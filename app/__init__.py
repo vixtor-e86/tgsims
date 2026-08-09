@@ -1,3 +1,4 @@
+
 from flask import Flask, session
 from app.config import Config
 
@@ -29,18 +30,30 @@ def create_app(config_class=Config):
     @app.context_processor
     def inject_globals():
         """Expose shared values to every template (drives the app-shell topbar)."""
-        from app.services.supabase_client import mock_db
-        user = session.get('user')
-        wallet_balance_usd = None
-        if user:
-            wallet_balance_usd = mock_db.wallets.get(
-                user['id'], {'balance': 45.50}
-            )['balance']
-        return {
-            'NGN_PER_USD': NGN_PER_USD,
-            'BRAND': 'Tgsims',
-            'current_user': user,
-            'wallet_balance_usd': wallet_balance_usd,
-        }
+        try:
+            from app.services.supabase_client import mock_db
+            user = session.get('user')
+            wallet_balance_usd = 45.50
+            if isinstance(user, dict) and 'id' in user:
+                wallet_data = mock_db.wallets.get(user['id'], {'balance': 45.50})
+                if isinstance(wallet_data, dict):
+                    wallet_balance_usd = wallet_data.get('balance', 45.50)
+            return {
+                'NGN_PER_USD': NGN_PER_USD,
+                'BRAND': 'Tgsims',
+                'current_user': user if isinstance(user, dict) else None,
+                'wallet_balance_usd': wallet_balance_usd,
+            }
+        except Exception:
+            return {
+                'NGN_PER_USD': NGN_PER_USD,
+                'BRAND': 'Tgsims',
+                'current_user': None,
+                'wallet_balance_usd': 45.50,
+            }
+
+    @app.errorhandler(500)
+    def handle_500(e):
+        return f"<h3>Internal Server Error</h3><p>{e}</p>", 500
 
     return app
