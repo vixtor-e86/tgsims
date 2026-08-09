@@ -1,7 +1,14 @@
 """Public-facing routes (no auth required): the marketing landing page."""
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, send_from_directory, current_app
+import os
 
 public_bp = Blueprint('public', __name__)
+
+
+@public_bp.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(current_app.root_path, 'static', 'img'),
+                               'logo.png', mimetype='image/png')
 
 
 @public_bp.route('/')
