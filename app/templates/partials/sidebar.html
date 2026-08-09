@@ -1,0 +1,40 @@
+{# ==========================================================================
+   sidebar.html  -  app-shell primary navigation
+   Active state is derived from request.endpoint, so pages need no extra vars.
+   ========================================================================== #}
+{% from "partials/icons.html" import icon %}
+{% set nav_items = [
+  {'ep': 'dashboard.index',  'icon': 'grid',     'label': 'Dashboard'},
+  {'ep': 'sims.store',       'icon': 'cart',     'label': 'Buy Number'},
+  {'ep': 'sims.my_sims',     'icon': 'list',     'label': 'My Orders'},
+  {'ep': 'sims.otp_history', 'icon': 'history',  'label': 'OTP History'},
+  {'ep': 'wallet.index',     'icon': 'wallet',   'label': 'Wallet'},
+  {'ep': 'account.referral', 'icon': 'users',    'label': 'Referral Program'},
+  {'ep': 'account.settings', 'icon': 'settings', 'label': 'Settings'},
+  {'ep': 'account.support',  'icon': 'life-buoy','label': 'Support'},
+] %}
+<aside class="sidebar" id="sidebar">
+  <a class="brand sidebar-brand" href="{{ url_for('dashboard.index') }}">
+    <span class="brand-logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo" style="width:40px;height:40px;"></span>
+    <span style="display:flex;flex-direction:column;">
+      <span class="brand-name">{{ BRAND }}</span>
+      <span class="brand-sub">SMS Verification</span>
+    </span>
+  </a>
+
+  <nav class="side-nav" aria-label="Primary">
+    {% for it in nav_items %}
+    <a href="{{ url_for(it.ep) }}"
+       class="side-link {% if request.endpoint == it.ep %}is-active{% endif %}"
+       {% if request.endpoint == it.ep %}aria-current="page"{% endif %}>
+      {{ icon(it.icon) }} <span>{{ it.label }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+
+  <div class="sidebar-foot">
+    <hr class="divider">
+    <a href="{{ url_for('auth.logout') }}" class="side-link">{{ icon('logout') }} <span>Logout</span></a>
+  </div>
+</aside>
+<div class="sidebar-scrim" aria-hidden="true"></div>

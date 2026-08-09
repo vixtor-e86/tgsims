@@ -1,0 +1,18 @@
+{# ==========================================================================
+   app.html  -  authenticated app shell (sidebar + topbar + page)
+   Every signed-in page extends this and fills {% block page %}.
+   ========================================================================== #}
+{% extends "layouts/base.html" %}
+
+{% block body %}
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="app">
+  {% include "partials/sidebar.html" %}
+  <div class="main">
+    {% include "partials/topbar.html" %}
+    <main class="page" id="main">
+      {% block page %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

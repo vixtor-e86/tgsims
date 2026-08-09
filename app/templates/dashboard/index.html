@@ -1,0 +1,173 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Dashboard | {{ BRAND }}{% endblock %}
+
+{% block page %}
+{# ---- Page header: greeting + quick actions ---- #}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Good Morning, {{ (user.first_name or 'there') }} 👋</h1>
+    <p class="page-subtitle">Welcome back to {{ BRAND }}. Here is what's happening with your account today.</p>
+  </div>
+  <div class="page-head-actions">
+    <a href="{{ url_for('wallet.fund') }}" class="btn btn-secondary">{{ icon('plus') }} Deposit Funds</a>
+    <a href="{{ url_for('sims.store') }}" class="btn btn-primary">{{ icon('cart') }} Buy Number</a>
+  </div>
+</div>
+
+{# ---- Stat cards ---- #}
+<div class="grid-3 stat-grid">
+  <div class="card card-pad stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Wallet Balance</span>
+      <span class="icon-tile"><span>{{ icon('wallet') }}</span></span>
+    </div>
+    <div class="stat-value" data-usd="{{ '%.2f'|format(stats.wallet_balance_usd) }}">₦{{ '{:,.2f}'.format(stats.wallet_balance_usd * NGN_PER_USD) }}</div>
+    <div class="stat-delta is-up">
+      {{ icon('trending-up') }}
+      <span><span data-usd="{{ '%.2f'|format(stats.wallet_delta_usd) }}" data-sign="+">+₦{{ '{:,.2f}'.format(stats.wallet_delta_usd * NGN_PER_USD) }}</span> this week</span>
+    </div>
+  </div>
+
+  <div class="card card-pad stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Today's Spending</span>
+      <span class="icon-tile"><span>{{ icon('card') }}</span></span>
+    </div>
+    <div class="stat-value" data-usd="{{ '%.2f'|format(stats.today_spending_usd) }}">₦{{ '{:,.2f}'.format(stats.today_spending_usd * NGN_PER_USD) }}</div>
+    <div class="stat-delta is-muted">
+      {{ icon('clock') }}
+      <span>{{ stats.numbers_today }} numbers purchased today</span>
+    </div>
+  </div>
+
+  <div class="card card-pad stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Total Numbers</span>
+      <span class="icon-tile"><span>{{ icon('sim') }}</span></span>
+    </div>
+    <div class="stat-value">{{ '{:,}'.format(stats.total_numbers) }}</div>
+    <div class="stat-delta is-up">
+      {{ icon('trending-up') }}
+      <span>+{{ stats.total_delta_pct }}% vs last month</span>
+    </div>
+  </div>
+</div>
+
+{# ---- Quick Buy + Activity ---- #}
+<div class="grid-sidebar-main dash-mid">
+  {# Quick Buy #}
+  <section class="card card-pad quick-buy"
+           data-quick-buy
+           data-catalog='{{ catalog|tojson }}'
+           data-endpoint="{{ url_for('api.purchase_sim') }}">
+    <div class="card-head">
+      <h2 class="card-title">{{ icon('bolt') }} Quick Buy</h2>
+    </div>
+
+    <div class="field">
+      <label class="label" for="qb-country">Select Country</label>
+      <select class="select" id="qb-country" data-qb-country></select>
+    </div>
+
+    <div class="field">
+      <label class="label" for="qb-service">Select Service</label>
+      <select class="select" id="qb-service" data-qb-service></select>
+    </div>
+
+    <div class="price-box">
+      <span class="price-box-label">Price</span>
+      <span class="price-box-value" data-qb-price data-usd="0">₦0.00</span>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" data-qb-submit type="button">
+      Buy Number Now {{ icon('arrow-right') }}
+    </button>
+    <p class="quick-buy-note">{{ icon('clock') }} Estimated delivery: <strong>Instant</strong></p>
+  </section>
+
+  {# Activity Overview #}
+  <section class="card card-pad activity-card" data-tabs>
+    <div class="card-head">
+      <h2 class="card-title">Activity Overview</h2>
+      <div class="seg" role="group" aria-label="Activity range">
+        <button class="seg-btn is-active" data-tab="7d" type="button">7D</button>
+        <button class="seg-btn" data-tab="30d" type="button">30D</button>
+      </div>
+    </div>
+
+    {% for range_key in ['7d', '30d'] %}
+    <div class="chart {{ 'hidden' if range_key == '30d' else '' }}" data-panel="{{ range_key }}">
+      <div class="chart-bars">
+        {% for pt in activity[range_key] %}
+        <div class="chart-col" title="{{ pt.label }}: {{ pt.total }} purchased, {{ pt.done }} completed">
+          <span class="bar" style="height: {{ pt.total }}%">
+            <span class="bar-fill" style="height: {{ (pt.done / pt.total * 100)|round(1) }}%"></span>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="chart-axis">
+        {% for pt in activity[range_key] %}
+        <span class="chart-axis-label">{{ pt.label }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="chart-legend">
+      <span class="chart-legend-item"><span class="dot dot-soft"></span> Purchased</span>
+      <span class="chart-legend-item"><span class="dot dot-solid"></span> Completed</span>
+    </div>
+  </section>
+</div>
+
+{# ---- Recent Verifications ---- #}
+<section class="card recent-card">
+  <div class="card-head recent-head">
+    <h2 class="card-title">Recent Verifications</h2>
+    <a href="{{ url_for('sims.my_sims') }}" class="link-more">View All {{ icon('arrow-right', 'i-inline') }}</a>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Service</th>
+          <th>Number</th>
+          <th>Cost</th>
+          <th>Status</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in recent %}
+        <tr>
+          <td class="td-mono td-strong">#{{ o.order_reference }}</td>
+          <td class="td-strong">{{ o.service_name }}</td>
+          <td class="td-mono td-dim">{{ o.phone_number }}</td>
+          <td class="td-strong" data-usd="{{ '%.2f'|format(o.price) }}">₦{{ '{:,.2f}'.format(o.price * NGN_PER_USD) }}</td>
+          <td>
+            {% if o.status == 'active' %}
+              <span class="badge badge-warning badge-dot">Waiting SMS</span>
+            {% elif o.status == 'completed' %}
+              <span class="badge badge-success badge-dot">Completed</span>
+            {% else %}
+              <span class="badge badge-danger badge-dot">Cancelled</span>
+            {% endif %}
+          </td>
+          <td class="td-dim">{{ o.created_at.split(' ')[1][:5] if ' ' in o.created_at else o.created_at }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="td-dim text-center" style="padding:var(--sp-8);">No verifications yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

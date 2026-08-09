@@ -1,0 +1,52 @@
+{# ==========================================================================
+   topbar.html  -  app-shell header (search, wallet, controls, account menu)
+   ========================================================================== #}
+{% from "partials/icons.html" import icon %}
+{% set u = current_user or {} %}
+<header class="topbar">
+  <button class="icon-btn menu-btn" data-sidebar-toggle type="button" aria-label="Open menu">{{ icon('menu') }}</button>
+
+  <div class="topbar-search">
+    <div class="input-group">
+      <span class="input-icon">{{ icon('search') }}</span>
+      <input class="input" type="search" placeholder="Search services, orders..." aria-label="Search">
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <a class="wallet-chip" href="{{ url_for('wallet.index') }}" aria-label="Wallet balance">
+      {{ icon('wallet') }}
+      <span data-usd="{{ '%.2f'|format(wallet_balance_usd or 0) }}" data-decimals="2">{{ '₦%.2f'|format((wallet_balance_usd or 0) * NGN_PER_USD) }}</span>
+    </a>
+
+    <div class="cur-switch" role="group" aria-label="Currency">
+      <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
+      <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
+    </div>
+
+    <button class="icon-btn" type="button" aria-label="Notifications">{{ icon('bell') }}<span class="dot"></span></button>
+    <button class="icon-btn" type="button" aria-label="Messages">{{ icon('mail') }}</button>
+
+    <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+      {{ icon('sun', 'i-sun') }}{{ icon('moon', 'i-moon') }}
+    </button>
+
+    <div class="dropdown" data-dropdown>
+      <button class="avatar" data-dropdown-trigger type="button" aria-label="Account menu" aria-haspopup="true">
+        {% if u.avatar %}<img src="{{ u.avatar }}" alt="{{ u.full_name }}">{% else %}{{ (u.first_name or 'U')[0]|upper }}{% endif %}
+      </button>
+      <div class="dropdown-menu" role="menu">
+        <div style="padding:var(--sp-2) var(--sp-3);">
+          <div class="fw-bold" style="font-size:var(--fs-sm);">{{ u.full_name or 'Guest' }}</div>
+          <div class="text-muted" style="font-size:var(--fs-xs);">{{ u.email or '' }}</div>
+        </div>
+        <div class="dropdown-sep"></div>
+        <a class="dropdown-item" href="{{ url_for('account.settings') }}" role="menuitem">{{ icon('settings') }} Settings</a>
+        <a class="dropdown-item" href="{{ url_for('wallet.index') }}" role="menuitem">{{ icon('wallet') }} Wallet</a>
+        <a class="dropdown-item" href="{{ url_for('account.support') }}" role="menuitem">{{ icon('life-buoy') }} Support</a>
+        <div class="dropdown-sep"></div>
+        <a class="dropdown-item" href="{{ url_for('auth.logout') }}" role="menuitem">{{ icon('logout') }} Logout</a>
+      </div>
+    </div>
+  </div>
+</header>

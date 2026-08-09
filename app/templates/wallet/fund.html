@@ -1,0 +1,95 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Fund Your Wallet | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Fund Your Wallet</h1>
+    <p class="page-subtitle">Add funds securely to continue purchasing eSIMs and virtual numbers.</p>
+  </div>
+  <a href="{{ url_for('wallet.index') }}" class="btn btn-secondary btn-sm">Back to Wallet</a>
+</div>
+
+<div class="fund-shell" data-fund data-fee-rate="{{ fee_rate }}">
+  <section class="card card-pad">
+    {# ---- Amount ---- #}
+    <label class="fund-label" for="fund-amount">Enter Amount</label>
+    <div class="amount-group">
+      <span class="amount-symbol" data-amount-symbol>₦</span>
+      <input class="amount-input" id="fund-amount" type="number" inputmode="decimal"
+             min="0" step="any" placeholder="0.00" autocomplete="off" data-amount-input>
+    </div>
+
+    <div class="preset-row">
+      {% for p in presets_ngn %}
+      <button type="button" class="preset-btn" data-preset
+              data-usd="{{ '%.4f'|format(p / NGN_PER_USD) }}" data-decimals="0">₦{{ '{:,.0f}'.format(p) }}</button>
+      {% endfor %}
+    </div>
+
+    <hr class="divider">
+
+    {# ---- Payment method ---- #}
+    <span class="fund-label">Select Payment Method</span>
+    <div class="pay-methods">
+      {% for m in methods %}
+      <button type="button" class="pay-method {{ 'is-active' if loop.first else '' }}"
+              data-method data-method-id="{{ m.id }}">
+        <span class="pay-check">{{ icon('check') }}</span>
+        <span class="pay-method-ico">{{ icon(m.icon) }}</span>
+        <span class="pay-method-label">{{ m.label }}</span>
+        <span class="pay-method-note">{{ m.note }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+    {# ---- Card details (only for card method) ---- #}
+    <div class="card-fields" data-card-fields>
+      <label class="fund-label" for="card-number">Card Number</label>
+      <input class="input" id="card-number" type="text" inputmode="numeric"
+             placeholder="1234 5678 9012 3456" autocomplete="cc-number" maxlength="19">
+      <div class="card-fields-row" style="margin-top:var(--sp-4);">
+        <div>
+          <label class="fund-label" for="card-expiry">Expiry Date</label>
+          <input class="input" id="card-expiry" type="text" placeholder="MM/YY"
+                 autocomplete="cc-exp" maxlength="5">
+        </div>
+        <div>
+          <label class="fund-label" for="card-cvc">CVC</label>
+          <input class="input" id="card-cvc" type="text" inputmode="numeric"
+                 placeholder="123" autocomplete="cc-csc" maxlength="4">
+        </div>
+      </div>
+    </div>
+
+    {# ---- Order summary ---- #}
+    <div class="order-summary">
+      <div class="summary-row">
+        <span>Deposit Amount</span>
+        <strong data-summary-amount data-usd="0" data-decimals="2">₦0.00</strong>
+      </div>
+      <div class="summary-row">
+        <span>Processing Fee (1.5%)</span>
+        <strong data-summary-fee data-usd="0" data-decimals="2">₦0.00</strong>
+      </div>
+      <div class="summary-row summary-total">
+        <span>Total to Pay</span>
+        <strong data-summary-total data-usd="0" data-decimals="2">₦0.00</strong>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-primary btn-block btn-lg" style="margin-top:var(--sp-6);"
+            data-fund-submit disabled>
+      <span data-confirm-label>Confirm Deposit</span>
+    </button>
+
+    <p class="fund-secure">{{ icon('lock') }} Payments are secure and encrypted.</p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/fund.js') }}"></script>
+{% endblock %}

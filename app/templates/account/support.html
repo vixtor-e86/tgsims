@@ -1,0 +1,84 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Support Center | {{ BRAND }}{% endblock %}
+
+{% block page %}
+{# ---- Search hero ---- #}
+<section class="support-hero">
+  <h1 class="support-hero-title">How can we help you?</h1>
+  <form class="support-search" role="search" onsubmit="return false;">
+    <span class="support-search-ico">{{ icon('search') }}</span>
+    <input class="input" type="search" placeholder="Search for articles, eSIM guides, or error codes…" aria-label="Search help articles">
+  </form>
+  <div class="support-chips">
+    {% for chip in ['Activation Error 404', 'Refund Policy', 'eSIM Setup'] %}
+    <button type="button" class="pill">{{ chip }}</button>
+    {% endfor %}
+  </div>
+</section>
+
+{# ---- Knowledge base ---- #}
+<h2 class="page-title" style="font-size:var(--fs-xl);margin-bottom:var(--sp-5);">Knowledge Base</h2>
+<div class="kb-grid" style="margin-bottom:var(--sp-8);">
+  {% for t in topics %}
+  <a href="#" class="card card-pad card-hover kb-card">
+    <span class="icon-tile">{{ icon(t.icon) }}</span>
+    <div class="kb-title">{{ t.title }}</div>
+    <p class="kb-text">{{ t.text }}</p>
+  </a>
+  {% endfor %}
+</div>
+
+{# ---- Recent support tickets ---- #}
+<section class="card card-pad" style="margin-bottom:var(--sp-8);">
+  <div class="card-head">
+    <h2 class="card-title">Recent Support Tickets</h2>
+    <a href="#" class="link-more">View All {{ icon('arrow-right', 'i-inline') }}</a>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Ticket ID</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Last Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tk in tickets %}
+        <tr>
+          <td><a href="#" class="ticket-id">#{{ tk.id }}</a></td>
+          <td>{{ tk.subject }}</td>
+          <td>
+            {% if tk.status == 'resolved' %}
+              <span class="badge badge-success badge-dot">Resolved</span>
+            {% elif tk.status == 'open' %}
+              <span class="badge badge-danger badge-dot">Open</span>
+            {% else %}
+              <span class="badge badge-warning badge-dot">Pending</span>
+            {% endif %}
+          </td>
+          <td class="td-dim">{{ tk.updated }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="td-dim text-center" style="padding:var(--sp-12);">No tickets yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{# ---- Contact channels ---- #}
+<div class="channel-grid">
+  {% for c in channels %}
+  <div class="card card-pad channel-card">
+    <span class="channel-ico">{{ icon(c.icon) }}</span>
+    <div class="channel-title">{{ c.title }}</div>
+    <p class="channel-text">{{ c.text }}</p>
+    <a href="#" class="btn btn-secondary btn-block">{{ c.cta }}</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

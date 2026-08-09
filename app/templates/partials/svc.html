@@ -1,0 +1,22 @@
+{# ==========================================================================
+   svc.html  -  service avatar (colored circle + glyph), server-side twin of
+   the mapping in buy.js so tables and the Buy grid render identically.
+   Usage:  {% from "partials/svc.html" import svc_icon %}
+           {{ svc_icon("WhatsApp") }}   {{ svc_icon(o.service_name, "svc-sm") }}
+   ========================================================================== #}
+{% from "partials/icons.html" import icon %}
+{% macro svc_icon(name, extra_cls="") -%}
+  {%- set n = (name or "")|lower -%}
+  {%- if "whatsapp" in n -%}{% set cls, glyph = "svc-whatsapp", "chat" %}
+  {%- elif "telegram" in n -%}{% set cls, glyph = "svc-telegram", "send" %}
+  {%- elif "google" in n or "gmail" in n -%}{% set cls, glyph = "svc-google", "mail" %}
+  {%- elif "instagram" in n -%}{% set cls, glyph = "svc-instagram", "camera" %}
+  {%- elif "openai" in n or "chatgpt" in n -%}{% set cls, glyph = "svc-openai", "sparkles" %}
+  {%- elif "tinder" in n -%}{% set cls, glyph = "svc-tinder", "sparkles" %}
+  {%- elif "facebook" in n -%}{% set cls, glyph = "svc-facebook", "users" %}
+  {%- elif "esim" in n -%}{% set cls, glyph = "svc-esim", "globe" %}
+  {%- elif "bank" in n -%}{% set cls, glyph = "svc-generic", "bank" %}
+  {%- else -%}{% set cls, glyph = "svc-generic", "sim" %}
+  {%- endif -%}
+  <span class="svc-ico {{ cls }} {{ extra_cls }}">{{ icon(glyph) }}</span>
+{%- endmacro %}

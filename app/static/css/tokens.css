@@ -1,0 +1,204 @@
+/* ==========================================================================
+   TGSIMS  -  Design Tokens
+   Single source of truth for color, type, space, radius, shadow, motion.
+   Themes flip via [data-theme="light"|"dark"] on <html>.
+   ========================================================================== */
+
+:root {
+  /* ---- Brand palette (theme-independent) ---- */
+  --brand-50:  #eff5ff;
+  --brand-100: #dbe8ff;
+  --brand-200: #bfd6ff;
+  --brand-300: #93b8ff;
+  --brand-400: #5b8dfb;
+  --brand-500: #2563eb;   /* primary */
+  --brand-600: #1d4ed8;
+  --brand-700: #1e40af;
+  --brand-800: #1e3a8a;
+  --brand-900: #172554;
+
+  --accent-cyan: #22d3ee;
+  --accent-teal: #2dd4bf;
+
+  /* ---- Fixed semantic hues (used by both themes, tuned per theme below) ---- */
+  --hue-success: #10b981;
+  --hue-warning: #f59e0b;
+  --hue-danger:  #ef4444;
+  --hue-info:    #3b82f6;
+
+  /* ---- Type ---- */
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont,
+               "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+
+  --fs-xs:   0.75rem;    /* 12 */
+  --fs-sm:   0.875rem;   /* 14 */
+  --fs-base: 1rem;       /* 16 */
+  --fs-md:   1.125rem;   /* 18 */
+  --fs-lg:   1.375rem;   /* 22 */
+  --fs-xl:   1.75rem;    /* 28 */
+  --fs-2xl:  2.25rem;    /* 36 */
+  --fs-3xl:  3rem;       /* 48 */
+
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semi:   600;
+  --fw-bold:   700;
+  --fw-extra:  800;
+
+  --lh-tight: 1.15;
+  --lh-snug:  1.35;
+  --lh-base:  1.6;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-7: 1.75rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+  --sp-20: 5rem;
+  --sp-24: 6rem;
+
+  /* ---- Radius ---- */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-full: 999px;
+
+  /* ---- Layout ---- */
+  --sidebar-w: 264px;
+  --topbar-h: 76px;
+  --container-max: 1200px;
+  --content-max: 1320px;
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 360ms;
+
+  /* ---- Z-index ---- */
+  --z-sticky: 100;
+  --z-sidebar: 200;
+  --z-dropdown: 500;
+  --z-modal: 1000;
+  --z-toast: 1500;
+}
+
+/* ==========================================================================
+   LIGHT THEME (default)
+   ========================================================================== */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg:            #f4f7fc;
+  --bg-alt:        #eef2f9;
+  --surface:       #ffffff;
+  --surface-2:     #f5f8fd;   /* subtle raised / inset */
+  --surface-3:     #eaf0fa;   /* hover */
+  --surface-inv:   #0c1526;   /* dark panel inside light UI (auth hero, CTA) */
+
+  --sidebar-bg:    #ffffff;
+  --sidebar-border: #e7edf6;
+  --topbar-bg:     rgba(255,255,255,0.85);
+
+  --border:        #e6ecf5;
+  --border-strong: #d3dcea;
+  --ring:          rgba(37, 99, 235, 0.35);
+
+  --text:          #0e1a2f;
+  --text-muted:    #5a6b86;
+  --text-dim:      #8593a8;
+  --text-inv:      #f3f6fc;      /* text on dark surfaces */
+
+  --brand:         var(--brand-500);
+  --brand-strong:  var(--brand-600);
+  --brand-soft:    var(--brand-50);
+  --on-brand:      #ffffff;
+
+  --link:          var(--brand-600);
+
+  /* Status: text + soft background pairings */
+  --success:       #059669;
+  --success-bg:    #d9f5ea;
+  --warning:       #b7791f;
+  --warning-bg:    #fdf0d5;
+  --danger:        #dc2626;
+  --danger-bg:     #fde2e2;
+  --info:          #2563eb;
+  --info-bg:       #e0ebff;
+
+  --chart-bar:     var(--brand-500);
+  --chart-bar-soft: #b9d0fb;
+  --chart-grid:    #eef2f8;
+
+  --shadow-xs: 0 1px 2px rgba(16, 30, 54, 0.06);
+  --shadow-sm: 0 2px 6px rgba(16, 30, 54, 0.07);
+  --shadow-md: 0 6px 18px rgba(16, 30, 54, 0.08);
+  --shadow-lg: 0 18px 40px rgba(16, 30, 54, 0.12);
+  --shadow-brand: 0 10px 26px rgba(37, 99, 235, 0.28);
+}
+
+/* ==========================================================================
+   DARK THEME
+   ========================================================================== */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg:            #070c18;
+  --bg-alt:        #0a1122;
+  --surface:       #0f1830;
+  --surface-2:     #142042;   /* raised / inset */
+  --surface-3:     #1b2a4e;   /* hover */
+  --surface-inv:   #0b1428;
+
+  --sidebar-bg:    #080e1c;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --topbar-bg:     rgba(9, 15, 28, 0.82);
+
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --ring:          rgba(91, 141, 251, 0.5);
+
+  --text:          #eaf0fb;
+  --text-muted:    #9aa8c2;
+  --text-dim:      #647089;
+  --text-inv:      #eaf0fb;
+
+  --brand:         var(--brand-500);
+  --brand-strong:  var(--brand-400);
+  --brand-soft:    rgba(37, 99, 235, 0.16);
+  --on-brand:      #ffffff;
+
+  --link:          var(--brand-400);
+
+  --success:       #34d399;
+  --success-bg:    rgba(16, 185, 129, 0.15);
+  --warning:       #fbbf24;
+  --warning-bg:    rgba(245, 158, 11, 0.15);
+  --danger:        #f87171;
+  --danger-bg:     rgba(239, 68, 68, 0.16);
+  --info:          #60a5fa;
+  --info-bg:       rgba(59, 130, 246, 0.16);
+
+  --chart-bar:     var(--brand-500);
+  --chart-bar-soft: #1e3a75;
+  --chart-grid:    rgba(255, 255, 255, 0.06);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 22px 48px rgba(0, 0, 0, 0.6);
+  --shadow-brand: 0 10px 30px rgba(37, 99, 235, 0.45);
+}

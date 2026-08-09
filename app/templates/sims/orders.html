@@ -1,0 +1,125 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/svc.html" import svc_icon %}
+
+{% block title %}My Orders | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">My Orders</h1>
+    <p class="page-subtitle">Track and manage your virtual number orders.</p>
+  </div>
+  <div class="page-head-actions">
+    <a href="{{ url_for('sims.store') }}" class="btn btn-primary">{{ icon('plus') }} New Order</a>
+  </div>
+</div>
+
+{# ---- Filters ---- #}
+<div class="filter-bar">
+  <div class="input-group">
+    <span class="input-icon">{{ icon('search') }}</span>
+    <input class="input" type="search" placeholder="Search Order ID or Service..." aria-label="Search orders">
+  </div>
+  <select class="select" aria-label="Filter by status">
+    <option>Status: All</option>
+    <option>Active</option>
+    <option>Completed</option>
+    <option>Expired</option>
+    <option>Cancelled</option>
+  </select>
+  <select class="select" aria-label="Filter by date">
+    <option>Date: All Time</option>
+    <option>Today</option>
+    <option>Last 7 days</option>
+    <option>Last 30 days</option>
+  </select>
+</div>
+
+{# ---- Orders table ---- #}
+<section class="card table-card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Order ID</th>
+          <th>Phone Number</th>
+          <th>OTP / Result</th>
+          <th>Status</th>
+          <th>Date &amp; Time</th>
+          <th>Price</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        {% set day = o.created_at.split(' ')[0] %}
+        {% set hm = o.created_at.split(' ')[1][:5] if ' ' in o.created_at else '' %}
+        {% set dead = o.status in ['expired', 'cancelled'] %}
+        <tr>
+          <td>
+            <span class="svc">{{ svc_icon(o.service_name, "svc-sm") }} <span class="td-strong">{{ o.service_name }}</span></span>
+          </td>
+          <td class="td-mono td-dim">#{{ o.order_reference }}</td>
+          <td>
+            <span class="num-cell">
+              <span class="flag">{{ o.country_code }}</span>
+              <span class="td-mono {{ 'strike' if dead else 'td-dim' }}">{{ o.phone_number }}</span>
+            </span>
+          </td>
+          <td>
+            {% if o.status == 'active' %}
+              <span class="otp-waiting">{{ icon('refresh') }} Waiting...</span>
+            {% elif o.status == 'completed' %}
+              <span class="code-chip">{{ o.sms_code }}
+                <button class="copy-btn" data-copy="{{ o.sms_code }}" type="button" aria-label="Copy code">{{ icon('copy') }}</button>
+              </span>
+            {% elif o.status == 'expired' %}
+              <span class="td-dim">Timeout</span>
+            {% else %}
+              <span class="text-danger fw-semi">Refunded</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if o.status == 'active' %}
+              <span class="badge badge-info badge-dot">Active</span>
+            {% elif o.status == 'completed' %}
+              <span class="badge badge-success badge-dot">Completed</span>
+            {% elif o.status == 'expired' %}
+              <span class="badge badge-neutral badge-dot">Expired</span>
+            {% else %}
+              <span class="badge badge-danger badge-dot">Cancelled</span>
+            {% endif %}
+          </td>
+          <td class="td-dim">{{ day }}<span class="stack-sub">{{ hm }}</span></td>
+          <td class="{{ 'strike' if dead else 'td-strong' }}" data-usd="{{ '%.2f'|format(o.price) }}">₦{{ '{:,.2f}'.format(o.price * NGN_PER_USD) }}</td>
+          <td class="text-right">
+            {% if o.status == 'active' %}
+              <a href="{{ url_for('sims.otp_history') }}" class="btn btn-primary btn-sm">View OTP</a>
+            {% elif o.status == 'cancelled' %}
+              <a href="{{ url_for('account.support') }}" class="btn btn-secondary btn-sm">Support</a>
+            {% else %}
+              <a href="{{ url_for('sims.store') }}" class="btn btn-secondary btn-sm">Re-order</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="td-dim text-center" style="padding:var(--sp-12);">No orders yet. <a href="{{ url_for('sims.store') }}" class="fw-semi text-brand">Buy your first number</a>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if orders %}
+  <div class="table-foot">
+    <span>Showing 1 to {{ orders|length }} of {{ orders|length }} entries</span>
+    <div class="pagination">
+      <button class="page-btn" type="button" aria-label="Previous" disabled>{{ icon('chevron-left') }}</button>
+      <button class="page-btn is-active" type="button">1</button>
+      <button class="page-btn" type="button" aria-label="Next" disabled>{{ icon('chevron-right') }}</button>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+from flask import Flask, session
+from app.config import Config
+
+# Single source of truth for USD->NGN display conversion (frontend mirrors this).
+NGN_PER_USD = 1600
+
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+
+    # Register Blueprints
+    from app.routes.public import public_bp
+    from app.routes.auth import auth_bp
+    from app.routes.dashboard import dashboard_bp
+    from app.routes.sims import sims_bp
+    from app.routes.wallet import wallet_bp
+    from app.routes.account import account_bp
+    from app.routes.api import api_bp
+
+    app.register_blueprint(public_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(sims_bp)
+    app.register_blueprint(wallet_bp)
+    app.register_blueprint(account_bp)
+    app.register_blueprint(api_bp)
+
+    @app.context_processor
+    def inject_globals():
+        """Expose shared values to every template (drives the app-shell topbar)."""
+        from app.services.supabase_client import mock_db
+        user = session.get('user')
+        wallet_balance_usd = None
+        if user:
+            wallet_balance_usd = mock_db.wallets.get(
+                user['id'], {'balance': 45.50}
+            )['balance']
+        return {
+            'NGN_PER_USD': NGN_PER_USD,
+            'BRAND': 'Tgsims',
+            'current_user': user,
+            'wallet_balance_usd': wallet_balance_usd,
+        }
+
+    return app

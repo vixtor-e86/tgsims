@@ -1,0 +1,94 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+{% from "partials/svc.html" import svc_icon %}
+
+{% block title %}OTP History | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">OTP History</h1>
+    <p class="page-subtitle">Review all verification codes and messages received across your virtual numbers.</p>
+  </div>
+</div>
+
+{# ---- Filters ---- #}
+<div class="filter-bar">
+  <div class="input-group">
+    <span class="input-icon">{{ icon('search') }}</span>
+    <input class="input" type="search" placeholder="Search by service or number..." aria-label="Search OTP history">
+  </div>
+  <select class="select" aria-label="Filter by service">
+    <option>All Services</option>
+    {% for h in history %}<option>{{ h.service_name }}</option>{% endfor %}
+  </select>
+  <span class="filter-bar-spacer"></span>
+  <button class="btn btn-secondary" type="button">{{ icon('calendar') }} Last 30 Days {{ icon('chevron-down') }}</button>
+  <button class="icon-btn" type="button" aria-label="Export history">{{ icon('download') }}</button>
+</div>
+
+{# ---- History table ---- #}
+<section class="card table-card">
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Phone Number</th>
+          <th>OTP / Code</th>
+          <th>Message Content</th>
+          <th>Date &amp; Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in history %}
+        {% set day = h.created_at.split(' ')[0] %}
+        {% set tm = h.created_at.split(' ')[1] if ' ' in h.created_at else '' %}
+        {% set dead = h.status in ['expired', 'cancelled'] %}
+        <tr>
+          <td>
+            <span class="svc">{{ svc_icon(h.service_name, "svc-sm") }} <span class="td-strong">{{ h.service_name }}</span></span>
+          </td>
+          <td>
+            <span class="num-cell">
+              <span class="flag">{{ h.country_code }}</span>
+              <span class="td-mono td-dim">{{ h.phone_number }}</span>
+            </span>
+          </td>
+          <td>
+            {% if dead %}
+              <span class="badge badge-danger">Timed Out</span>
+            {% else %}
+              <span class="code-chip">{{ h.sms_code }}
+                <button class="copy-btn" data-copy="{{ h.sms_code }}" type="button" aria-label="Copy code">{{ icon('copy') }}</button>
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            {% if dead %}
+              <span class="otp-msg">No message received within the 20-minute window. Funds refunded.</span>
+            {% else %}
+              <span class="otp-msg">{{ h.full_sms_text }}</span>
+            {% endif %}
+          </td>
+          <td class="td-dim">{{ day }}<span class="stack-sub">{{ tm }} UTC</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="td-dim text-center" style="padding:var(--sp-12);">No verification codes received yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if history %}
+  <div class="table-foot">
+    <span>Showing 1 to {{ history|length }} of {{ history|length }} entries</span>
+    <div class="pagination">
+      <button class="page-btn" type="button" aria-label="Previous" disabled>{{ icon('chevron-left') }}</button>
+      <button class="page-btn is-active" type="button">1</button>
+      <button class="page-btn" type="button" aria-label="Next" disabled>{{ icon('chevron-right') }}</button>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

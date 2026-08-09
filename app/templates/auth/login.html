@@ -1,0 +1,77 @@
+{% extends "layouts/base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Welcome Back | {{ BRAND }}{% endblock %}
+{% block meta_desc %}Sign in to your {{ BRAND }} account to buy virtual numbers, receive SMS codes, and manage your wallet.{% endblock %}
+
+{% block body %}
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="auth-top">
+  <a class="brand" href="{{ url_for('public.landing') }}">
+    <span class="brand-logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo" style="width:38px;height:38px;"></span>
+    <span class="brand-name">{{ BRAND }}</span>
+  </a>
+  <div class="lp-nav-actions">
+    <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+      {{ icon("sun", "i-sun") }}{{ icon("moon", "i-moon") }}
+    </button>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-ghost btn-sm">Register</a>
+    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Login</a>
+  </div>
+</header>
+
+<main id="main">
+  <div class="auth-center">
+    <div class="auth-card is-centered">
+      <div class="text-center">
+        <h1 class="auth-title">Welcome back</h1>
+        <p class="auth-sub">Sign in to your account</p>
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.login') }}" style="margin-top:var(--sp-8);">
+        <div class="field">
+          <label class="label" for="login-email">Email Address</label>
+          <div class="input-group">
+            <span class="input-icon">{{ icon("mail") }}</span>
+            <input class="input" id="login-email" name="email" type="email" placeholder="name@company.com" autocomplete="email" required autofocus>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:var(--sp-2);">
+          <label class="label" for="login-password">Password</label>
+          <div class="input-group">
+            <span class="input-icon">{{ icon("lock") }}</span>
+            <input class="input input-affix-right" id="login-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+            <button class="input-toggle" data-password-toggle type="button" aria-label="Show password">
+              {{ icon("eye", "i-eye") }}{{ icon("eye-off", "i-eye-off") }}
+            </button>
+          </div>
+        </div>
+
+        <div class="text-right" style="margin-bottom:var(--sp-6);">
+          <a href="#" class="fw-semi" style="font-size:var(--fs-sm);">Forgot your password?</a>
+        </div>
+
+        <button class="btn btn-dark btn-block btn-lg" type="submit">Sign In</button>
+      </form>
+
+      <hr class="divider">
+      <p class="text-center text-muted" style="font-size:var(--fs-sm);">
+        Don't have an account? <a href="{{ url_for('auth.register') }}" class="fw-semi">Sign up here</a>
+      </p>
+    </div>
+  </div>
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="auth-foot">
+  <span>&copy; {{ 2026 }} {{ BRAND }}. Verify Without Limits.</span>
+  <nav class="auth-foot-links" aria-label="Legal">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">Help Center</a>
+  </nav>
+</footer>
+{% endblock %}

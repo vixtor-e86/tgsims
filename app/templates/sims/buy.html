@@ -1,0 +1,112 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Buy Virtual Number | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Buy a Virtual Number</h1>
+    <p class="page-subtitle">Choose a country and service to get started.</p>
+  </div>
+</div>
+
+<div class="grid-main-aside buy-grid"
+     data-buy
+     data-catalog='{{ catalog|tojson }}'
+     data-endpoint="{{ url_for('api.purchase_sim') }}">
+
+  {# ---- Left column: selection steps ---- #}
+  <div>
+    {# Step 1: Country #}
+    <section class="card card-pad buy-step">
+      <div class="step-head">
+        <div class="step-head-title">
+          <span class="step-num">1</span>
+          <h2 class="step-title">Select Country</h2>
+        </div>
+        <div class="input-group step-search">
+          <span class="input-icon">{{ icon('search') }}</span>
+          <input class="input" type="search" placeholder="Search countries..."
+                 data-country-search aria-label="Search countries">
+        </div>
+      </div>
+      <div class="tile-grid" data-country-grid></div>
+    </section>
+
+    {# Step 2: Service #}
+    <section class="card card-pad buy-step">
+      <div class="step-head">
+        <div class="step-head-title">
+          <span class="step-num">2</span>
+          <h2 class="step-title">Select Service</h2>
+        </div>
+        <div class="input-group step-search">
+          <span class="input-icon">{{ icon('search') }}</span>
+          <input class="input" type="search" placeholder="Search services..."
+                 data-service-search aria-label="Search services">
+        </div>
+      </div>
+      <div class="tile-grid" data-service-grid></div>
+    </section>
+  </div>
+
+  {# ---- Right column: review & purchase ---- #}
+  <aside>
+    <section class="card card-pad review-card">
+      <div class="step-head-title" style="margin-bottom: var(--sp-5);">
+        <span class="step-num">3</span>
+        <h2 class="step-title">Review &amp; Purchase</h2>
+      </div>
+
+      <div class="review-rows">
+        <div class="review-row">
+          <span class="k">Country</span>
+          <span class="v is-empty" data-review-country>-</span>
+        </div>
+        <div class="review-row">
+          <span class="k">Service</span>
+          <span class="v is-empty" data-review-service>-</span>
+        </div>
+        <div class="review-row">
+          <span class="k">Estimated Delivery</span>
+          <span class="badge badge-success" data-review-delivery>Instant</span>
+        </div>
+      </div>
+
+      <div class="review-total">
+        <span class="review-total-label">Total Price</span>
+        <span class="review-total-value" data-review-price data-usd="0">₦0.00</span>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" data-buy-submit type="button" disabled>
+        {{ icon('cart') }} Buy Number Now
+      </button>
+      <p class="review-secure">{{ icon('lock') }} Secure Payment</p>
+    </section>
+  </aside>
+</div>
+
+{# ---- Why choose TGSims? ---- #}
+<section class="buy-why">
+  <hr class="divider">
+  <h2 class="buy-why-title">Why choose {{ BRAND }}?</h2>
+  <div class="why-grid">
+    {% set why_tint = ['why-teal', 'why-blue', 'why-amber', 'why-dark'] %}
+    {% for w in why %}
+    <div class="why-item">
+      <span class="icon-tile {{ why_tint[loop.index0 % 4] }}">{{ icon(w.icon) }}</span>
+      <div>
+        <div class="why-h">{{ w.title }}</div>
+        <div class="why-t">{{ w.text }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="buy-powered">Powered by {{ BRAND }} API</p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/buy.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Wallet | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Wallet</h1>
+    <p class="page-subtitle">Manage your funds and transaction history.</p>
+  </div>
+</div>
+
+<div class="wallet-grid">
+  {# ---- Total balance hero ---- #}
+  <section class="balance-card">
+        <span class="balance-chip">{{ icon('wallet') }}</span>
+    <span class="balance-label">Total Balance</span>
+    <div class="balance-value" data-usd="{{ '%.2f'|format(wallet.balance) }}">₦{{ '{:,.2f}'.format(wallet.balance * NGN_PER_USD) }}</div>
+    <p class="balance-sub">Funds available for instant use across 200+ platforms.</p>
+    <a href="{{ url_for('wallet.fund') }}" class="btn btn-primary">{{ icon('plus') }} Add Funds</a>
+  </section>
+
+  {# ---- Payment method selector ---- #}
+  <section class="card card-pad method-card">
+    <h2 class="card-title">Payment Method</h2>
+    <div class="method-list">
+      {% for m in methods %}
+      <a class="method {{ 'is-active' if loop.first else '' }}" href="{{ url_for('wallet.fund') }}">
+        <span class="method-radio"></span>
+        <span class="method-meta">
+          <span class="method-label">{{ m.label }}</span>
+          <span class="method-note">{{ m.note }}</span>
+        </span>
+        <span class="method-ico">{{ icon(m.icon) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{# ---- Recent activity ---- #}
+<section class="card card-pad recent-activity">
+  <div class="card-head">
+    <h2 class="card-title">Recent Activity</h2>
+    <a href="{{ url_for('wallet.fund') }}" class="link-more">View All {{ icon('arrow-right', 'i-inline') }}</a>
+  </div>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th class="text-right">Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in transactions %}
+        {% set day = t.created_at.split(' ')[0] %}
+        {% set is_in = t.amount >= 0 %}
+        <tr>
+          <td class="td-dim">{{ day }}</td>
+          <td>
+            <span class="tx-desc">
+              <span class="tx-ico {{ 'is-in' if is_in else '' }}">{{ icon('plus' if is_in else 'arrow-up-right') }}</span>
+              <span class="tx-title">{{ t.description }}</span>
+            </span>
+          </td>
+          <td class="text-right">
+            <span class="tx-amount {{ 'is-in' if is_in else 'is-out' }}"
+                  data-usd="{{ '%.2f'|format(t.amount) }}" data-sign="{{ '+' if is_in else '' }}">{{ '+' if is_in else '-' }}₦{{ '{:,.2f}'.format(t.amount|abs * NGN_PER_USD) }}</span>
+          </td>
+          <td>
+            {% if t.status == 'completed' %}
+              <span class="badge badge-success badge-dot">Completed</span>
+            {% elif t.status == 'pending' %}
+              <span class="badge badge-warning badge-dot">Pending</span>
+            {% else %}
+              <span class="badge badge-danger badge-dot">Failed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="td-dim text-center" style="padding:var(--sp-12);">No transactions yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Referral Program | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Referral Program</h1>
+    <p class="page-subtitle">Invite friends and earn wallet credit on every top-up they make.</p>
+  </div>
+</div>
+
+{# ---- Hero: code + copy ---- #}
+<section class="ref-hero">
+  <span class="ref-hero-ico">{{ icon('gift') }}</span>
+  <h2 class="ref-hero-title">Give $5, Get $5</h2>
+  <p class="ref-hero-sub">Share your code with friends. When they fund their wallet, you both earn credit.</p>
+
+  <div class="ref-code-box">
+    <span class="ref-code">{{ referral.code }}</span>
+    <button type="button" class="btn btn-primary btn-sm" data-copy="{{ referral.code }}">
+      {{ icon('copy') }} Copy Code
+    </button>
+  </div>
+</section>
+
+{# ---- Stats ---- #}
+<div class="grid-3 stat-grid">
+  <div class="card card-pad stat-card ref-stat">
+    <span class="icon-tile">{{ icon('coins') }}</span>
+    <div class="ref-stat-value" data-usd="{{ '%.2f'|format(referral.earned_usd) }}">₦{{ '{:,.2f}'.format(referral.earned_usd * NGN_PER_USD) }}</div>
+    <div class="ref-stat-label">Total Earned</div>
+  </div>
+  <div class="card card-pad stat-card ref-stat">
+    <span class="icon-tile">{{ icon('users') }}</span>
+    <div class="ref-stat-value">{{ referral.invited }}</div>
+    <div class="ref-stat-label">Friends Invited</div>
+  </div>
+  <div class="card card-pad stat-card ref-stat">
+    <span class="icon-tile">{{ icon('check-circle') }}</span>
+    <div class="ref-stat-value">{{ referral.converted }}</div>
+    <div class="ref-stat-label">Successful Referrals</div>
+  </div>
+</div>
+
+{# ---- Share link ---- #}
+<section class="card card-pad" style="margin-bottom:var(--sp-6);">
+  <div class="card-head">
+    <h2 class="card-title">{{ icon('send') }} Your Referral Link</h2>
+  </div>
+  <div class="ref-share">
+    <input class="input" type="text" value="{{ referral.link }}" readonly aria-label="Referral link"
+           onfocus="this.select()">
+    <button type="button" class="btn btn-primary" data-copy="{{ referral.link }}">{{ icon('copy') }} Copy Link</button>
+  </div>
+</section>
+
+{# ---- How it works ---- #}
+<section class="card card-pad">
+  <div class="card-head">
+    <h2 class="card-title">{{ icon('trending-up') }} How It Works</h2>
+  </div>
+  <div class="ref-steps">
+    <div class="ref-step">
+      <div class="ref-step-num">1</div>
+      <div class="ref-step-title">Share your link</div>
+      <p class="ref-step-text">Send your unique referral code or link to friends who need virtual numbers.</p>
+    </div>
+    <div class="ref-step">
+      <div class="ref-step-num">2</div>
+      <div class="ref-step-title">They sign up &amp; fund</div>
+      <p class="ref-step-text">Your friend creates an account and makes their first wallet top-up.</p>
+    </div>
+    <div class="ref-step">
+      <div class="ref-step-num">3</div>
+      <div class="ref-step-title">You both earn</div>
+      <p class="ref-step-text">$5 credit lands in both wallets instantly, ready to spend on any service.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

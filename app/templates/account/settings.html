@@ -1,0 +1,169 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Settings | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Manage your account preferences, security, and notifications.</p>
+  </div>
+</div>
+
+<div class="settings-grid" data-tabs>
+  {# ---- Sub-navigation ---- #}
+  <nav class="card card-pad set-nav" aria-label="Settings sections">
+    <button type="button" class="set-nav-item is-active" data-tab="profile">
+      {{ icon('user') }} Profile
+    </button>
+    <button type="button" class="set-nav-item" data-tab="security">
+      {{ icon('shield') }} Security
+    </button>
+    <button type="button" class="set-nav-item" data-tab="notifications">
+      {{ icon('bell') }} Notifications
+    </button>
+  </nav>
+
+  {# ---- Panels ---- #}
+  <div>
+    {# --- Profile --- #}
+    <section class="card card-pad" data-panel="profile">
+      <div class="card-head">
+        <h2 class="card-title">{{ icon('user') }} Profile Settings</h2>
+      </div>
+
+      <form method="POST" action="{{ url_for('account.settings') }}">
+        <div class="avatar-row">
+          <span class="avatar-thumb">
+            {{ icon('user') }}
+            <label class="avatar-edit" for="avatar-file" aria-label="Change avatar">{{ icon('camera') }}</label>
+          </span>
+          <div class="avatar-meta">
+            <div class="avatar-label">Avatar</div>
+            <p class="avatar-hint">Upload a new avatar. Max file size is 5MB.</p>
+            <label class="btn btn-secondary btn-sm" for="avatar-file">Choose File</label>
+            <input id="avatar-file" name="avatar" type="file" accept="image/*" class="hidden">
+          </div>
+        </div>
+
+        <div class="set-form-grid">
+          <div class="field">
+            <label class="label" for="set-name">Full Name</label>
+            <input class="input" id="set-name" name="full_name" type="text" value="{{ profile.full_name }}" autocomplete="name">
+          </div>
+          <div class="field">
+            <label class="label" for="set-email">Email Address</label>
+            <input class="input" id="set-email" name="email" type="email" value="{{ profile.email }}" autocomplete="email">
+          </div>
+          <div class="field">
+            <label class="label" for="set-phone">Phone Number</label>
+            <input class="input" id="set-phone" name="phone" type="tel" value="{{ profile.phone }}" autocomplete="tel">
+          </div>
+          <div class="field">
+            <label class="label" for="set-country">Country</label>
+            <select class="select" id="set-country" name="country">
+              {% for c in ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'United States', 'United Kingdom'] %}
+              <option value="{{ c }}" {{ 'selected' if c == profile.country else '' }}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="set-actions">
+          <button class="btn btn-primary" type="submit">Save Changes</button>
+        </div>
+      </form>
+    </section>
+
+    {# --- Security --- #}
+    <section class="card card-pad hidden" data-panel="security">
+      <div class="card-head">
+        <h2 class="card-title">{{ icon('shield') }} Security</h2>
+      </div>
+
+      <form method="POST" action="{{ url_for('account.settings') }}">
+        <div class="set-form-grid">
+          <div class="field field-full">
+            <label class="label" for="cur-pass">Current Password</label>
+            <div class="input-group">
+              <span class="input-icon">{{ icon('lock') }}</span>
+              <input class="input input-affix-right" id="cur-pass" name="current_password" type="password" placeholder="Enter current password" autocomplete="current-password">
+              <button class="input-toggle" data-password-toggle type="button" aria-label="Show password">
+                {{ icon('eye', 'i-eye') }}{{ icon('eye-off', 'i-eye-off') }}
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="new-pass">New Password</label>
+            <div class="input-group">
+              <span class="input-icon">{{ icon('lock') }}</span>
+              <input class="input input-affix-right" id="new-pass" name="new_password" type="password" placeholder="Create a new password" autocomplete="new-password">
+              <button class="input-toggle" data-password-toggle type="button" aria-label="Show password">
+                {{ icon('eye', 'i-eye') }}{{ icon('eye-off', 'i-eye-off') }}
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="conf-pass">Confirm New Password</label>
+            <div class="input-group">
+              <span class="input-icon">{{ icon('lock') }}</span>
+              <input class="input input-affix-right" id="conf-pass" name="confirm_password" type="password" placeholder="Re-enter new password" autocomplete="new-password">
+              <button class="input-toggle" data-password-toggle type="button" aria-label="Show password">
+                {{ icon('eye', 'i-eye') }}{{ icon('eye-off', 'i-eye-off') }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="set-row" style="margin-top:var(--sp-4);">
+          <div>
+            <div class="set-row-title">Two-Factor Authentication</div>
+            <p class="set-row-note">Add an extra layer of security by requiring a verification code at login.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" name="twofa">
+            <span class="track"></span>
+          </label>
+        </div>
+
+        <div class="set-actions">
+          <button class="btn btn-primary" type="submit">Update Security</button>
+        </div>
+      </form>
+    </section>
+
+    {# --- Notifications --- #}
+    <section class="card card-pad hidden" data-panel="notifications">
+      <div class="card-head">
+        <h2 class="card-title">{{ icon('bell') }} Notifications</h2>
+      </div>
+
+      <form method="POST" action="{{ url_for('account.settings') }}">
+        {% set prefs = [
+          {'name': 'notif_otp', 'title': 'OTP & Delivery Alerts', 'note': 'Get notified the moment a verification code arrives.', 'on': true},
+          {'name': 'notif_wallet', 'title': 'Wallet & Billing', 'note': 'Low balance warnings and successful top-up receipts.', 'on': true},
+          {'name': 'notif_product', 'title': 'Product Updates', 'note': 'New features, supported services, and platform news.', 'on': false},
+          {'name': 'notif_promo', 'title': 'Promotions & Offers', 'note': 'Occasional discounts and referral bonuses.', 'on': false},
+        ] %}
+        {% for p in prefs %}
+        <div class="set-row">
+          <div>
+            <div class="set-row-title">{{ p.title }}</div>
+            <p class="set-row-note">{{ p.note }}</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" name="{{ p.name }}" {{ 'checked' if p.on else '' }}>
+            <span class="track"></span>
+          </label>
+        </div>
+        {% endfor %}
+
+        <div class="set-actions">
+          <button class="btn btn-primary" type="submit">Save Preferences</button>
+        </div>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}
