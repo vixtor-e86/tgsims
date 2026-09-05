@@ -32,7 +32,7 @@ def create_app(config_class=Config):
     def dev_gate_protect():
         """Ensure visitor has entered access password before viewing any page."""
         # Whitelist static assets, favicon, and the unlock page
-        if request.path.startswith('/static') or request.path == '/favicon.ico':
+        if request.path.startswith('/static') or request.path == '/favicon.ico' or request.endpoint == 'static':
             return None
         if request.endpoint == 'public.site_unlock':
             return None
