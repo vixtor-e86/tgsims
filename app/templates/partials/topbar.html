@@ -4,7 +4,15 @@
 {% from "partials/icons.html" import icon %}
 {% set u = current_user or {} %}
 <header class="topbar">
-  <button class="icon-btn menu-btn" data-sidebar-toggle type="button" aria-label="Open menu">{{ icon('menu') }}</button>
+  <div class="topbar-left">
+    <button class="icon-btn menu-btn" data-sidebar-toggle type="button" aria-label="Open navigation menu">
+      {{ icon('menu') }}
+    </button>
+    <a class="brand mobile-brand" href="{{ url_for('dashboard.index') }}">
+      <span class="brand-logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo" style="width:30px;height:30px;"></span>
+      <span class="brand-name">{{ BRAND }}</span>
+    </a>
+  </div>
 
   <div class="topbar-search">
     <div class="input-group">
@@ -19,15 +27,15 @@
       <span data-usd="{{ '%.2f'|format(wallet_balance_usd or 0) }}" data-decimals="2">{{ '₦%.2f'|format((wallet_balance_usd or 0) * NGN_PER_USD) }}</span>
     </a>
 
-    <div class="cur-switch" role="group" aria-label="Currency">
+    <div class="cur-switch desktop-only" role="group" aria-label="Currency">
       <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
       <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
     </div>
 
-    <button class="icon-btn" type="button" aria-label="Notifications">{{ icon('bell') }}<span class="dot"></span></button>
-    <button class="icon-btn" type="button" aria-label="Messages">{{ icon('mail') }}</button>
+    <button class="icon-btn desktop-only" type="button" aria-label="Notifications">{{ icon('bell') }}<span class="dot"></span></button>
+    <button class="icon-btn desktop-only" type="button" aria-label="Messages">{{ icon('mail') }}</button>
 
-    <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+    <button class="icon-btn theme-toggle desktop-only" data-theme-toggle type="button" aria-label="Toggle theme">
       {{ icon('sun', 'i-sun') }}{{ icon('moon', 'i-moon') }}
     </button>
 
@@ -45,7 +53,11 @@
         <a class="dropdown-item" href="{{ url_for('wallet.index') }}" role="menuitem">{{ icon('wallet') }} Wallet</a>
         <a class="dropdown-item" href="{{ url_for('account.support') }}" role="menuitem">{{ icon('life-buoy') }} Support</a>
         <div class="dropdown-sep"></div>
-        <a class="dropdown-item" href="{{ url_for('auth.logout') }}" role="menuitem">{{ icon('logout') }} Logout</a>
+        <button class="dropdown-item theme-toggle" data-theme-toggle type="button" role="menuitem">
+          {{ icon('sun', 'i-sun') }}{{ icon('moon', 'i-moon') }} Toggle Theme
+        </button>
+        <div class="dropdown-sep"></div>
+        <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}" role="menuitem">{{ icon('logout') }} Logout</a>
       </div>
     </div>
   </div>

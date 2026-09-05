@@ -59,10 +59,12 @@
     function open() {
       sidebar.classList.add("is-open");
       if (scrim) scrim.classList.add("is-open");
+      document.body.style.overflow = "hidden";
     }
     function close() {
       sidebar.classList.remove("is-open");
       if (scrim) scrim.classList.remove("is-open");
+      document.body.style.overflow = "";
     }
 
     document.querySelectorAll("[data-sidebar-toggle]").forEach(function (btn) {
@@ -71,9 +73,61 @@
         sidebar.classList.contains("is-open") ? close() : open();
       });
     });
+
+    document.querySelectorAll("[data-sidebar-close]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        close();
+      });
+    });
+
     if (scrim) scrim.addEventListener("click", close);
+
+    sidebar.querySelectorAll(".side-link").forEach(function (link) {
+      link.addEventListener("click", function () {
+        if (window.innerWidth <= 900) close();
+      });
+    });
+
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") close();
+    });
+  }
+
+  /* ---- Landing mobile navigation drawer ----------------------------------- */
+  function initLandingMenu() {
+    var toggleBtn = document.querySelector("[data-lp-menu-toggle]");
+    var menu = document.getElementById("lp-mobile-menu");
+    if (!toggleBtn || !menu) return;
+
+    function toggleMenu() {
+      var isOpen = menu.classList.toggle("is-open");
+      toggleBtn.classList.toggle("is-active", isOpen);
+      toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+    function closeMenu() {
+      menu.classList.remove("is-open");
+      toggleBtn.classList.remove("is-active");
+      toggleBtn.setAttribute("aria-expanded", "false");
+    }
+
+    toggleBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    menu.querySelectorAll(".lp-mobile-link, .lp-mobile-auth a").forEach(function (link) {
+      link.addEventListener("click", closeMenu);
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!menu.contains(e.target) && !toggleBtn.contains(e.target)) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeMenu();
     });
   }
 
@@ -231,6 +285,7 @@
   /* ---- Boot -------------------------------------------------------------- */
   function init() {
     initSidebar();
+    initLandingMenu();
     initDropdowns();
     initModals();
     initAccordion();

@@ -10,7 +10,7 @@
 <header class="lp-nav">
   <div class="container lp-nav-inner">
     <a class="brand" href="{{ url_for('public.landing') }}">
-      <span class="brand-logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo" style="width:38px;height:38px;"></span>
+      <span class="brand-logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo" style="width:34px;height:34px;"></span>
       <span class="brand-name">{{ BRAND }}</span>
     </a>
     <nav class="lp-nav-links" aria-label="Main">
@@ -20,18 +20,57 @@
       <a href="#faq">FAQ</a>
     </nav>
     <div class="lp-nav-actions">
-      <div class="cur-switch" role="group" aria-label="Currency">
+      <div class="cur-switch lp-desktop-only" role="group" aria-label="Currency">
         <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
         <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
       </div>
-      <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+      <button class="icon-btn theme-toggle lp-desktop-only" data-theme-toggle type="button" aria-label="Toggle theme">
         {{ icon("sun", "i-sun") }}{{ icon("moon", "i-moon") }}
       </button>
       {% if current_user %}
-        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-sm">{{ icon("grid") }} Go to Dashboard</a>
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-sm lp-cta-btn">{{ icon("grid") }} <span>Dashboard</span></a>
       {% else %}
-        <a href="{{ url_for('auth.login') }}" class="lp-nav-login">Log In</a>
-        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Get Started</a>
+        <a href="{{ url_for('auth.login') }}" class="lp-nav-login lp-desktop-only">Log In</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm lp-cta-btn">Get Started</a>
+      {% endif %}
+      <button class="icon-btn lp-menu-btn" data-lp-menu-toggle type="button" aria-label="Toggle navigation menu" aria-expanded="false">
+        {{ icon("menu", "i-menu") }}
+        {{ icon("x", "i-close") }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile navigation drawer -->
+  <div class="lp-mobile-menu" id="lp-mobile-menu">
+    <nav class="lp-mobile-links">
+      <a href="#features" class="lp-mobile-link">{{ icon("bolt") }} <span>Features</span></a>
+      <a href="#how" class="lp-mobile-link">{{ icon("refresh") }} <span>How it Works</span></a>
+      <a href="#usecases" class="lp-mobile-link">{{ icon("briefcase") }} <span>Use Cases</span></a>
+      <a href="#faq" class="lp-mobile-link">{{ icon("help") }} <span>FAQ</span></a>
+    </nav>
+    <div class="lp-mobile-footer">
+      <div class="lp-mobile-control">
+        <span class="lp-control-label">Currency</span>
+        <div class="cur-switch" role="group" aria-label="Currency">
+          <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
+          <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
+        </div>
+      </div>
+      <div class="lp-mobile-control">
+        <span class="lp-control-label">Appearance</span>
+        <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+          {{ icon("sun", "i-sun") }}{{ icon("moon", "i-moon") }}
+        </button>
+      </div>
+      {% if not current_user %}
+      <div class="lp-mobile-auth">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-block">Log In</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-block">Create Free Account</a>
+      </div>
+      {% else %}
+      <div class="lp-mobile-auth">
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-block">{{ icon("grid") }} Go to Dashboard</a>
+      </div>
       {% endif %}
     </div>
   </div>
