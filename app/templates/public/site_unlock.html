@@ -1,0 +1,66 @@
+{% extends "layouts/base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Site Locked | {{ BRAND }} Development Mode{% endblock %}
+
+{% block body %}
+<div class="auth-page dev-gate-page">
+  <div class="dev-gate-container">
+    <div class="card card-pad dev-gate-card">
+      <div class="text-center" style="margin-bottom: var(--sp-6);">
+        <div class="dev-gate-logo">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo">
+        </div>
+        <div class="dev-gate-badge">
+          <span class="live-dot" style="background:#f59e0b;"></span> DEVELOPMENT MODE
+        </div>
+        <h1 class="dev-gate-title">Enter Access Password</h1>
+        <p class="dev-gate-subtitle">
+          This platform is currently in private development. Please enter the site password to continue.
+        </p>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-danger" style="margin-bottom: var(--sp-5);">
+        {{ icon('shield') }}
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('public.site_unlock', next=next_url) }}" class="dev-gate-form">
+        <div class="field" style="margin-bottom: var(--sp-6);">
+          <label class="label" for="site-password">Password</label>
+          <div class="input-group">
+            <span class="input-icon">{{ icon('lock') }}</span>
+            <input class="input"
+                   id="site-password"
+                   name="password"
+                   type="password"
+                   placeholder="Enter authentication password"
+                   autocomplete="current-password"
+                   autofocus
+                   required>
+            <button class="icon-btn input-affix-btn"
+                    data-password-toggle
+                    type="button"
+                    aria-label="Show password">
+              {{ icon('eye', 'i-eye') }}
+              {{ icon('eye-off', 'i-eye-off') }}
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg">
+          Unlock Site {{ icon('arrow-right') }}
+        </button>
+      </form>
+
+      <div class="dev-gate-footer">
+        <p class="text-center text-muted" style="font-size: var(--fs-xs); margin: 0;">
+          {{ icon('lock') }} Remains unlocked until this browser tab is closed.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

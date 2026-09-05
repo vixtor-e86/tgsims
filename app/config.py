@@ -12,3 +12,4 @@ class Config:
     SIM_PROVIDER_BASE_URL = os.getenv('SIM_PROVIDER_BASE_URL', '')
     PAYMENT_SECRET_KEY = os.getenv('PAYMENT_SECRET_KEY', '')
     PAYMENT_PUBLIC_KEY = os.getenv('PAYMENT_PUBLIC_KEY', '')
+    DEV_PASSWORD = os.getenv('DEV_PASSWORD', 'Icui4cu')

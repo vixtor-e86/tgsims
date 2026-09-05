@@ -1,5 +1,5 @@
 
-from flask import Flask, session
+from flask import Flask, session, request, redirect, url_for
 from app.config import Config
 
 # Single source of truth for USD->NGN display conversion (frontend mirrors this).
@@ -9,6 +9,7 @@ NGN_PER_USD = 1600
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    app.config['SESSION_PERMANENT'] = False
 
     # Register Blueprints
     from app.routes.public import public_bp
@@ -26,6 +27,20 @@ def create_app(config_class=Config):
     app.register_blueprint(wallet_bp)
     app.register_blueprint(account_bp)
     app.register_blueprint(api_bp)
+
+    @app.before_request
+    def dev_gate_protect():
+        """Ensure visitor has entered access password before viewing any page."""
+        # Whitelist static assets, favicon, and the unlock page
+        if request.path.startswith('/static') or request.path == '/favicon.ico':
+            return None
+        if request.endpoint == 'public.site_unlock':
+            return None
+
+        # Check if site is unlocked in this browser session
+        if not session.get('site_unlocked'):
+            next_url = request.full_path if request.query_string else request.path
+            return redirect(url_for('public.site_unlock', next=next_url))
 
     @app.context_processor
     def inject_globals():

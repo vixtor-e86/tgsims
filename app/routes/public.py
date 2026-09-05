@@ -1,5 +1,4 @@
-"""Public-facing routes (no auth required): the marketing landing page."""
-from flask import Blueprint, render_template, send_from_directory, current_app
+from flask import Blueprint, render_template, send_from_directory, current_app, request, redirect, url_for, session
 import os
 
 public_bp = Blueprint('public', __name__)
@@ -9,6 +8,30 @@ public_bp = Blueprint('public', __name__)
 def favicon():
     return send_from_directory(os.path.join(current_app.root_path, 'static', 'img'),
                                'logo.png', mimetype='image/png')
+
+
+@public_bp.route('/site-unlock', methods=['GET', 'POST'])
+def site_unlock():
+    """Private development gate  -  requires authentication password to access the live site."""
+    next_url = request.args.get('next') or url_for('public.landing')
+    if not next_url.startswith('/') or next_url.startswith('//'):
+        next_url = url_for('public.landing')
+
+    if session.get('site_unlocked'):
+        return redirect(next_url)
+
+    error = None
+    if request.method == 'POST':
+        password = request.form.get('password', '').strip()
+        expected = current_app.config.get('DEV_PASSWORD', 'Icui4cu')
+        if password == expected:
+            session['site_unlocked'] = True
+            session.permanent = False
+            return redirect(next_url)
+        else:
+            error = "Invalid access password. Please try again."
+
+    return render_template('public/site_unlock.html', error=error, next_url=next_url)
 
 
 @public_bp.route('/')
