@@ -582,6 +582,7 @@
     gap: var(--sp-3);
   }
   .page { padding: var(--sp-5); }
+  .page-title { font-size: 1.65rem; }
   .auth-split { grid-template-columns: 1fr; }
   .auth-hero { display: none; }
   .lp-nav-links { display: none; }
@@ -593,7 +594,17 @@
 
 @media (max-width: 640px) {
   .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
-  .page-head { flex-direction: column; }
+  .page-head { flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+  .page-title {
+    font-size: clamp(1.2rem, 5vw, 1.35rem);
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+  .page-subtitle {
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    margin-top: 0.25rem;
+  }
   .lp-section { padding: var(--sp-16) 0; }
   .topbar-search { display: none; }
   .auth-top, .auth-foot { padding-inline: var(--sp-4); }

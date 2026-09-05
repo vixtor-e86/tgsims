@@ -670,6 +670,20 @@
 @media (max-width: 900px) {
   .chart, .chart-bars { min-height: 200px; }
 }
+@media (max-width: 640px) {
+  .dashboard-greeting {
+    font-size: clamp(1.15rem, 4.8vw, 1.3rem);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+  .page-head-actions {
+    gap: var(--sp-2);
+  }
+  .page-head-actions .btn {
+    padding: 0.55rem 0.9rem;
+    font-size: var(--fs-xs);
+  }
+}
 /* ==========================================================================
    BUY NUMBER
    ========================================================================== */
