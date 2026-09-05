@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: tgsims
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: FLASK_ENV
+        value: production
+      - key: DEV_PASSWORD
+        value: Icui4cu
+      - key: SECRET_KEY
+        generateValue: true
