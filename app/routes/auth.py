@@ -142,10 +142,13 @@ def register():
             return render_template('auth/register.html', username=username, email=email)
 
         try:
+            # Dynamic redirect back to the live login page after email confirmation
+            redirect_url = request.host_url.rstrip('/') + url_for('auth.login')
             res = supabase.auth.sign_up({
                 'email': email,
                 'password': password,
                 'options': {
+                    'email_redirect_to': redirect_url,
                     'data': {
                         'username': username,
                         'full_name': username,
@@ -395,3 +398,17 @@ def preview_email_otp():
     code = request.args.get('code', '384902')
     name = request.args.get('name', 'User')
     return EmailService.get_password_reset_html(code, name)
+
+
+@auth_bp.route('/preview-signup-email')
+def preview_signup_email():
+    """Live browser preview of the signup confirmation email for Supabase."""
+    import os
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    tpl_path = os.path.join(base_dir, 'templates', 'emails', 'confirm_signup.html')
+    with open(tpl_path, 'r', encoding='utf-8') as f:
+        html = f.read()
+    # Substitute GoTrue placeholders with demo values for browser preview
+    html = html.replace('{{ .ConfirmationURL }}', url_for('auth.login', confirmed='true', _external=True))
+    html = html.replace('{{ .Token }}', '482910')
+    return html
