@@ -282,6 +282,27 @@
     });
   }
 
+  /* ---- Form submit button spinner --------------------------------------- */
+  function initFormSubmitSpinners() {
+    document.addEventListener("submit", function (e) {
+      var form = e.target;
+      if (!form || form.tagName !== "FORM") return;
+      if (e.defaultPrevented) return;
+
+      var btn = form.querySelector('button[type="submit"]');
+      if (!btn || btn.classList.contains("is-loading")) return;
+
+      var loadingText = btn.getAttribute("data-loading-text") || "Please wait...";
+      setTimeout(function () {
+        if (!e.defaultPrevented) {
+          btn.disabled = true;
+          btn.classList.add("is-loading");
+          btn.innerHTML = '<span class="spinner"></span> <span>' + loadingText + '</span>';
+        }
+      }, 10);
+    });
+  }
+
   /* ---- Boot -------------------------------------------------------------- */
   function init() {
     initSidebar();
@@ -293,6 +314,7 @@
     initCopy();
     initPasswordToggles();
     initFlashes();
+    initFormSubmitSpinners();
   }
 
   if (document.readyState === "loading") {

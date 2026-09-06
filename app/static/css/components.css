@@ -31,6 +31,35 @@
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn svg { width: 18px; height: 18px; }
 
+/* Spinner animation & button loading state */
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: btn-spin 0.65s linear infinite;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.btn-secondary .spinner,
+.btn-ghost .spinner {
+  border-color: rgba(30, 41, 59, 0.2);
+  border-top-color: var(--brand-500);
+}
+
+.btn.is-loading {
+  opacity: 0.88;
+  cursor: wait;
+  pointer-events: none;
+}
+
 .btn-primary {
   background: var(--brand-500);
   color: var(--on-brand);
