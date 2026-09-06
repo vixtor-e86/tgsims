@@ -86,6 +86,7 @@
                 {{ icon("eye", "i-eye") }}{{ icon("eye-off", "i-eye-off") }}
               </button>
             </div>
+            <div id="password-match-msg" style="display:none; font-size:var(--fs-xs); margin-top:var(--sp-1); font-weight: 500;"></div>
           </div>
 
           <label class="check" style="margin-bottom:var(--sp-6);">
@@ -115,4 +116,88 @@
     <a href="#">Help Center</a>
   </nav>
 </footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var form = document.querySelector('form[action*="register"]');
+    var pwd = document.getElementById('reg-password');
+    var confirm = document.getElementById('reg-confirm');
+    var matchMsg = document.getElementById('password-match-msg');
+
+    function checkMatch(showMsg) {
+      if (!pwd || !confirm) return true;
+      var pVal = pwd.value;
+      var cVal = confirm.value;
+
+      if (!cVal) {
+        if (matchMsg) matchMsg.style.display = 'none';
+        confirm.style.borderColor = '';
+        confirm.style.boxShadow = '';
+        return true;
+      }
+
+      if (pVal !== cVal) {
+        if (matchMsg) {
+          matchMsg.style.display = 'block';
+          matchMsg.style.color = '#ef4444';
+          matchMsg.textContent = 'Passwords do not match';
+        }
+        confirm.style.borderColor = '#ef4444';
+        confirm.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.15)';
+        return false;
+      } else {
+        if (matchMsg) {
+          matchMsg.style.display = 'block';
+          matchMsg.style.color = '#10b981';
+          matchMsg.textContent = 'Passwords match';
+        }
+        confirm.style.borderColor = '#10b981';
+        confirm.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
+        return true;
+      }
+    }
+
+    if (confirm) {
+      confirm.addEventListener('input', function () { checkMatch(true); });
+    }
+    if (pwd) {
+      pwd.addEventListener('input', function () {
+        if (confirm && confirm.value) checkMatch(true);
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        var pVal = (pwd ? pwd.value : '');
+        var cVal = (confirm ? confirm.value : '');
+
+        if (pVal.length < 6) {
+          e.preventDefault();
+          if (window.toast) {
+            window.toast("Password must be at least 6 characters long.", "error");
+          }
+          if (pwd) {
+            pwd.focus();
+            pwd.style.borderColor = '#ef4444';
+          }
+          return false;
+        }
+
+        if (pVal !== cVal) {
+          e.preventDefault(); // Stop submission immediately without reloading the page!
+          if (window.toast) {
+            window.toast("Passwords do not match. Please verify and try again.", "error");
+          }
+          if (confirm) {
+            confirm.focus();
+            checkMatch(true);
+          }
+          return false;
+        }
+      });
+    }
+  })();
+</script>
 {% endblock %}

@@ -179,6 +179,8 @@ def register():
             err = str(e)
             if 'User already registered' in err:
                 msg = 'An account with this email already exists. Please log in.'
+            elif 'rate limit' in err.lower():
+                msg = 'Email rate limit reached. In Supabase Dashboard > Authentication > Providers > Email, turn off "Confirm email" for instant registrations.'
             else:
                 msg = f"Registration error: {err}"
             flash(msg, 'error')
