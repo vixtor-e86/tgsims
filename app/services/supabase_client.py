@@ -1,14 +1,36 @@
 import os
 from app.config import Config
 
+from dotenv import load_dotenv
+
 _supabase_client = None
 _supabase_admin = None
 
 
-def is_supabase_configured():
+def _refresh_env():
+    """Ensure environment variables from .env are fresh."""
+    load_dotenv(override=False)
+
+
+def get_supabase_url() -> str:
+    _refresh_env()
+    return (os.getenv('SUPABASE_URL') or getattr(Config, 'SUPABASE_URL', '') or '').strip()
+
+
+def get_supabase_anon_key() -> str:
+    _refresh_env()
+    return (os.getenv('SUPABASE_ANON_KEY') or getattr(Config, 'SUPABASE_ANON_KEY', '') or '').strip()
+
+
+def get_supabase_service_role_key() -> str:
+    _refresh_env()
+    return (os.getenv('SUPABASE_SERVICE_ROLE_KEY') or getattr(Config, 'SUPABASE_SERVICE_ROLE_KEY', '') or '').strip()
+
+
+def is_supabase_configured() -> bool:
     """Check if valid Supabase credentials have been configured."""
-    url = Config.SUPABASE_URL.strip()
-    key = Config.SUPABASE_ANON_KEY.strip()
+    url = get_supabase_url()
+    key = get_supabase_anon_key()
     return bool(url and key and url != 'https://your-supabase-project.supabase.co' and key != 'your-supabase-anon-key')
 
 
@@ -24,11 +46,13 @@ def create_supabase_client():
     """Create a fresh Supabase client instance using the Anon Public Key.
     Recommended for per-request Auth actions (sign_up, sign_in, sign_out) to prevent session leaks.
     """
-    if not is_supabase_configured():
+    url = get_supabase_url()
+    key = get_supabase_anon_key()
+    if not (url and key and url != 'https://your-supabase-project.supabase.co' and key != 'your-supabase-anon-key'):
         return None
     try:
         from supabase import create_client
-        return create_client(Config.SUPABASE_URL.strip(), Config.SUPABASE_ANON_KEY.strip())
+        return create_client(url, key)
     except Exception as e:
         print(f"[Supabase] Error initializing client: {e}")
         return None
@@ -37,8 +61,8 @@ def create_supabase_client():
 def get_supabase_admin():
     """Admin client with Service Role Key for server-level operations (bypasses RLS, admin auth)."""
     global _supabase_admin
-    url = Config.SUPABASE_URL.strip()
-    key = Config.SUPABASE_SERVICE_ROLE_KEY.strip()
+    url = get_supabase_url()
+    key = get_supabase_service_role_key()
     if not (url and key and key != 'your-supabase-service-role-key' and url != 'https://your-supabase-project.supabase.co'):
         return None
 

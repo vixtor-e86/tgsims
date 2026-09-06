@@ -37,6 +37,10 @@ def login():
             return render_template('auth/login.html', email=email)
 
         supabase = create_supabase_client()
+        if not supabase:
+            flash('Unable to initialize Supabase connection. Please verify your .env settings and restart your Flask server.', 'error')
+            return render_template('auth/login.html', email=email)
+
         try:
             auth_res = supabase.auth.sign_in_with_password({
                 'email': email,
@@ -133,6 +137,10 @@ def register():
             return render_template('auth/register.html', username=username, email=email)
 
         supabase = create_supabase_client()
+        if not supabase:
+            flash('Unable to initialize Supabase connection. Please verify your .env settings and restart your Flask server.', 'error')
+            return render_template('auth/register.html', username=username, email=email)
+
         try:
             res = supabase.auth.sign_up({
                 'email': email,
@@ -232,7 +240,8 @@ def forgot_password():
         if is_supabase_configured():
             try:
                 supabase = create_supabase_client()
-                supabase.auth.reset_password_for_email(email)
+                if supabase:
+                    supabase.auth.reset_password_for_email(email)
             except Exception:
                 pass
 
@@ -309,13 +318,14 @@ def reset_password():
         if not otp_verified and is_supabase_configured():
             try:
                 supabase = create_supabase_client()
-                supa_res = supabase.auth.verify_otp({
-                    'email': email,
-                    'token': otp,
-                    'type': 'recovery'
-                })
-                if supa_res and supa_res.user:
-                    otp_verified = True
+                if supabase:
+                    supa_res = supabase.auth.verify_otp({
+                        'email': email,
+                        'token': otp,
+                        'type': 'recovery'
+                    })
+                    if supa_res and supa_res.user:
+                        otp_verified = True
             except Exception:
                 pass
 
@@ -327,7 +337,7 @@ def reset_password():
         password_updated = False
 
         # Attempt updating via Supabase Admin Client
-        if admin_client:
+        if admin_client and getattr(admin_client, 'auth', None) and getattr(admin_client.auth, 'admin', None):
             try:
                 # Find user id by email
                 users_res = admin_client.auth.admin.list_users()
@@ -342,8 +352,9 @@ def reset_password():
         if not password_updated and is_supabase_configured():
             try:
                 supabase = create_supabase_client()
-                supabase.auth.update_user({'password': password})
-                password_updated = True
+                if supabase:
+                    supabase.auth.update_user({'password': password})
+                    password_updated = True
             except Exception as e:
                 print(f"[Reset Password] Client update notice: {e}")
 
