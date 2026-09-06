@@ -35,7 +35,7 @@
           <label class="label" for="login-email">Email Address</label>
           <div class="input-group">
             <span class="input-icon">{{ icon("mail") }}</span>
-            <input class="input" id="login-email" name="email" type="email" placeholder="name@company.com" autocomplete="email" required autofocus>
+            <input class="input" id="login-email" name="email" type="email" placeholder="name@company.com" autocomplete="email" value="{{ email or '' }}" required autofocus>
           </div>
         </div>
 
@@ -51,7 +51,7 @@
         </div>
 
         <div class="text-right" style="margin-bottom:var(--sp-6);">
-          <a href="#" class="fw-semi" style="font-size:var(--fs-sm);">Forgot your password?</a>
+          <a href="{{ url_for('auth.forgot_password') }}" class="fw-semi" style="font-size:var(--fs-sm);">Forgot your password?</a>
         </div>
 
         <button class="btn btn-dark btn-block btn-lg" type="submit">Sign In</button>

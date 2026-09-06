@@ -8,6 +8,8 @@ class Config:
     SUPABASE_URL = os.getenv('SUPABASE_URL', '')
     SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '')
     SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
+    RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+    RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', 'Tgsims <noreply@tgsims.com>')
     SIM_PROVIDER_API_KEY = os.getenv('SIM_PROVIDER_API_KEY', '')
     SIM_PROVIDER_BASE_URL = os.getenv('SIM_PROVIDER_BASE_URL', '')
     PAYMENT_SECRET_KEY = os.getenv('PAYMENT_SECRET_KEY', '')

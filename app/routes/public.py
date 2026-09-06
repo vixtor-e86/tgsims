@@ -6,8 +6,10 @@ public_bp = Blueprint('public', __name__)
 
 @public_bp.route('/favicon.ico')
 def favicon():
-    return send_from_directory(os.path.join(current_app.root_path, 'static', 'img'),
-                               'logo.png', mimetype='image/png')
+    img_dir = os.path.join(current_app.root_path, 'static', 'img')
+    if os.path.exists(os.path.join(img_dir, 'logo.png')):
+        return send_from_directory(img_dir, 'logo.png', mimetype='image/png')
+    return ('', 204)
 
 
 @public_bp.route('/site-unlock', methods=['GET', 'POST'])

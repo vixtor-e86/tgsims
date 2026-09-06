@@ -54,7 +54,7 @@
             <label class="label" for="reg-username">Username</label>
             <div class="input-group">
               <span class="input-icon">{{ icon("user") }}</span>
-              <input class="input" id="reg-username" name="username" type="text" placeholder="johndoe" autocomplete="username" required>
+              <input class="input" id="reg-username" name="username" type="text" placeholder="johndoe" autocomplete="username" value="{{ username or '' }}" required>
             </div>
           </div>
 
@@ -62,7 +62,7 @@
             <label class="label" for="reg-email">Email Address</label>
             <div class="input-group">
               <span class="input-icon">{{ icon("mail") }}</span>
-              <input class="input" id="reg-email" name="email" type="email" placeholder="name@company.com" autocomplete="email" required>
+              <input class="input" id="reg-email" name="email" type="email" placeholder="name@company.com" autocomplete="email" value="{{ email or '' }}" required>
             </div>
           </div>
 
