@@ -49,7 +49,7 @@
         <h1 class="auth-title">Create your account</h1>
         <p class="auth-sub">Join {{ BRAND }} today in just one minute</p>
 
-        <form method="POST" action="{{ url_for('auth.register') }}" style="margin-top:var(--sp-8);">
+        <form method="POST" action="{{ url_for('auth.register') }}" novalidate style="margin-top:var(--sp-8);">
           <div class="field">
             <label class="label" for="reg-username">Username</label>
             <div class="input-group">
@@ -168,10 +168,40 @@
       });
     }
 
+    var agree = document.querySelector('input[name="agree"]');
+    var checkWrap = agree ? agree.closest('.check') : null;
+
+    if (agree && checkWrap) {
+      agree.addEventListener('change', function () {
+        if (agree.checked) {
+          checkWrap.style.outline = '';
+          checkWrap.style.boxShadow = '';
+        }
+      });
+    }
+
     if (form) {
       form.addEventListener('submit', function (e) {
+        var uEl = document.getElementById('reg-username');
+        var eEl = document.getElementById('reg-email');
+        var uVal = (uEl ? uEl.value.trim() : '');
+        var eVal = (eEl ? eEl.value.trim() : '');
         var pVal = (pwd ? pwd.value : '');
         var cVal = (confirm ? confirm.value : '');
+
+        if (!uVal) {
+          e.preventDefault();
+          if (window.toast) window.toast("Please enter a username.", "error");
+          if (uEl) uEl.focus();
+          return false;
+        }
+
+        if (!eVal) {
+          e.preventDefault();
+          if (window.toast) window.toast("Please enter your email address.", "error");
+          if (eEl) eEl.focus();
+          return false;
+        }
 
         if (pVal.length < 6) {
           e.preventDefault();
@@ -194,6 +224,20 @@
             confirm.focus();
             checkMatch(true);
           }
+          return false;
+        }
+
+        if (agree && !agree.checked) {
+          e.preventDefault();
+          if (window.toast) {
+            window.toast("Please agree to the Terms of Service and Privacy Policy to continue.", "error");
+          }
+          if (checkWrap) {
+            checkWrap.style.outline = '2px solid #ef4444';
+            checkWrap.style.outlineOffset = '4px';
+            checkWrap.style.borderRadius = '6px';
+          }
+          agree.focus();
           return false;
         }
       });
