@@ -142,8 +142,10 @@ def register():
             return render_template('auth/register.html', username=username, email=email)
 
         try:
-            # Dynamic redirect back to the live login page after email confirmation
-            redirect_url = request.host_url.rstrip('/') + url_for('auth.login')
+            # Build canonical HTTPS redirect URL for email confirmation
+            scheme = 'https' if (request.is_secure or request.headers.get('X-Forwarded-Proto') == 'https' or 'tgsims.com' in request.host) else request.scheme
+            host = request.headers.get('X-Forwarded-Host') or request.host
+            redirect_url = f"{scheme}://{host}{url_for('auth.login')}"
             res = supabase.auth.sign_up({
                 'email': email,
                 'password': password,

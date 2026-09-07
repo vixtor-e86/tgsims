@@ -1,5 +1,6 @@
 
 from flask import Flask, session, request, redirect, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import Config
 
 # Single source of truth for USD->NGN display conversion (frontend mirrors this).
@@ -8,6 +9,7 @@ NGN_PER_USD = 1600
 
 def create_app(config_class=Config):
     app = Flask(__name__)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
     app.config.from_object(config_class)
     app.config['SESSION_PERMANENT'] = False
 
