@@ -89,11 +89,14 @@
         t.className = "opt-tile";
         t.dataset.code = c.country_code;
         if (state.country && state.country.country_code === c.country_code) t.classList.add("is-selected");
+        var flagHtml = c.flag
+          ? '<span style="font-size:1.65rem;line-height:1;margin-bottom:2px;">' + c.flag + '</span>'
+          : flagBadge(c.country_code);
         t.innerHTML =
           '<span class="opt-tile-check">' + svg(G.check) + "</span>" +
-          flagBadge(c.country_code) +
+          flagHtml +
           '<span class="opt-tile-name">' + c.country_name + "</span>" +
-          '<span class="opt-tile-sub">' + (DIAL[c.country_code] || "") + "</span>";
+          '<span class="opt-tile-sub">' + (c.dial || DIAL[c.country_code] || "") + "</span>";
         countryGrid.appendChild(t);
       });
     }

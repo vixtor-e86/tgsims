@@ -23,7 +23,7 @@
   </div>
   <select class="select" aria-label="Filter by status" data-orders-status-filter>
     <option value="all">Status: All</option>
-    <option value="active">Active / Pending</option>
+    <option value="active">Active / Waiting</option>
     <option value="completed">Completed / Received</option>
     <option value="expired">Expired / Timeout</option>
     <option value="cancelled">Cancelled / Refunded</option>
@@ -56,6 +56,7 @@
         {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] %}
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] %}
+        {% set price_formatted = '₦{:,.2f}'.format(o.price * NGN_PER_USD) %}
         <tr data-order-row data-order-id="{{ o.id or o.order_reference }}">
           <td>
             <span class="svc">{{ svc_icon(o.service_name, "svc-sm") }} <span class="td-strong">{{ o.service_name }}</span></span>
@@ -95,12 +96,18 @@
             {% endif %}
           </td>
           <td class="td-dim">{{ day }}<span class="stack-sub">{{ hm }}</span></td>
-          <td class="{{ 'strike' if (is_timeout or is_refunded) else 'td-strong' }}" data-usd="{{ '%.2f'|format(o.price) }}">₦{{ '{:,.2f}'.format(o.price * NGN_PER_USD) }}</td>
+          <td class="{{ 'strike' if (is_timeout or is_refunded) else 'td-strong' }}" data-usd="{{ '%.2f'|format(o.price) }}">{{ price_formatted }}</td>
           <td class="text-right">
             {% if is_active %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
                 <button type="button" class="btn btn-primary btn-sm" data-action="check" data-id="{{ o.id or o.order_reference }}">Check Code</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-action="cancel" data-id="{{ o.id or o.order_reference }}" style="color:var(--text-danger);" title="Cancel order and refund wallet">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-action="cancel" 
+                        data-id="{{ o.id or o.order_reference }}"
+                        data-service="{{ o.service_name }}"
+                        data-phone="{{ o.phone_number }}"
+                        data-ref="{{ o.order_reference }}"
+                        data-price="{{ price_formatted }}"
+                        style="color:var(--text-danger);" title="Cancel order and refund wallet">Cancel</button>
               </div>
             {% elif is_done %}
               <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
@@ -123,9 +130,86 @@
   {% endif %}
 </section>
 
+{# ---- Custom Cancellation Confirmation Modal (No window.alert or window.confirm) ---- #}
+<div class="modal" id="cancelModal" aria-hidden="true" role="dialog" aria-labelledby="cancelModalTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:36px; height:36px; border-radius:var(--r-full); background:rgba(239, 68, 68, 0.12); color:var(--text-danger); display:grid; place-items:center;">
+          {{ icon('trash') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="cancelModalTitle">Cancel Virtual Number</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;">Immediate wallet refund</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-modal-cancel-close aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:var(--fs-sm); color:var(--text); line-height:1.6; margin:0;">
+        Are you sure you want to cancel your <strong id="modalSvcName">Virtual Number</strong> (<span class="td-mono td-strong" id="modalPhoneNum">+1 555...</span>)?
+      </p>
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-top:var(--sp-4);">
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim);">
+          <span>Order Reference</span>
+          <span class="td-mono td-strong" id="modalOrderRef">#TGS-SIM-XXXX</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
+          <span>Refund to Wallet</span>
+          <span class="td-strong text-success" id="modalRefundAmount">₦0.00</span>
+        </div>
+      </div>
+      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
+        This number will be released back to the verification network. Since no SMS code was received, the full amount will be credited back to your balance immediately.
+      </p>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" data-modal-cancel-close>Keep Number</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btnConfirmCancel" style="background:#ef4444; color:#fff; border-color:#ef4444;">Yes, Cancel &amp; Refund</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
-  // Handle Check Code and Cancel Order actions
+  var cancelModal = document.getElementById('cancelModal');
+  var targetOrderId = null;
+  var modalSvcName = document.getElementById('modalSvcName');
+  var modalPhoneNum = document.getElementById('modalPhoneNum');
+  var modalOrderRef = document.getElementById('modalOrderRef');
+  var modalRefundAmount = document.getElementById('modalRefundAmount');
+  var btnConfirmCancel = document.getElementById('btnConfirmCancel');
+
+  function openCancelModal(orderId, svcName, phoneNum, orderRef, priceFormatted) {
+    targetOrderId = orderId;
+    if (modalSvcName) modalSvcName.textContent = svcName || 'Virtual Number';
+    if (modalPhoneNum) modalPhoneNum.textContent = phoneNum || '';
+    if (modalOrderRef) modalOrderRef.textContent = '#' + (orderRef || orderId);
+    if (modalRefundAmount) modalRefundAmount.textContent = priceFormatted || '';
+    if (btnConfirmCancel) {
+      btnConfirmCancel.disabled = false;
+      btnConfirmCancel.textContent = 'Yes, Cancel & Refund';
+    }
+    cancelModal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCancelModal() {
+    targetOrderId = null;
+    cancelModal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('[data-modal-cancel-close]').forEach(function(el) {
+    el.addEventListener('click', closeCancelModal);
+  });
+  if (cancelModal) {
+    cancelModal.addEventListener('click', function(e) {
+      if (e.target === cancelModal) closeCancelModal();
+    });
+  }
+
+  // Handle Check Code and Cancel Order button clicks
   document.addEventListener('click', function(e) {
     var checkBtn = e.target.closest('[data-action="check"]');
     var cancelBtn = e.target.closest('[data-action="cancel"]');
@@ -142,7 +226,7 @@
             if (window.toast) window.toast('Verification code received: ' + data.sms_code, 'success');
             setTimeout(function() { window.location.reload(); }, 600);
           } else {
-            if (window.toast) window.toast(data.message || 'Still waiting for SMS. Please allow up to 2 minutes.', 'info');
+            if (window.toast) window.toast(data.message || 'Still waiting for code. Please allow up to 2 minutes.', 'info');
             checkBtn.disabled = false;
             checkBtn.textContent = 'Check Code';
           }
@@ -156,29 +240,41 @@
 
     if (cancelBtn) {
       var cancelId = cancelBtn.dataset.id;
-      if (!confirm('Cancel this virtual number and refund the amount to your wallet?')) return;
-      cancelBtn.disabled = true;
-      cancelBtn.textContent = 'Refunding...';
+      var svc = cancelBtn.dataset.service;
+      var phone = cancelBtn.dataset.phone;
+      var ref = cancelBtn.dataset.ref;
+      var price = cancelBtn.dataset.price;
+      openCancelModal(cancelId, svc, phone, ref, price);
+    }
+  });
 
-      fetch('/api/cancel-sim/' + encodeURIComponent(cancelId), { method: 'POST' })
+  // Modal confirm action
+  if (btnConfirmCancel) {
+    btnConfirmCancel.addEventListener('click', function() {
+      if (!targetOrderId) return;
+      btnConfirmCancel.disabled = true;
+      btnConfirmCancel.textContent = 'Cancelling...';
+
+      fetch('/api/cancel-sim/' + encodeURIComponent(targetOrderId), { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.success) {
-            if (window.toast) window.toast(data.message || 'Order refunded successfully.', 'success');
+            closeCancelModal();
+            if (window.toast) window.toast(data.message || 'Order cancelled and funds refunded to your wallet.', 'success');
             setTimeout(function() { window.location.reload(); }, 800);
           } else {
             if (window.toast) window.toast(data.message || 'Could not cancel order.', 'error');
-            cancelBtn.disabled = false;
-            cancelBtn.textContent = 'Cancel';
+            btnConfirmCancel.disabled = false;
+            btnConfirmCancel.textContent = 'Yes, Cancel & Refund';
           }
         })
         .catch(function() {
           if (window.toast) window.toast('Failed to process cancellation.', 'error');
-          cancelBtn.disabled = false;
-          cancelBtn.textContent = 'Cancel';
+          btnConfirmCancel.disabled = false;
+          btnConfirmCancel.textContent = 'Yes, Cancel & Refund';
         });
-    }
-  });
+    });
+  }
 
   // Automatic gentle polling for active orders (every 6 seconds)
   var activePollers = document.querySelectorAll('[data-poll-indicator]');

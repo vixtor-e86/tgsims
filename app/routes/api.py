@@ -161,6 +161,36 @@ def cancel_sim(order_id):
     if not user_id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
+    # 1. Fetch order from DB
+    order = DBService.get_order_by_id(user_id, order_id)
+    if not order:
+        return jsonify({'success': False, 'message': 'Order not found.'}), 404
+
+    status = str(order.get('status', '')).lower()
+    if status in ['refunded', 'cancelled']:
+        return jsonify({'success': False, 'message': 'Order has already been cancelled.'}), 400
+
+    if status == 'completed':
+        return jsonify({'success': False, 'message': 'Completed orders cannot be cancelled.'}), 400
+
+    if order.get('sms_code'):
+        return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
+
+    # 2. Cancel order on 5sim
+    prov_id = order.get('provider_order_id')
+    if prov_id and not str(prov_id).startswith('SIM-'):
+        cancel_res = SIMProviderService.cancel_order(str(prov_id))
+        if not cancel_res.get('success'):
+            raw_err = str(cancel_res.get('message', '')).lower()
+            if 'already' in raw_err or 'received' in raw_err or 'finished' in raw_err:
+                return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
+            elif 'not found' in raw_err:
+                # Order may have timed out or expired in 5sim already
+                pass
+            else:
+                return jsonify({'success': False, 'message': 'Unable to cancel order at this moment. Please try again or contact support.'}), 400
+
+    # 3. Atomically refund wallet in database
     refund_result = DBService.refund_order(order_id, user_id, reason="Cancelled by user before receiving code")
     if not refund_result.get('success'):
         return jsonify(refund_result), 400

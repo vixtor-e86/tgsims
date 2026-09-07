@@ -230,77 +230,46 @@ class SIMProviderService:
         profit_margin = round(retail_price - base_cost, 4)
         return retail_price, profit_margin
 
+    _cached_catalog = None
+
     @classmethod
     def get_catalog(cls) -> list:
-        """Returns country and service catalog.
-        Uses cached/curated rates with live availability where configured.
+        """Returns country and service catalog loaded from app/data/catalog.json.
+        Covers all 153 countries from 5sim with all platforms and dynamic markups.
         """
-        # Curated featured countries & services for fast and reliable UI display
-        catalog = [
+        if cls._cached_catalog is not None:
+            return cls._cached_catalog
+
+        import json
+        json_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'catalog.json')
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if data and isinstance(data, list) and len(data) > 0:
+                        cls._cached_catalog = data
+                        return data
+            except Exception as e:
+                print(f"[SIMProviderService] Error reading catalog.json: {e}")
+
+        # Curated fallback countries & services
+        return [
             {
                 'country_code': 'US',
                 'country_name': 'United States',
+                'country_slug': 'usa',
                 'flag': '🇺🇸',
+                'dial': '+1',
                 'services': [
                     {'name': 'WhatsApp', 'price': 1.25, 'available': 46790, 'category': 'SMS Verification'},
                     {'name': 'Telegram', 'price': 1.10, 'available': 12500, 'category': 'SMS Verification'},
                     {'name': 'OpenAI / ChatGPT', 'price': 1.40, 'available': 8200, 'category': 'SMS Verification'},
                     {'name': 'Google / Gmail', 'price': 0.95, 'available': 35400, 'category': 'SMS Verification'},
                     {'name': 'Instagram', 'price': 0.85, 'available': 24100, 'category': 'SMS Verification'},
-                    {'name': 'Tinder', 'price': 1.20, 'available': 6100, 'category': 'SMS Verification'},
-                    {'name': 'Twitter / X', 'price': 0.90, 'available': 18900, 'category': 'SMS Verification'},
-                    {'name': 'eSIM 5GB Travel Data', 'price': 12.00, 'available': 999, 'category': 'eSIM Data'}
-                ]
-            },
-            {
-                'country_code': 'GB',
-                'country_name': 'United Kingdom',
-                'flag': '🇬🇧',
-                'services': [
-                    {'name': 'WhatsApp', 'price': 0.60, 'available': 1221700, 'category': 'SMS Verification'},
-                    {'name': 'Telegram', 'price': 0.55, 'available': 480200, 'category': 'SMS Verification'},
-                    {'name': 'Google / Gmail', 'price': 0.50, 'available': 890000, 'category': 'SMS Verification'},
-                    {'name': 'Instagram', 'price': 0.45, 'available': 670000, 'category': 'SMS Verification'},
-                    {'name': 'TikTok', 'price': 0.55, 'available': 340000, 'category': 'SMS Verification'},
-                    {'name': 'eSIM 10GB Europe', 'price': 18.00, 'available': 999, 'category': 'eSIM Data'}
-                ]
-            },
-            {
-                'country_code': 'NG',
-                'country_name': 'Nigeria',
-                'flag': '🇳🇬',
-                'services': [
-                    {'name': 'WhatsApp', 'price': 0.58, 'available': 2182700, 'category': 'SMS Verification'},
-                    {'name': 'Telegram', 'price': 0.50, 'available': 1450000, 'category': 'SMS Verification'},
-                    {'name': 'Google / Gmail', 'price': 0.45, 'available': 980000, 'category': 'SMS Verification'},
-                    {'name': 'Bank Verification', 'price': 0.75, 'available': 12000, 'category': 'SMS Verification'},
-                    {'name': 'TikTok', 'price': 0.48, 'available': 450000, 'category': 'SMS Verification'}
-                ]
-            },
-            {
-                'country_code': 'CA',
-                'country_name': 'Canada',
-                'flag': '🇨🇦',
-                'services': [
-                    {'name': 'WhatsApp', 'price': 1.20, 'available': 18400, 'category': 'SMS Verification'},
-                    {'name': 'Telegram', 'price': 1.05, 'available': 14200, 'category': 'SMS Verification'},
-                    {'name': 'TikTok', 'price': 0.95, 'available': 22500, 'category': 'SMS Verification'},
-                    {'name': 'OpenAI / ChatGPT', 'price': 1.35, 'available': 7800, 'category': 'SMS Verification'}
-                ]
-            },
-            {
-                'country_code': 'DE',
-                'country_name': 'Germany',
-                'flag': '🇩🇪',
-                'services': [
-                    {'name': 'WhatsApp', 'price': 0.95, 'available': 37900, 'category': 'SMS Verification'},
-                    {'name': 'Telegram', 'price': 0.85, 'available': 29400, 'category': 'SMS Verification'},
-                    {'name': 'Instagram', 'price': 0.75, 'available': 41000, 'category': 'SMS Verification'},
-                    {'name': 'eSIM Unlimited 7 Days', 'price': 25.00, 'available': 999, 'category': 'eSIM Data'}
+                    {'name': 'Tinder', 'price': 1.20, 'available': 6100, 'category': 'SMS Verification'}
                 ]
             }
         ]
-        return catalog
 
     @classmethod
     def purchase_number(cls, country_code: str, service_name: str, operator: str = 'any') -> dict:
@@ -312,13 +281,27 @@ class SIMProviderService:
         svc_clean = (service_name or 'WhatsApp').strip()
 
         # Map country to 5sim slug
-        c_meta = cls.COUNTRY_SLUGS.get(cc_clean, {'slug': cc_clean.lower(), 'name': 'United States', 'dial': '+1'})
-        country_slug = c_meta['slug']
+        c_meta = cls.COUNTRY_SLUGS.get(cc_clean)
+        if c_meta:
+            country_slug = c_meta['slug']
+            country_name = c_meta['name']
+        else:
+            cat = cls.get_catalog()
+            matched = next((c for c in cat if c.get('country_code', '').upper() == cc_clean or c.get('country_slug', '').lower() == cc_clean.lower()), None)
+            if matched:
+                country_slug = matched.get('country_slug', cc_clean.lower())
+                country_name = matched.get('country_name', cc_clean)
+            else:
+                country_slug = cc_clean.lower()
+                country_name = cc_clean
 
         # Map service to 5sim code
         svc_lookup = svc_clean.lower().split('/')[0].strip()
-        s_meta = cls.SERVICE_SLUGS.get(svc_lookup, {'code': svc_lookup.replace(' ', ''), 'name': svc_clean})
-        service_code = s_meta['code']
+        s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
+        if s_meta:
+            service_code = s_meta['code']
+        else:
+            service_code = svc_lookup.replace(' ', '').replace('-', '').lower()
 
         order_ref = f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"
 
@@ -339,7 +322,7 @@ class SIMProviderService:
                 'phone_number': phone,
                 'provider_order_id': prov_id,
                 'country_code': cc_clean,
-                'country_name': c_meta['name'],
+                'country_name': country_name,
                 'country_slug': country_slug,
                 'service_name': svc_clean,
                 'service_code': service_code,
