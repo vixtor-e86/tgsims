@@ -48,24 +48,12 @@ def create_app(config_class=Config):
     def inject_globals():
         """Expose shared values to every template (drives the app-shell topbar)."""
         try:
-            from app.services.supabase_client import mock_db, get_supabase
+            from app.services.db_service import DBService
             user = session.get('user')
             wallet_balance_usd = 0.00
             if isinstance(user, dict) and 'id' in user:
-                user_id = user['id']
-                if user_id != 'demo-user-id':
-                    supabase = get_supabase()
-                    if supabase:
-                        try:
-                            w_res = supabase.table('wallets').select('balance').eq('user_id', user_id).limit(1).execute()
-                            if w_res.data and len(w_res.data) > 0:
-                                wallet_balance_usd = float(w_res.data[0].get('balance', 0.00))
-                        except Exception:
-                            pass
-                else:
-                    wallet_data = mock_db.wallets.get(user_id, {'balance': 45.50})
-                    if isinstance(wallet_data, dict):
-                        wallet_balance_usd = wallet_data.get('balance', 45.50)
+                wallet = DBService.get_wallet(user['id'])
+                wallet_balance_usd = float(wallet.get('balance', 0.00))
             return {
                 'NGN_PER_USD': NGN_PER_USD,
                 'BRAND': 'Tgsims',

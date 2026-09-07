@@ -10,8 +10,10 @@ class Config:
     SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
     RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
     RESEND_FROM_EMAIL = os.getenv('RESEND_FROM_EMAIL', 'Tgsims <noreply@tgsims.com>')
-    SIM_PROVIDER_API_KEY = os.getenv('SIM_PROVIDER_API_KEY', '')
-    SIM_PROVIDER_BASE_URL = os.getenv('SIM_PROVIDER_BASE_URL', '')
+    FIVESIM_API_KEY = (os.getenv('FIVESIM_API_KEY') or os.getenv('SIM_PROVIDER_API_KEY', '')).strip()
+    FIVESIM_BASE_URL = (os.getenv('FIVESIM_BASE_URL') or os.getenv('SIM_PROVIDER_BASE_URL', 'https://5sim.net/v1')).strip().rstrip('/')
+    SIM_PROVIDER_API_KEY = FIVESIM_API_KEY
+    SIM_PROVIDER_BASE_URL = FIVESIM_BASE_URL
     PAYMENT_SECRET_KEY = os.getenv('PAYMENT_SECRET_KEY', '')
     PAYMENT_PUBLIC_KEY = os.getenv('PAYMENT_PUBLIC_KEY', '')
     DEV_PASSWORD = os.getenv('DEV_PASSWORD', 'Icui4cu')

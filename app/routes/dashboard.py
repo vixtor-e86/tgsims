@@ -1,7 +1,8 @@
 """Authenticated dashboard overview."""
 from flask import Blueprint, render_template, session
-from app.services.supabase_client import mock_db
+from app.services.db_service import DBService
 from app.services.sim_provider import SIMProviderService
+import datetime
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -25,19 +26,32 @@ def index():
     user = _ensure_demo_user()
     user_id = user['id']
 
-    wallet = mock_db.wallets.get(user_id, {'balance': 45.50, 'currency': 'USD'})
+    wallet = DBService.get_wallet(user_id)
+    orders = DBService.get_orders(user_id)
+    recent = orders[:5]
 
-    # Recent verifications feed for the dashboard table.
-    recent = mock_db.sim_orders[:5]
+    today_str = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+    today_orders = [o for o in orders if str(o.get('created_at', '')).startswith(today_str)]
+    today_spending = sum(float(o.get('price', o.get('user_cost', 0.0))) for o in today_orders)
 
-    stats = {
-        'wallet_balance_usd': wallet['balance'],
-        'today_spending_usd': 0.28,
-        'numbers_today': 3,
-        'total_numbers': 1204,
-        'wallet_delta_usd': 1.56,
-        'total_delta_pct': 12,
-    }
+    if user_id == 'demo-user-id' and not orders:
+        stats = {
+            'wallet_balance_usd': wallet.get('balance', 45.50),
+            'today_spending_usd': 0.28,
+            'numbers_today': 3,
+            'total_numbers': 1204,
+            'wallet_delta_usd': 1.56,
+            'total_delta_pct': 12,
+        }
+    else:
+        stats = {
+            'wallet_balance_usd': wallet.get('balance', 0.00),
+            'today_spending_usd': round(today_spending, 2),
+            'numbers_today': len(today_orders),
+            'total_numbers': len(orders),
+            'wallet_delta_usd': round(wallet.get('balance', 0.00), 2),
+            'total_delta_pct': 100 if len(orders) > 0 else 0,
+        }
 
     # Activity series for the Activity Overview chart. Each point carries a
     # total height (0-100) and the completed portion (<= total) so the bars

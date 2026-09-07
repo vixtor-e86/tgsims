@@ -119,7 +119,7 @@ class MockDatabase:
                 'type': 'deposit',
                 'status': 'completed',
                 'reference': 'DEP-908123',
-                'description': 'Wallet Top-up via Paystack',
+                'description': 'Wallet Top-up',
                 'created_at': '2026-08-05 10:00:00'
             },
             {

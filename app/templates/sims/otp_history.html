@@ -42,9 +42,11 @@
       </thead>
       <tbody>
         {% for h in history %}
-        {% set day = h.created_at.split(' ')[0] %}
-        {% set tm = h.created_at.split(' ')[1] if ' ' in h.created_at else '' %}
-        {% set dead = h.status in ['expired', 'cancelled'] %}
+        {% set raw_dt = h.created_at|string %}
+        {% set dt_clean = raw_dt.replace('T', ' ') %}
+        {% set day = dt_clean.split(' ')[0] %}
+        {% set tm = dt_clean.split(' ')[1][:8] if ' ' in dt_clean else '' %}
+        {% set dead = h.status in ['expired', 'cancelled', 'timeout', 'refunded', 'banned'] and not h.sms_code %}
         <tr>
           <td>
             <span class="svc">{{ svc_icon(h.service_name, "svc-sm") }} <span class="td-strong">{{ h.service_name }}</span></span>

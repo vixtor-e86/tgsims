@@ -1,53 +1,25 @@
 -- ==============================================================================
--- TGSIMS - MASTER DATABASE SCHEMA FOR SUPABASE (POSTGRESQL)
--- Built for 5sim Virtual SIM API & Double-Entry Financial Accounting
+-- TGSIMS MIGRATION 002: 5SIM INTEGRATION, SIM ORDERS, SMS FEED, & TRANSACTIONS
+-- ==============================================================================
+-- Description:
+--   1. Creates public.sim_orders tailored for 5sim activation & hosting lifecycles.
+--   2. Creates public.wallet_transactions (double-entry ledger with order linking).
+--   3. Creates public.sim_sms_messages for multi-SMS verification tracking.
+--   4. Creates public.service_catalog for caching 5sim prices, stock & profit margins.
+--   5. Creates public.platform_settings for global markups & exchange rates.
+--   6. Implements atomic PostgreSQL RPC functions:
+--      - deduct_wallet_balance: atomically deducts funds upon order creation
+--      - refund_sim_order: atomically refunds wallet on order cancel/timeout/ban
+--      - record_sim_sms: records received SMS and updates order state
+--      - complete_sim_order: finalizes completed orders
+--   7. Configures Row Level Security (RLS) policies and performance indexes.
 -- ==============================================================================
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. PROFILES TABLE (Linked to auth.users)
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    email TEXT UNIQUE NOT NULL,
-    username TEXT UNIQUE,
-    full_name TEXT,
-    avatar_url TEXT,
-    phone_number TEXT,
-    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
-CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
-
--- 3. WALLETS TABLE (Stores user balances)
-CREATE TABLE IF NOT EXISTS public.wallets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID UNIQUE NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (balance >= 0),
-    currency VARCHAR(5) DEFAULT 'USD',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON public.wallets(user_id);
-
--- 4. PASSWORD RESETS TABLE (For secure OTP verification via email)
-CREATE TABLE IF NOT EXISTS public.password_resets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT NOT NULL,
-    otp_hash TEXT NOT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    used BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_password_resets_email ON public.password_resets(email);
-
--- 5. SIM ORDERS TABLE (5sim lifecycle)
+-- 2. SIM ORDERS TABLE (5sim lifecycle)
 CREATE TABLE IF NOT EXISTS public.sim_orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -85,7 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_sim_orders_status ON public.sim_orders(status);
 CREATE INDEX IF NOT EXISTS idx_sim_orders_reference ON public.sim_orders(order_reference);
 CREATE INDEX IF NOT EXISTS idx_sim_orders_created_at ON public.sim_orders(created_at DESC);
 
--- 6. WALLET TRANSACTIONS TABLE (Double-entry ledger with order linking)
+-- 3. WALLET TRANSACTIONS TABLE
 CREATE TABLE IF NOT EXISTS public.wallet_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -104,7 +76,7 @@ CREATE INDEX IF NOT EXISTS idx_wallet_transactions_order_id ON public.wallet_tra
 CREATE INDEX IF NOT EXISTS idx_wallet_transactions_reference ON public.wallet_transactions(reference);
 CREATE INDEX IF NOT EXISTS idx_wallet_transactions_created_at ON public.wallet_transactions(created_at DESC);
 
--- 7. SIM SMS MESSAGES TABLE (Multiple SMS per order)
+-- 4. SIM SMS MESSAGES TABLE (Multiple SMS per order)
 CREATE TABLE IF NOT EXISTS public.sim_sms_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES public.sim_orders(id) ON DELETE CASCADE,
@@ -119,7 +91,7 @@ CREATE TABLE IF NOT EXISTS public.sim_sms_messages (
 CREATE INDEX IF NOT EXISTS idx_sim_sms_messages_order_id ON public.sim_sms_messages(order_id);
 CREATE INDEX IF NOT EXISTS idx_sim_sms_messages_received_at ON public.sim_sms_messages(received_at DESC);
 
--- 8. SERVICE CATALOG (5sim price & stock cache)
+-- 5. SERVICE CATALOG (5sim price & stock cache)
 CREATE TABLE IF NOT EXISTS public.service_catalog (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     country_code VARCHAR(10) NOT NULL,
@@ -143,7 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_service_catalog_country ON public.service_catalog
 CREATE INDEX IF NOT EXISTS idx_service_catalog_service ON public.service_catalog(service_code);
 CREATE INDEX IF NOT EXISTS idx_service_catalog_active ON public.service_catalog(is_active);
 
--- 9. PLATFORM SETTINGS (Markups & Conversion Rates)
+-- 6. PLATFORM SETTINGS (Markups & Conversion Rates)
 CREATE TABLE IF NOT EXISTS public.platform_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     default_markup_percent NUMERIC(5, 2) DEFAULT 30.00,
@@ -153,42 +125,17 @@ CREATE TABLE IF NOT EXISTS public.platform_settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Seed initial default settings if table empty
 INSERT INTO public.platform_settings (default_markup_percent, min_profit_usd, rub_to_usd_rate, ngn_per_usd_rate)
 SELECT 30.00, 0.30, 0.011000, 1600.00
 WHERE NOT EXISTS (SELECT 1 FROM public.platform_settings);
 
--- ==============================================================================
--- 10. ROW LEVEL SECURITY (RLS) POLICIES
--- ==============================================================================
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.password_resets ENABLE ROW LEVEL SECURITY;
+-- 7. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE public.sim_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallet_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sim_sms_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.service_catalog ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
-
--- Profiles: Authenticated users can view; users can update their own
-DROP POLICY IF EXISTS "Profiles are viewable by authenticated users" ON public.profiles;
-CREATE POLICY "Profiles are viewable by authenticated users"
-    ON public.profiles FOR SELECT
-    TO authenticated
-    USING (true);
-
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile"
-    ON public.profiles FOR UPDATE
-    TO authenticated
-    USING (auth.uid() = id)
-    WITH CHECK (auth.uid() = id);
-
--- Wallets: Users can only view their own wallet
-DROP POLICY IF EXISTS "Users can view own wallet" ON public.wallets;
-CREATE POLICY "Users can view own wallet"
-    ON public.wallets FOR SELECT
-    TO authenticated
-    USING (auth.uid() = user_id);
 
 -- SIM Orders Policies
 DROP POLICY IF EXISTS "Users can view own sim orders" ON public.sim_orders;
@@ -229,67 +176,7 @@ CREATE POLICY "Platform settings viewable by everyone"
     ON public.platform_settings FOR SELECT
     USING (true);
 
--- ==============================================================================
--- 11. TRIGGERS
--- ==============================================================================
-
--- 11A. Auto-create Profile & Wallet on Auth signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_username TEXT;
-    v_full_name TEXT;
-BEGIN
-    v_username := COALESCE(
-        NEW.raw_user_meta_data->>'username',
-        split_part(NEW.email, '@', 1)
-    );
-    v_full_name := COALESCE(
-        NEW.raw_user_meta_data->>'full_name',
-        NEW.raw_user_meta_data->>'username',
-        split_part(NEW.email, '@', 1)
-    );
-
-    INSERT INTO public.profiles (id, email, username, full_name)
-    VALUES (NEW.id, NEW.email, v_username, v_full_name)
-    ON CONFLICT (id) DO UPDATE SET
-        email = EXCLUDED.email,
-        username = COALESCE(public.profiles.username, EXCLUDED.username),
-        full_name = COALESCE(public.profiles.full_name, EXCLUDED.full_name),
-        updated_at = timezone('utc'::text, now());
-
-    INSERT INTO public.wallets (user_id, balance, currency)
-    VALUES (NEW.id, 0.00, 'USD')
-    ON CONFLICT (user_id) DO NOTHING;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- 11B. updated_at timestamp trigger
-CREATE OR REPLACE FUNCTION public.set_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = timezone('utc'::text, now());
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS tr_profiles_updated_at ON public.profiles;
-CREATE TRIGGER tr_profiles_updated_at
-    BEFORE UPDATE ON public.profiles
-    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-
-DROP TRIGGER IF EXISTS tr_wallets_updated_at ON public.wallets;
-CREATE TRIGGER tr_wallets_updated_at
-    BEFORE UPDATE ON public.wallets
-    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-
+-- 8. TRIGGER: set_updated_at for sim_orders and service_catalog
 DROP TRIGGER IF EXISTS tr_sim_orders_updated_at ON public.sim_orders;
 CREATE TRIGGER tr_sim_orders_updated_at
     BEFORE UPDATE ON public.sim_orders
@@ -301,10 +188,10 @@ CREATE TRIGGER tr_service_catalog_updated_at
     FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- ==============================================================================
--- 12. ATOMIC STORED PROCEDURES (RPCs)
+-- 9. ATOMIC STORED PROCEDURES (RPCs)
 -- ==============================================================================
 
--- 12A. DEDUCT WALLET BALANCE (ATOMIC WITH FOR UPDATE LOCK)
+-- 9A. DEDUCT WALLET BALANCE FOR PURCHASE
 CREATE OR REPLACE FUNCTION public.deduct_wallet_balance(
     p_user_id UUID,
     p_amount NUMERIC(12, 2),
@@ -322,6 +209,7 @@ DECLARE
     v_new_balance NUMERIC(12, 2);
     v_transaction_id UUID;
 BEGIN
+    -- Lock wallet row FOR UPDATE to strictly prevent race conditions & double-spend
     SELECT balance INTO v_current_balance
     FROM public.wallets
     WHERE user_id = p_user_id
@@ -342,11 +230,13 @@ BEGIN
 
     v_new_balance := v_current_balance - p_amount;
 
+    -- Update balance
     UPDATE public.wallets
     SET balance = v_new_balance,
         updated_at = timezone('utc'::text, now())
     WHERE user_id = p_user_id;
 
+    -- Record transaction
     INSERT INTO public.wallet_transactions (
         user_id, order_id, amount, type, status, reference, description, metadata
     ) VALUES (
@@ -365,52 +255,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- 12B. CREDIT WALLET BALANCE (FOR DEPOSITS & TOP-UPS)
-CREATE OR REPLACE FUNCTION public.credit_wallet_balance(
-    p_user_id UUID,
-    p_amount NUMERIC(12, 2),
-    p_type TEXT,
-    p_reference TEXT,
-    p_description TEXT,
-    p_metadata JSONB DEFAULT '{}'::jsonb
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    v_new_balance NUMERIC(12, 2);
-    v_transaction_id UUID;
-BEGIN
-    INSERT INTO public.wallets (user_id, balance)
-    VALUES (p_user_id, 0.00)
-    ON CONFLICT (user_id) DO NOTHING;
-
-    UPDATE public.wallets
-    SET balance = balance + p_amount,
-        updated_at = timezone('utc'::text, now())
-    WHERE user_id = p_user_id
-    RETURNING balance INTO v_new_balance;
-
-    INSERT INTO public.wallet_transactions (
-        user_id, amount, type, status, reference, description, metadata
-    ) VALUES (
-        p_user_id, p_amount, p_type, 'completed', p_reference, p_description, p_metadata
-    )
-    RETURNING id INTO v_transaction_id;
-
-    RETURN jsonb_build_object(
-        'success', true,
-        'message', 'Wallet credited successfully.',
-        'new_balance', v_new_balance,
-        'transaction_id', v_transaction_id
-    );
-EXCEPTION WHEN OTHERS THEN
-    RETURN jsonb_build_object('success', false, 'message', SQLERRM);
-END;
-$$;
-
--- 12C. ATOMIC REFUND FOR SIM ORDER (On Cancel, Timeout, or Ban)
+-- 9B. ATOMIC REFUND FOR SIM ORDER (On Cancel, Timeout, or Ban)
 CREATE OR REPLACE FUNCTION public.refund_sim_order(
     p_order_id UUID,
     p_reason TEXT DEFAULT 'Order cancelled or expired without receiving SMS'
@@ -425,6 +270,7 @@ DECLARE
     v_ref_tx_id UUID;
     v_refund_ref TEXT;
 BEGIN
+    -- Lock order row
     SELECT * INTO v_order
     FROM public.sim_orders
     WHERE id = p_order_id
@@ -434,22 +280,27 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Order not found.');
     END IF;
 
+    -- Prevent double refund
     IF v_order.status IN ('refunded', 'cancelled') THEN
         RETURN jsonb_build_object('success', false, 'message', 'Order has already been refunded or cancelled.');
     END IF;
 
+    -- Prevent refunding completed orders
     IF v_order.status = 'completed' THEN
         RETURN jsonb_build_object('success', false, 'message', 'Completed orders cannot be refunded.');
     END IF;
 
+    -- Lock and credit user wallet
     UPDATE public.wallets
     SET balance = balance + v_order.user_cost,
         updated_at = timezone('utc'::text, now())
     WHERE user_id = v_order.user_id
     RETURNING balance INTO v_new_balance;
 
+    -- Generate refund reference
     v_refund_ref := 'REF-' || substr(md5(random()::text || clock_timestamp()::text), 1, 10);
 
+    -- Insert refund ledger entry
     INSERT INTO public.wallet_transactions (
         user_id, order_id, amount, type, status, reference, description, metadata
     ) VALUES (
@@ -464,6 +315,7 @@ BEGIN
     )
     RETURNING id INTO v_ref_tx_id;
 
+    -- Update order status
     UPDATE public.sim_orders
     SET status = 'refunded',
         refunded_at = timezone('utc'::text, now()),
@@ -483,7 +335,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- 12D. RECORD RECEIVED SMS FOR AN ORDER
+-- 9C. RECORD RECEIVED SMS FOR AN ORDER
 CREATE OR REPLACE FUNCTION public.record_sim_sms(
     p_order_id UUID,
     p_provider_sms_id VARCHAR,
@@ -499,6 +351,7 @@ AS $$
 DECLARE
     v_sms_id UUID;
 BEGIN
+    -- Insert into sim_sms_messages
     INSERT INTO public.sim_sms_messages (
         order_id, provider_sms_id, sender, sms_code, full_text, raw_data
     ) VALUES (
@@ -506,6 +359,7 @@ BEGIN
     )
     RETURNING id INTO v_sms_id;
 
+    -- Update sim_orders with latest SMS info
     UPDATE public.sim_orders
     SET status = 'received',
         sms_code = p_sms_code,
@@ -524,7 +378,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- 12E. COMPLETE SIM ORDER
+-- 9D. COMPLETE SIM ORDER
 CREATE OR REPLACE FUNCTION public.complete_sim_order(
     p_order_id UUID
 )

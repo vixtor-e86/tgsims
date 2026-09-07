@@ -1,7 +1,7 @@
 """Virtual number routes: buy a number, view orders, and OTP history."""
 from flask import Blueprint, render_template, session, redirect, url_for
 from app.services.sim_provider import SIMProviderService
-from app.services.supabase_client import mock_db
+from app.services.db_service import DBService
 
 sims_bp = Blueprint('sims', __name__, url_prefix='/sims')
 
@@ -18,7 +18,7 @@ def store():
         return redirect(url_for('auth.login'))
 
     catalog = SIMProviderService.get_catalog()
-    wallet = mock_db.wallets.get(user['id'], {'balance': 45.50, 'currency': 'USD'})
+    wallet = DBService.get_wallet(user['id'])
 
     why = [
         {'icon': 'bolt', 'title': 'Instant Activation', 'text': 'Numbers ready immediately.'},
@@ -37,7 +37,7 @@ def my_sims():
     if not user:
         return redirect(url_for('auth.login'))
 
-    orders = [o for o in mock_db.sim_orders if o['user_id'] == user['id']]
+    orders = DBService.get_orders(user['id'])
     return render_template('sims/orders.html', orders=orders, user=user)
 
 
@@ -49,5 +49,6 @@ def otp_history():
         return redirect(url_for('auth.login'))
 
     # Build an OTP feed from orders that have received codes.
-    history = [o for o in mock_db.sim_orders if o['user_id'] == user['id']]
+    history = DBService.get_orders(user['id'])
     return render_template('sims/otp_history.html', history=history, user=user)
+

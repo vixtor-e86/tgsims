@@ -1,6 +1,6 @@
 """Wallet & billing routes."""
 from flask import Blueprint, render_template, session, redirect, url_for
-from app.services.supabase_client import mock_db
+from app.services.db_service import DBService
 
 wallet_bp = Blueprint('wallet', __name__, url_prefix='/wallet')
 
@@ -16,8 +16,8 @@ def index():
     if not user:
         return redirect(url_for('auth.login'))
 
-    wallet = mock_db.wallets.get(user['id'], {'balance': 45.50, 'currency': 'USD'})
-    transactions = [t for t in mock_db.transactions if t['user_id'] == user['id']]
+    wallet = DBService.get_wallet(user['id'])
+    transactions = DBService.get_transactions(user['id'])
 
     methods = [
         {'id': 'card', 'label': 'Visa/Mastercard', 'note': 'Instant processing', 'icon': 'card'},
@@ -36,7 +36,7 @@ def fund():
     if not user:
         return redirect(url_for('auth.login'))
 
-    wallet = mock_db.wallets.get(user['id'], {'balance': 45.50, 'currency': 'USD'})
+    wallet = DBService.get_wallet(user['id'])
     # Presets are round Naira amounts (canonical USD derived in the template).
     presets_ngn = [1000, 5000, 10000, 25000]
 
