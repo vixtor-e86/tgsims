@@ -238,17 +238,8 @@ def forgot_password():
                 'expires_at': expires_at.timestamp()
             }
 
-        # 2. Dispatch OTP via Resend email service matching the template design
+        # 2. Dispatch OTP exclusively via Resend email service matching our custom design
         email_result = EmailService.send_password_reset_otp(email, otp_code, username=username)
-
-        # Also notify Supabase Auth recovery if configured
-        if is_supabase_configured():
-            try:
-                supabase = create_supabase_client()
-                if supabase:
-                    supabase.auth.reset_password_for_email(email)
-            except Exception:
-                pass
 
         if email_result.get('success'):
             flash('A 6-digit verification code has been sent to your email address.', 'success')
