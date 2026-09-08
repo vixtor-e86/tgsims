@@ -111,6 +111,100 @@ def purchase_sim():
     })
 
 
+@api_bp.route('/purchase-us-canada', methods=['POST'])
+def purchase_us_canada():
+    """Allocate and order a dedicated high-reliability US or Canada virtual number."""
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in to complete your purchase.'}), 401
+
+    data = request.json or {}
+    country_code = data.get('country_code', 'US').upper()
+    service_name = data.get('service_name', 'WhatsApp')
+    package_id = data.get('package_id', 'whatsapp_guaranteed')
+    provider_id = data.get('provider_id', 'auto')
+
+    # Look up package
+    pkg = next((p for p in SIMProviderService.US_CANADA_PACKAGES if p['id'] == package_id), SIMProviderService.US_CANADA_PACKAGES[2])
+    price = float(pkg['price_usd'])
+    country_name = 'United States' if country_code == 'US' else 'Canada'
+
+    # 1. Check wallet balance
+    wallet = DBService.get_wallet(user_id)
+    cur_balance = float(wallet.get('balance', 0.00))
+    if cur_balance < price:
+        return jsonify({
+            'success': False,
+            'message': f'Insufficient wallet balance. You need ${price:.2f} but have ${cur_balance:.2f}. Please top up your wallet.'
+        }), 400
+
+    # 2. Allocate US/Canada number
+    alloc_res = SIMProviderService.purchase_us_canada_number(
+        country_code=country_code,
+        service_name=service_name,
+        package_id=package_id,
+        provider_id=provider_id
+    )
+
+    if not alloc_res or not alloc_res.get('success'):
+        return jsonify({
+            'success': False,
+            'message': 'Unable to allocate a carrier line at this moment. Please try another package or line.'
+        }), 503
+
+    order_ref = alloc_res.get('order_reference') or f"TGS-USCA-{uuid.uuid4().hex[:6].upper()}"
+
+    # 3. Deduct wallet atomically in database
+    deduct_res = DBService.deduct_wallet_balance(
+        user_id=user_id,
+        amount=price,
+        reference=order_ref,
+        description=f"{service_name} ({pkg['name']}) - {country_name}",
+        metadata={
+            'service_name': service_name,
+            'country_name': country_name,
+            'country_code': country_code,
+            'package_name': pkg['name'],
+            'provider_line': alloc_res.get('provider_line', 'Titan Line')
+        }
+    )
+
+    if not deduct_res.get('success'):
+        return jsonify({
+            'success': False,
+            'message': deduct_res.get('message', 'Failed to deduct wallet balance.')
+        }), 400
+
+    # 4. Save SIM Order to database
+    order_data = {
+        'order_reference': order_ref,
+        'service_name': f"{service_name} ({pkg['name']})",
+        'service_code': service_name.lower().replace(' ', '_'),
+        'country_name': country_name,
+        'country_code': country_code,
+        'country_slug': 'usa' if country_code == 'US' else 'canada',
+        'phone_number': alloc_res.get('phone_number', ''),
+        'user_cost': price,
+        'price': price,
+        'provider_cost': 0.00,
+        'provider_order_id': alloc_res.get('provider_order_id', ''),
+        'order_type': 'activation',
+        'status': 'active',
+        'qr_code_url': None,
+        'expires_at': alloc_res.get('expires_at')
+    }
+    saved_order = DBService.create_order(user_id, order_data)
+
+    return jsonify({
+        'success': True,
+        'message': f"{country_name} {service_name} number activated successfully!",
+        'new_balance': deduct_res.get('new_balance', cur_balance - price),
+        'order_reference': order_ref,
+        'phone_number': alloc_res.get('phone_number', ''),
+        'redirect_url': '/sims/my-sims'
+    })
+
+
 @api_bp.route('/check-sms/<order_id>', methods=['GET'])
 def check_sms(order_id):
     user_id = _get_current_user_id()

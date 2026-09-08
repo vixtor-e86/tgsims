@@ -13,41 +13,98 @@
 </div>
 
 {# ---- Filters ---- #}
-<div class="filter-bar">
-  <div class="input-group">
+<div class="filter-bar" data-otp-filter-bar>
+  <div class="input-group" style="min-width: 220px; flex: 1;">
     <span class="input-icon">{{ icon('search') }}</span>
-    <input class="input" type="search" placeholder="Search by service or number..." aria-label="Search OTP history">
+    <input class="input" type="search" placeholder="Search service, number, or OTP..." aria-label="Search OTP history" data-otp-search>
   </div>
-  <select class="select" aria-label="Filter by service">
-    <option>All Services</option>
-    {% for h in history %}<option>{{ h.service_name }}</option>{% endfor %}
+  
+  <select class="select" aria-label="Filter by service" data-otp-service-filter style="width: auto; min-width: 150px;">
+    <option value="all">All Services</option>
+    {% for s in services %}
+    <option value="{{ s }}">{{ s }}</option>
+    {% endfor %}
   </select>
+
+  <select class="select" aria-label="Filter by status" data-otp-status-filter style="width: auto; min-width: 140px;">
+    <option value="all">All Statuses</option>
+    <option value="received">Code Received</option>
+    <option value="waiting">Waiting SMS</option>
+    <option value="timeout">Timed Out</option>
+    <option value="refunded">Cancelled / Refunded</option>
+  </select>
+
   <span class="filter-bar-spacer"></span>
-  <button class="btn btn-secondary" type="button">{{ icon('calendar') }} Last 30 Days {{ icon('chevron-down') }}</button>
-  <button class="icon-btn" type="button" aria-label="Export history">{{ icon('download') }}</button>
+
+  {# Calendar Date Range Dropdown #}
+  <div class="dropdown" data-dropdown data-otp-date-dropdown>
+    <button class="btn btn-secondary" data-dropdown-trigger type="button" aria-haspopup="true" aria-expanded="false" data-otp-date-btn>
+      {{ icon('calendar') }} <span data-otp-date-text>All Time</span> {{ icon('chevron-down') }}
+    </button>
+    <div class="dropdown-menu date-filter-menu" role="menu">
+      <button class="dropdown-item is-active" data-date-range="all" type="button">All Time</button>
+      <button class="dropdown-item" data-date-range="today" type="button">Today</button>
+      <button class="dropdown-item" data-date-range="7d" type="button">Last 7 Days</button>
+      <button class="dropdown-item" data-date-range="30d" type="button">Last 30 Days</button>
+      <div class="dropdown-sep"></div>
+      <div class="date-custom-box">
+        <span class="label label-muted" style="font-size: 11px; margin-bottom: 6px; display: block;">Custom Date Range</span>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <input type="date" class="input input-sm" data-date-start aria-label="Start date">
+          <input type="date" class="input input-sm" data-date-end aria-label="End date">
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <button class="btn btn-primary btn-sm" type="button" data-apply-date-range style="flex: 1;">Apply</button>
+            <button class="btn btn-secondary btn-sm" type="button" data-clear-date-range>Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 {# ---- History table ---- #}
 <section class="card table-card">
   <div class="table-wrap">
-    <table class="table">
+    <table class="table" data-otp-table>
       <thead>
         <tr>
           <th>Service</th>
           <th>Phone Number</th>
           <th>OTP / Code</th>
           <th>Message Content</th>
+          <th>Status</th>
           <th>Date &amp; Time</th>
         </tr>
       </thead>
       <tbody>
+        {% if not history %}
+        <tr data-otp-empty-state>
+          <td colspan="6" class="text-center" style="padding:var(--sp-12) var(--sp-4);">
+            <div style="max-width: 360px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);">
+              <span class="icon-tile icon-tile-lg" style="margin-bottom: var(--sp-2);">{{ icon('inbox') }}</span>
+              <h3 style="font-size: var(--fs-md); font-weight: var(--fw-bold); margin: 0;">No OTP records yet</h3>
+              <p class="td-dim" style="font-size: var(--fs-sm); margin: 0;">When you order virtual numbers and receive SMS verification codes, they will be logged here for your records.</p>
+              <a href="{{ url_for('sims.order_numbers') }}" class="btn btn-primary btn-sm" style="margin-top: var(--sp-2);">{{ icon('plus') }} Order Numbers</a>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
         {% for h in history %}
         {% set raw_dt = h.created_at|string %}
         {% set dt_clean = raw_dt.replace('T', ' ') %}
         {% set day = dt_clean.split(' ')[0] %}
         {% set tm = dt_clean.split(' ')[1][:8] if ' ' in dt_clean else '' %}
-        {% set dead = h.status in ['expired', 'cancelled', 'timeout', 'refunded', 'banned'] and not h.sms_code %}
-        <tr>
+        {% set has_code = h.sms_code is defined and h.sms_code %}
+        {% set is_active = (h.status in ['active', 'pending']) and not has_code %}
+        {% set is_refunded = h.status in ['cancelled', 'refunded', 'banned'] %}
+        {% set row_status = 'received' if has_code else ('waiting' if is_active else ('refunded' if is_refunded else 'timeout')) %}
+        <tr data-otp-row
+            data-service="{{ (h.service_name or '')|lower }}"
+            data-phone="{{ h.phone_number or '' }}"
+            data-code="{{ h.sms_code or '' }}"
+            data-msg="{{ (h.full_sms_text or '')|lower }}"
+            data-date="{{ day }}"
+            data-status="{{ row_status }}">
           <td>
             <span class="svc">{{ svc_icon(h.service_name, "svc-sm") }} <span class="td-strong">{{ h.service_name }}</span></span>
           </td>
@@ -55,42 +112,69 @@
             <span class="num-cell">
               <span class="flag">{{ h.country_code }}</span>
               <span class="td-mono td-dim">{{ h.phone_number }}</span>
+              {% if h.phone_number %}
+              <button class="copy-btn" data-copy="{{ h.phone_number }}" type="button" aria-label="Copy phone number" title="Copy phone number">{{ icon('copy') }}</button>
+              {% endif %}
             </span>
           </td>
           <td>
-            {% if dead %}
-              <span class="badge badge-danger">Timed Out</span>
-            {% else %}
+            {% if has_code %}
               <span class="code-chip">{{ h.sms_code }}
-                <button class="copy-btn" data-copy="{{ h.sms_code }}" type="button" aria-label="Copy code">{{ icon('copy') }}</button>
+                <button class="copy-btn" data-copy="{{ h.sms_code }}" type="button" aria-label="Copy code" title="Copy code">{{ icon('copy') }}</button>
               </span>
+            {% elif is_active %}
+              <a href="{{ url_for('sims.my_sims') }}" class="otp-waiting" style="font-size:var(--fs-xs); text-decoration:none;" title="Click to view awaiting order">{{ icon('refresh') }} Waiting...</a>
+            {% else %}
+              <span class="badge badge-neutral">No Code</span>
             {% endif %}
           </td>
           <td>
-            {% if dead %}
-              <span class="otp-msg">No message received within the 20-minute window. Funds refunded.</span>
-            {% else %}
+            {% if has_code and h.full_sms_text %}
               <span class="otp-msg">{{ h.full_sms_text }}</span>
+            {% elif has_code %}
+              <span class="otp-msg">Your verification code is {{ h.sms_code }}</span>
+            {% elif is_active %}
+              <span class="otp-msg text-muted">Awaiting incoming verification message...</span>
+            {% elif is_refunded %}
+              <span class="otp-msg text-dim">Order cancelled or refunded. Number released.</span>
+            {% else %}
+              <span class="otp-msg text-dim">No message received before expiration. Funds refunded.</span>
             {% endif %}
           </td>
-          <td class="td-dim">{{ day }}<span class="stack-sub">{{ tm }} UTC</span></td>
+          <td>
+            {% if has_code %}
+              <span class="badge badge-success badge-dot">Received</span>
+            {% elif is_active %}
+              <span class="badge badge-info badge-dot">Waiting</span>
+            {% elif is_refunded %}
+              <span class="badge badge-danger badge-dot">Refunded</span>
+            {% else %}
+              <span class="badge badge-neutral badge-dot">Timed Out</span>
+            {% endif %}
+          </td>
+          <td class="td-dim">{{ day }}<span class="stack-sub">{{ tm }}</span></td>
         </tr>
-        {% else %}
-        <tr><td colspan="5" class="td-dim text-center" style="padding:var(--sp-12);">No verification codes received yet.</td></tr>
         {% endfor %}
+        <tr class="otp-no-matches hidden" data-otp-no-matches>
+          <td colspan="6" class="td-dim text-center" style="padding:var(--sp-12);">
+            No verification codes match your search or filter.
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
 
-  {% if history %}
-  <div class="table-foot">
-    <span>Showing 1 to {{ history|length }} of {{ history|length }} entries</span>
-    <div class="pagination">
-      <button class="page-btn" type="button" aria-label="Previous" disabled>{{ icon('chevron-left') }}</button>
-      <button class="page-btn is-active" type="button">1</button>
-      <button class="page-btn" type="button" aria-label="Next" disabled>{{ icon('chevron-right') }}</button>
+  <div class="table-foot" data-otp-foot {% if not history %}style="display:none;"{% endif %}>
+    <span data-otp-count>Showing 1 to {{ history|length }} of {{ history|length }} entries</span>
+    <div class="pagination" data-otp-pagination>
+      <button class="page-btn" data-page-prev type="button" aria-label="Previous" disabled>{{ icon('chevron-left') }}</button>
+      <div class="page-numbers" data-page-numbers style="display:inline-flex;gap:4px;"></div>
+      <button class="page-btn" data-page-next type="button" aria-label="Next" disabled>{{ icon('chevron-right') }}</button>
     </div>
   </div>
-  {% endif %}
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/otp_history.js') }}"></script>
 {% endblock %}

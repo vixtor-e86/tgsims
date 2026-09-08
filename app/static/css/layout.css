@@ -37,6 +37,9 @@
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* ---- Sidebar ---- */
@@ -151,7 +154,14 @@
 .side-user .role { font-size: var(--fs-xs); color: var(--text-muted); }
 
 /* ---- Main column ---- */
-.main { display: flex; flex-direction: column; min-width: 0; }
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 /* ---- Topbar ---- */
 .topbar {
@@ -166,6 +176,9 @@
   background: var(--topbar-bg);
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--border);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .topbar-left {
   display: flex;
@@ -213,7 +226,9 @@
   padding: var(--sp-8);
   max-width: var(--content-max);
   width: 100%;
+  box-sizing: border-box;
   margin-inline: auto;
+  min-width: 0;
 }
 .page-head {
   display: flex;
@@ -593,6 +608,7 @@
 }
 
 @media (max-width: 640px) {
+  .page { padding: var(--sp-4) var(--sp-3); }
   .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
   .page-head { flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
   .page-title {

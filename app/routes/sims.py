@@ -10,9 +10,37 @@ def _require_user():
     return session.get('user')
 
 
-@sims_bp.route('/store')
+@sims_bp.route('/us-canada', endpoint='us_canada')
+@sims_bp.route('/order-us-canada', endpoint='order_us_canada')
+def us_canada():
+    """Order US & Canada Virtual Numbers  -  high-reliability cellular lines."""
+    user = _require_user()
+    if not user:
+        return redirect(url_for('auth.login'))
+
+    config = SIMProviderService.get_us_canada_config()
+    wallet = DBService.get_wallet(user['id'])
+
+    why = [
+        {'icon': 'shield', 'title': 'Real Cellular SIMs', 'text': 'Direct AT&T, Verizon, T-Mobile & Rogers lines.'},
+        {'icon': 'check', 'title': 'WhatsApp Guaranteed', 'text': '100% pre-checked unbanned phone numbers.'},
+        {'icon': 'bolt', 'title': 'Instant SMS Delivery', 'text': 'High-priority direct cellular routing.'},
+        {'icon': 'refresh', 'title': 'Auto-Refund Protection', 'text': 'Full wallet refund if no SMS is received.'},
+    ]
+
+    return render_template(
+        'sims/us_canada.html',
+        config=config,
+        wallet=wallet,
+        why=why,
+        user=user
+    )
+
+
+@sims_bp.route('/store', endpoint='store')
+@sims_bp.route('/order-numbers', endpoint='order_numbers')
 def store():
-    """Buy a Virtual Number  -  country + service selection."""
+    """Order Numbers  -  worldwide country + service selection."""
     user = _require_user()
     if not user:
         return redirect(url_for('auth.login'))
@@ -50,5 +78,6 @@ def otp_history():
 
     # Build an OTP feed from orders that have received codes.
     history = DBService.get_orders(user['id'])
-    return render_template('sims/otp_history.html', history=history, user=user)
+    services = sorted(list({h.get('service_name') for h in history if h.get('service_name')}))
+    return render_template('sims/otp_history.html', history=history, services=services, user=user)
 

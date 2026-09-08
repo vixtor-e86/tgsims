@@ -53,36 +53,10 @@ def index():
             'total_delta_pct': 100 if len(orders) > 0 else 0,
         }
 
-    # Activity series for the Activity Overview chart. Each point carries a
-    # total height (0-100) and the completed portion (<= total) so the bars
-    # render two-tone (purchased vs completed), matching the Figma.
-    activity = {
-        '7d': [
-            {'label': 'Mon', 'total': 42, 'done': 30},
-            {'label': 'Tue', 'total': 58, 'done': 44},
-            {'label': 'Wed', 'total': 35, 'done': 22},
-            {'label': 'Thu', 'total': 74, 'done': 60},
-            {'label': 'Fri', 'total': 61, 'done': 40},
-            {'label': 'Sat', 'total': 88, 'done': 71},
-            {'label': 'Sun', 'total': 52, 'done': 38},
-        ],
-        '30d': [
-            {'label': 'W1', 'total': 48, 'done': 33},
-            {'label': 'W2', 'total': 63, 'done': 47},
-            {'label': 'W3', 'total': 41, 'done': 28},
-            {'label': 'W4', 'total': 78, 'done': 62},
-            {'label': 'W5', 'total': 55, 'done': 39},
-            {'label': 'W6', 'total': 90, 'done': 72},
-            {'label': 'W7', 'total': 67, 'done': 50},
-            {'label': 'W8', 'total': 72, 'done': 58},
-        ],
-    }
-
     return render_template(
         'dashboard/index.html',
         stats=stats,
         recent=recent,
-        activity=activity,
         catalog=SIMProviderService.get_catalog(),
         user=user,
     )

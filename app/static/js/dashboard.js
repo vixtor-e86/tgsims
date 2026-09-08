@@ -128,7 +128,10 @@
         })
         .then(function (r) {
           if (!r.ok) throw new Error(r.data.message || "Could not complete purchase.");
-          if (window.toast) window.toast(r.data.message || "SIM purchased!", "success");
+          if (window.toast) window.toast(r.data.message || "Number ordered successfully!", "success");
+          setTimeout(function () {
+            window.location.href = "/sims/my-sims";
+          }, 600);
         })
         .catch(function (err) {
           if (window.toast) window.toast(err.message || "Something went wrong. Try again.", "error");

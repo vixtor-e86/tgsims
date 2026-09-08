@@ -12,7 +12,7 @@
   </div>
   <div class="page-head-actions">
     <a href="{{ url_for('wallet.fund') }}" class="btn btn-secondary">{{ icon('plus') }} Deposit Funds</a>
-    <a href="{{ url_for('sims.store') }}" class="btn btn-primary">{{ icon('cart') }} Buy Number</a>
+    <a href="{{ url_for('sims.store') }}" class="btn btn-primary">{{ icon('cart') }} Order Numbers</a>
   </div>
 </div>
 
@@ -55,8 +55,8 @@
   </div>
 </div>
 
-{# ---- Quick Buy + Activity ---- #}
-<div class="grid-sidebar-main dash-mid">
+{# ---- Quick Buy + US/Canada Dedicated Service ---- #}
+<div class="grid-2 dash-mid">
   {# Quick Buy #}
   <section class="card card-pad quick-buy"
            data-quick-buy
@@ -82,43 +82,49 @@
     </div>
 
     <button class="btn btn-primary btn-block btn-lg" data-qb-submit type="button">
-      Buy Number Now {{ icon('arrow-right') }}
+      Order Number Now {{ icon('arrow-right') }}
     </button>
     <p class="quick-buy-note">{{ icon('clock') }} Estimated delivery: <strong>Instant</strong></p>
   </section>
 
-  {# Activity Overview #}
-  <section class="card card-pad activity-card" data-tabs>
-    <div class="card-head">
-      <h2 class="card-title">Activity Overview</h2>
-      <div class="seg" role="group" aria-label="Activity range">
-        <button class="seg-btn is-active" data-tab="7d" type="button">7D</button>
-        <button class="seg-btn" data-tab="30d" type="button">30D</button>
+  {# US / Canada Guaranteed Lines Feature Card #}
+  <section class="card card-pad us-ca-feature-card">
+    <div class="feature-card-tag">
+      <span class="badge badge-brand">{{ icon('shield') }} Dedicated Lines</span>
+      <span class="badge badge-success">99.8% Success</span>
+    </div>
+    <h2 class="feature-card-title">Order US &amp; Canada Numbers</h2>
+    <p class="feature-card-desc">
+      Ultra-reliable Tier-1 cellular lines (AT&amp;T, T-Mobile, Verizon, Rogers).
+      Screened specifically for <strong>WhatsApp, WhatsApp Business, Google, and Banking</strong> with guaranteed unbanned status.
+    </p>
+
+    <div class="feature-badges-grid">
+      <div class="feat-pill">
+        <span class="feat-ico">{{ icon('check') }}</span>
+        <span>WhatsApp Unbanned Guarantee</span>
+      </div>
+      <div class="feat-pill">
+        <span class="feat-ico">{{ icon('check') }}</span>
+        <span>Real Non-VoIP Carriers</span>
+      </div>
+      <div class="feat-pill">
+        <span class="feat-ico">{{ icon('check') }}</span>
+        <span>Instant Auto-Refund if No SMS</span>
+      </div>
+      <div class="feat-pill">
+        <span class="feat-ico">{{ icon('check') }}</span>
+        <span>Private Dedicated Lines</span>
       </div>
     </div>
 
-    {% for range_key in ['7d', '30d'] %}
-    <div class="chart {{ 'hidden' if range_key == '30d' else '' }}" data-panel="{{ range_key }}">
-      <div class="chart-bars">
-        {% for pt in activity[range_key] %}
-        <div class="chart-col" title="{{ pt.label }}: {{ pt.total }} purchased, {{ pt.done }} completed">
-          <span class="bar" style="height: {{ pt.total }}%">
-            <span class="bar-fill" style="height: {{ (pt.done / pt.total * 100)|round(1) }}%"></span>
-          </span>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="chart-axis">
-        {% for pt in activity[range_key] %}
-        <span class="chart-axis-label">{{ pt.label }}</span>
-        {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-
-    <div class="chart-legend">
-      <span class="chart-legend-item"><span class="dot dot-soft"></span> Purchased</span>
-      <span class="chart-legend-item"><span class="dot dot-solid"></span> Completed</span>
+    <div class="feature-card-actions">
+      <a href="{{ url_for('sims.us_canada') }}" class="btn btn-primary btn-lg">
+        Order US / Canada Numbers {{ icon('arrow-right') }}
+      </a>
+      <a href="{{ url_for('sims.store') }}" class="btn btn-secondary">
+        Browse All Countries
+      </a>
     </div>
   </section>
 </div>

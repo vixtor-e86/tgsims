@@ -1,0 +1,202 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Order US &amp; Canada Numbers | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head">
+  <div>
+    <div class="pill-badge-row" style="margin-bottom:var(--sp-2);">
+      <span class="badge badge-brand">{{ icon('shield') }} Dedicated Carrier Lines</span>
+      <span class="badge badge-success">{{ icon('check') }} 99.8% Success Rate</span>
+      <span class="badge badge-neutral">{{ icon('refresh') }} Auto-Refund Guarantee</span>
+    </div>
+    <h1 class="page-title">Order US &amp; Canada Numbers</h1>
+    <p class="page-subtitle">Real non-VoIP cellular numbers screened specifically for WhatsApp, Google, and banking verification.</p>
+  </div>
+</div>
+
+<div class="grid-main-aside buy-grid"
+     data-usca
+     data-config='{{ config|tojson }}'
+     data-endpoint="{{ url_for('api.purchase_us_canada') }}">
+
+  {# ---- Left column: selection steps ---- #}
+  <div>
+    {# Step 1: Select Country #}
+    <section class="card card-pad buy-step">
+      <div class="step-head">
+        <div class="step-head-title">
+          <span class="step-num">1</span>
+          <h2 class="step-title">Select Country</h2>
+        </div>
+      </div>
+      <div class="usca-country-grid">
+        {% for c in config.countries %}
+        <button type="button"
+                class="usca-country-card {% if loop.first %}is-selected{% endif %}"
+                data-usca-country="{{ c.country_code }}">
+          <span class="usca-country-flag">{{ c.flag }}</span>
+          <div class="usca-country-meta">
+            <span class="usca-country-name">{{ c.country_name }}</span>
+            <span class="usca-country-dial">{{ c.dial }} &bull; {{ c.tag }}</span>
+          </div>
+          <span class="usca-country-check">{{ icon('check') }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# Step 2: Select Package & Reliability Tier #}
+    <section class="card card-pad buy-step">
+      <div class="step-head">
+        <div class="step-head-title">
+          <span class="step-num">2</span>
+          <h2 class="step-title">Select Reliability Package</h2>
+        </div>
+      </div>
+      <div class="pkg-grid">
+        {% for p in config.packages %}
+        <div class="pkg-card {% if p.id == 'whatsapp_guaranteed' %}is-selected is-featured{% endif %}"
+             data-usca-pkg="{{ p.id }}"
+             data-usd="{{ p.price_usd }}">
+          <div class="pkg-head">
+            <span class="badge {{ p.badge_class }}">{{ p.badge }}</span>
+            <span class="pkg-rate">{{ p.success_rate }}% Success</span>
+          </div>
+          <h3 class="pkg-title">{{ p.name }}</h3>
+          <p class="pkg-desc">{{ p.description }}</p>
+          <ul class="pkg-features">
+            {% for f in p.features %}
+            <li>{{ icon('check') }} <span>{{ f }}</span></li>
+            {% endfor %}
+          </ul>
+          <div class="pkg-price-row">
+            <span class="pkg-price-label">Price per SIM</span>
+            <span class="pkg-price-val" data-usd="{{ p.price_usd }}">
+              ₦{{ '{:,.2f}'.format(p.price_usd * NGN_PER_USD) }}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# Step 3: Select Carrier Server Line #}
+    <section class="card card-pad buy-step">
+      <div class="step-head">
+        <div class="step-head-title">
+          <span class="step-num">3</span>
+          <h2 class="step-title">Select Carrier Line</h2>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label class="label label-muted" for="carrier-select">Select routing line or use Express Auto-Select</label>
+        <select class="select select-lg" id="carrier-select" data-usca-provider>
+          {% for pr in config.providers %}
+          <option value="{{ pr.id }}" {% if loop.first %}selected{% endif %}>
+            {{ pr.name }} &bull; {{ pr.carrier }} &mdash; {{ pr.badge }}
+          </option>
+          {% endfor %}
+        </select>
+        <p class="text-dim" style="font-size:var(--fs-xs);margin-top:var(--sp-2);">
+          All lines route exclusively through tier-1 North American wireless networks.
+        </p>
+      </div>
+    </section>
+
+    {# Step 4: Select Service #}
+    <section class="card card-pad buy-step">
+      <div class="step-head">
+        <div class="step-head-title">
+          <span class="step-num">4</span>
+          <h2 class="step-title">Select Service</h2>
+        </div>
+        <div class="input-group step-search">
+          <span class="input-icon">{{ icon('search') }}</span>
+          <input class="input" type="search" placeholder="Search service (e.g. WhatsApp, Google)..."
+                 data-usca-service-search aria-label="Search service">
+        </div>
+      </div>
+      <div class="tile-grid-scroll">
+        <div class="tile-grid" data-usca-service-grid>
+          {# Generated dynamically by us_canada.js #}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  {# ---- Right column: review & purchase ---- #}
+  <aside>
+    <section class="card card-pad review-card">
+      <div class="step-head-title" style="margin-bottom: var(--sp-5);">
+        <span class="step-num">{{ icon('shield') }}</span>
+        <h2 class="step-title">Review &amp; Purchase</h2>
+      </div>
+
+      <div class="review-rows">
+        <div class="review-row">
+          <span class="k">Country</span>
+          <span class="v" data-review-country>
+            <span class="flag-badge"><i>U</i><i>S</i></span>
+            <span>United States (+1)</span>
+          </span>
+        </div>
+        <div class="review-row">
+          <span class="k">Package</span>
+          <span class="v" data-review-pkg>Ultra Clean WhatsApp Line</span>
+        </div>
+        <div class="review-row">
+          <span class="k">Carrier Line</span>
+          <span class="v" data-review-line>Express Dynamic Line</span>
+        </div>
+        <div class="review-row">
+          <span class="k">Service</span>
+          <span class="v" data-review-service>WhatsApp</span>
+        </div>
+        <div class="review-row">
+          <span class="k">Status Screen</span>
+          <span class="badge badge-success" data-review-screen>Unbanned Guaranteed</span>
+        </div>
+        <div class="review-row">
+          <span class="k">SMS Delivery</span>
+          <span class="badge badge-brand" data-review-delivery>Instant Cellular</span>
+        </div>
+      </div>
+
+      <div class="review-total">
+        <span class="review-total-label">Total Price</span>
+        <span class="review-total-value" data-review-price data-usd="2.50">₦4,000.00</span>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" data-usca-submit type="button">
+        {{ icon('cart') }} Order Number Now
+      </button>
+      <p class="review-secure">{{ icon('lock') }} Secure Wallet Payment &bull; Instant Delivery</p>
+    </section>
+  </aside>
+</div>
+
+{# ---- Why choose section ---- #}
+<section class="buy-why">
+  <hr class="divider">
+  <h2 class="buy-why-title">Why choose {{ BRAND }} for US &amp; Canada?</h2>
+  <div class="why-grid">
+    {% set why_tint = ['why-teal', 'why-blue', 'why-amber', 'why-dark'] %}
+    {% for w in why %}
+    <div class="why-item">
+      <span class="icon-tile {{ why_tint[loop.index0 % 4] }}">{{ icon(w.icon) }}</span>
+      <div>
+        <div class="why-h">{{ w.title }}</div>
+        <div class="why-t">{{ w.text }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="buy-powered">High-Availability Cellular Infrastructure &bull; {{ BRAND }}</p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/us_canada.js') }}"></script>
+{% endblock %}
