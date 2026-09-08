@@ -68,13 +68,11 @@
 
     var countryCards = root.querySelectorAll("[data-usca-country]");
     var pkgCards = root.querySelectorAll("[data-usca-pkg]");
-    var providerSelect = root.querySelector("[data-usca-provider]");
     var serviceGrid = root.querySelector("[data-usca-service-grid]");
     var serviceSearch = root.querySelector("[data-usca-service-search]");
 
     var reviewCountry = root.querySelector("[data-review-country]");
     var reviewPkg = root.querySelector("[data-review-pkg]");
-    var reviewLine = root.querySelector("[data-review-line]");
     var reviewService = root.querySelector("[data-review-service]");
     var reviewScreen = root.querySelector("[data-review-screen]");
     var reviewPrice = root.querySelector("[data-review-price]");
@@ -145,10 +143,6 @@
         reviewPkg.textContent = state.pkg.name;
       }
 
-      if (reviewLine && state.provider) {
-        reviewLine.textContent = state.provider.name;
-      }
-
       if (reviewService && state.service) {
         reviewService.textContent = state.service.name;
       }
@@ -213,16 +207,6 @@
         updateReview();
       });
     });
-
-    /* ---- Events: Provider line change ---- */
-    if (providerSelect) {
-      providerSelect.addEventListener("change", function () {
-        var provId = providerSelect.value;
-        var pr = providers.filter(function (x) { return x.id === provId; })[0];
-        if (pr) state.provider = pr;
-        updateReview();
-      });
-    }
 
     /* ---- Events: Service selection ---- */
     if (serviceGrid) {

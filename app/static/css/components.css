@@ -173,6 +173,13 @@
   border-radius: var(--r-full);
   line-height: 1;
 }
+.badge svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
 .badge-dot::before {
   content: "";
   width: 6px; height: 6px;

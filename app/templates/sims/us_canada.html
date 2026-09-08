@@ -7,7 +7,7 @@
 <div class="page-head">
   <div>
     <div class="pill-badge-row" style="margin-bottom:var(--sp-2);">
-      <span class="badge badge-brand">{{ icon('shield') }} Dedicated Carrier Lines</span>
+      <span class="badge badge-brand">{{ icon('shield') }} Dedicated Cellular</span>
       <span class="badge badge-success">{{ icon('check') }} 99.8% Success Rate</span>
       <span class="badge badge-neutral">{{ icon('refresh') }} Auto-Refund Guarantee</span>
     </div>
@@ -82,34 +82,11 @@
       </div>
     </section>
 
-    {# Step 3: Select Carrier Server Line #}
+    {# Step 3: Select Service #}
     <section class="card card-pad buy-step">
       <div class="step-head">
         <div class="step-head-title">
           <span class="step-num">3</span>
-          <h2 class="step-title">Select Carrier Line</h2>
-        </div>
-      </div>
-      <div class="field" style="margin-bottom:0;">
-        <label class="label label-muted" for="carrier-select">Select routing line or use Express Auto-Select</label>
-        <select class="select select-lg" id="carrier-select" data-usca-provider>
-          {% for pr in config.providers %}
-          <option value="{{ pr.id }}" {% if loop.first %}selected{% endif %}>
-            {{ pr.name }} &bull; {{ pr.carrier }} &mdash; {{ pr.badge }}
-          </option>
-          {% endfor %}
-        </select>
-        <p class="text-dim" style="font-size:var(--fs-xs);margin-top:var(--sp-2);">
-          All lines route exclusively through tier-1 North American wireless networks.
-        </p>
-      </div>
-    </section>
-
-    {# Step 4: Select Service #}
-    <section class="card card-pad buy-step">
-      <div class="step-head">
-        <div class="step-head-title">
-          <span class="step-num">4</span>
           <h2 class="step-title">Select Service</h2>
         </div>
         <div class="input-group step-search">
@@ -145,10 +122,6 @@
         <div class="review-row">
           <span class="k">Package</span>
           <span class="v" data-review-pkg>Ultra Clean WhatsApp Line</span>
-        </div>
-        <div class="review-row">
-          <span class="k">Carrier Line</span>
-          <span class="v" data-review-line>Express Dynamic Line</span>
         </div>
         <div class="review-row">
           <span class="k">Service</span>
