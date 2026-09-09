@@ -107,9 +107,11 @@
         if (window.toast) window.toast("Pick a country and service first.", "error");
         return;
       }
+      var origHtml = submit.innerHTML;
       submit.disabled = true;
       submit.classList.add("is-loading");
       submit.setAttribute("aria-busy", "true");
+      submit.innerHTML = '<span class="spinner"></span> <span>Ordering Number...</span>';
 
       var payload = {
         country_code: country.country_code,
@@ -128,6 +130,7 @@
         })
         .then(function (r) {
           if (!r.ok) throw new Error(r.data.message || "Could not complete purchase.");
+          submit.innerHTML = '<span class="spinner"></span> <span>Number Allocated! Redirecting...</span>';
           if (window.toast) window.toast(r.data.message || "Number ordered successfully!", "success");
           setTimeout(function () {
             window.location.href = "/sims/my-sims";
@@ -135,11 +138,10 @@
         })
         .catch(function (err) {
           if (window.toast) window.toast(err.message || "Something went wrong. Try again.", "error");
-        })
-        .then(function () {
           submit.disabled = false;
           submit.classList.remove("is-loading");
           submit.removeAttribute("aria-busy");
+          submit.innerHTML = origHtml;
         });
     });
 

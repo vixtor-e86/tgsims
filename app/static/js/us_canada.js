@@ -238,9 +238,11 @@
       submit.addEventListener("click", function () {
         if (submit.disabled || !state.country || !state.pkg || !state.service) return;
 
+        var origHtml = submit.innerHTML;
         submit.disabled = true;
         submit.classList.add("is-loading");
         submit.setAttribute("aria-busy", "true");
+        submit.innerHTML = '<span class="spinner"></span> <span>Ordering Number...</span>';
 
         var payload = {
           country_code: state.country.country_code,
@@ -265,6 +267,7 @@
           })
           .then(function (r) {
             if (!r.ok) throw new Error(r.data.message || "Could not allocate number.");
+            submit.innerHTML = '<span class="spinner"></span> <span>Number Activated! Redirecting...</span>';
             if (window.toast) window.toast(r.data.message || "Number ordered successfully!", "success");
             setTimeout(function () {
               window.location.href = r.data.redirect_url || "/sims/my-sims";
@@ -275,6 +278,7 @@
             submit.disabled = false;
             submit.classList.remove("is-loading");
             submit.removeAttribute("aria-busy");
+            submit.innerHTML = origHtml;
           });
       });
     }

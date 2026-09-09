@@ -56,8 +56,16 @@
 
 .btn.is-loading {
   opacity: 0.88;
-  cursor: wait;
-  pointer-events: none;
+  cursor: wait !important;
+  pointer-events: none !important;
+}
+.btn .spinner {
+  margin-right: 8px;
+}
+.btn-lg .spinner {
+  width: 18px;
+  height: 18px;
+  border-width: 2.2px;
 }
 
 .btn-primary {

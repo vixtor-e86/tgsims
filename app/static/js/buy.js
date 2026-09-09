@@ -195,9 +195,11 @@
 
     submit.addEventListener("click", function () {
       if (submit.disabled || !state.country || !state.service) return;
+      var origHtml = submit.innerHTML;
       submit.disabled = true;
       submit.classList.add("is-loading");
       submit.setAttribute("aria-busy", "true");
+      submit.innerHTML = '<span class="spinner"></span> <span>Ordering Number...</span>';
 
       fetch(endpoint, {
         method: "POST",
@@ -218,14 +220,16 @@
         })
         .then(function (r) {
           if (!r.ok) throw new Error(r.data.message || "Could not complete purchase.");
+          submit.innerHTML = '<span class="spinner"></span> <span>Number Allocated! Redirecting...</span>';
           if (window.toast) window.toast(r.data.message || "Number purchased!", "success");
-          setTimeout(function () { window.location.href = "/sims/my-sims"; }, 900);
+          setTimeout(function () { window.location.href = "/sims/my-sims"; }, 700);
         })
         .catch(function (err) {
           if (window.toast) window.toast(err.message || "Something went wrong. Try again.", "error");
           submit.disabled = false;
           submit.classList.remove("is-loading");
           submit.removeAttribute("aria-busy");
+          submit.innerHTML = origHtml;
         });
     });
 
