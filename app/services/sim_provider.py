@@ -211,6 +211,24 @@ class SIMProviderService:
     _client = None
 
     @classmethod
+    def get_textverified_client(cls):
+        import os
+        try:
+            from textverified import TextVerified
+        except ImportError:
+            return None
+        
+        api_key = os.getenv('TEXTVERIFIED_API_KEY')
+        api_username = os.getenv('TEXTVERIFIED_USERNAME')
+        if not api_key or not api_username:
+            return None
+        try:
+            return TextVerified(api_key=api_key, api_username=api_username)
+        except Exception as e:
+            print(f"[SIMProviderService] Error initializing TextVerified: {e}")
+            return None
+
+    @classmethod
     def get_client(cls) -> FiveSimClient:
         if cls._client is None:
             cls._client = FiveSimClient()
@@ -384,7 +402,33 @@ class SIMProviderService:
                     prov_order_id = o.get('provider_order_id')
                     break
 
-        if client.is_configured and prov_order_id and not prov_order_id.startswith('SIM-'):
+        if prov_order_id and prov_order_id.startswith('TXTV-'):
+            tv_id = prov_order_id[5:]
+            tv_client = cls.get_textverified_client()
+            if tv_client:
+                try:
+                    verification = tv_client.verifications.details(tv_id)
+                    sms_list = tv_client.sms.list(data=verification)
+                    items = list(sms_list)
+                    if items:
+                        sms = items[0]
+                        return {
+                            'has_sms': True,
+                            'sms_code': sms.parsed_code,
+                            'full_sms': sms.sms_content,
+                            'provider_sms_id': sms.id
+                        }
+                    else:
+                        return {
+                            'has_sms': False,
+                            'sms_code': None,
+                            'full_sms': None,
+                            'status': verification.state.value if hasattr(verification.state, 'value') else str(verification.state)
+                        }
+                except Exception as e:
+                    print(f"[SIMProviderService] TextVerified check_sms error: {e}")
+
+        if client.is_configured and prov_order_id and not prov_order_id.startswith('SIM-') and not prov_order_id.startswith('USCA-'):
             check_res = client.check_order(prov_order_id)
             if check_res.get('has_sms'):
                 return check_res
@@ -408,9 +452,21 @@ class SIMProviderService:
 
     @classmethod
     def cancel_order(cls, provider_order_id: str) -> dict:
-        """Cancels order with 5sim."""
+        """Cancels order with provider."""
+        if provider_order_id and provider_order_id.startswith('TXTV-'):
+            tv_id = provider_order_id[5:]
+            tv_client = cls.get_textverified_client()
+            if tv_client:
+                try:
+                    verification = tv_client.verifications.details(tv_id)
+                    verification.cancel()
+                    return {'success': True}
+                except Exception as e:
+                    print(f"[SIMProviderService] TextVerified cancel_order error: {e}")
+                    return {'success': False, 'message': str(e)}
+
         client = cls.get_client()
-        if client.is_configured and provider_order_id and not provider_order_id.startswith('SIM-'):
+        if client.is_configured and provider_order_id and not provider_order_id.startswith('SIM-') and not provider_order_id.startswith('USCA-'):
             return client.cancel_order(provider_order_id)
         return {'success': True}
 
@@ -443,7 +499,6 @@ class SIMProviderService:
             'tagline': 'Basic numbers that might not pass WhatsApp verification.',
             'description': 'Standard pool. Might not pass through WhatsApp verification, but works for general platforms.',
             'features': ['Instant auto-cancellation if no code', 'General carrier rotation', '1-3 min average code arrival'],
-            'price_usd': 1.25,
         },
         {
             'id': 'reliable_non_voip',
@@ -455,7 +510,6 @@ class SIMProviderService:
             'tagline': 'Highly reliable non-VoIP numbers.',
             'description': 'The most reliable, non-VoIP numbers. Highly recommended for WhatsApp and important services.',
             'features': ['Guaranteed unbanned on WhatsApp', 'Clean unflagged number history', 'Instant SMS code delivery', 'Full refund if SMS does not arrive'],
-            'price_usd': 2.50,
         },
     ]
 
@@ -467,6 +521,7 @@ class SIMProviderService:
             'description': 'Automatically routes through the carrier line with lowest latency and highest real-time delivery rate.',
             'badge': 'Fastest Delivery',
             'operator': 'any',
+            'price_usd': 1.50,
         },
         {
             'id': 'titan_att',
@@ -475,6 +530,7 @@ class SIMProviderService:
             'description': 'Direct connection to AT&T cellular towers across major US metropolitan regions.',
             'badge': 'AT&T Cellular',
             'operator': 'att',
+            'price_usd': 1.85,
         },
         {
             'id': 'apex_tmo',
@@ -483,6 +539,7 @@ class SIMProviderService:
             'description': 'High-reputation T-Mobile wireless carrier blocks with rapid SMS routing.',
             'badge': 'T-Mobile Direct',
             'operator': 'tmobile',
+            'price_usd': 1.85,
         },
         {
             'id': 'summit_vzw',
@@ -491,30 +548,31 @@ class SIMProviderService:
             'description': 'Verizon cellular lines known for highest banking, WhatsApp, and Google pass rates.',
             'badge': 'Verizon Direct',
             'operator': 'verizon',
+            'price_usd': 2.50,
         },
     ]
 
     US_CANADA_SERVICES = [
-        {'id': 'whatsapp', 'name': 'WhatsApp', 'icon': 'chat', 'category': 'Messaging'},
-        {'id': 'whatsapp_business', 'name': 'WhatsApp Business', 'icon': 'chat', 'category': 'Business'},
-        {'id': 'telegram', 'name': 'Telegram', 'icon': 'send', 'category': 'Messaging'},
-        {'id': 'google', 'name': 'Google / Gmail', 'icon': 'mail', 'category': 'Email & Tech'},
-        {'id': 'openai', 'name': 'OpenAI / ChatGPT', 'icon': 'sparkles', 'category': 'AI'},
-        {'id': 'claude', 'name': 'Claude AI', 'icon': 'sparkles', 'category': 'AI'},
-        {'id': 'bank', 'name': 'Bank / Zelle / Cash App', 'icon': 'bank', 'category': 'FinTech'},
-        {'id': 'apple', 'name': 'Apple ID / iCloud', 'icon': 'shield', 'category': 'Tech'},
-        {'id': 'paypal', 'name': 'PayPal', 'icon': 'card', 'category': 'FinTech'},
-        {'id': 'tinder', 'name': 'Tinder', 'icon': 'flame', 'category': 'Dating'},
-        {'id': 'bumble', 'name': 'Bumble', 'icon': 'flame', 'category': 'Dating'},
-        {'id': 'twitter', 'name': 'Twitter / X', 'icon': 'globe', 'category': 'Social'},
-        {'id': 'instagram', 'name': 'Instagram', 'icon': 'camera', 'category': 'Social'},
-        {'id': 'tiktok', 'name': 'TikTok', 'icon': 'play', 'category': 'Social'},
-        {'id': 'amazon', 'name': 'Amazon', 'icon': 'cart', 'category': 'Shopping'},
-        {'id': 'uber', 'name': 'Uber / Lyft', 'icon': 'map-pin', 'category': 'Travel'},
-        {'id': 'facebook', 'name': 'Facebook', 'icon': 'globe', 'category': 'Social'},
-        {'id': 'craigslist', 'name': 'Craigslist', 'icon': 'list', 'category': 'Marketplace'},
-        {'id': 'discord', 'name': 'Discord', 'icon': 'message-circle', 'category': 'Community'},
-        {'id': 'other', 'name': 'Other Platforms', 'icon': 'sim', 'category': 'General'},
+        {'id': 'whatsapp', 'name': 'WhatsApp', 'icon': 'chat', 'category': 'Messaging', 'price_usd': 1.00},
+        {'id': 'whatsapp_business', 'name': 'WhatsApp Business', 'icon': 'chat', 'category': 'Business', 'price_usd': 1.50},
+        {'id': 'telegram', 'name': 'Telegram', 'icon': 'send', 'category': 'Messaging', 'price_usd': 0.80},
+        {'id': 'google', 'name': 'Google / Gmail', 'icon': 'mail', 'category': 'Email & Tech', 'price_usd': 0.50},
+        {'id': 'openai', 'name': 'OpenAI / ChatGPT', 'icon': 'sparkles', 'category': 'AI', 'price_usd': 0.80},
+        {'id': 'claude', 'name': 'Claude AI', 'icon': 'sparkles', 'category': 'AI', 'price_usd': 0.80},
+        {'id': 'bank', 'name': 'Bank / Zelle / Cash App', 'icon': 'bank', 'category': 'FinTech', 'price_usd': 1.50},
+        {'id': 'apple', 'name': 'Apple ID / iCloud', 'icon': 'shield', 'category': 'Tech', 'price_usd': 0.50},
+        {'id': 'paypal', 'name': 'PayPal', 'icon': 'card', 'category': 'FinTech', 'price_usd': 0.80},
+        {'id': 'tinder', 'name': 'Tinder', 'icon': 'flame', 'category': 'Dating', 'price_usd': 0.80},
+        {'id': 'bumble', 'name': 'Bumble', 'icon': 'flame', 'category': 'Dating', 'price_usd': 0.80},
+        {'id': 'twitter', 'name': 'Twitter / X', 'icon': 'globe', 'category': 'Social', 'price_usd': 0.50},
+        {'id': 'instagram', 'name': 'Instagram', 'icon': 'camera', 'category': 'Social', 'price_usd': 0.50},
+        {'id': 'tiktok', 'name': 'TikTok', 'icon': 'play', 'category': 'Social', 'price_usd': 0.50},
+        {'id': 'amazon', 'name': 'Amazon', 'icon': 'cart', 'category': 'Shopping', 'price_usd': 0.50},
+        {'id': 'uber', 'name': 'Uber / Lyft', 'icon': 'map-pin', 'category': 'Travel', 'price_usd': 0.50},
+        {'id': 'facebook', 'name': 'Facebook', 'icon': 'globe', 'category': 'Social', 'price_usd': 0.50},
+        {'id': 'craigslist', 'name': 'Craigslist', 'icon': 'list', 'category': 'Marketplace', 'price_usd': 0.50},
+        {'id': 'discord', 'name': 'Discord', 'icon': 'message-circle', 'category': 'Community', 'price_usd': 0.50},
+        {'id': 'other', 'name': 'Other Platforms', 'icon': 'sim', 'category': 'General', 'price_usd': 0.50},
     ]
 
     @classmethod
@@ -558,8 +616,6 @@ class SIMProviderService:
 
         # Match package
         pkg = next((p for p in cls.US_CANADA_PACKAGES if p['id'] == package_id), cls.US_CANADA_PACKAGES[0])
-        price = pkg['price_usd']
-
         # Match provider / operator
         prov = next((pr for pr in cls.US_CANADA_PROVIDERS if pr['id'] == provider_id), cls.US_CANADA_PROVIDERS[0])
         operator = prov.get('operator', 'any')
@@ -572,6 +628,11 @@ class SIMProviderService:
         svc_lookup = svc_clean.lower().split('/')[0].strip()
         s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
         service_code = s_meta['code'] if s_meta else svc_lookup.replace(' ', '').lower()
+        
+        # Calculate price based on provider and service
+        svc_config = next((s for s in cls.US_CANADA_SERVICES if s['name'].lower() == svc_clean.lower() or s['id'] == service_code), None)
+        svc_price = svc_config.get('price_usd', 0.50) if svc_config else 0.50
+        price = prov.get('price_usd', 1.50) + svc_price
 
         # 1. Check if external secondary US/CA API is configured in env
         secondary_api_key = os.getenv('US_CA_API_KEY')
@@ -579,8 +640,43 @@ class SIMProviderService:
             # Pluggable hook for dedicated direct carrier SIM API
             pass
 
-        # 2. Try primary client with selected operator if standard or premium
-        if client.is_configured and package_id == 'standard_pool':
+        # 2. TextVerified Integration for Reliable Package
+        if package_id == 'reliable_non_voip':
+            tv_client = cls.get_textverified_client()
+            if tv_client:
+                from textverified import NewVerificationRequest, ReservationCapability
+                # Try to map service code or fallback
+                tv_service_name = service_code
+                if service_code == 'google': tv_service_name = 'google'
+                elif service_code == 'whatsapp': tv_service_name = 'whatsapp'
+                
+                try:
+                    request = NewVerificationRequest(
+                        service_name=tv_service_name,
+                        capability=ReservationCapability.SMS,
+                    )
+                    verification = tv_client.verifications.create(request)
+                    return {
+                        'success': True,
+                        'order_reference': order_ref,
+                        'phone_number': verification.number,
+                        'provider_order_id': f"TXTV-{verification.id}",
+                        'country_code': cc_clean,
+                        'country_name': country_name,
+                        'service_name': f"{svc_clean} ({pkg['name']})",
+                        'package_id': pkg['id'],
+                        'package_name': pkg['name'],
+                        'provider_line': prov['name'],
+                        'price': price,
+                        'status': 'pending',
+                    }
+                except Exception as e:
+                    print(f"[SIMProviderService] TextVerified Error: {e}")
+                    # Fallback to mock generation if API fails for some reason
+                    pass
+
+        # 3. Try primary client with selected operator if basic pool
+        if client.is_configured and package_id == 'basic_pool':
             buy_res = client.buy_activation(country_slug=country_slug, service_code=service_code, operator=operator)
             if buy_res.get('success'):
                 return {
@@ -598,8 +694,7 @@ class SIMProviderService:
                     'status': 'pending',
                 }
 
-        # 3. Dedicated clean line generation for WhatsApp Guaranteed & VIP Private lines
-        # Produces verified non-recycled cellular numbers with valid North American area codes
+        # 4. Fallback: Mock generation if APIs are unavailable
         us_area_codes = ['415', '212', '312', '404', '713', '206', '512', '305', '617', '702', '303']
         
         area = random.choice(us_area_codes)

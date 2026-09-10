@@ -34,8 +34,7 @@
       <div class="pkg-grid">
         {% for p in config.packages %}
         <div class="pkg-card {% if p.is_featured %}is-selected is-featured{% endif %}"
-             data-usca-pkg="{{ p.id }}"
-             data-usd="{{ p.price_usd }}">
+             data-usca-pkg="{{ p.id }}">
           <div class="pkg-head">
             <span class="badge {{ p.badge_class }}">{{ p.badge }}</span>
             <span class="pkg-rate">{{ p.success_rate }}% Success</span>
@@ -47,12 +46,6 @@
             <li>{{ icon('check') }} <span>{{ f }}</span></li>
             {% endfor %}
           </ul>
-          <div class="pkg-price-row">
-            <span class="pkg-price-label">Price per SIM</span>
-            <span class="pkg-price-val" data-usd="{{ p.price_usd }}">
-              ₦{{ '{:,.2f}'.format(p.price_usd * NGN_PER_USD) }}
-            </span>
-          </div>
         </div>
         {% endfor %}
       </div>
@@ -71,7 +64,7 @@
         <button type="button" class="usca-country-card {% if loop.first %}is-selected{% endif %}" data-usca-provider="{{ pr.id }}">
           <div class="usca-country-meta">
             <span class="usca-country-name">{{ pr.name }}</span>
-            <span class="usca-country-dial" style="margin-top: 4px;">{{ pr.carrier }} &bull; {{ pr.badge }}</span>
+            <span class="usca-country-dial" style="margin-top: 4px;">{{ pr.carrier }} &bull; Base Price: <span data-usd="{{ pr.price_usd }}">₦{{ '{:,.2f}'.format(pr.price_usd * NGN_PER_USD) }}</span></span>
           </div>
           <span class="usca-country-check">{{ icon('check') }}</span>
         </button>

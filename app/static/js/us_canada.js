@@ -80,15 +80,21 @@
 
     var state = {
       country: countries[0] || { country_code: "US", country_name: "United States" },
-      pkg: packages[0] || { id: "reliable_non_voip", name: "Reliable Package", price_usd: 2.50 },
-      provider: providers[0] || { id: "auto", name: "Express Dynamic Line" },
-      service: services[0] || { id: "whatsapp", name: "WhatsApp" }
+      pkg: packages[0] || { id: "reliable_non_voip", name: "Reliable Package" },
+      provider: providers[0] || { id: "auto", name: "Express Dynamic Line", price_usd: 1.50 },
+      service: services[0] || { id: "whatsapp", name: "WhatsApp", price_usd: 1.00 }
     };
 
     function priceRender() {
       if (window.TgCurrency && window.TgCurrency.render) {
         window.TgCurrency.render(root);
       }
+    }
+
+    function calculatePrice(svc) {
+      var sPrice = (svc && svc.price_usd) ? svc.price_usd : 0.50;
+      var pPrice = (state.provider && state.provider.price_usd) ? state.provider.price_usd : 1.50;
+      return sPrice + pPrice;
     }
 
     /* ---- Render services grid ---- */
@@ -119,12 +125,14 @@
         if (state.service && state.service.id === s.id) {
           btn.classList.add("is-selected");
         }
+        
+        var currentPrice = calculatePrice(s);
 
         btn.innerHTML =
           '<span class="opt-tile-check">' + svg(G.check) + "</span>" +
           '<span class="svc-ico ' + vis.cls + '">' + glyph + "</span>" +
           '<span class="opt-tile-name">' + s.name + "</span>" +
-          '<span class="opt-tile-sub" data-usd="' + state.pkg.price_usd + '">' + state.pkg.price_usd + "</span>";
+          '<span class="opt-tile-sub" data-usd="' + currentPrice + '">' + currentPrice + "</span>";
 
         serviceGrid.appendChild(btn);
       });
@@ -156,8 +164,9 @@
         reviewScreen.textContent = state.pkg.badge;
       }
 
-      if (reviewPrice && state.pkg) {
-        reviewPrice.setAttribute("data-usd", String(state.pkg.price_usd));
+      if (reviewPrice && state.provider && state.service) {
+        var price = calculatePrice(state.service);
+        reviewPrice.setAttribute("data-usd", String(price));
       }
 
       if (submit) {
@@ -178,6 +187,13 @@
         providerCards.forEach(function (el) { el.classList.remove("is-selected"); });
         card.classList.add("is-selected");
 
+        // Re-render prices in service grid
+        if (serviceSearch) {
+          renderServices(serviceSearch.value);
+        } else {
+          renderServices("");
+        }
+
         updateReview();
       });
     });
@@ -192,13 +208,6 @@
 
         pkgCards.forEach(function (el) { el.classList.remove("is-selected"); });
         card.classList.add("is-selected");
-
-        // Update tile prices in the service grid
-        if (serviceGrid) {
-          serviceGrid.querySelectorAll(".opt-tile-sub").forEach(function (sub) {
-            sub.setAttribute("data-usd", String(p.price_usd));
-          });
-        }
 
         updateReview();
       });
@@ -246,7 +255,7 @@
           package_id: state.pkg.id,
           provider_id: state.provider ? state.provider.id : "auto",
           service_name: state.service.name,
-          price: state.pkg.price_usd
+          price: calculatePrice(state.service)
         };
 
         fetch(endpoint, {
