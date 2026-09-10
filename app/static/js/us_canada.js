@@ -63,10 +63,7 @@
 
     var countries = config.countries || [];
     var packages = config.packages || [];
-    var providers = config.providers || [];
-    var services = config.services || [];
 
-    var providerCards = root.querySelectorAll("[data-usca-provider]");
     var pkgCards = root.querySelectorAll("[data-usca-pkg]");
     var serviceGrid = root.querySelector("[data-usca-service-grid]");
     var serviceSearch = root.querySelector("[data-usca-service-search]");
@@ -80,10 +77,15 @@
 
     var state = {
       country: countries[0] || { country_code: "US", country_name: "United States" },
-      pkg: packages[0] || { id: "reliable_non_voip", name: "Reliable Package" },
-      provider: providers[0] || { id: "auto", name: "Express Dynamic Line", price_usd: 1.50 },
-      service: services[0] || { id: "whatsapp", name: "WhatsApp", price_usd: 1.00 }
+      pkg: packages[0] || { id: "basic_pool", name: "Basic Package", price_usd: 1.25, services: [] },
+      service: null
     };
+    
+    // Set initial services to the selected package's services
+    var currentServices = state.pkg.services || [];
+    if (currentServices.length > 0) {
+      state.service = currentServices[0];
+    }
 
     function priceRender() {
       if (window.TgCurrency && window.TgCurrency.render) {
@@ -91,10 +93,8 @@
       }
     }
 
-    function calculatePrice(svc) {
-      var sPrice = (svc && svc.price_usd) ? svc.price_usd : 0.50;
-      var pPrice = (state.provider && state.provider.price_usd) ? state.provider.price_usd : 1.50;
-      return sPrice + pPrice;
+    function calculatePrice() {
+      return state.pkg.price_usd || 1.25;
     }
 
     /* ---- Render services grid ---- */
@@ -102,7 +102,7 @@
       if (!serviceGrid) return;
       serviceGrid.innerHTML = "";
       var q = (filter || "").trim().toLowerCase();
-      var shown = services.filter(function (s) {
+      var shown = currentServices.filter(function (s) {
         return !q || s.name.toLowerCase().indexOf(q) > -1 || (s.category && s.category.toLowerCase().indexOf(q) > -1);
       });
 
@@ -126,7 +126,7 @@
           btn.classList.add("is-selected");
         }
         
-        var currentPrice = calculatePrice(s);
+        var currentPrice = calculatePrice();
 
         btn.innerHTML =
           '<span class="opt-tile-check">' + svg(G.check) + "</span>" +
@@ -148,11 +148,7 @@
       }
 
       if (reviewPkg && state.pkg) {
-        var pName = state.pkg.name;
-        if (state.provider) {
-          pName += " (" + state.provider.name + ")";
-        }
-        reviewPkg.textContent = pName;
+        reviewPkg.textContent = state.pkg.name;
       }
 
       if (reviewService && state.service) {
@@ -164,39 +160,17 @@
         reviewScreen.textContent = state.pkg.badge;
       }
 
-      if (reviewPrice && state.provider && state.service) {
-        var price = calculatePrice(state.service);
+      if (reviewPrice) {
+        var price = calculatePrice();
         reviewPrice.setAttribute("data-usd", String(price));
       }
 
       if (submit) {
-        submit.disabled = !(state.country && state.pkg && state.service && state.provider);
+        submit.disabled = !(state.country && state.pkg && state.service);
       }
 
       priceRender();
     }
-
-    /* ---- Events: Provider selection ---- */
-    providerCards.forEach(function (card) {
-      card.addEventListener("click", function () {
-        var code = card.getAttribute("data-usca-provider");
-        var p = providers.filter(function (x) { return x.id === code; })[0];
-        if (!p) return;
-        state.provider = p;
-
-        providerCards.forEach(function (el) { el.classList.remove("is-selected"); });
-        card.classList.add("is-selected");
-
-        // Re-render prices in service grid
-        if (serviceSearch) {
-          renderServices(serviceSearch.value);
-        } else {
-          renderServices("");
-        }
-
-        updateReview();
-      });
-    });
 
     /* ---- Events: Package selection ---- */
     pkgCards.forEach(function (card) {
@@ -205,9 +179,24 @@
         var p = packages.filter(function (x) { return x.id === pkgId; })[0];
         if (!p) return;
         state.pkg = p;
+        
+        currentServices = p.services || [];
+        if (currentServices.length > 0) {
+          // If the currently selected service exists in the new list, keep it. Else select first.
+          var existing = currentServices.filter(function(s) { return state.service && s.id === state.service.id; })[0];
+          state.service = existing || currentServices[0];
+        } else {
+          state.service = null;
+        }
 
         pkgCards.forEach(function (el) { el.classList.remove("is-selected"); });
         card.classList.add("is-selected");
+
+        if (serviceSearch) {
+          renderServices(serviceSearch.value);
+        } else {
+          renderServices("");
+        }
 
         updateReview();
       });
@@ -219,7 +208,7 @@
         var tile = e.target.closest(".opt-tile");
         if (!tile) return;
         var sId = tile.dataset.id;
-        var s = services.filter(function (x) { return x.id === sId; })[0];
+        var s = currentServices.filter(function (x) { return x.id === sId; })[0];
         if (!s) return;
         state.service = s;
 
@@ -253,9 +242,9 @@
           country_code: state.country.country_code,
           country_name: state.country.country_name,
           package_id: state.pkg.id,
-          provider_id: state.provider ? state.provider.id : "auto",
+          provider_id: "auto",
           service_name: state.service.name,
-          price: calculatePrice(state.service)
+          price: calculatePrice()
         };
 
         fetch(endpoint, {

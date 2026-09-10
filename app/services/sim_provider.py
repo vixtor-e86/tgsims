@@ -499,6 +499,7 @@ class SIMProviderService:
             'tagline': 'Basic numbers that might not pass WhatsApp verification.',
             'description': 'Standard pool. Might not pass through WhatsApp verification, but works for general platforms.',
             'features': ['Instant auto-cancellation if no code', 'General carrier rotation', '1-3 min average code arrival'],
+            'price_usd': 1.25,
         },
         {
             'id': 'reliable_non_voip',
@@ -506,10 +507,11 @@ class SIMProviderService:
             'badge': 'Recommended',
             'badge_class': 'badge-brand',
             'is_featured': True,
-            'success_rate': 99.4,
-            'tagline': 'Highly reliable non-VoIP numbers.',
-            'description': 'The most reliable, non-VoIP numbers. Highly recommended for WhatsApp and important services.',
-            'features': ['Guaranteed unbanned on WhatsApp', 'Clean unflagged number history', 'Instant SMS code delivery', 'Full refund if SMS does not arrive'],
+            'success_rate': 99,
+            'tagline': 'Highest verification success rate for critical platforms.',
+            'description': 'Verified Non-VoIP numbers from US major carriers. Ideal for WhatsApp, Banking, OpenAI, and more.',
+            'features': ['100% Non-VoIP guarantee', 'Bypass anti-fraud systems', 'Dedicated direct carrier routing'],
+            'price_usd': 2.50,
         },
     ]
 
@@ -552,48 +554,71 @@ class SIMProviderService:
         },
     ]
 
-    US_CANADA_SERVICES = [
-        {'id': 'whatsapp', 'name': 'WhatsApp', 'icon': 'chat', 'category': 'Messaging', 'price_usd': 1.00},
-        {'id': 'whatsapp_business', 'name': 'WhatsApp Business', 'icon': 'chat', 'category': 'Business', 'price_usd': 1.50},
-        {'id': 'telegram', 'name': 'Telegram', 'icon': 'send', 'category': 'Messaging', 'price_usd': 0.80},
-        {'id': 'google', 'name': 'Google / Gmail', 'icon': 'mail', 'category': 'Email & Tech', 'price_usd': 0.50},
-        {'id': 'openai', 'name': 'OpenAI / ChatGPT', 'icon': 'sparkles', 'category': 'AI', 'price_usd': 0.80},
-        {'id': 'claude', 'name': 'Claude AI', 'icon': 'sparkles', 'category': 'AI', 'price_usd': 0.80},
-        {'id': 'bank', 'name': 'Bank / Zelle / Cash App', 'icon': 'bank', 'category': 'FinTech', 'price_usd': 1.50},
-        {'id': 'apple', 'name': 'Apple ID / iCloud', 'icon': 'shield', 'category': 'Tech', 'price_usd': 0.50},
-        {'id': 'paypal', 'name': 'PayPal', 'icon': 'card', 'category': 'FinTech', 'price_usd': 0.80},
-        {'id': 'tinder', 'name': 'Tinder', 'icon': 'flame', 'category': 'Dating', 'price_usd': 0.80},
-        {'id': 'bumble', 'name': 'Bumble', 'icon': 'flame', 'category': 'Dating', 'price_usd': 0.80},
-        {'id': 'twitter', 'name': 'Twitter / X', 'icon': 'globe', 'category': 'Social', 'price_usd': 0.50},
-        {'id': 'instagram', 'name': 'Instagram', 'icon': 'camera', 'category': 'Social', 'price_usd': 0.50},
-        {'id': 'tiktok', 'name': 'TikTok', 'icon': 'play', 'category': 'Social', 'price_usd': 0.50},
-        {'id': 'amazon', 'name': 'Amazon', 'icon': 'cart', 'category': 'Shopping', 'price_usd': 0.50},
-        {'id': 'uber', 'name': 'Uber / Lyft', 'icon': 'map-pin', 'category': 'Travel', 'price_usd': 0.50},
-        {'id': 'facebook', 'name': 'Facebook', 'icon': 'globe', 'category': 'Social', 'price_usd': 0.50},
-        {'id': 'craigslist', 'name': 'Craigslist', 'icon': 'list', 'category': 'Marketplace', 'price_usd': 0.50},
-        {'id': 'discord', 'name': 'Discord', 'icon': 'message-circle', 'category': 'Community', 'price_usd': 0.50},
-        {'id': 'other', 'name': 'Other Platforms', 'icon': 'sim', 'category': 'General', 'price_usd': 0.50},
+    FIVESIM_US_SERVICES = [
+        {'id': 'whatsapp', 'name': 'WhatsApp', 'icon': 'chat', 'category': 'Messaging'},
+        {'id': 'whatsapp_business', 'name': 'WhatsApp Business', 'icon': 'chat', 'category': 'Business'},
+        {'id': 'telegram', 'name': 'Telegram', 'icon': 'send', 'category': 'Messaging'},
+        {'id': 'google', 'name': 'Google / Gmail', 'icon': 'mail', 'category': 'Email & Tech'},
+        {'id': 'openai', 'name': 'OpenAI / ChatGPT', 'icon': 'sparkles', 'category': 'AI'},
+        {'id': 'claude', 'name': 'Claude AI', 'icon': 'sparkles', 'category': 'AI'},
+        {'id': 'apple', 'name': 'Apple ID / iCloud', 'icon': 'shield', 'category': 'Tech'},
+        {'id': 'paypal', 'name': 'PayPal', 'icon': 'card', 'category': 'FinTech'},
+        {'id': 'tinder', 'name': 'Tinder', 'icon': 'flame', 'category': 'Dating'},
+        {'id': 'bumble', 'name': 'Bumble', 'icon': 'flame', 'category': 'Dating'},
+        {'id': 'twitter', 'name': 'Twitter / X', 'icon': 'globe', 'category': 'Social'},
+        {'id': 'instagram', 'name': 'Instagram', 'icon': 'camera', 'category': 'Social'},
+        {'id': 'tiktok', 'name': 'TikTok', 'icon': 'play', 'category': 'Social'},
+        {'id': 'amazon', 'name': 'Amazon', 'icon': 'cart', 'category': 'Shopping'},
+        {'id': 'uber', 'name': 'Uber / Lyft', 'icon': 'map-pin', 'category': 'Travel'},
+        {'id': 'facebook', 'name': 'Facebook', 'icon': 'globe', 'category': 'Social'},
+        {'id': 'craigslist', 'name': 'Craigslist', 'icon': 'list', 'category': 'Marketplace'},
+        {'id': 'discord', 'name': 'Discord', 'icon': 'message-circle', 'category': 'Community'},
+        {'id': 'other', 'name': 'Other Platforms', 'icon': 'sim', 'category': 'General'},
     ]
+
+    TEXTVERIFIED_SERVICES = [
+        {'id': 'whatsapp', 'name': 'WhatsApp', 'icon': 'chat', 'category': 'Messaging'},
+        {'id': 'google', 'name': 'Google / Gmail', 'icon': 'mail', 'category': 'Email & Tech'},
+        {'id': 'telegram', 'name': 'Telegram', 'icon': 'send', 'category': 'Messaging'},
+        {'id': 'openai', 'name': 'OpenAI / ChatGPT', 'icon': 'sparkles', 'category': 'AI'},
+        {'id': 'tinder', 'name': 'Tinder', 'icon': 'flame', 'category': 'Dating'},
+        {'id': 'paypal', 'name': 'PayPal', 'icon': 'card', 'category': 'FinTech'},
+        {'id': 'apple', 'name': 'Apple ID / iCloud', 'icon': 'shield', 'category': 'Tech'},
+        {'id': 'uber', 'name': 'Uber / Lyft', 'icon': 'map-pin', 'category': 'Travel'},
+        {'id': 'discord', 'name': 'Discord', 'icon': 'message-circle', 'category': 'Community'},
+        {'id': 'facebook', 'name': 'Facebook', 'icon': 'globe', 'category': 'Social'},
+        {'id': 'instagram', 'name': 'Instagram', 'icon': 'camera', 'category': 'Social'},
+        {'id': 'twitter', 'name': 'Twitter / X', 'icon': 'globe', 'category': 'Social'},
+        {'id': 'amazon', 'name': 'Amazon', 'icon': 'cart', 'category': 'Shopping'},
+    ]
+
+    US_CANADA_SERVICES = FIVESIM_US_SERVICES
 
     @classmethod
     def get_us_canada_config(cls) -> dict:
-        """Returns the packages, providers, countries and services for US/Canada portal."""
+        """Returns the packages, countries and services for US/Canada portal."""
         countries = [
             {
                 'country_code': 'US',
                 'country_name': 'United States',
                 'country_slug': 'usa',
                 'flag': '🇺🇸',
-                'dial': '+1',
-                'area_codes': '415, 212, 312, 404, 713, 206',
-                'tag': 'All 50 States',
+                'dial': '+1'
             }
         ]
+
+        # Add services to packages
+        pkgs = cls.US_CANADA_PACKAGES.copy()
+        for p in pkgs:
+            if p['id'] == 'basic_pool':
+                p['services'] = cls.FIVESIM_US_SERVICES
+            elif p['id'] == 'reliable_non_voip':
+                p['services'] = cls.TEXTVERIFIED_SERVICES
+
         return {
             'countries': countries,
-            'packages': cls.US_CANADA_PACKAGES,
-            'providers': cls.US_CANADA_PROVIDERS,
-            'services': cls.US_CANADA_SERVICES,
+            'packages': pkgs,
+            'providers': [],
         }
 
     @classmethod
@@ -629,10 +654,8 @@ class SIMProviderService:
         s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
         service_code = s_meta['code'] if s_meta else svc_lookup.replace(' ', '').lower()
         
-        # Calculate price based on provider and service
-        svc_config = next((s for s in cls.US_CANADA_SERVICES if s['name'].lower() == svc_clean.lower() or s['id'] == service_code), None)
-        svc_price = svc_config.get('price_usd', 0.50) if svc_config else 0.50
-        price = prov.get('price_usd', 1.50) + svc_price
+        # Simple package-based pricing
+        price = pkg.get('price_usd', 1.25)
 
         # 1. Check if external secondary US/CA API is configured in env
         secondary_api_key = os.getenv('US_CA_API_KEY')

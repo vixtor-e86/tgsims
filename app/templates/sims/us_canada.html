@@ -46,37 +46,22 @@
             <li>{{ icon('check') }} <span>{{ f }}</span></li>
             {% endfor %}
           </ul>
+          <div class="pkg-price-row">
+            <span class="pkg-price-label">Price per SIM</span>
+            <span class="pkg-price-val" data-usd="{{ p.price_usd }}">
+              ₦{{ '{:,.2f}'.format(p.price_usd * NGN_PER_USD) }}
+            </span>
+          </div>
         </div>
         {% endfor %}
       </div>
     </section>
 
-    {# Step 2: Select Provider #}
+    {# Step 2: Select Service #}
     <section class="card card-pad buy-step">
       <div class="step-head">
         <div class="step-head-title">
           <span class="step-num">2</span>
-          <h2 class="step-title">Select Provider</h2>
-        </div>
-      </div>
-      <div class="usca-country-grid">
-        {% for pr in config.providers %}
-        <button type="button" class="usca-country-card {% if loop.first %}is-selected{% endif %}" data-usca-provider="{{ pr.id }}">
-          <div class="usca-country-meta">
-            <span class="usca-country-name">{{ pr.name }}</span>
-            <span class="usca-country-dial" style="margin-top: 4px;">{{ pr.carrier }} &bull; Base Price: <span data-usd="{{ pr.price_usd }}">₦{{ '{:,.2f}'.format(pr.price_usd * NGN_PER_USD) }}</span></span>
-          </div>
-          <span class="usca-country-check">{{ icon('check') }}</span>
-        </button>
-        {% endfor %}
-      </div>
-    </section>
-
-    {# Step 3: Select Service #}
-    <section class="card card-pad buy-step">
-      <div class="step-head">
-        <div class="step-head-title">
-          <span class="step-num">3</span>
           <h2 class="step-title">Select Service</h2>
         </div>
         <div class="input-group step-search">
