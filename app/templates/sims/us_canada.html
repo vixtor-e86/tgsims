@@ -1,7 +1,7 @@
 {% extends "layouts/app.html" %}
 {% from "partials/icons.html" import icon %}
 
-{% block title %}Order US &amp; Canada Numbers | {{ BRAND }}{% endblock %}
+{% block title %}Buy US Number | {{ BRAND }}{% endblock %}
 
 {% block page %}
 <div class="page-head">
@@ -11,7 +11,7 @@
       <span class="badge badge-success">{{ icon('check') }} 99.8% Success Rate</span>
       <span class="badge badge-neutral">{{ icon('refresh') }} Auto-Refund Guarantee</span>
     </div>
-    <h1 class="page-title">Order US &amp; Canada Numbers</h1>
+    <h1 class="page-title">Buy US Number</h1>
     <p class="page-subtitle">Real non-VoIP cellular numbers screened specifically for WhatsApp, Google, and banking verification.</p>
   </div>
 </div>
@@ -23,41 +23,17 @@
 
   {# ---- Left column: selection steps ---- #}
   <div>
-    {# Step 1: Select Country #}
+    {# Step 1: Select Package #}
     <section class="card card-pad buy-step">
       <div class="step-head">
         <div class="step-head-title">
           <span class="step-num">1</span>
-          <h2 class="step-title">Select Country</h2>
-        </div>
-      </div>
-      <div class="usca-country-grid">
-        {% for c in config.countries %}
-        <button type="button"
-                class="usca-country-card {% if loop.first %}is-selected{% endif %}"
-                data-usca-country="{{ c.country_code }}">
-          <span class="usca-country-flag">{{ c.flag }}</span>
-          <div class="usca-country-meta">
-            <span class="usca-country-name">{{ c.country_name }}</span>
-            <span class="usca-country-dial">{{ c.dial }} &bull; {{ c.tag }}</span>
-          </div>
-          <span class="usca-country-check">{{ icon('check') }}</span>
-        </button>
-        {% endfor %}
-      </div>
-    </section>
-
-    {# Step 2: Select Package & Reliability Tier #}
-    <section class="card card-pad buy-step">
-      <div class="step-head">
-        <div class="step-head-title">
-          <span class="step-num">2</span>
-          <h2 class="step-title">Select Reliability Package</h2>
+          <h2 class="step-title">Select Package</h2>
         </div>
       </div>
       <div class="pkg-grid">
         {% for p in config.packages %}
-        <div class="pkg-card {% if p.id == 'whatsapp_guaranteed' %}is-selected is-featured{% endif %}"
+        <div class="pkg-card {% if p.is_featured %}is-selected is-featured{% endif %}"
              data-usca-pkg="{{ p.id }}"
              data-usd="{{ p.price_usd }}">
           <div class="pkg-head">
@@ -78,6 +54,27 @@
             </span>
           </div>
         </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# Step 2: Select Provider #}
+    <section class="card card-pad buy-step">
+      <div class="step-head">
+        <div class="step-head-title">
+          <span class="step-num">2</span>
+          <h2 class="step-title">Select Provider</h2>
+        </div>
+      </div>
+      <div class="usca-country-grid">
+        {% for pr in config.providers %}
+        <button type="button" class="usca-country-card {% if loop.first %}is-selected{% endif %}" data-usca-provider="{{ pr.id }}">
+          <div class="usca-country-meta">
+            <span class="usca-country-name">{{ pr.name }}</span>
+            <span class="usca-country-dial" style="margin-top: 4px;">{{ pr.carrier }} &bull; {{ pr.badge }}</span>
+          </div>
+          <span class="usca-country-check">{{ icon('check') }}</span>
+        </button>
         {% endfor %}
       </div>
     </section>
@@ -153,7 +150,7 @@
 {# ---- Why choose section ---- #}
 <section class="buy-why">
   <hr class="divider">
-  <h2 class="buy-why-title">Why choose {{ BRAND }} for US &amp; Canada?</h2>
+  <h2 class="buy-why-title">Why choose {{ BRAND }} for US numbers?</h2>
   <div class="why-grid">
     {% set why_tint = ['why-teal', 'why-blue', 'why-amber', 'why-dark'] %}
     {% for w in why %}

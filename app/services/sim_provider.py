@@ -247,8 +247,10 @@ class SIMProviderService:
                 with open(json_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     if data and isinstance(data, list) and len(data) > 0:
-                        cls._cached_catalog = data
-                        return data
+                        # Filter out US from the other countries catalog
+                        filtered_data = [c for c in data if c.get('country_code', '').upper() != 'US']
+                        cls._cached_catalog = filtered_data
+                        return filtered_data
             except Exception as e:
                 print(f"[SIMProviderService] Error reading catalog.json: {e}")
 
@@ -433,49 +435,27 @@ class SIMProviderService:
     # =========================================================================
     US_CANADA_PACKAGES = [
         {
-            'id': 'standard_pool',
-            'name': 'Standard Carrier Pool',
+            'id': 'basic_pool',
+            'name': 'Basic Package',
             'badge': 'Economy',
             'badge_class': 'badge-neutral',
             'success_rate': 92,
-            'tagline': 'Fast non-VoIP rotation for general platforms.',
-            'description': 'Standard cellular pool. Suitable for Telegram, Twitter/X, Discord, TikTok, Uber, and general social verification.',
-            'features': ['Instant auto-cancellation if no code', 'General non-VoIP carrier rotation', '1-3 min average code arrival'],
+            'tagline': 'Basic numbers that might not pass WhatsApp verification.',
+            'description': 'Standard pool. Might not pass through WhatsApp verification, but works for general platforms.',
+            'features': ['Instant auto-cancellation if no code', 'General carrier rotation', '1-3 min average code arrival'],
             'price_usd': 1.25,
         },
         {
-            'id': 'premium_carrier',
-            'name': 'Premium Cellular Line',
+            'id': 'reliable_non_voip',
+            'name': 'Reliable Package',
             'badge': 'Recommended',
             'badge_class': 'badge-brand',
             'is_featured': True,
             'success_rate': 99.4,
-            'tagline': 'Direct AT&T / T-Mobile / Verizon / Rogers cellular SIMs.',
-            'description': 'Real Tier-1 cellular carrier lines with verified high trust scores. Optimized for Google/Gmail, Tinder, Apple ID, and PayPal.',
-            'features': ['Tier-1 direct cellular carriers', 'Clean unflagged number history', 'Instant SMS code delivery', 'Full refund if SMS does not arrive'],
-            'price_usd': 1.85,
-        },
-        {
-            'id': 'whatsapp_guaranteed',
-            'name': 'Ultra Clean WhatsApp Line',
-            'badge': 'WhatsApp Guaranteed',
-            'badge_class': 'badge-success',
-            'success_rate': 99.9,
-            'tagline': '100% Unbanned on WhatsApp & WA Business.',
-            'description': 'Freshly screened real mobile lines verified to never have been registered or banned on WhatsApp. Zero ban risk on first signup.',
-            'features': ['Guaranteed unbanned on WhatsApp', 'Supports WhatsApp Business', 'Priority cellular carrier line', 'Instant auto-refund guarantee'],
+            'tagline': 'Highly reliable non-VoIP numbers.',
+            'description': 'The most reliable, non-VoIP numbers. Highly recommended for WhatsApp and important services.',
+            'features': ['Guaranteed unbanned on WhatsApp', 'Clean unflagged number history', 'Instant SMS code delivery', 'Full refund if SMS does not arrive'],
             'price_usd': 2.50,
-        },
-        {
-            'id': 'vip_private',
-            'name': 'Private Dedicated VIP Line',
-            'badge': 'Banking & FinTech',
-            'badge_class': 'badge-warning',
-            'success_rate': 100,
-            'tagline': 'Bank-grade private lines for financial & AI services.',
-            'description': 'Exclusive private line with extended expiration. Ideal for US Banks, Zelle, Cash App, OpenAI, Claude, and Crypto exchanges.',
-            'features': ['US Banking & FinTech verified', 'Extended 25-minute active window', 'Strict non-VoIP cellular routing', 'Zero carrier blocklist'],
-            'price_usd': 3.40,
         },
     ]
 
@@ -511,14 +491,6 @@ class SIMProviderService:
             'description': 'Verizon cellular lines known for highest banking, WhatsApp, and Google pass rates.',
             'badge': 'Verizon Direct',
             'operator': 'verizon',
-        },
-        {
-            'id': 'maple_tel',
-            'name': 'Maple Carrier Line',
-            'carrier': 'Rogers / Bell / Telus Canada',
-            'description': 'Dedicated Canadian nationwide wireless networks with native +1 Canadian area codes.',
-            'badge': 'Canada Direct',
-            'operator': 'rogers',
         },
     ]
 
@@ -557,15 +529,6 @@ class SIMProviderService:
                 'dial': '+1',
                 'area_codes': '415, 212, 312, 404, 713, 206',
                 'tag': 'All 50 States',
-            },
-            {
-                'country_code': 'CA',
-                'country_name': 'Canada',
-                'country_slug': 'canada',
-                'flag': '🇨🇦',
-                'dial': '+1',
-                'area_codes': '647, 437, 514, 403, 604',
-                'tag': 'All Provinces',
             }
         ]
         return {
@@ -583,21 +546,18 @@ class SIMProviderService:
         package_id: str = 'whatsapp_guaranteed',
         provider_id: str = 'auto'
     ) -> dict:
-        """Purchases a high-reliability virtual number for US or Canada.
+        """Purchases a high-reliability virtual number for US.
         Architected with multi-line provider routing and unbanned WhatsApp line allocation.
         """
         import random
         import uuid
 
-        cc_clean = country_code.upper() if country_code else 'US'
-        if cc_clean not in ['US', 'CA']:
-            cc_clean = 'US'
-        
-        country_name = 'United States' if cc_clean == 'US' else 'Canada'
-        country_slug = 'usa' if cc_clean == 'US' else 'canada'
+        cc_clean = 'US'
+        country_name = 'United States'
+        country_slug = 'usa'
 
         # Match package
-        pkg = next((p for p in cls.US_CANADA_PACKAGES if p['id'] == package_id), cls.US_CANADA_PACKAGES[2])
+        pkg = next((p for p in cls.US_CANADA_PACKAGES if p['id'] == package_id), cls.US_CANADA_PACKAGES[0])
         price = pkg['price_usd']
 
         # Match provider / operator
@@ -641,9 +601,8 @@ class SIMProviderService:
         # 3. Dedicated clean line generation for WhatsApp Guaranteed & VIP Private lines
         # Produces verified non-recycled cellular numbers with valid North American area codes
         us_area_codes = ['415', '212', '312', '404', '713', '206', '512', '305', '617', '702', '303']
-        ca_area_codes = ['647', '437', '514', '403', '604', '905', '587', '778', '819']
         
-        area = random.choice(us_area_codes) if cc_clean == 'US' else random.choice(ca_area_codes)
+        area = random.choice(us_area_codes)
         nxx = random.randint(220, 890)
         xxxx = random.randint(1000, 9999)
         formatted_phone = f"+1{area}{nxx}{xxxx}"

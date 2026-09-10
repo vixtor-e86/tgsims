@@ -66,7 +66,7 @@
     var providers = config.providers || [];
     var services = config.services || [];
 
-    var countryCards = root.querySelectorAll("[data-usca-country]");
+    var providerCards = root.querySelectorAll("[data-usca-provider]");
     var pkgCards = root.querySelectorAll("[data-usca-pkg]");
     var serviceGrid = root.querySelector("[data-usca-service-grid]");
     var serviceSearch = root.querySelector("[data-usca-service-search]");
@@ -80,7 +80,7 @@
 
     var state = {
       country: countries[0] || { country_code: "US", country_name: "United States" },
-      pkg: packages[2] || packages[0] || { id: "whatsapp_guaranteed", name: "Ultra Clean WhatsApp Line", price_usd: 2.50 },
+      pkg: packages[0] || { id: "reliable_non_voip", name: "Reliable Package", price_usd: 2.50 },
       provider: providers[0] || { id: "auto", name: "Express Dynamic Line" },
       service: services[0] || { id: "whatsapp", name: "WhatsApp" }
     };
@@ -140,7 +140,11 @@
       }
 
       if (reviewPkg && state.pkg) {
-        reviewPkg.textContent = state.pkg.name;
+        var pName = state.pkg.name;
+        if (state.provider) {
+          pName += " (" + state.provider.name + ")";
+        }
+        reviewPkg.textContent = pName;
       }
 
       if (reviewService && state.service) {
@@ -148,16 +152,8 @@
       }
 
       if (reviewScreen && state.pkg) {
-        if (state.pkg.id === "whatsapp_guaranteed") {
-          reviewScreen.className = "badge badge-success";
-          reviewScreen.textContent = "WhatsApp Verified Unbanned";
-        } else if (state.pkg.id === "vip_private") {
-          reviewScreen.className = "badge badge-warning";
-          reviewScreen.textContent = "Bank & FinTech Certified";
-        } else {
-          reviewScreen.className = "badge badge-brand";
-          reviewScreen.textContent = state.pkg.reliability || "Cellular Direct";
-        }
+        reviewScreen.className = "badge " + state.pkg.badge_class;
+        reviewScreen.textContent = state.pkg.badge;
       }
 
       if (reviewPrice && state.pkg) {
@@ -165,21 +161,21 @@
       }
 
       if (submit) {
-        submit.disabled = !(state.country && state.pkg && state.service);
+        submit.disabled = !(state.country && state.pkg && state.service && state.provider);
       }
 
       priceRender();
     }
 
-    /* ---- Events: Country selection ---- */
-    countryCards.forEach(function (card) {
+    /* ---- Events: Provider selection ---- */
+    providerCards.forEach(function (card) {
       card.addEventListener("click", function () {
-        var code = card.getAttribute("data-usca-country");
-        var c = countries.filter(function (x) { return x.country_code === code; })[0];
-        if (!c) return;
-        state.country = c;
+        var code = card.getAttribute("data-usca-provider");
+        var p = providers.filter(function (x) { return x.id === code; })[0];
+        if (!p) return;
+        state.provider = p;
 
-        countryCards.forEach(function (el) { el.classList.remove("is-selected"); });
+        providerCards.forEach(function (el) { el.classList.remove("is-selected"); });
         card.classList.add("is-selected");
 
         updateReview();
