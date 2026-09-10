@@ -125,7 +125,7 @@ def purchase_us_canada():
     provider_id = data.get('provider_id', 'auto')
 
     # Look up package
-    pkg = next((p for p in SIMProviderService.US_CANADA_PACKAGES if p['id'] == package_id), SIMProviderService.US_CANADA_PACKAGES[2])
+    pkg = next((p for p in SIMProviderService.US_CANADA_PACKAGES if p['id'] == package_id), SIMProviderService.US_CANADA_PACKAGES[0])
     price = float(pkg['price_usd'])
     country_name = 'United States' if country_code == 'US' else 'Canada'
 
