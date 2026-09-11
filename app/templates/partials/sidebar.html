@@ -38,11 +38,11 @@
     {% endfor %}
 
     {% if current_user and current_user.role == 'admin' %}
-    <div style="margin-top: 0.75rem; padding: 0 var(--sp-3);">
-      <a href="{{ url_for('admin.index') }}" class="side-link" style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-md); font-weight: 700;">
-        {{ icon('shield') }} <span>Admin Panel</span>
-      </a>
-    </div>
+    <a href="{{ url_for('admin.index') }}"
+       class="side-link {% if request.endpoint and request.endpoint.startswith('admin.') %}is-active{% endif %}"
+       {% if request.endpoint and request.endpoint.startswith('admin.') %}aria-current="page"{% endif %}>
+      {{ icon('shield') }} <span>Admin Panel</span>
+    </a>
     {% endif %}
   </nav>
 

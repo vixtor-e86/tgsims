@@ -6,8 +6,8 @@
 {% block admin_content %}
 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
   <div>
-    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-heading, #fff);">User Accounts & Liquidity</h1>
-    <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.95rem;">
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text);">User Accounts & Liquidity</h1>
+    <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem;">
       Manage customer profiles, promote administrative roles, and inspect or adjust wallet balances.
     </p>
   </div>
@@ -17,7 +17,7 @@
 </div>
 
 {# Search Form #}
-<div class="card card-pad" style="margin-bottom: 1.5rem; padding: 1rem;">
+<div class="card card-pad" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--surface); border: 1px solid var(--border);">
   <form action="{{ url_for('admin.users') }}" method="GET" style="display: flex; gap: 0.75rem; max-width: 500px;">
     <div class="input-group" style="flex: 1;">
       <span class="input-icon">{{ icon('search') }}</span>
@@ -31,12 +31,12 @@
 </div>
 
 {# Users Table #}
-<div class="card card-pad">
+<div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
   {% if users and users|length > 0 %}
     <div style="overflow-x: auto;">
       <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
         <thead>
-          <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+          <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
             <th style="padding: 0.75rem 0.5rem;">User</th>
             <th style="padding: 0.75rem 0.5rem;">Role</th>
             <th style="padding: 0.75rem 0.5rem;">Wallet Balance</th>
@@ -46,17 +46,17 @@
         </thead>
         <tbody>
           {% for u in users %}
-            <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+            <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
               {# User #}
               <td style="padding: 0.75rem 0.5rem;">
-                <div style="font-weight: 600; color: var(--text-heading, #fff);">{{ u.full_name or u.username or 'Customer' }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ u.email }}</div>
+                <div style="font-weight: 600; color: var(--text);">{{ u.full_name or u.username or 'Customer' }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ u.email }}</div>
               </td>
 
               {# Role #}
               <td style="padding: 0.75rem 0.5rem;">
                 {% if u.role == 'admin' %}
-                  <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.75rem; font-weight: 700;">ADMIN</span>
+                  <span class="badge badge-brand" style="font-size: 0.75rem; font-weight: 700;">ADMIN</span>
                 {% else %}
                   <span class="badge badge-muted" style="font-size: 0.75rem;">USER</span>
                 {% endif %}
@@ -64,16 +64,16 @@
 
               {# Balance #}
               <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-weight: 800; color: #10b981; font-size: 1.05rem;">
+                <span style="font-weight: 800; color: var(--hue-success); font-size: 1.05rem;">
                   ${{ '%.2f'|format(u.wallet_balance or 0) }}
                 </span>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
                   ≈ ₦{{ '{:,.2f}'.format((u.wallet_balance or 0) * NGN_PER_USD) }}
                 </div>
               </td>
 
               {# Joined #}
-              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted, #8b949e); font-size: 0.8rem;">
+              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.8rem;">
                 {{ u.created_at[:10] if u.created_at else '-' }}
               </td>
 
@@ -104,9 +104,9 @@
       </table>
     </div>
   {% else %}
-    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted, #8b949e);">
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
       <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">👥</div>
-      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-heading, #fff);">No Users Found</div>
+      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text);">No Users Found</div>
       <p style="font-size: 0.85rem; margin-top: 0.25rem;">No user profiles match your search criteria.</p>
     </div>
   {% endif %}
@@ -114,24 +114,24 @@
 
 {# Balance Adjustment Modal #}
 <div id="balanceModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; padding: 1rem;">
-  <div class="card card-pad" style="max-width: 440px; width: 100%; position: relative; background: var(--bg-surface, #161b22); border: 1px solid var(--border-color, #30363d); border-radius: 10px;">
+  <div class="card card-pad" style="max-width: 440px; width: 100%; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-lg);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-heading, #fff);">Adjust User Balance</h3>
-      <button type="button" onclick="closeBalanceModal()" style="background: none; border: none; color: inherit; font-size: 1.3rem; cursor: pointer;">&times;</button>
+      <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">Adjust User Balance</h3>
+      <button type="button" onclick="closeBalanceModal()" style="background: none; border: none; color: var(--text); font-size: 1.3rem; cursor: pointer;">&times;</button>
     </div>
 
     <form id="balanceForm" method="POST">
       <div style="margin-bottom: 1rem;">
-        <span style="font-size: 0.85rem; color: var(--text-muted, #8b949e);">Target User:</span>
-        <div id="modalUserEmail" style="font-weight: 600; color: var(--text-heading, #fff);"></div>
-        <div style="font-size: 0.8rem; color: var(--text-muted, #8b949e); margin-top: 0.2rem;">
-          Current Balance: <strong id="modalCurrentBal" style="color: #10b981;"></strong>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Target User:</span>
+        <div id="modalUserEmail" style="font-weight: 600; color: var(--text);"></div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+          Current Balance: <strong id="modalCurrentBal" style="color: var(--hue-success);"></strong>
         </div>
       </div>
 
       <div class="form-group" style="margin-bottom: 1rem;">
-        <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Action Type</label>
-        <div style="display: flex; gap: 1rem; margin-top: 0.35rem;">
+        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Action Type</label>
+        <div style="display: flex; gap: 1rem; margin-top: 0.35rem; color: var(--text);">
           <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
             <input type="radio" name="adjustment_type" value="credit" checked> Credit (Add Funds)
           </label>
@@ -142,12 +142,12 @@
       </div>
 
       <div class="form-group" style="margin-bottom: 1rem;">
-        <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Amount ($ USD)</label>
+        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Amount ($ USD)</label>
         <input type="number" step="0.01" min="0.01" max="5000" name="amount" placeholder="10.00" required class="input" style="font-weight: 700;">
       </div>
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
-        <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Audit Reason / Note</label>
+        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Audit Reason / Note</label>
         <input type="text" name="reason" placeholder="e.g. Bank transfer verified manually or compensation" required class="input">
       </div>
 

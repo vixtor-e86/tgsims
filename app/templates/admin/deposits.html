@@ -6,8 +6,8 @@
 {% block admin_content %}
 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
   <div>
-    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-heading, #fff);">Payment Verification Center</h1>
-    <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.95rem;">
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text);">Payment Verification Center</h1>
+    <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem;">
       Review and approve incoming user wallet deposits across Squad, Crypto, and Bank Transfers.
     </p>
   </div>
@@ -17,28 +17,28 @@
 </div>
 
 {# Filter Tabs #}
-<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color, #30363d); padding-bottom: 0.5rem;">
-  <a href="{{ url_for('admin.deposits', status='pending') }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; flex-wrap: wrap;">
+  <a href="{{ url_for('admin.deposits', status='pending') }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     {{ icon('clock') }} Pending Approval
   </a>
-  <a href="{{ url_for('admin.deposits', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+  <a href="{{ url_for('admin.deposits', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     {{ icon('check') }} Completed / Credited
   </a>
-  <a href="{{ url_for('admin.deposits', status='failed') }}" class="btn btn-sm {% if status_filter == 'failed' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+  <a href="{{ url_for('admin.deposits', status='failed') }}" class="btn btn-sm {% if status_filter == 'failed' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     {{ icon('x') }} Rejected / Failed
   </a>
-  <a href="{{ url_for('admin.deposits', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+  <a href="{{ url_for('admin.deposits', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     All Transactions
   </a>
 </div>
 
 {# Deposits Table #}
-<div class="card card-pad">
+<div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
   {% if deposits and deposits|length > 0 %}
     <div style="overflow-x: auto;">
       <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
         <thead>
-          <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+          <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
             <th style="padding: 0.75rem 0.5rem;">User</th>
             <th style="padding: 0.75rem 0.5rem;">Payment Channel</th>
             <th style="padding: 0.75rem 0.5rem;">Amount (USD)</th>
@@ -51,11 +51,11 @@
         </thead>
         <tbody>
           {% for dep in deposits %}
-            <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+            <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
               {# User #}
               <td style="padding: 0.75rem 0.5rem;">
-                <div style="font-weight: 600; color: var(--text-heading, #fff);">{{ dep.user_name or 'User' }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ dep.user_email }}</div>
+                <div style="font-weight: 600; color: var(--text);">{{ dep.user_name or 'User' }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ dep.user_email }}</div>
               </td>
 
               {# Channel #}
@@ -63,7 +63,7 @@
                 {% if dep.payment_channel == 'squad' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">Squad (Bank/Card)</span>
                 {% elif dep.payment_channel == 'crypto' %}
-                  <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem;">Crypto USDT</span>
+                  <span class="badge" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--border); font-size: 0.75rem;">Crypto</span>
                 {% elif dep.payment_channel == 'card' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">Debit Card</span>
                 {% else %}
@@ -72,20 +72,20 @@
               </td>
 
               {# Amount #}
-              <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: #10b981;">
+              <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--hue-success);">
                 ${{ '%.2f'|format(dep.amount) }}
               </td>
 
               {# NGN #}
-              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted, #8b949e); font-size: 0.85rem;">
+              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
                 ₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}
               </td>
 
               {# Reference #}
               <td style="padding: 0.75rem 0.5rem;">
-                <code style="font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 0.15rem 0.35rem; border-radius: 4px;">{{ dep.reference }}</code>
+                <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ dep.reference }}</code>
                 {% if dep.metadata and dep.metadata.hash %}
-                  <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.2rem;">
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
                     Hash: {{ dep.metadata.hash }}
                   </div>
                 {% endif %}
@@ -101,14 +101,14 @@
                   <span class="badge badge-danger" style="font-size: 0.75rem;">{{ dep.status|capitalize }}</span>
                 {% endif %}
                 {% if dep.verified_at %}
-                  <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.15rem;">
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
                     Audited: {{ dep.verified_at[:10] }}
                   </div>
                 {% endif %}
               </td>
 
               {# Date #}
-              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted, #8b949e); font-size: 0.8rem;">
+              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.8rem;">
                 {{ dep.created_at[:16] if dep.created_at else '-' }}
               </td>
 
@@ -134,7 +134,7 @@
                     </form>
                   </div>
                 {% else %}
-                  <span style="font-size: 0.8rem; color: var(--text-muted, #8b949e);">Processed</span>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Processed</span>
                 {% endif %}
               </td>
             </tr>
@@ -143,9 +143,9 @@
       </table>
     </div>
   {% else %}
-    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted, #8b949e);">
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
       <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">💳</div>
-      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-heading, #fff);">No Deposits in this view</div>
+      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text);">No Deposits in this view</div>
       <p style="font-size: 0.85rem; margin-top: 0.25rem;">
         {% if status_filter == 'pending' %}
           There are no pending deposits requiring manual verification at this moment.

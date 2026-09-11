@@ -6,8 +6,8 @@
 {% block admin_content %}
 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
   <div>
-    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-heading, #fff);">Virtual SIM Orders</h1>
-    <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.95rem;">
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text);">Virtual SIM Orders</h1>
+    <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem;">
       Monitor real-time activations across all users and carrier pools, inspect SMS deliveries, or trigger manual refunds.
     </p>
   </div>
@@ -17,31 +17,31 @@
 </div>
 
 {# Filter Tabs #}
-<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color, #30363d); padding-bottom: 0.5rem; flex-wrap: wrap;">
-  <a href="{{ url_for('admin.orders', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; flex-wrap: wrap;">
+  <a href="{{ url_for('admin.orders', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     All Orders
   </a>
-  <a href="{{ url_for('admin.orders', status='active') }}" class="btn btn-sm {% if status_filter == 'active' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+  <a href="{{ url_for('admin.orders', status='active') }}" class="btn btn-sm {% if status_filter == 'active' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     {{ icon('clock') }} Active / Pending
   </a>
-  <a href="{{ url_for('admin.orders', status='received') }}" class="btn btn-sm {% if status_filter == 'received' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+  <a href="{{ url_for('admin.orders', status='received') }}" class="btn btn-sm {% if status_filter == 'received' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     {{ icon('check') }} SMS Received
   </a>
-  <a href="{{ url_for('admin.orders', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+  <a href="{{ url_for('admin.orders', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     Completed
   </a>
-  <a href="{{ url_for('admin.orders', status='refunded') }}" class="btn btn-sm {% if status_filter == 'refunded' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+  <a href="{{ url_for('admin.orders', status='refunded') }}" class="btn btn-sm {% if status_filter == 'refunded' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
     Refunded
   </a>
 </div>
 
 {# Orders Table #}
-<div class="card card-pad">
+<div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
   {% if orders and orders|length > 0 %}
     <div style="overflow-x: auto;">
       <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
         <thead>
-          <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+          <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
             <th style="padding: 0.75rem 0.5rem;">Order Ref</th>
             <th style="padding: 0.75rem 0.5rem;">Customer</th>
             <th style="padding: 0.75rem 0.5rem;">Service & Country</th>
@@ -55,25 +55,25 @@
         </thead>
         <tbody>
           {% for ord in orders %}
-            <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+            <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
               {# Ref #}
               <td style="padding: 0.75rem 0.5rem;">
-                <code style="font-size: 0.8rem;">{{ ord.order_reference }}</code>
-                <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.15rem;">
+                <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ ord.order_reference }}</code>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
                   {{ ord.created_at[:16] if ord.created_at else '-' }}
                 </div>
               </td>
 
               {# Customer #}
               <td style="padding: 0.75rem 0.5rem;">
-                <div style="font-weight: 600; color: var(--text-heading, #fff);">{{ ord.user_name or 'User' }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ ord.user_email }}</div>
+                <div style="font-weight: 600; color: var(--text);">{{ ord.user_name or 'User' }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ord.user_email }}</div>
               </td>
 
               {# Service #}
               <td style="padding: 0.75rem 0.5rem;">
-                <div style="font-weight: 600;">{{ ord.service_name }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ ord.country_name }} ({{ ord.country_code }})</div>
+                <div style="font-weight: 600; color: var(--text);">{{ ord.service_name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ord.country_name }} ({{ ord.country_code }})</div>
               </td>
 
               {# Provider Route #}
@@ -83,21 +83,21 @@
                 {% else %}
                   <span class="badge badge-success" style="font-size: 0.75rem;">5sim</span>
                 {% endif %}
-                <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.15rem;">
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
                   Route: {{ ord.operator or 'any' }}
                 </div>
               </td>
 
               {# Phone #}
               <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-family: var(--font-mono, monospace); font-weight: 600;">{{ ord.phone_number }}</span>
+                <span style="font-family: var(--font-mono, monospace); font-weight: 600; color: var(--text);">{{ ord.phone_number }}</span>
               </td>
 
               {# Price #}
               <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-weight: 700; color: #10b981;">${{ '%.2f'|format(ord.price or ord.user_cost or 0) }}</span>
+                <span style="font-weight: 700; color: var(--hue-success);">${{ '%.2f'|format(ord.price or ord.user_cost or 0) }}</span>
                 {% if ord.provider_cost %}
-                  <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e);">
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">
                     Cost: ${{ '%.2f'|format(ord.provider_cost) }}
                   </div>
                 {% endif %}
@@ -110,7 +110,7 @@
                     {{ ord.sms_code }}
                   </span>
                 {% else %}
-                  <span style="font-size: 0.8rem; color: var(--text-muted, #8b949e);">Waiting...</span>
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Waiting...</span>
                 {% endif %}
               </td>
 
@@ -138,7 +138,7 @@
                     </button>
                   </form>
                 {% else %}
-                  <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">Refunded</span>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">Refunded</span>
                 {% endif %}
               </td>
             </tr>
@@ -147,9 +147,9 @@
       </table>
     </div>
   {% else %}
-    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted, #8b949e);">
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
       <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📱</div>
-      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-heading, #fff);">No Orders Found</div>
+      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text);">No Orders Found</div>
       <p style="font-size: 0.85rem; margin-top: 0.25rem;">No orders match the selected filter.</p>
     </div>
   {% endif %}

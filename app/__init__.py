@@ -46,6 +46,27 @@ def create_app(config_class=Config):
             next_url = request.full_path if request.query_string else request.path
             return redirect(url_for('public.site_unlock', next=next_url))
 
+    @app.before_request
+    def sync_user_role():
+        """Ensure logged-in user's role is always fresh from Supabase on every page refresh."""
+        if request.path.startswith('/static') or request.path == '/favicon.ico':
+            return None
+
+        user = session.get('user')
+        if isinstance(user, dict) and user.get('id'):
+            from app.services.supabase_client import get_supabase_admin
+            admin = get_supabase_admin()
+            if admin:
+                try:
+                    res = admin.table('profiles').select('role').eq('id', user['id']).limit(1).execute()
+                    if res.data and len(res.data) > 0:
+                        fresh_role = res.data[0].get('role', 'user')
+                        if user.get('role') != fresh_role:
+                            session['user']['role'] = fresh_role
+                            session.modified = True
+                except Exception:
+                    pass
+
     @app.context_processor
     def inject_globals():
         """Expose shared values to every template (drives the app-shell topbar)."""

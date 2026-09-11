@@ -7,8 +7,8 @@
 {# Header #}
 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
   <div>
-    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-heading, #fff);">Admin Command Center</h1>
-    <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.95rem;">Monitor platform liquidity, virtual number operations, and payment verifications.</p>
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text);">Admin Command Center</h1>
+    <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem;">Monitor platform liquidity, virtual number operations, and payment verifications.</p>
   </div>
   <div style="display: flex; gap: 0.75rem;">
     <a href="{{ url_for('admin.pricing') }}" class="btn btn-secondary btn-sm">
@@ -27,61 +27,61 @@
 <div class="grid-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
   
   {# Users #}
-  <div class="card card-pad" style="border-top: 3px solid var(--brand-primary, #6366f1);">
-    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted, #8b949e); font-size: 0.85rem; font-weight: 600;">
+  <div class="card card-pad" style="border-top: 3px solid var(--brand); background: var(--surface);">
+    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">
       <span>TOTAL USERS</span>
       {{ icon('users') }}
     </div>
-    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text-heading, #fff);">
+    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text);">
       {{ stats.total_users }}
     </div>
-    <div style="font-size: 0.8rem; color: var(--text-muted, #8b949e); margin-top: 0.25rem;">
+    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
       Registered accounts
     </div>
   </div>
 
   {# SIM Orders #}
-  <div class="card card-pad" style="border-top: 3px solid #10b981;">
-    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted, #8b949e); font-size: 0.85rem; font-weight: 600;">
+  <div class="card card-pad" style="border-top: 3px solid var(--hue-success); background: var(--surface);">
+    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">
       <span>TOTAL ORDERS</span>
       {{ icon('sim') }}
     </div>
-    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text-heading, #fff);">
+    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text);">
       {{ stats.total_orders }}
     </div>
-    <div style="font-size: 0.8rem; color: #10b981; margin-top: 0.25rem;">
+    <div style="font-size: 0.8rem; color: var(--hue-success); margin-top: 0.25rem;">
       {{ stats.active_orders }} active / in verification
     </div>
   </div>
 
   {# Deposit Volume #}
-  <div class="card card-pad" style="border-top: 3px solid #3b82f6;">
-    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted, #8b949e); font-size: 0.85rem; font-weight: 600;">
+  <div class="card card-pad" style="border-top: 3px solid var(--hue-info); background: var(--surface);">
+    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">
       <span>DEPOSIT VOLUME</span>
       {{ icon('trending-up') }}
     </div>
-    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text-heading, #fff);">
+    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text);">
       ${{ '%.2f'|format(stats.total_deposit_volume_usd) }}
     </div>
-    <div style="font-size: 0.8rem; color: var(--text-muted, #8b949e); margin-top: 0.25rem;">
+    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
       ≈ ₦{{ '{:,.2f}'.format(stats.total_deposit_volume_usd * settings.ngn_per_usd_rate) }} credited
     </div>
   </div>
 
   {# Pending Verification #}
-  <div class="card card-pad" style="border-top: 3px solid {% if stats.pending_deposits_count > 0 %}#f59e0b{% else %}var(--border-color, #30363d){% endif %};">
-    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted, #8b949e); font-size: 0.85rem; font-weight: 600;">
+  <div class="card card-pad" style="border-top: 3px solid {% if stats.pending_deposits_count > 0 %}var(--hue-warning){% else %}var(--border){% endif %}; background: var(--surface);">
+    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">
       <span>PENDING DEPOSITS</span>
       {{ icon('clock') }}
     </div>
-    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: {% if stats.pending_deposits_count > 0 %}#f59e0b{% else %}var(--text-heading, #fff){% endif %};">
+    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: {% if stats.pending_deposits_count > 0 %}var(--hue-warning){% else %}var(--text){% endif %};">
       {{ stats.pending_deposits_count }}
     </div>
     <div style="font-size: 0.8rem; margin-top: 0.25rem;">
       {% if stats.pending_deposits_count > 0 %}
-        <a href="{{ url_for('admin.deposits') }}" style="color: #f59e0b; font-weight: 600; text-decoration: none;">Action required: Review & credit &rarr;</a>
+        <a href="{{ url_for('admin.deposits') }}" style="color: var(--hue-warning); font-weight: 600; text-decoration: none;">Action required: Review & credit &rarr;</a>
       {% else %}
-        <span style="color: var(--text-muted, #8b949e);">All deposits processed</span>
+        <span style="color: var(--text-muted);">All deposits processed</span>
       {% endif %}
     </div>
   </div>
@@ -92,27 +92,27 @@
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
   
   {# Live API Balances #}
-  <div class="card card-pad">
+  <div class="card card-pad" style="background: var(--surface);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-heading, #fff); display: flex; align-items: center; gap: 0.5rem;">
+      <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
         {{ icon('activity') }} Provider API Status & Balances
       </h2>
       <a href="{{ url_for('admin.index') }}" class="btn btn-ghost btn-sm" title="Refresh balances">{{ icon('refresh') }}</a>
     </div>
 
     {# 5sim Balance #}
-    <div style="background: var(--bg-surface-soft, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 0.75rem;">
+    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem; margin-bottom: 0.75rem;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-heading, #fff);">5sim API (Global Pool)</span>
-          <div style="font-size: 0.8rem; color: var(--text-muted, #8b949e);">Used for 150+ countries & US Basic</div>
+          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">5sim API (Global Pool)</span>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Used for 150+ countries & US Basic</div>
         </div>
         <div style="text-align: right;">
           {% if fivesim_balance %}
-            <div style="font-weight: 800; font-size: 1.1rem; color: #10b981;">
+            <div style="font-weight: 800; font-size: 1.1rem; color: var(--hue-success);">
               {{ fivesim_balance.balance }} {{ fivesim_balance.currency }}
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
               ≈ ${{ '%.2f'|format(fivesim_balance.usd_estimate) }} USD
             </div>
           {% else %}
@@ -123,11 +123,11 @@
     </div>
 
     {# TextVerified Balance #}
-    <div style="background: var(--bg-surface-soft, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 0.85rem 1rem;">
+    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-heading, #fff);">TextVerified (Reliable Non-VoIP)</span>
-          <div style="font-size: 0.8rem; color: var(--text-muted, #8b949e);">Dedicated cellular lines with reactivation</div>
+          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">TextVerified (Reliable Non-VoIP)</span>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Dedicated cellular lines with reactivation</div>
         </div>
         <div style="text-align: right;">
           {% if tv_status.configured %}
@@ -141,40 +141,40 @@
   </div>
 
   {# Current Live Profit & FX Settings #}
-  <div class="card card-pad">
+  <div class="card card-pad" style="background: var(--surface);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-heading, #fff); display: flex; align-items: center; gap: 0.5rem;">
+      <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
         {{ icon('tag') }} Active Pricing & Profit Rules
       </h2>
       <a href="{{ url_for('admin.pricing') }}" class="btn btn-outline-brand btn-sm">Edit Rules</a>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-      <div style="background: var(--bg-surface-soft, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 0.75rem;">
-        <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e); text-transform: uppercase;">USD / NGN Rate</span>
-        <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-heading, #fff); margin-top: 0.2rem;">
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.75rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">USD / NGN Rate</span>
+        <div style="font-weight: 800; font-size: 1.15rem; color: var(--text); margin-top: 0.2rem;">
           ₦{{ '{:,.2f}'.format(settings.ngn_per_usd_rate) }}
         </div>
       </div>
 
-      <div style="background: var(--bg-surface-soft, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 0.75rem;">
-        <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e); text-transform: uppercase;">5sim Profit Margin</span>
-        <div style="font-weight: 800; font-size: 1.15rem; color: #10b981; margin-top: 0.2rem;">
-          +{{ settings.fivesim_markup_percent }}% <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">(min ${{ '%.2f'|format(settings.fivesim_min_profit_usd) }})</span>
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.75rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">5sim Profit Margin</span>
+        <div style="font-weight: 800; font-size: 1.15rem; color: var(--hue-success); margin-top: 0.2rem;">
+          +{{ settings.fivesim_markup_percent }}% <span style="font-size: 0.75rem; color: var(--text-muted);">(min ${{ '%.2f'|format(settings.fivesim_min_profit_usd) }})</span>
         </div>
       </div>
 
-      <div style="background: var(--bg-surface-soft, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 0.75rem;">
-        <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e); text-transform: uppercase;">TextVerified Margin</span>
-        <div style="font-weight: 800; font-size: 1.15rem; color: #3b82f6; margin-top: 0.2rem;">
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.75rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">TextVerified Margin</span>
+        <div style="font-weight: 800; font-size: 1.15rem; color: var(--brand); margin-top: 0.2rem;">
           +{{ settings.textverified_markup_percent }}%
         </div>
       </div>
 
-      <div style="background: var(--bg-surface-soft, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 0.75rem;">
-        <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e); text-transform: uppercase;">Reactivation Fee</span>
-        <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-heading, #fff); margin-top: 0.2rem;">
-          ${{ '%.2f'|format(settings.reactivation_fee_usd) }} <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">(₦{{ '{:,.0f}'.format(settings.reactivation_fee_usd * settings.ngn_per_usd_rate) }})</span>
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.75rem;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Reactivation Fee</span>
+        <div style="font-weight: 800; font-size: 1.15rem; color: var(--text); margin-top: 0.2rem;">
+          ${{ '%.2f'|format(settings.reactivation_fee_usd) }} <span style="font-size: 0.75rem; color: var(--text-muted);">(₦{{ '{:,.0f}'.format(settings.reactivation_fee_usd * settings.ngn_per_usd_rate) }})</span>
         </div>
       </div>
     </div>
@@ -183,9 +183,9 @@
 </div>
 
 {# Recent Pending Deposits Section #}
-<div class="card card-pad" style="margin-bottom: 2rem;">
+<div class="card card-pad" style="margin-bottom: 2rem; background: var(--surface);">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-heading, #fff); display: flex; align-items: center; gap: 0.5rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
       {{ icon('wallet') }} Pending Payments Awaiting Verification
     </h2>
     <a href="{{ url_for('admin.deposits') }}" class="btn btn-ghost btn-sm">View All Deposits &rarr;</a>
@@ -195,7 +195,7 @@
     <div style="overflow-x: auto;">
       <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
         <thead>
-          <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+          <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
             <th style="padding: 0.75rem 0.5rem;">User</th>
             <th style="padding: 0.75rem 0.5rem;">Payment Channel</th>
             <th style="padding: 0.75rem 0.5rem;">Amount</th>
@@ -206,30 +206,30 @@
         </thead>
         <tbody>
           {% for dep in pending_deposits %}
-            <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+            <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
               <td style="padding: 0.75rem 0.5rem;">
-                <div style="font-weight: 600; color: var(--text-heading, #fff);">{{ dep.user_name or 'User' }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ dep.user_email }}</div>
+                <div style="font-weight: 600; color: var(--text);">{{ dep.user_name or 'User' }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ dep.user_email }}</div>
               </td>
               <td style="padding: 0.75rem 0.5rem;">
                 {% if dep.payment_channel == 'squad' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">Squad (Bank/Card)</span>
                 {% elif dep.payment_channel == 'crypto' %}
-                  <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem;">Crypto USDT</span>
+                  <span class="badge" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--border); font-size: 0.75rem;">Crypto</span>
                 {% else %}
                   <span class="badge badge-muted" style="font-size: 0.75rem;">{{ dep.payment_channel or 'Manual' }}</span>
                 {% endif %}
               </td>
               <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-weight: 700; color: #10b981;">${{ '%.2f'|format(dep.amount) }}</span>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">
+                <span style="font-weight: 700; color: var(--hue-success);">${{ '%.2f'|format(dep.amount) }}</span>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
                   ≈ ₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}
                 </div>
               </td>
               <td style="padding: 0.75rem 0.5rem;">
-                <code style="font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 0.15rem 0.35rem; border-radius: 4px;">{{ dep.reference }}</code>
+                <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ dep.reference }}</code>
               </td>
-              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted, #8b949e); font-size: 0.85rem;">
+              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
                 {{ dep.created_at[:16] if dep.created_at else 'Just now' }}
               </td>
               <td style="padding: 0.75rem 0.5rem; text-align: right;">
@@ -246,18 +246,18 @@
       </table>
     </div>
   {% else %}
-    <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted, #8b949e);">
+    <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
       <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</div>
-      <div style="font-weight: 600; font-size: 1rem; color: var(--text-heading, #fff);">No Pending Deposits</div>
+      <div style="font-weight: 600; font-size: 1rem; color: var(--text);">No Pending Deposits</div>
       <p style="font-size: 0.85rem; margin-top: 0.25rem;">All incoming user transactions have been verified and processed.</p>
     </div>
   {% endif %}
 </div>
 
 {# Recent Orders Table #}
-<div class="card card-pad">
+<div class="card card-pad" style="background: var(--surface);">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-heading, #fff); display: flex; align-items: center; gap: 0.5rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
       {{ icon('list') }} Recent Virtual SIM Orders
     </h2>
     <a href="{{ url_for('admin.orders') }}" class="btn btn-ghost btn-sm">View All Orders &rarr;</a>
@@ -266,7 +266,7 @@
   <div style="overflow-x: auto;">
     <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
       <thead>
-        <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+        <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
           <th style="padding: 0.75rem 0.5rem;">Order Ref</th>
           <th style="padding: 0.75rem 0.5rem;">User</th>
           <th style="padding: 0.75rem 0.5rem;">Service & Country</th>
@@ -277,17 +277,17 @@
       </thead>
       <tbody>
         {% for ord in recent_orders %}
-          <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+          <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
             <td style="padding: 0.75rem 0.5rem;">
               <code style="font-size: 0.8rem;">{{ ord.order_reference }}</code>
             </td>
             <td style="padding: 0.75rem 0.5rem;">
-              <div style="font-weight: 600; color: var(--text-heading, #fff);">{{ ord.user_name or 'User' }}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ ord.user_email }}</div>
+              <div style="font-weight: 600; color: var(--text);">{{ ord.user_name or 'User' }}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ord.user_email }}</div>
             </td>
             <td style="padding: 0.75rem 0.5rem;">
               <span style="font-weight: 600;">{{ ord.service_name }}</span>
-              <span style="font-size: 0.8rem; color: var(--text-muted, #8b949e);">({{ ord.country_name }})</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">({{ ord.country_name }})</span>
             </td>
             <td style="padding: 0.75rem 0.5rem;">
               <span style="font-family: var(--font-mono, monospace); font-weight: 600;">{{ ord.phone_number }}</span>

@@ -12,7 +12,7 @@
   </div>
   <div class="page-head-actions">
     {% if user and user.role == 'admin' %}
-    <a href="{{ url_for('admin.index') }}" class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700;">
+    <a href="{{ url_for('admin.index') }}" class="btn btn-outline-brand">
       {{ icon('shield') }} Admin Panel
     </a>
     {% endif %}

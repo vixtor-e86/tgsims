@@ -556,15 +556,33 @@ class DBService:
             return deposits[:limit]
 
         try:
-            q = admin.table('wallet_transactions').select('*, profiles(email, full_name, username)').eq('type', 'deposit')
-            if status_filter and status_filter != 'all':
-                q = q.eq('status', status_filter)
-            res = q.order('created_at', desc=True).limit(limit).execute()
-            
+            try:
+                # Try explicit foreign key for user_id
+                q = admin.table('wallet_transactions').select('*, profiles!wallet_transactions_user_id_fkey(email, full_name, username)').eq('type', 'deposit')
+                if status_filter and status_filter != 'all':
+                    q = q.eq('status', status_filter)
+                res = q.order('created_at', desc=True).limit(limit).execute()
+            except Exception:
+                # Fallback to direct select without join
+                q = admin.table('wallet_transactions').select('*').eq('type', 'deposit')
+                if status_filter and status_filter != 'all':
+                    q = q.eq('status', status_filter)
+                res = q.order('created_at', desc=True).limit(limit).execute()
+
             items = res.data or []
+            # Gather missing profile details if not embedded
+            missing_user_ids = [it['user_id'] for it in items if 'profiles' not in it and it.get('user_id')]
+            prof_map = {}
+            if missing_user_ids:
+                try:
+                    p_res = admin.table('profiles').select('id, email, full_name, username').in_('id', list(set(missing_user_ids))).execute()
+                    prof_map = {p['id']: p for p in (p_res.data or [])}
+                except Exception:
+                    pass
+
             # Flatten profile information & fallback to metadata
             for item in items:
-                prof = item.get('profiles') or {}
+                prof = item.get('profiles') or prof_map.get(item.get('user_id')) or {}
                 item['user_email'] = prof.get('email', 'Unknown')
                 item['user_name'] = prof.get('full_name') or prof.get('username') or item['user_email']
 

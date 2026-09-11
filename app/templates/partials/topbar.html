@@ -49,12 +49,6 @@
           <div class="text-muted" style="font-size:var(--fs-xs);">{{ u.email or '' }}</div>
         </div>
         <div class="dropdown-sep"></div>
-        {% if u.role == 'admin' %}
-        <a class="dropdown-item fw-bold" href="{{ url_for('admin.index') }}" role="menuitem" style="color: #ef4444;">
-          {{ icon('shield') }} Admin Panel
-        </a>
-        <div class="dropdown-sep"></div>
-        {% endif %}
         <a class="dropdown-item" href="{{ url_for('account.settings') }}" role="menuitem">{{ icon('settings') }} Settings</a>
         <a class="dropdown-item" href="{{ url_for('wallet.index') }}" role="menuitem">{{ icon('wallet') }} Wallet</a>
         <a class="dropdown-item" href="{{ url_for('account.support') }}" role="menuitem">{{ icon('life-buoy') }} Support</a>
