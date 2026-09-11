@@ -23,10 +23,20 @@
 
     var endpoint = root.getAttribute("data-endpoint") || "/api/purchase-us-canada";
     var config = {};
-    try {
-      config = JSON.parse(root.getAttribute("data-config") || "{}");
-    } catch (e) {
-      config = {};
+    var scriptEl = document.getElementById("usca-config-data");
+    if (scriptEl && scriptEl.textContent) {
+      try {
+        config = JSON.parse(scriptEl.textContent);
+      } catch (e) {
+        console.error("Could not parse usca-config-data:", e);
+      }
+    }
+    if (!config || !config.basic_services || config.basic_services.length === 0) {
+      try {
+        config = JSON.parse(root.getAttribute("data-config") || "{}");
+      } catch (e) {
+        config = {};
+      }
     }
 
     var basicServices = config.basic_services || [];
@@ -118,7 +128,7 @@
         return;
       }
 
-      var MAX_RENDER = 70;
+      var MAX_RENDER = 250;
       var toRender = items.slice(0, MAX_RENDER);
 
       toRender.forEach(function (s, idx) {
@@ -159,7 +169,7 @@
         footer.style.padding = "8px 12px";
         footer.style.fontSize = "0.7rem";
         footer.style.borderTop = "1px solid var(--border)";
-        footer.textContent = "Showing top " + MAX_RENDER + " of " + items.length + " matching routes — type to narrow down";
+        footer.textContent = "Showing " + MAX_RENDER + " of " + items.length + " matching routes — type to narrow down";
         dropdownMenu.appendChild(footer);
       }
     }
@@ -172,13 +182,13 @@
         if (!opt) {
           opt = document.createElement("option");
           opt.value = s.id;
-          opt.textContent = s.name + "  —  " + formatMoney(s.price_usd);
+          opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
           selectEl.prepend(opt);
         }
         selectEl.value = s.id;
       }
       if (searchInput) {
-        searchInput.value = s.name || s.service_name;
+        searchInput.value = s.service_name || s.name;
         if (clearBtn) clearBtn.style.display = "inline-block";
       }
       updatePriceDisplay();
@@ -204,27 +214,54 @@
         return;
       }
 
-      var MAX_SELECT = 80;
-      var toRender = items.slice(0, MAX_SELECT);
+      var frag = document.createDocumentFragment();
+      var selectedTargetId = preserveSelectionId || (selectedItem ? selectedItem.id : (items[0] ? items[0].id : null));
 
-      if (preserveSelectionId && !toRender.some(function (x) { return x.id === preserveSelectionId; })) {
-        var foundPreserved = items.find(function (x) { return x.id === preserveSelectionId; });
-        if (foundPreserved) toRender.unshift(foundPreserved);
+      // Group full catalogs (>50 items) into Popular vs All Services
+      var isUnfiltered = (items.length === allServices.length) && (items.length > 50);
+
+      if (isUnfiltered) {
+        var popularGroup = document.createElement("optgroup");
+        popularGroup.label = "Popular Services (WhatsApp, Google, Telegram...)";
+
+        var allGroup = document.createElement("optgroup");
+        allGroup.label = "All Services (A to Z — 400+ Services)";
+
+        var popularCutoff = 80;
+        items.forEach(function (s, idx) {
+          var opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
+          if (idx < popularCutoff) {
+            popularGroup.appendChild(opt);
+          } else {
+            allGroup.appendChild(opt);
+          }
+        });
+
+        frag.appendChild(popularGroup);
+        frag.appendChild(allGroup);
+      } else {
+        // Direct flat options for search results
+        items.forEach(function (s) {
+          var opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
+          frag.appendChild(opt);
+        });
       }
 
-      var selectedIndex = 0;
-      toRender.forEach(function (s, idx) {
-        var opt = document.createElement("option");
-        opt.value = s.id;
-        opt.textContent = s.name + "  —  " + formatMoney(s.price_usd);
-        if (preserveSelectionId && s.id === preserveSelectionId) {
-          selectedIndex = idx;
-        }
-        selectEl.appendChild(opt);
-      });
+      selectEl.appendChild(frag);
 
-      selectEl.selectedIndex = selectedIndex;
-      selectedItem = toRender[selectedIndex];
+      if (selectedTargetId) {
+        selectEl.value = selectedTargetId;
+      }
+      if (!selectEl.value && selectEl.options.length > 0) {
+        selectEl.selectedIndex = 0;
+      }
+
+      var currentVal = selectEl.value;
+      selectedItem = allServices.filter(function (s) { return s.id === currentVal; })[0] || items[0];
       updatePriceDisplay();
       if (submitBtn) submitBtn.disabled = false;
     }
@@ -244,6 +281,9 @@
     if (searchInput) {
       searchInput.addEventListener("focus", function () {
         openDropdown();
+        if (searchInput.value) {
+          searchInput.select();
+        }
       });
 
       searchInput.addEventListener("click", function () {
@@ -261,8 +301,9 @@
           currentFiltered = allServices.filter(function (s) {
             var n = (s.name || "").toLowerCase();
             var sn = (s.service_name || "").toLowerCase();
+            var sc = (s.service_code || "").toLowerCase();
             var ql = (s.quality || "").toLowerCase();
-            return n.indexOf(q) > -1 || sn.indexOf(q) > -1 || ql.indexOf(q) > -1;
+            return n.indexOf(q) > -1 || sn.indexOf(q) > -1 || sc.indexOf(q) > -1 || ql.indexOf(q) > -1;
           });
         }
         highlightedIndex = currentFiltered.length > 0 ? 0 : -1;
@@ -345,9 +386,8 @@
 
     // Initial render
     renderOptions(currentFiltered);
-    if (selectedItem && searchInput && !searchInput.value) {
-      searchInput.value = selectedItem.name || selectedItem.service_name;
-      if (clearBtn) clearBtn.style.display = "inline-block";
+    if (clearBtn) {
+      clearBtn.style.display = (searchInput && searchInput.value) ? "inline-block" : "none";
     }
 
     // Submit purchase

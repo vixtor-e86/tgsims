@@ -41,10 +41,13 @@
   {% endfor %}
 </div>
 
+<script id="usca-config-data" type="application/json">
+{{ config|tojson|safe }}
+</script>
+
 {# ---- Two Side-by-Side Quick Buy Boxes ---- #}
 <div class="buy-boxes-grid"
      data-usca-boxes
-     data-config='{{ config|tojson }}'
      data-endpoint="{{ url_for('api.purchase_us_canada') }}">
 
   {# Box 1: Basic Package Numbers (5sim Multi-Route) #}
