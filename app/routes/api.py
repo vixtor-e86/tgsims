@@ -233,7 +233,7 @@ def check_sms(order_id):
     status = str(order.get('status', '')).lower()
     
     # 5-minute auto-refund check
-    if status == 'pending' and order.get('created_at'):
+    if status in ('active', 'pending') and order.get('created_at'):
         import datetime
         try:
             # Handle standard ISO formats, drop the 'Z' if present
@@ -249,23 +249,24 @@ def check_sms(order_id):
                 
             now = datetime.datetime.now(datetime.timezone.utc)
             if (now - created_at).total_seconds() > 300: # 5 minutes
-                # Auto refund
+                # Auto refund on provider
                 prov_id = order.get('provider_order_id')
                 if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
-                    SIMProviderService.cancel_order(str(prov_id))
+                    try:
+                        SIMProviderService.cancel_order(str(prov_id))
+                    except Exception as e:
+                        print(f"[check_sms] provider cancel on timeout error: {e}")
                 
-                price = float(order.get('user_cost') or order.get('price') or 0.0)
-                DBService.credit_wallet_balance(
+                # Atomically refund user wallet and mark order as refunded
+                DBService.refund_order(
+                    order_id=order_id,
                     user_id=user_id,
-                    amount=price,
-                    reference=f"REFUND-{order_id}",
-                    description=f"Auto Refund: Timeout ({order.get('service_name', 'SIM')})"
+                    reason="Auto-cancelled: SMS timeout (5 mins)"
                 )
-                DBService.update_order_status(order_id, 'cancelled', reason="Auto-cancelled: SMS timeout (5 mins)")
                 
                 return jsonify({
                     'success': False,
-                    'message': 'Order timed out (5 mins) and was automatically refunded to your wallet.',
+                    'message': 'Verification timed out (5 mins). Full refund has been credited to your wallet.',
                     'auto_refunded': True
                 })
         except Exception as e:
@@ -318,19 +319,20 @@ def cancel_sim(order_id):
     if order.get('sms_code'):
         return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
 
-    # 2. Cancel order on 5sim
+    # 2. Cancel order on verification provider (5sim or TextVerified)
     prov_id = order.get('provider_order_id')
-    if prov_id and not str(prov_id).startswith('SIM-'):
+    if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
         cancel_res = SIMProviderService.cancel_order(str(prov_id))
         if not cancel_res.get('success'):
             raw_err = str(cancel_res.get('message', '')).lower()
             if 'already' in raw_err or 'received' in raw_err or 'finished' in raw_err:
                 return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
-            elif 'not found' in raw_err:
-                # Order may have timed out or expired in 5sim already
+            elif 'not found' in raw_err or 'timed' in raw_err or 'expired' in raw_err:
+                # Order may have timed out or expired on carrier side already
                 pass
             else:
-                return jsonify({'success': False, 'message': 'Unable to cancel order at this moment. Please try again or contact support.'}), 400
+                # Log provider error but allow refund if no SMS was received
+                print(f"[cancel_sim] provider cancel note: {cancel_res.get('message')}")
 
     # 3. Atomically refund wallet in database
     refund_result = DBService.refund_order(order_id, user_id, reason="Cancelled by user before receiving code")
@@ -373,3 +375,15 @@ def deposit():
         'message': f'Wallet funded with ${amount:.2f} successfully!',
         'new_balance': credit_res.get('new_balance')
     })
+
+
+@api_bp.route('/reactivate-order/<order_id>', methods=['POST'])
+def reactivate_order(order_id):
+    """Reactivates an eligible virtual number line to receive another OTP verification code."""
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in to reactivate your order.'}), 401
+
+    res = SIMProviderService.reactivate_order(order_id, user_id=user_id)
+    status_code = 200 if res.get('success') else 400
+    return jsonify(res), status_code

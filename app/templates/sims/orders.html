@@ -52,14 +52,24 @@
         {% set dt_clean = raw_dt.replace('T', ' ') %}
         {% set day = dt_clean.split(' ')[0] %}
         {% set hm = dt_clean.split(' ')[1][:5] if ' ' in dt_clean else '' %}
-        {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code %}
+        {% set countdown = o.countdown_seconds if o.countdown_seconds is defined else 300 %}
+        {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
         {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
-        {% set is_timeout = o.status in ['expired', 'timeout'] %}
-        {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] %}
+        {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
+        {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
+        {% set is_reliable = (o.provider_order_id and o.provider_order_id.startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) %}
         {% set price_formatted = '₦{:,.2f}'.format(o.price * NGN_PER_USD) %}
-        <tr data-order-row data-order-id="{{ o.id or o.order_reference }}">
+        <tr data-order-row data-order-id="{{ o.id or o.order_reference }}" data-is-active="{{ 'true' if is_active else 'false' }}">
           <td>
-            <span class="svc">{{ svc_icon(o.service_name, "svc-sm") }} <span class="td-strong">{{ o.service_name }}</span></span>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <span class="svc">{{ svc_icon(o.service_name, "svc-sm") }} <span class="td-strong">{{ o.service_name }}</span></span>
+              {% if is_reliable %}
+              <div style="display:inline-flex; gap:4px; flex-wrap:wrap; margin-left:26px;">
+                <span class="badge badge-brand badge-sm" style="font-size:0.65rem; padding:1px 6px;">{{ icon('shield') }} Reliable Line</span>
+                <span class="badge badge-info badge-sm" style="font-size:0.65rem; padding:1px 6px;">{{ icon('refresh') }} Reactivatable</span>
+              </div>
+              {% endif %}
+            </div>
           </td>
           <td class="td-mono td-dim">#{{ o.order_reference }}</td>
           <td>
@@ -77,9 +87,18 @@
                 <button class="copy-btn" data-copy="{{ o.sms_code }}" type="button" aria-label="Copy code">{{ icon('copy') }}</button>
               </span>
             {% elif is_active %}
-              <span class="otp-waiting" data-poll-indicator>{{ icon('refresh') }} Waiting for SMS...</span>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <span class="otp-waiting" data-poll-indicator>{{ icon('refresh') }} Waiting for SMS...</span>
+                <div class="countdown-pill" data-countdown-timer data-order-id="{{ o.id or o.order_reference }}" data-seconds="{{ countdown }}" style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-family:var(--font-mono, monospace); font-weight:600; color:var(--brand); background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.25); padding:2px 8px; border-radius:var(--r-full); width:fit-content; transition:all 0.2s ease;">
+                  <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse-dot 1.5s infinite;"></span>
+                  <span data-countdown-display>05:00</span>
+                </div>
+              </div>
             {% elif is_timeout %}
-              <span class="td-dim">Timed out</span>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span class="td-dim">Timed out</span>
+                <span class="badge badge-neutral badge-sm" style="font-size:0.65rem; width:fit-content;">Auto-Refunded</span>
+              </div>
             {% else %}
               <span class="text-danger fw-semi">Refunded</span>
             {% endif %}
@@ -88,7 +107,7 @@
             {% if is_done %}
               <span class="badge badge-success badge-dot">Received</span>
             {% elif is_active %}
-              <span class="badge badge-info badge-dot">Waiting</span>
+              <span class="badge badge-info badge-dot" data-order-status-badge>Waiting</span>
             {% elif is_timeout %}
               <span class="badge badge-neutral badge-dot">Expired</span>
             {% else %}
@@ -107,10 +126,30 @@
                         data-phone="{{ o.phone_number }}"
                         data-ref="{{ o.order_reference }}"
                         data-price="{{ price_formatted }}"
-                        style="color:var(--text-danger);" title="Cancel order and refund wallet">Cancel</button>
+                        style="color:var(--text-danger);" title="Cancel order and refund wallet">Cancel &amp; Refund</button>
+              </div>
+            {% elif is_done and is_reliable %}
+              <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
+                <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
+                <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
+                        data-id="{{ o.id or o.order_reference }}"
+                        data-service="{{ o.service_name }}"
+                        data-phone="{{ o.phone_number }}"
+                        data-ref="{{ o.order_reference }}"
+                        title="Reactivate this number to receive another OTP code">
+                  {{ icon('refresh') }} Reactivate
+                </button>
               </div>
             {% elif is_done %}
               <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
+            {% elif is_timeout and is_reliable %}
+              <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
+                      data-id="{{ o.id or o.order_reference }}"
+                      data-service="{{ o.service_name }}"
+                      data-phone="{{ o.phone_number }}"
+                      data-ref="{{ o.order_reference }}">
+                {{ icon('refresh') }} Reactivate
+              </button>
             {% else %}
               <a href="{{ url_for('sims.store') }}" class="btn btn-secondary btn-sm">Re-order</a>
             {% endif %}
@@ -170,6 +209,46 @@
   </div>
 </div>
 
+{# ---- Custom Reactivation Confirmation Modal ---- #}
+<div class="modal" id="reactivateModal" aria-hidden="true" role="dialog" aria-labelledby="reactivateModalTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:36px; height:36px; border-radius:var(--r-full); background:rgba(37, 99, 235, 0.12); color:var(--brand); display:grid; place-items:center;">
+          {{ icon('refresh') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="reactivateModalTitle">Reactivate Number</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;">Request another verification OTP</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-modal-reactivate-close aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:var(--fs-sm); color:var(--text); line-height:1.6; margin:0;">
+        Do you want to reactivate your <strong id="modalReactivateSvc">Virtual Number</strong> (<span class="td-mono td-strong" id="modalReactivatePhone">+1 555...</span>)?
+      </p>
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-top:var(--sp-4);">
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim);">
+          <span>Order Reference</span>
+          <span class="td-mono td-strong" id="modalReactivateRef">#TGS-USCA-XXXX</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
+          <span>Carrier Line Type</span>
+          <span class="badge badge-brand badge-sm">Dedicated Cellular (Reactivatable)</span>
+        </div>
+      </div>
+      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
+        This re-opens the carrier line to receive a fresh verification code. Once activated, trigger your SMS and check for the incoming code.
+      </p>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" data-modal-reactivate-close>Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmReactivate">Yes, Reactivate Number</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   var cancelModal = document.getElementById('cancelModal');
@@ -179,6 +258,13 @@
   var modalOrderRef = document.getElementById('modalOrderRef');
   var modalRefundAmount = document.getElementById('modalRefundAmount');
   var btnConfirmCancel = document.getElementById('btnConfirmCancel');
+
+  var reactivateModal = document.getElementById('reactivateModal');
+  var targetReactivateId = null;
+  var modalReactivateSvc = document.getElementById('modalReactivateSvc');
+  var modalReactivatePhone = document.getElementById('modalReactivatePhone');
+  var modalReactivateRef = document.getElementById('modalReactivateRef');
+  var btnConfirmReactivate = document.getElementById('btnConfirmReactivate');
 
   function openCancelModal(orderId, svcName, phoneNum, orderRef, priceFormatted) {
     targetOrderId = orderId;
@@ -200,6 +286,25 @@
     document.body.style.overflow = '';
   }
 
+  function openReactivateModal(orderId, svcName, phoneNum, orderRef) {
+    targetReactivateId = orderId;
+    if (modalReactivateSvc) modalReactivateSvc.textContent = svcName || 'Virtual Number';
+    if (modalReactivatePhone) modalReactivatePhone.textContent = phoneNum || '';
+    if (modalReactivateRef) modalReactivateRef.textContent = '#' + (orderRef || orderId);
+    if (btnConfirmReactivate) {
+      btnConfirmReactivate.disabled = false;
+      btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
+    }
+    reactivateModal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeReactivateModal() {
+    targetReactivateId = null;
+    reactivateModal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
   document.querySelectorAll('[data-modal-cancel-close]').forEach(function(el) {
     el.addEventListener('click', closeCancelModal);
   });
@@ -209,10 +314,20 @@
     });
   }
 
-  // Handle Check Code and Cancel Order button clicks
+  document.querySelectorAll('[data-modal-reactivate-close]').forEach(function(el) {
+    el.addEventListener('click', closeReactivateModal);
+  });
+  if (reactivateModal) {
+    reactivateModal.addEventListener('click', function(e) {
+      if (e.target === reactivateModal) closeReactivateModal();
+    });
+  }
+
+  // Handle Check Code, Cancel Order, and Reactivate button clicks
   document.addEventListener('click', function(e) {
     var checkBtn = e.target.closest('[data-action="check"]');
     var cancelBtn = e.target.closest('[data-action="cancel"]');
+    var reactivateBtn = e.target.closest('[data-action="reactivate"]');
 
     if (checkBtn) {
       var id = checkBtn.dataset.id;
@@ -249,9 +364,17 @@
       var price = cancelBtn.dataset.price;
       openCancelModal(cancelId, svc, phone, ref, price);
     }
+
+    if (reactivateBtn) {
+      var rId = reactivateBtn.dataset.id;
+      var rSvc = reactivateBtn.dataset.service;
+      var rPhone = reactivateBtn.dataset.phone;
+      var rRef = reactivateBtn.dataset.ref;
+      openReactivateModal(rId, rSvc, rPhone, rRef);
+    }
   });
 
-  // Modal confirm action
+  // Cancel Modal confirm action
   if (btnConfirmCancel) {
     btnConfirmCancel.addEventListener('click', function() {
       if (!targetOrderId) return;
@@ -277,6 +400,119 @@
           btnConfirmCancel.textContent = 'Yes, Cancel & Refund';
         });
     });
+  }
+
+  // Reactivate Modal confirm action
+  if (btnConfirmReactivate) {
+    btnConfirmReactivate.addEventListener('click', function() {
+      if (!targetReactivateId) return;
+      btnConfirmReactivate.disabled = true;
+      btnConfirmReactivate.textContent = 'Reactivating...';
+
+      fetch('/api/reactivate-order/' + encodeURIComponent(targetReactivateId), { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.success) {
+            closeReactivateModal();
+            if (window.toast) window.toast(data.message || 'Number reactivated! Line is now open for your new OTP.', 'success');
+            setTimeout(function() { window.location.reload(); }, 700);
+          } else {
+            if (window.toast) window.toast(data.message || 'Could not reactivate number.', 'error');
+            btnConfirmReactivate.disabled = false;
+            btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
+          }
+        })
+        .catch(function() {
+          if (window.toast) window.toast('Failed to reactivate number. Please try again.', 'error');
+          btnConfirmReactivate.disabled = false;
+          btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
+        });
+    });
+  }
+
+  // 1-second live countdown ticker for all active orders (5 minutes limit)
+  var timerElements = document.querySelectorAll('[data-countdown-timer]');
+  if (timerElements.length > 0) {
+    function formatTime(totalSec) {
+      var m = Math.floor(totalSec / 60);
+      var s = totalSec % 60;
+      return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    var activeTimers = [];
+    timerElements.forEach(function(el) {
+      var initialSec = parseInt(el.dataset.seconds || '300', 10);
+      var orderId = el.dataset.orderId;
+      var displaySpan = el.querySelector('[data-countdown-display]');
+      
+      activeTimers.push({
+        element: el,
+        display: displaySpan,
+        orderId: orderId,
+        remaining: initialSec,
+        refundTriggered: false
+      });
+    });
+
+    function updateTimerUI(item) {
+      if (!item.display) return;
+      if (item.remaining <= 0) {
+        item.display.textContent = '00:00 (Auto-refunding...)';
+        item.element.style.color = '#ef4444';
+        item.element.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        item.element.style.background = 'rgba(239, 68, 68, 0.08)';
+      } else {
+        item.display.textContent = formatTime(item.remaining);
+        if (item.remaining <= 60) {
+          item.element.style.color = '#f59e0b';
+          item.element.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+          item.element.style.background = 'rgba(245, 158, 11, 0.08)';
+        }
+      }
+    }
+
+    // Initial render
+    activeTimers.forEach(updateTimerUI);
+
+    var countdownInterval = setInterval(function() {
+      var allDone = true;
+
+      activeTimers.forEach(function(item) {
+        if (item.remaining > 0) {
+          allDone = false;
+          item.remaining -= 1;
+          updateTimerUI(item);
+
+          if (item.remaining <= 0 && !item.refundTriggered) {
+            item.refundTriggered = true;
+            // Trigger automatic refund via check-sms endpoint (which executes auto-refund on 5-min timeout)
+            fetch('/api/check-sms/' + encodeURIComponent(item.orderId))
+              .then(function(r) { return r.json(); })
+              .then(function(res) {
+                if (window.toast) {
+                  window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
+                }
+                setTimeout(function() { window.location.reload(); }, 1200);
+              })
+              .catch(function() {
+                // Fallback direct cancel request
+                fetch('/api/cancel-sim/' + encodeURIComponent(item.orderId), { method: 'POST' })
+                  .then(function() {
+                    if (window.toast) {
+                      window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
+                    }
+                    setTimeout(function() { window.location.reload(); }, 1200);
+                  })
+                  .catch(function() {});
+              });
+          }
+        }
+      });
+
+      if (allDone) {
+        clearInterval(countdownInterval);
+      }
+    }, 1000);
   }
 
   // Automatic gentle polling for active orders (every 6 seconds)
@@ -310,4 +546,11 @@
   }
 })();
 </script>
+
+<style>
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.25; transform: scale(0.7); }
+}
+</style>
 {% endblock %}

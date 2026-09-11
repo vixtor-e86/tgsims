@@ -108,6 +108,16 @@ class DBService:
             return [o for o in mock_db.sim_orders if o['user_id'] == user_id]
 
     @staticmethod
+    def _is_uuid(val: str) -> bool:
+        if not val or not isinstance(val, str):
+            return False
+        try:
+            uuid.UUID(str(val))
+            return True
+        except (ValueError, AttributeError):
+            return False
+
+    @staticmethod
     def get_order_by_id(user_id: str, order_id: str) -> dict:
         """Retrieve a specific order by UUID or reference."""
         if not user_id or user_id == 'demo-user-id':
@@ -118,7 +128,12 @@ class DBService:
             return next((o for o in mock_db.sim_orders if o.get('id') == order_id or o.get('order_reference') == order_id), None)
 
         try:
-            res = admin.table('sim_orders').select('*').eq('user_id', user_id).or_(f"id.eq.{order_id},order_reference.eq.{order_id}").limit(1).execute()
+            q = admin.table('sim_orders').select('*').eq('user_id', user_id)
+            if DBService._is_uuid(order_id):
+                q = q.or_(f"id.eq.{order_id},order_reference.eq.{order_id}")
+            else:
+                q = q.eq('order_reference', order_id)
+            res = q.limit(1).execute()
             if res.data and len(res.data) > 0:
                 o = res.data[0]
                 if 'price' not in o:
@@ -347,15 +362,26 @@ class DBService:
 
         try:
             # Update order
-            admin.table('sim_orders').update({
+            order_update = {
                 'status': 'received',
                 'sms_code': sms_code,
                 'full_sms_text': full_sms,
                 'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
-            }).or_(f"id.eq.{order_id},order_reference.eq.{order_id}").execute()
+            }
+            q = admin.table('sim_orders').update(order_update)
+            if DBService._is_uuid(order_id):
+                q = q.or_(f"id.eq.{order_id},order_reference.eq.{order_id}")
+            else:
+                q = q.eq('order_reference', order_id)
+            q.execute()
 
             # Record in sim_sms_messages if order row found
-            order_res = admin.table('sim_orders').select('id').or_(f"id.eq.{order_id},order_reference.eq.{order_id}").limit(1).execute()
+            q2 = admin.table('sim_orders').select('id')
+            if DBService._is_uuid(order_id):
+                q2 = q2.or_(f"id.eq.{order_id},order_reference.eq.{order_id}")
+            else:
+                q2 = q2.eq('order_reference', order_id)
+            order_res = q2.limit(1).execute()
             if order_res.data:
                 real_uuid = order_res.data[0]['id']
                 admin.table('sim_sms_messages').insert({
@@ -368,6 +394,37 @@ class DBService:
             return True
         except Exception as e:
             print(f"[DBService] update_order_sms error: {e}")
+            return False
+
+    @staticmethod
+    def update_order_status(order_id: str, status: str, reason: str = None) -> bool:
+        """Updates the status of an order."""
+        admin = get_supabase_admin()
+        if not admin:
+            for o in mock_db.sim_orders:
+                if o.get('id') == order_id or o.get('order_reference') == order_id:
+                    o['status'] = status
+                    if reason:
+                        o['status_reason'] = reason
+                    return True
+            return False
+
+        try:
+            update_data = {
+                'status': status,
+                'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
+            }
+            if reason:
+                update_data['status_reason'] = reason
+            q = admin.table('sim_orders').update(update_data)
+            if DBService._is_uuid(order_id):
+                q = q.or_(f"id.eq.{order_id},order_reference.eq.{order_id}")
+            else:
+                q = q.eq('order_reference', order_id)
+            q.execute()
+            return True
+        except Exception as e:
+            print(f"[DBService] update_order_status error: {e}")
             return False
 
     @staticmethod
@@ -405,12 +462,18 @@ class DBService:
         admin = get_supabase_admin()
         if admin and user_id != 'demo-user-id':
             try:
-                admin.table('sim_orders').update({
+                real_id = order.get('id')
+                q = admin.table('sim_orders').update({
                     'status': 'refunded',
                     'refunded_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     'refund_reason': reason,
                     'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
-                }).or_(f"id.eq.{order_id},order_reference.eq.{order_id}").execute()
+                })
+                if DBService._is_uuid(real_id):
+                    q = q.eq('id', str(real_id))
+                else:
+                    q = q.eq('order_reference', str(order.get('order_reference') or order_id))
+                q.execute()
             except Exception as e:
                 print(f"[DBService] refund order status update error: {e}")
         else:

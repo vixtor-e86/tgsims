@@ -209,21 +209,25 @@ class SIMProviderService:
     }
 
     _client = None
+    _tv_client = None
 
     @classmethod
     def get_textverified_client(cls):
+        if cls._tv_client is not None:
+            return cls._tv_client
         import os
         try:
             from textverified import TextVerified
         except ImportError:
             return None
         
-        api_key = os.getenv('TEXTVERIFIED_API_KEY')
-        api_username = os.getenv('TEXTVERIFIED_USERNAME')
+        api_key = (os.getenv('TEXTVERIFIED_API_KEY') or getattr(Config, 'TEXTVERIFIED_API_KEY', '')).strip()
+        api_username = (os.getenv('TEXTVERIFIED_USERNAME') or getattr(Config, 'TEXTVERIFIED_USERNAME', '')).strip()
         if not api_key or not api_username:
             return None
         try:
-            return TextVerified(api_key=api_key, api_username=api_username)
+            cls._tv_client = TextVerified(api_key=api_key, api_username=api_username)
+            return cls._tv_client
         except Exception as e:
             print(f"[SIMProviderService] Error initializing TextVerified: {e}")
             return None
@@ -404,6 +408,13 @@ class SIMProviderService:
 
         if prov_order_id and prov_order_id.startswith('TXTV-'):
             tv_id = prov_order_id[5:]
+            if tv_id.startswith('DEMO-'):
+                return {
+                    'has_sms': False,
+                    'sms_code': None,
+                    'full_sms': None,
+                    'status': 'PENDING'
+                }
             tv_client = cls.get_textverified_client()
             if tv_client:
                 try:
@@ -411,19 +422,23 @@ class SIMProviderService:
                     sms_list = tv_client.sms.list(data=verification)
                     items = list(sms_list)
                     if items:
-                        sms = items[0]
+                        sms = items[-1]  # Latest SMS code received
+                        code = sms.parsed_code
+                        text = sms.sms_content
+                        sms_id = getattr(sms, 'id', str(len(items)))
                         return {
                             'has_sms': True,
-                            'sms_code': sms.parsed_code,
-                            'full_sms': sms.sms_content,
-                            'provider_sms_id': sms.id
+                            'sms_code': code,
+                            'full_sms': text or (f"Your verification code is: {code}" if code else None),
+                            'provider_sms_id': sms_id
                         }
                     else:
+                        st = verification.state.value if hasattr(verification.state, 'value') else str(verification.state)
                         return {
                             'has_sms': False,
                             'sms_code': None,
                             'full_sms': None,
-                            'status': verification.state.value if hasattr(verification.state, 'value') else str(verification.state)
+                            'status': st
                         }
                 except Exception as e:
                     print(f"[SIMProviderService] TextVerified check_sms error: {e}")
@@ -505,10 +520,11 @@ class SIMProviderService:
             'name': 'Reliable Package',
             'badge': 'Recommended',
             'badge_class': 'badge-brand',
-            'description': 'Screened 100% Non-VoIP real cellular lines (AT&T, Verizon, T-Mobile). Dedicated high-reputation lines for WhatsApp, Banking, and OpenAI.',
+            'description': 'Screened 100% Non-VoIP real cellular lines (AT&T, Verizon, T-Mobile). Supports number reactivation to request additional OTP codes on the same number.',
             'features': [
                 '100% Non-VoIP real cellular carrier numbers',
                 'Screened unbanned guarantee for WhatsApp & Banking',
+                'Supports reactivation for additional OTP codes',
                 'Dedicated 1-to-1 reliable carrier routing',
                 'Instant auto-refund to wallet if no SMS received'
             ],
@@ -744,3 +760,123 @@ class SIMProviderService:
             'price': charge_price,
             'status': 'pending',
         }
+
+    @classmethod
+    def reactivate_order(cls, order_id: str, user_id: str = None) -> dict:
+        """Reactivates a previously completed/expired verification line so a new OTP can be received.
+        Supported on TextVerified dedicated cellular lines.
+        """
+        # Find order in DB
+        admin = get_supabase_admin()
+        order = None
+        if admin:
+            try:
+                import uuid
+                is_valid_uuid = False
+                try:
+                    uuid.UUID(str(order_id))
+                    is_valid_uuid = True
+                except (ValueError, TypeError):
+                    is_valid_uuid = False
+
+                if is_valid_uuid:
+                    q = admin.table('sim_orders').select('*').or_(f"id.eq.{order_id},order_reference.eq.{order_id}")
+                else:
+                    q = admin.table('sim_orders').select('*').eq('order_reference', order_id)
+
+                if user_id and user_id != 'demo-user-id':
+                    q = q.eq('user_id', user_id)
+                res = q.limit(1).execute()
+                if res.data and len(res.data) > 0:
+                    order = res.data[0]
+            except Exception as e:
+                print(f"[SIMProviderService] DB lookup error during reactivate: {e}")
+
+        if not order:
+            for o in mock_db.sim_orders:
+                if o.get('id') == order_id or o.get('order_reference') == order_id:
+                    if not user_id or o.get('user_id') == user_id or user_id == 'demo-user-id':
+                        order = o
+                        break
+
+        if not order:
+            return {'success': False, 'message': 'Order not found.'}
+
+        prov_order_id = str(order.get('provider_order_id') or '')
+
+        # TextVerified order reactivation
+        if prov_order_id.startswith('TXTV-'):
+            tv_id = prov_order_id[5:]
+
+            # Demo order reactivation
+            if tv_id.startswith('DEMO-'):
+                cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
+                return {
+                    'success': True,
+                    'message': 'Number reactivated! Line is now open for your next verification code.',
+                    'order_reference': order.get('order_reference')
+                }
+
+            tv_client = cls.get_textverified_client()
+            if not tv_client:
+                return {'success': False, 'message': 'Verification service temporarily unavailable.'}
+
+            try:
+                success = tv_client.verifications.reactivate(tv_id)
+                if success:
+                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': True,
+                        'message': 'Number reactivated successfully! Waiting for your new OTP code.',
+                        'order_reference': order.get('order_reference')
+                    }
+                else:
+                    return {'success': False, 'message': 'Could not reactivate this line with carrier. The reactivation window may have closed.'}
+            except Exception as e:
+                print(f"[SIMProviderService] TextVerified reactivate error: {e}")
+                err_str = str(e).lower()
+                if 'cannot be reactivated' in err_str:
+                    return {'success': False, 'message': 'This number cannot be reactivated at this moment (it may still be in use, or the carrier reactivation window has ended).'}
+                if '404' in err_str or 'not found' in err_str:
+                    return {'success': False, 'message': 'This number line has expired beyond the carrier reactivation window. Please order a new number.'}
+                return {'success': False, 'message': 'Carrier reactivation is unavailable for this number at the moment.'}
+
+        return {'success': False, 'message': 'Reactivation is only supported on Reliable Package numbers.'}
+
+    @classmethod
+    def _reset_order_for_new_otp(cls, db_order_id: str, admin=None):
+        """Resets order status to active and clears previous SMS code for a fresh OTP."""
+        import datetime
+        import uuid
+        now_str = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+
+        update_payload = {
+            'status': 'active',
+            'sms_code': None,
+            'full_sms_text': 'Line reactivated - waiting for new verification code...',
+            'updated_at': now_str
+        }
+
+        if admin:
+            try:
+                is_valid_uuid = False
+                try:
+                    uuid.UUID(str(db_order_id))
+                    is_valid_uuid = True
+                except (ValueError, TypeError):
+                    is_valid_uuid = False
+
+                if is_valid_uuid:
+                    admin.table('sim_orders').update(update_payload).eq('id', db_order_id).execute()
+                else:
+                    admin.table('sim_orders').update(update_payload).eq('order_reference', db_order_id).execute()
+            except Exception as e:
+                print(f"[SIMProviderService] Update order error during reactivate reset: {e}")
+
+        for o in mock_db.sim_orders:
+            if o.get('id') == db_order_id or o.get('order_reference') == db_order_id:
+                o['status'] = 'active'
+                o['sms_code'] = None
+                o['full_sms_text'] = 'Line reactivated - waiting for new verification code...'
+                o['updated_at'] = now_str
+                break

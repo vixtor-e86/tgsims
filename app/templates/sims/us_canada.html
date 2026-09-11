@@ -79,12 +79,18 @@
     <p class="quick-buy-note">{{ icon('clock') }} Estimated delivery: <strong>Instant</strong> &bull; Auto-refund if no SMS</p>
   </section>
 
-  {# Box 2: Reliable Package Numbers (TextVerified Dedicated Non-VoIP) #}
+  {# Box 2: Reliable Package Numbers (Dedicated Non-VoIP with Reactivation) #}
   <section class="card card-pad quick-buy us-quick-box" data-box="premium">
     <div class="card-head">
       <h2 class="card-title">{{ icon('shield') }} Reliable Package Numbers</h2>
-      <span class="badge badge-brand">Recommended &bull; Non-VoIP</span>
+      <div style="display:flex; gap:var(--sp-1); flex-wrap:wrap;">
+        <span class="badge badge-brand">Recommended &bull; Non-VoIP</span>
+        <span class="badge badge-info">{{ icon('refresh') }} Reactivatable</span>
+      </div>
     </div>
+    <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-bottom:var(--sp-3); line-height:1.4;">
+      Screened 100% Non-VoIP real cellular lines. Can be reactivated to receive additional OTPs on the same line.
+    </p>
 
     <div class="field">
       <label class="label" for="prem-search">Search Service</label>

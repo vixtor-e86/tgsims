@@ -17,3 +17,5 @@ class Config:
     PAYMENT_SECRET_KEY = os.getenv('PAYMENT_SECRET_KEY', '')
     PAYMENT_PUBLIC_KEY = os.getenv('PAYMENT_PUBLIC_KEY', '')
     DEV_PASSWORD = os.getenv('DEV_PASSWORD', 'Icui4cu')
+    TEXTVERIFIED_API_KEY = (os.getenv('TEXTVERIFIED_API_KEY') or '').strip()
+    TEXTVERIFIED_USERNAME = (os.getenv('TEXTVERIFIED_USERNAME') or '').strip()
