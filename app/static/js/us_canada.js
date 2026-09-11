@@ -118,7 +118,10 @@
         return;
       }
 
-      items.forEach(function (s, idx) {
+      var MAX_RENDER = 70;
+      var toRender = items.slice(0, MAX_RENDER);
+
+      toRender.forEach(function (s, idx) {
         var itemEl = document.createElement("div");
         itemEl.className = "search-dropdown-item";
         if (selectedItem && selectedItem.id === s.id) {
@@ -149,12 +152,29 @@
 
         dropdownMenu.appendChild(itemEl);
       });
+
+      if (items.length > MAX_RENDER) {
+        var footer = document.createElement("div");
+        footer.className = "search-dropdown-empty";
+        footer.style.padding = "8px 12px";
+        footer.style.fontSize = "0.7rem";
+        footer.style.borderTop = "1px solid var(--border)";
+        footer.textContent = "Showing top " + MAX_RENDER + " of " + items.length + " matching routes — type to narrow down";
+        dropdownMenu.appendChild(footer);
+      }
     }
 
     function chooseService(s) {
       if (!s) return;
       selectedItem = s;
       if (selectEl) {
+        var opt = selectEl.querySelector('option[value="' + s.id + '"]');
+        if (!opt) {
+          opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = s.name + "  —  " + formatMoney(s.price_usd);
+          selectEl.prepend(opt);
+        }
         selectEl.value = s.id;
       }
       if (searchInput) {
@@ -184,8 +204,16 @@
         return;
       }
 
+      var MAX_SELECT = 80;
+      var toRender = items.slice(0, MAX_SELECT);
+
+      if (preserveSelectionId && !toRender.some(function (x) { return x.id === preserveSelectionId; })) {
+        var foundPreserved = items.find(function (x) { return x.id === preserveSelectionId; });
+        if (foundPreserved) toRender.unshift(foundPreserved);
+      }
+
       var selectedIndex = 0;
-      items.forEach(function (s, idx) {
+      toRender.forEach(function (s, idx) {
         var opt = document.createElement("option");
         opt.value = s.id;
         opt.textContent = s.name + "  —  " + formatMoney(s.price_usd);
@@ -196,7 +224,7 @@
       });
 
       selectEl.selectedIndex = selectedIndex;
-      selectedItem = items[selectedIndex];
+      selectedItem = toRender[selectedIndex];
       updatePriceDisplay();
       if (submitBtn) submitBtn.disabled = false;
     }

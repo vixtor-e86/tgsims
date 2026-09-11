@@ -113,11 +113,42 @@ class MockDatabase:
         ]
         self.transactions = [
             {
+                'id': 'tx-pending-squad',
+                'user_id': 'demo-user-id',
+                'user_email': 'user@example.com',
+                'user_name': 'Demo User',
+                'amount': 25.00,
+                'type': 'deposit',
+                'status': 'pending',
+                'payment_channel': 'squad',
+                'reference': 'SQ-DEP-992140',
+                'description': 'Squad Bank Transfer Deposit',
+                'metadata': {'gateway': 'squad', 'account_number': '0129481923'},
+                'created_at': '2026-08-08 11:20:00'
+            },
+            {
+                'id': 'tx-pending-crypto',
+                'user_id': 'demo-user-id',
+                'user_email': 'user@example.com',
+                'user_name': 'Demo User',
+                'amount': 50.00,
+                'type': 'deposit',
+                'status': 'pending',
+                'payment_channel': 'crypto',
+                'reference': 'CRYPTO-TX-77182',
+                'description': 'USDT (TRC20) Deposit',
+                'metadata': {'network': 'TRC20', 'hash': '0x9fa872b...18d'},
+                'created_at': '2026-08-08 12:45:00'
+            },
+            {
                 'id': 'tx-1',
                 'user_id': 'demo-user-id',
+                'user_email': 'user@example.com',
+                'user_name': 'Demo User',
                 'amount': 50.00,
                 'type': 'deposit',
                 'status': 'completed',
+                'payment_channel': 'card',
                 'reference': 'DEP-908123',
                 'description': 'Wallet Top-up',
                 'created_at': '2026-08-05 10:00:00'
@@ -125,6 +156,8 @@ class MockDatabase:
             {
                 'id': 'tx-2',
                 'user_id': 'demo-user-id',
+                'user_email': 'user@example.com',
+                'user_name': 'Demo User',
                 'amount': -2.50,
                 'type': 'purchase',
                 'status': 'completed',

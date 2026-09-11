@@ -11,6 +11,11 @@
     <p class="page-subtitle">Welcome back to {{ BRAND }}. Here is what's happening with your account today.</p>
   </div>
   <div class="page-head-actions">
+    {% if user and user.role == 'admin' %}
+    <a href="{{ url_for('admin.index') }}" class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700;">
+      {{ icon('shield') }} Admin Panel
+    </a>
+    {% endif %}
     <a href="{{ url_for('wallet.fund') }}" class="btn btn-secondary">{{ icon('plus') }} Deposit Funds</a>
     <a href="{{ url_for('sims.store') }}" class="btn btn-primary">{{ icon('cart') }} Order Numbers</a>
   </div>

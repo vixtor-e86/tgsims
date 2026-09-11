@@ -245,14 +245,18 @@
           <span>Carrier Line Type</span>
           <span class="badge badge-brand badge-sm">Dedicated Cellular (Reactivatable)</span>
         </div>
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
+          <span>Reactivation Fee</span>
+          <span class="td-strong text-brand" id="modalReactivateFee">₦1,600.00 ($1.00)</span>
+        </div>
       </div>
       <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
-        This re-opens the carrier line to receive a fresh verification code. Once activated, trigger your SMS and check for the incoming code.
+        This re-opens the carrier line to receive a fresh verification code ($1.00 will be deducted from your wallet). Once activated, trigger your SMS and check for the incoming code.
       </p>
     </div>
     <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
       <button type="button" class="btn btn-secondary btn-sm" data-modal-reactivate-close>Cancel</button>
-      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmReactivate">Yes, Reactivate Number</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmReactivate">Yes, Reactivate ($1.00)</button>
     </div>
   </div>
 </div>

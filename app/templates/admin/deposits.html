@@ -1,0 +1,159 @@
+{% extends "admin/layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Deposit Verifications | {{ BRAND }} Admin{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-heading, #fff);">Payment Verification Center</h1>
+    <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.95rem;">
+      Review and approve incoming user wallet deposits across Squad, Crypto, and Bank Transfers.
+    </p>
+  </div>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
+    {{ icon('arrow-left') }} Back to Overview
+  </a>
+</div>
+
+{# Filter Tabs #}
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color, #30363d); padding-bottom: 0.5rem;">
+  <a href="{{ url_for('admin.deposits', status='pending') }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    {{ icon('clock') }} Pending Approval
+  </a>
+  <a href="{{ url_for('admin.deposits', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    {{ icon('check') }} Completed / Credited
+  </a>
+  <a href="{{ url_for('admin.deposits', status='failed') }}" class="btn btn-sm {% if status_filter == 'failed' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    {{ icon('x') }} Rejected / Failed
+  </a>
+  <a href="{{ url_for('admin.deposits', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    All Transactions
+  </a>
+</div>
+
+{# Deposits Table #}
+<div class="card card-pad">
+  {% if deposits and deposits|length > 0 %}
+    <div style="overflow-x: auto;">
+      <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+            <th style="padding: 0.75rem 0.5rem;">User</th>
+            <th style="padding: 0.75rem 0.5rem;">Payment Channel</th>
+            <th style="padding: 0.75rem 0.5rem;">Amount (USD)</th>
+            <th style="padding: 0.75rem 0.5rem;">NGN Equiv.</th>
+            <th style="padding: 0.75rem 0.5rem;">Reference</th>
+            <th style="padding: 0.75rem 0.5rem;">Status</th>
+            <th style="padding: 0.75rem 0.5rem;">Date</th>
+            <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dep in deposits %}
+            <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+              {# User #}
+              <td style="padding: 0.75rem 0.5rem;">
+                <div style="font-weight: 600; color: var(--text-heading, #fff);">{{ dep.user_name or 'User' }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ dep.user_email }}</div>
+              </td>
+
+              {# Channel #}
+              <td style="padding: 0.75rem 0.5rem;">
+                {% if dep.payment_channel == 'squad' %}
+                  <span class="badge badge-brand" style="font-size: 0.75rem;">Squad (Bank/Card)</span>
+                {% elif dep.payment_channel == 'crypto' %}
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem;">Crypto USDT</span>
+                {% elif dep.payment_channel == 'card' %}
+                  <span class="badge badge-brand" style="font-size: 0.75rem;">Debit Card</span>
+                {% else %}
+                  <span class="badge badge-muted" style="font-size: 0.75rem;">{{ dep.payment_channel|capitalize or 'Direct Transfer' }}</span>
+                {% endif %}
+              </td>
+
+              {# Amount #}
+              <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: #10b981;">
+                ${{ '%.2f'|format(dep.amount) }}
+              </td>
+
+              {# NGN #}
+              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted, #8b949e); font-size: 0.85rem;">
+                ₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}
+              </td>
+
+              {# Reference #}
+              <td style="padding: 0.75rem 0.5rem;">
+                <code style="font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 0.15rem 0.35rem; border-radius: 4px;">{{ dep.reference }}</code>
+                {% if dep.metadata and dep.metadata.hash %}
+                  <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.2rem;">
+                    Hash: {{ dep.metadata.hash }}
+                  </div>
+                {% endif %}
+              </td>
+
+              {# Status #}
+              <td style="padding: 0.75rem 0.5rem;">
+                {% if dep.status == 'completed' %}
+                  <span class="badge badge-success" style="font-size: 0.75rem;">Completed</span>
+                {% elif dep.status == 'pending' %}
+                  <span class="badge badge-warning" style="font-size: 0.75rem;">Pending Approval</span>
+                {% else %}
+                  <span class="badge badge-danger" style="font-size: 0.75rem;">{{ dep.status|capitalize }}</span>
+                {% endif %}
+                {% if dep.verified_at %}
+                  <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.15rem;">
+                    Audited: {{ dep.verified_at[:10] }}
+                  </div>
+                {% endif %}
+              </td>
+
+              {# Date #}
+              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted, #8b949e); font-size: 0.8rem;">
+                {{ dep.created_at[:16] if dep.created_at else '-' }}
+              </td>
+
+              {# Action #}
+              <td style="padding: 0.75rem 0.5rem; text-align: right;">
+                {% if dep.status == 'pending' %}
+                  <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                    {# Verify Button #}
+                    <form action="{{ url_for('admin.verify_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Verify and credit ${{ '%.2f'|format(dep.amount) }} (₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}) to {{ dep.user_name or dep.user_email }}?');">
+                      <input type="hidden" name="return_status" value="{{ status_filter }}">
+                      <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                        {{ icon('check') }} Verify & Credit
+                      </button>
+                    </form>
+
+                    {# Reject Button #}
+                    <form action="{{ url_for('admin.reject_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Reject this deposit?');">
+                      <input type="hidden" name="return_status" value="{{ status_filter }}">
+                      <input type="hidden" name="reason" value="Deposit rejected by admin">
+                      <button type="submit" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                        {{ icon('x') }} Reject
+                      </button>
+                    </form>
+                  </div>
+                {% else %}
+                  <span style="font-size: 0.8rem; color: var(--text-muted, #8b949e);">Processed</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted, #8b949e);">
+      <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">💳</div>
+      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-heading, #fff);">No Deposits in this view</div>
+      <p style="font-size: 0.85rem; margin-top: 0.25rem;">
+        {% if status_filter == 'pending' %}
+          There are no pending deposits requiring manual verification at this moment.
+        {% else %}
+          No transactions match the selected filter.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

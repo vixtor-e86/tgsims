@@ -1,0 +1,309 @@
+{% extends "admin/layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Pricing & Profit Margin Control | {{ BRAND }} Admin{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-heading, #fff);">Pricing & Profit Control Center</h1>
+    <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.95rem;">
+      Adjust exchange rates, provider markups, reactivation fees, and payment channels. Changes take effect across the platform immediately.
+    </p>
+  </div>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
+    {{ icon('arrow-left') }} Back to Overview
+  </a>
+</div>
+
+{# Live Margin Simulator & Preview #}
+<div class="card card-pad" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid var(--border-color, #30363d);">
+  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+    {{ icon('trending-up') }}
+    <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-heading, #fff);">
+      Live Margin Simulator (Active Rates)
+    </h2>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+    {# 5sim simulation #}
+    <div style="background: var(--bg-surface, #161b22); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 1rem;">
+      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; color: var(--text-heading, #fff);">
+        <span>5sim Simulation</span>
+        <span class="badge badge-success">+{{ settings.fivesim_markup_percent }}%</span>
+      </div>
+      <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted, #8b949e);">
+        <div>Base Provider Cost: <strong style="color: var(--text-heading, #fff);">${{ '%.2f'|format(examples.fivesim.cost) }}</strong></div>
+        <div style="margin-top: 0.25rem;">Retail Selling Price: <strong style="color: #10b981; font-size: 1.1rem;">${{ '%.2f'|format(examples.fivesim.price) }}</strong> (₦{{ '{:,.0f}'.format(examples.fivesim.ngn) }})</div>
+        <div style="margin-top: 0.25rem;">Your Profit: <strong style="color: #10b981;">+${{ '%.2f'|format(examples.fivesim.profit) }}</strong> per number</div>
+      </div>
+    </div>
+
+    {# TextVerified simulation #}
+    <div style="background: var(--bg-surface, #161b22); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 1rem;">
+      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; color: var(--text-heading, #fff);">
+        <span>TextVerified Simulation</span>
+        <span class="badge badge-brand">+{{ settings.textverified_markup_percent }}%</span>
+      </div>
+      <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted, #8b949e);">
+        <div>Base Provider Cost: <strong style="color: var(--text-heading, #fff);">${{ '%.2f'|format(examples.textverified.cost) }}</strong></div>
+        <div style="margin-top: 0.25rem;">Retail Selling Price: <strong style="color: #6366f1; font-size: 1.1rem;">${{ '%.2f'|format(examples.textverified.price) }}</strong> (₦{{ '{:,.0f}'.format(examples.textverified.ngn) }})</div>
+        <div style="margin-top: 0.25rem;">Your Profit: <strong style="color: #10b981;">+${{ '%.2f'|format(examples.textverified.profit) }}</strong> per number</div>
+      </div>
+    </div>
+
+    {# Reactivation Fee #}
+    <div style="background: var(--bg-surface, #161b22); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 1rem;">
+      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; color: var(--text-heading, #fff);">
+        <span>Reactivation Fee</span>
+        <span class="badge badge-muted">Per OTP Repeat</span>
+      </div>
+      <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted, #8b949e);">
+        <div>Charge per reactivation:</div>
+        <div style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 800; color: var(--text-heading, #fff);">
+          ${{ '%.2f'|format(settings.reactivation_fee_usd) }}
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted, #8b949e); margin-top: 0.15rem;">
+          ≈ ₦{{ '{:,.0f}'.format(settings.reactivation_fee_usd * settings.ngn_per_usd_rate) }} deducted atomically
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Settings Form #}
+<form action="{{ url_for('admin.pricing') }}" method="POST" class="card card-pad" style="margin-bottom: 2.5rem;">
+  <input type="hidden" name="action" value="update_settings">
+
+  <h2 style="font-size: 1.15rem; font-weight: 700; margin-top: 0; margin-bottom: 1.25rem; color: var(--text-heading, #fff); display: flex; align-items: center; gap: 0.5rem;">
+    {{ icon('settings') }} Currency, Provider Markups & Payment Settings
+  </h2>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+    
+    {# 1. Currency Exchange Rate #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text-heading, #fff);">
+        USD to NGN Exchange Rate (₦ / $1)
+      </label>
+      <div class="input-group" style="margin-top: 0.35rem;">
+        <span class="input-addon" style="background: var(--bg-surface-soft, rgba(255,255,255,0.05)); padding: 0.6rem 0.8rem; border: 1px solid var(--border-color, #30363d); border-right: none; border-radius: 6px 0 0 6px;">₦</span>
+        <input type="number" step="1" min="100" name="ngn_per_usd_rate" value="{{ '%.2f'|format(settings.ngn_per_usd_rate) }}" class="input" required style="border-radius: 0 6px 6px 0; font-weight: 700; font-size: 1rem;">
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.35rem;">
+        Controls the conversion rate displayed on the user dashboard, store, and wallet top-ups.
+      </div>
+    </div>
+
+    {# 2. 5sim Markup % #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text-heading, #fff);">
+        5sim Profit Margin (%)
+      </label>
+      <div class="input-group" style="margin-top: 0.35rem;">
+        <input type="number" step="0.5" min="0" max="500" name="fivesim_markup_percent" value="{{ settings.fivesim_markup_percent }}" class="input" required style="border-radius: 6px 0 0 6px; font-weight: 700; font-size: 1rem;">
+        <span class="input-addon" style="background: var(--bg-surface-soft, rgba(255,255,255,0.05)); padding: 0.6rem 0.8rem; border: 1px solid var(--border-color, #30363d); border-left: none; border-radius: 0 6px 6px 0;">%</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.35rem;">
+        Added automatically to live 5sim wholesale numbers.
+      </div>
+    </div>
+
+    {# 3. 5sim Minimum Floor #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text-heading, #fff);">
+        5sim Min Profit Floor ($)
+      </label>
+      <div class="input-group" style="margin-top: 0.35rem;">
+        <span class="input-addon" style="background: var(--bg-surface-soft, rgba(255,255,255,0.05)); padding: 0.6rem 0.8rem; border: 1px solid var(--border-color, #30363d); border-right: none; border-radius: 6px 0 0 6px;">$</span>
+        <input type="number" step="0.05" min="0" max="20" name="fivesim_min_profit_usd" value="{{ '%.2f'|format(settings.fivesim_min_profit_usd) }}" class="input" required style="border-radius: 0 6px 6px 0; font-weight: 700; font-size: 1rem;">
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.35rem;">
+        Ensures you never make less than this amount on low-cost numbers ($0.10 - $0.40).
+      </div>
+    </div>
+
+    {# 4. TextVerified Markup % #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text-heading, #fff);">
+        TextVerified Profit Margin (%)
+      </label>
+      <div class="input-group" style="margin-top: 0.35rem;">
+        <input type="number" step="0.5" min="0" max="500" name="textverified_markup_percent" value="{{ settings.textverified_markup_percent }}" class="input" required style="border-radius: 6px 0 0 6px; font-weight: 700; font-size: 1rem;">
+        <span class="input-addon" style="background: var(--bg-surface-soft, rgba(255,255,255,0.05)); padding: 0.6rem 0.8rem; border: 1px solid var(--border-color, #30363d); border-left: none; border-radius: 0 6px 6px 0;">%</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.35rem;">
+        Added to TextVerified dedicated cellular lines.
+      </div>
+    </div>
+
+    {# 5. Reactivation Fee #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text-heading, #fff);">
+        Reactivation Fee ($)
+      </label>
+      <div class="input-group" style="margin-top: 0.35rem;">
+        <span class="input-addon" style="background: var(--bg-surface-soft, rgba(255,255,255,0.05)); padding: 0.6rem 0.8rem; border: 1px solid var(--border-color, #30363d); border-right: none; border-radius: 6px 0 0 6px;">$</span>
+        <input type="number" step="0.10" min="0" max="20" name="reactivation_fee_usd" value="{{ '%.2f'|format(settings.reactivation_fee_usd) }}" class="input" required style="border-radius: 0 6px 6px 0; font-weight: 700; font-size: 1rem;">
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.35rem;">
+        Amount deducted from wallet when a user requests an additional OTP on their line.
+      </div>
+    </div>
+
+    {# 6. Crypto Address #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text-heading, #fff);">
+        Crypto USDT (TRC20) Deposit Address
+      </label>
+      <input type="text" name="crypto_deposit_address" value="{{ settings.crypto_deposit_address }}" class="input" placeholder="e.g. TLzDk...893" style="margin-top: 0.35rem; font-family: monospace;">
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.35rem;">
+        Displayed to users depositing via Crypto.
+      </div>
+    </div>
+
+  </div>
+
+  {# Channel Toggles & Manual Bank Info #}
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color, #30363d); margin-bottom: 1.5rem;">
+    <div>
+      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600;">
+        <input type="checkbox" name="squad_enabled" value="1" {% if settings.squad_enabled %}checked{% endif %}>
+        <span>Enable Squad (Naira Bank Transfers & Cards)</span>
+      </label>
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.25rem; margin-left: 1.5rem;">
+        Allows users to fund wallets via Nigerian virtual accounts & cards.
+      </div>
+
+      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; margin-top: 1rem;">
+        <input type="checkbox" name="crypto_enabled" value="1" {% if settings.crypto_enabled %}checked{% endif %}>
+        <span>Enable Cryptocurrency Deposits (USDT)</span>
+      </label>
+      <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 0.25rem; margin-left: 1.5rem;">
+        Allows users to submit transaction hashes for crypto top-ups.
+      </div>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-weight: 700; color: var(--text-heading, #fff);">
+        Manual Direct Bank Transfer Instructions
+      </label>
+      <textarea name="manual_bank_details" rows="3" class="input" style="margin-top: 0.35rem; width: 100%;">{{ settings.manual_bank_details }}</textarea>
+    </div>
+  </div>
+
+  <div style="text-align: right;">
+    <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-weight: 700;">
+      {{ icon('save') }} Save Pricing & Settings
+    </button>
+  </div>
+</form>
+
+{# Service Price Overrides Section #}
+<div class="card card-pad">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text-heading, #fff); display: flex; align-items: center; gap: 0.5rem;">
+        {{ icon('tag') }} Fixed Service Price Overrides
+      </h2>
+      <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.85rem;">
+        Set a fixed price for specific popular services (e.g. WhatsApp, Telegram, Google) regardless of provider price fluctuations.
+      </p>
+    </div>
+  </div>
+
+  {# Add Override Form #}
+  <form action="{{ url_for('admin.pricing') }}" method="POST" style="background: var(--bg-surface-soft, rgba(255,255,255,0.03)); border: 1px solid var(--border-color, #30363d); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+    <input type="hidden" name="action" value="add_override">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; align-items: flex-end;">
+      <div>
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Service Code</label>
+        <input type="text" name="service_code" placeholder="e.g. whatsapp" required class="input input-sm">
+      </div>
+      <div>
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Service Name</label>
+        <input type="text" name="service_name" placeholder="e.g. WhatsApp" required class="input input-sm">
+      </div>
+      <div>
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Provider Pool</label>
+        <select name="provider_type" class="input input-sm">
+          <option value="5sim">5sim (Global & US Basic)</option>
+          <option value="textverified">TextVerified (Reliable Cellular)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Fixed Price ($ USD)</label>
+        <input type="number" step="0.05" min="0.5" max="50" name="override_price_usd" placeholder="2.50" required class="input input-sm">
+      </div>
+      <div>
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">Notes (Optional)</label>
+        <input type="text" name="notes" placeholder="e.g. Promo pricing" class="input input-sm">
+      </div>
+      <div>
+        <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
+          {{ icon('plus') }} Add Override
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {# Overrides List #}
+  {% if overrides and overrides|length > 0 %}
+    <div style="overflow-x: auto;">
+      <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+            <th style="padding: 0.75rem 0.5rem;">Service</th>
+            <th style="padding: 0.75rem 0.5rem;">Service Code</th>
+            <th style="padding: 0.75rem 0.5rem;">Provider</th>
+            <th style="padding: 0.75rem 0.5rem;">Override Price</th>
+            <th style="padding: 0.75rem 0.5rem;">Notes</th>
+            <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ov in overrides %}
+            <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+              <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--text-heading, #fff);">
+                {{ ov.service_name }}
+              </td>
+              <td style="padding: 0.75rem 0.5rem;">
+                <code style="font-size: 0.8rem;">{{ ov.service_code }}</code>
+              </td>
+              <td style="padding: 0.75rem 0.5rem;">
+                {% if ov.provider_type == 'textverified' %}
+                  <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified</span>
+                {% else %}
+                  <span class="badge badge-success" style="font-size: 0.75rem;">5sim</span>
+                {% endif %}
+              </td>
+              <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: #10b981;">
+                ${{ '%.2f'|format(ov.override_price_usd) }}
+                <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e); font-weight: normal;">
+                  (₦{{ '{:,.0f}'.format(ov.override_price_usd * settings.ngn_per_usd_rate) }})
+                </span>
+              </td>
+              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted, #8b949e); font-size: 0.85rem;">
+                {{ ov.notes or '-' }}
+              </td>
+              <td style="padding: 0.75rem 0.5rem; text-align: right;">
+                <form action="{{ url_for('admin.pricing') }}" method="POST" style="display: inline;" onsubmit="return confirm('Remove price override?');">
+                  <input type="hidden" name="action" value="delete_override">
+                  <input type="hidden" name="override_id" value="{{ ov.id }}">
+                  <button type="submit" class="btn btn-ghost btn-sm text-danger" style="padding: 0.2rem 0.5rem;" title="Delete">
+                    {{ icon('trash') }}
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted, #8b949e); font-size: 0.9rem;">
+      No specific price overrides configured. All services currently follow the dynamic markup percentage rules above.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

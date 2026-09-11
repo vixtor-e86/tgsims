@@ -240,14 +240,18 @@ class SIMProviderService:
 
     @classmethod
     def calculate_retail_price(cls, base_cost: float) -> tuple[float, float]:
-        """Calculates retail price and profit margin in USD.
-        Rule: 35% margin with a minimum profit floor of $0.30 per number.
-        """
+        """Calculates retail price and profit margin in USD using admin-configured markup."""
         if base_cost <= 0:
             return 1.50, 1.50
 
-        # Margin: max(cost * 1.35, cost + 0.30) rounded to 2 decimals
-        markup = max(base_cost * 1.35, base_cost + 0.30)
+        try:
+            from app.services.settings_service import SettingsService
+            pct, floor = SettingsService.get_fivesim_markup()
+        except Exception:
+            pct, floor = 30.0, 0.30
+
+        mult = 1.0 + (pct / 100.0)
+        markup = max(base_cost * mult, base_cost + floor)
         retail_price = round(markup, 2)
         profit_margin = round(retail_price - base_cost, 4)
         return retail_price, profit_margin
@@ -628,12 +632,33 @@ class SIMProviderService:
         {'id': 'tv_other', 'service_name': 'Other Platforms', 'service_code': 'other', 'name': 'Other Platforms (Guaranteed Cellular)', 'price_usd': 2.75},
     ]
 
+    _cached_5sim_us_services = None
+
+    @classmethod
+    def get_5sim_us_services(cls) -> list:
+        """Loads full catalog of 5sim USA services and their provider routes."""
+        if cls._cached_5sim_us_services is not None:
+            return cls._cached_5sim_us_services
+
+        import json
+        import os
+        data_path = os.path.join(os.path.dirname(__file__), '..', 'data', '5sim_us_services.json')
+        if os.path.exists(data_path):
+            try:
+                with open(data_path, 'r', encoding='utf-8') as f:
+                    cls._cached_5sim_us_services = json.load(f)
+                    return cls._cached_5sim_us_services
+            except Exception as e:
+                print(f"[SIMProviderService] Error loading 5sim_us_services.json: {e}")
+
+        return cls.FIVESIM_US_SERVICES_WITH_ROUTES
+
     @classmethod
     def get_us_canada_config(cls) -> dict:
         """Returns the packages and service offerings for the US page."""
         return {
             'packages': cls.US_CANADA_PACKAGES,
-            'basic_services': cls.FIVESIM_US_SERVICES_WITH_ROUTES,
+            'basic_services': cls.get_5sim_us_services(),
             'premium_services': cls.TEXTVERIFIED_US_SERVICES,
         }
 
@@ -785,7 +810,11 @@ class SIMProviderService:
                     q = admin.table('sim_orders').select('*').eq('order_reference', order_id)
 
                 if user_id and user_id != 'demo-user-id':
-                    q = q.eq('user_id', user_id)
+                    try:
+                        uuid.UUID(str(user_id))
+                        q = q.eq('user_id', user_id)
+                    except (ValueError, TypeError):
+                        pass
                 res = q.limit(1).execute()
                 if res.data and len(res.data) > 0:
                     order = res.data[0]
@@ -804,21 +833,58 @@ class SIMProviderService:
 
         prov_order_id = str(order.get('provider_order_id') or '')
 
-        # TextVerified order reactivation
+        # TextVerified order reactivation (Configurable in Admin Settings)
         if prov_order_id.startswith('TXTV-'):
+            from app.services.db_service import DBService
+            from app.services.settings_service import SettingsService
             tv_id = prov_order_id[5:]
+            try:
+                REACTIVATION_FEE = SettingsService.get_reactivation_fee()
+                ngn_rate = SettingsService.get_usd_ngn_rate()
+            except Exception:
+                REACTIVATION_FEE = 1.00
+                ngn_rate = 1600.00
+            fee_deducted = False
+
+            # Deduct reactivation fee from user wallet
+            if user_id:
+                deduct_res = DBService.deduct_wallet_balance(
+                    user_id=user_id,
+                    amount=REACTIVATION_FEE,
+                    reference=f"REACT-{uuid.uuid4().hex[:8].upper()}",
+                    description=f"Number Reactivation ({order.get('service_name', 'SIM')})",
+                    metadata={'order_reference': order.get('order_reference'), 'type': 'reactivation'},
+                    order_id=order.get('id')
+                )
+                if not deduct_res.get('success'):
+                    fee_ngn = REACTIVATION_FEE * ngn_rate
+                    return {
+                        'success': False,
+                        'message': deduct_res.get('message') or f"Insufficient wallet balance. Reactivation costs ${REACTIVATION_FEE:.2f} (₦{fee_ngn:,.2f}). Please deposit funds to continue."
+                    }
+                fee_deducted = True
 
             # Demo order reactivation
             if tv_id.startswith('DEMO-'):
                 cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
                 return {
                     'success': True,
-                    'message': 'Number reactivated! Line is now open for your next verification code.',
+                    'message': f'Number reactivated successfully (${REACTIVATION_FEE:.2f})! Line is now open for your new OTP code.',
                     'order_reference': order.get('order_reference')
                 }
 
             tv_client = cls.get_textverified_client()
             if not tv_client:
+                # Refund fee if client missing
+                if fee_deducted and user_id:
+                    DBService.credit_wallet_balance(
+                        user_id=user_id,
+                        amount=REACTIVATION_FEE,
+                        trans_type='refund',
+                        reference=f"REF-REACT-{uuid.uuid4().hex[:8].upper()}",
+                        description="Refund: Reactivation unavailable",
+                        order_id=order.get('id')
+                    )
                 return {'success': False, 'message': 'Verification service temporarily unavailable.'}
 
             try:
@@ -827,13 +893,36 @@ class SIMProviderService:
                     cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
                     return {
                         'success': True,
-                        'message': 'Number reactivated successfully! Waiting for your new OTP code.',
+                        'message': 'Number reactivated successfully ($1.00)! Line is now open for your new OTP code.',
                         'order_reference': order.get('order_reference')
                     }
                 else:
+                    if fee_deducted and user_id:
+                        DBService.credit_wallet_balance(
+                            user_id=user_id,
+                            amount=REACTIVATION_FEE,
+                            trans_type='refund',
+                            reference=f"REF-REACT-{uuid.uuid4().hex[:8].upper()}",
+                            description="Refund: Carrier line closed",
+                            order_id=order.get('id')
+                        )
                     return {'success': False, 'message': 'Could not reactivate this line with carrier. The reactivation window may have closed.'}
             except Exception as e:
                 print(f"[SIMProviderService] TextVerified reactivate error: {e}")
+                # Refund the $1.00 reactivation fee on carrier failure
+                if fee_deducted and user_id:
+                    try:
+                        DBService.credit_wallet_balance(
+                            user_id=user_id,
+                            amount=REACTIVATION_FEE,
+                            trans_type='refund',
+                            reference=f"REF-REACT-{uuid.uuid4().hex[:8].upper()}",
+                            description="Refund: Reactivation unavailable",
+                            order_id=order.get('id')
+                        )
+                    except Exception as ex:
+                        print(f"[SIMProviderService] Error refunding reactivation fee: {ex}")
+
                 err_str = str(e).lower()
                 if 'cannot be reactivated' in err_str:
                     return {'success': False, 'message': 'This number cannot be reactivated at this moment (it may still be in use, or the carrier reactivation window has ended).'}
@@ -848,12 +937,14 @@ class SIMProviderService:
         """Resets order status to active and clears previous SMS code for a fresh OTP."""
         import datetime
         import uuid
-        now_str = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        now_str = now_utc.strftime('%Y-%m-%d %H:%M:%S')
 
         update_payload = {
             'status': 'active',
             'sms_code': None,
             'full_sms_text': 'Line reactivated - waiting for new verification code...',
+            'created_at': now_str,
             'updated_at': now_str
         }
 

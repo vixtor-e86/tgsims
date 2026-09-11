@@ -1,0 +1,157 @@
+{% extends "admin/layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}All Orders | {{ BRAND }} Admin{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text-heading, #fff);">Virtual SIM Orders</h1>
+    <p style="color: var(--text-muted, #8b949e); margin-top: 0.25rem; font-size: 0.95rem;">
+      Monitor real-time activations across all users and carrier pools, inspect SMS deliveries, or trigger manual refunds.
+    </p>
+  </div>
+  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
+    {{ icon('arrow-left') }} Back to Overview
+  </a>
+</div>
+
+{# Filter Tabs #}
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color, #30363d); padding-bottom: 0.5rem; flex-wrap: wrap;">
+  <a href="{{ url_for('admin.orders', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    All Orders
+  </a>
+  <a href="{{ url_for('admin.orders', status='active') }}" class="btn btn-sm {% if status_filter == 'active' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    {{ icon('clock') }} Active / Pending
+  </a>
+  <a href="{{ url_for('admin.orders', status='received') }}" class="btn btn-sm {% if status_filter == 'received' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    {{ icon('check') }} SMS Received
+  </a>
+  <a href="{{ url_for('admin.orders', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    Completed
+  </a>
+  <a href="{{ url_for('admin.orders', status='refunded') }}" class="btn btn-sm {% if status_filter == 'refunded' %}btn-primary{% else %}btn-ghost{% endif %}" style="border-radius: 6px;">
+    Refunded
+  </a>
+</div>
+
+{# Orders Table #}
+<div class="card card-pad">
+  {% if orders and orders|length > 0 %}
+    <div style="overflow-x: auto;">
+      <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border-color, #30363d); color: var(--text-muted, #8b949e); font-size: 0.8rem; text-transform: uppercase;">
+            <th style="padding: 0.75rem 0.5rem;">Order Ref</th>
+            <th style="padding: 0.75rem 0.5rem;">Customer</th>
+            <th style="padding: 0.75rem 0.5rem;">Service & Country</th>
+            <th style="padding: 0.75rem 0.5rem;">Provider Route</th>
+            <th style="padding: 0.75rem 0.5rem;">Phone</th>
+            <th style="padding: 0.75rem 0.5rem;">Price</th>
+            <th style="padding: 0.75rem 0.5rem;">SMS / Code</th>
+            <th style="padding: 0.75rem 0.5rem;">Status</th>
+            <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ord in orders %}
+            <tr style="border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05)); font-size: 0.9rem;">
+              {# Ref #}
+              <td style="padding: 0.75rem 0.5rem;">
+                <code style="font-size: 0.8rem;">{{ ord.order_reference }}</code>
+                <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.15rem;">
+                  {{ ord.created_at[:16] if ord.created_at else '-' }}
+                </div>
+              </td>
+
+              {# Customer #}
+              <td style="padding: 0.75rem 0.5rem;">
+                <div style="font-weight: 600; color: var(--text-heading, #fff);">{{ ord.user_name or 'User' }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ ord.user_email }}</div>
+              </td>
+
+              {# Service #}
+              <td style="padding: 0.75rem 0.5rem;">
+                <div style="font-weight: 600;">{{ ord.service_name }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">{{ ord.country_name }} ({{ ord.country_code }})</div>
+              </td>
+
+              {# Provider Route #}
+              <td style="padding: 0.75rem 0.5rem;">
+                {% if ord.provider_order_id and 'TXTV' in ord.provider_order_id %}
+                  <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified</span>
+                {% else %}
+                  <span class="badge badge-success" style="font-size: 0.75rem;">5sim</span>
+                {% endif %}
+                <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e); margin-top: 0.15rem;">
+                  Route: {{ ord.operator or 'any' }}
+                </div>
+              </td>
+
+              {# Phone #}
+              <td style="padding: 0.75rem 0.5rem;">
+                <span style="font-family: var(--font-mono, monospace); font-weight: 600;">{{ ord.phone_number }}</span>
+              </td>
+
+              {# Price #}
+              <td style="padding: 0.75rem 0.5rem;">
+                <span style="font-weight: 700; color: #10b981;">${{ '%.2f'|format(ord.price or ord.user_cost or 0) }}</span>
+                {% if ord.provider_cost %}
+                  <div style="font-size: 0.7rem; color: var(--text-muted, #8b949e);">
+                    Cost: ${{ '%.2f'|format(ord.provider_cost) }}
+                  </div>
+                {% endif %}
+              </td>
+
+              {# SMS Code #}
+              <td style="padding: 0.75rem 0.5rem;">
+                {% if ord.sms_code %}
+                  <span class="badge badge-success" style="font-size: 0.85rem; font-family: var(--font-mono, monospace); font-weight: 700;">
+                    {{ ord.sms_code }}
+                  </span>
+                {% else %}
+                  <span style="font-size: 0.8rem; color: var(--text-muted, #8b949e);">Waiting...</span>
+                {% endif %}
+              </td>
+
+              {# Status #}
+              <td style="padding: 0.75rem 0.5rem;">
+                {% if ord.status in ('completed', 'received') %}
+                  <span class="badge badge-success" style="font-size: 0.75rem;">{{ ord.status|capitalize }}</span>
+                {% elif ord.status in ('active', 'pending') %}
+                  <span class="badge badge-warning" style="font-size: 0.75rem;">Active</span>
+                {% elif ord.status == 'refunded' %}
+                  <span class="badge badge-muted" style="font-size: 0.75rem;">Refunded</span>
+                {% else %}
+                  <span class="badge badge-danger" style="font-size: 0.75rem;">{{ ord.status|capitalize }}</span>
+                {% endif %}
+              </td>
+
+              {# Action #}
+              <td style="padding: 0.75rem 0.5rem; text-align: right;">
+                {% if ord.status not in ('refunded', 'cancelled') %}
+                  <form action="{{ url_for('admin.manual_refund_order', order_id=ord.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Issue manual refund of ${{ '%.2f'|format(ord.price or ord.user_cost or 0) }} to user wallet?');">
+                    <input type="hidden" name="user_id" value="{{ ord.user_id }}">
+                    <input type="hidden" name="reason" value="Admin manual refund">
+                    <button type="submit" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                      {{ icon('refresh') }} Refund
+                    </button>
+                  </form>
+                {% else %}
+                  <span style="font-size: 0.75rem; color: var(--text-muted, #8b949e);">Refunded</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted, #8b949e);">
+      <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📱</div>
+      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text-heading, #fff);">No Orders Found</div>
+      <p style="font-size: 0.85rem; margin-top: 0.25rem;">No orders match the selected filter.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
