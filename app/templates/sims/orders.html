@@ -221,16 +221,19 @@
 
       fetch('/api/check-sms/' + encodeURIComponent(id))
         .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.success && data.sms_code) {
-            if (window.toast) window.toast('Verification code received: ' + data.sms_code, 'success');
-            setTimeout(function() { window.location.reload(); }, 600);
-          } else {
-            if (window.toast) window.toast(data.message || 'Still waiting for code. Please allow up to 2 minutes.', 'info');
-            checkBtn.disabled = false;
-            checkBtn.textContent = 'Check Code';
-          }
-        })
+          .then(function(data) {
+            if (data.success && data.sms_code) {
+              if (window.toast) window.toast('Verification code received: ' + data.sms_code, 'success');
+              setTimeout(function() { window.location.reload(); }, 600);
+            } else if (data.auto_refunded) {
+              if (window.toast) window.toast(data.message, 'warning');
+              setTimeout(function() { window.location.reload(); }, 1500);
+            } else {
+              if (window.toast) window.toast(data.message || 'Still waiting for code. Please allow up to 2 minutes.', 'info');
+              checkBtn.disabled = false;
+              checkBtn.textContent = 'Check Code';
+            }
+          })
         .catch(function() {
           if (window.toast) window.toast('Could not check code. Please try again.', 'error');
           checkBtn.disabled = false;
@@ -296,6 +299,10 @@
             clearInterval(pollInterval);
             if (window.toast) window.toast('Verification code received: ' + res.sms_code, 'success');
             setTimeout(function() { window.location.reload(); }, 700);
+          } else if (res.auto_refunded) {
+            clearInterval(pollInterval);
+            if (window.toast) window.toast(res.message, 'warning');
+            setTimeout(function() { window.location.reload(); }, 1500);
           }
         })
         .catch(function() {});

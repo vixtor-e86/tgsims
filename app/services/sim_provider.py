@@ -439,15 +439,11 @@ class SIMProviderService:
                 'status': check_res.get('status', 'PENDING')
             }
 
-        # Fallback simulation
-        import random
-        demo_codes = ['582-901', '721-403', '914-280', '341-925', '602-817']
-        code = random.choice(demo_codes)
         return {
-            'has_sms': True,
-            'sms_code': code,
-            'full_sms': f"Your verification code is {code}. Do not share this code with anyone.",
-            'provider_sms_id': f"SMS-{uuid.uuid4().hex[:6]}"
+            'has_sms': False,
+            'sms_code': None,
+            'full_sms': None,
+            'status': 'PENDING'
         }
 
     @classmethod
@@ -594,6 +590,17 @@ class SIMProviderService:
 
     US_CANADA_SERVICES = FIVESIM_US_SERVICES
 
+    FIVESIM_OPERATORS = [
+        {'id': 'any', 'name': 'Any operator', 'price_usd': 0.85, 'details': 'Random selection'},
+        {'id': 'virtual28', 'name': 'Virtual28', 'price_usd': 1.92, 'details': 'High success rate'},
+        {'id': 'virtual63', 'name': 'Virtual63', 'price_usd': 0.89, 'details': 'Standard rate'},
+        {'id': 'virtual8', 'name': 'Virtual8', 'price_usd': 0.85, 'details': 'Economy rate'},
+    ]
+
+    TEXTVERIFIED_OPERATORS = [
+        {'id': 'auto', 'name': 'TextVerified Direct', 'price_usd': 2.50, 'details': 'Premium Non-VoIP'},
+    ]
+
     @classmethod
     def get_us_canada_config(cls) -> dict:
         """Returns the packages, countries and services for US/Canada portal."""
@@ -607,13 +614,15 @@ class SIMProviderService:
             }
         ]
 
-        # Add services to packages
+        # Add services and operators to packages
         pkgs = cls.US_CANADA_PACKAGES.copy()
         for p in pkgs:
             if p['id'] == 'basic_pool':
                 p['services'] = cls.FIVESIM_US_SERVICES
+                p['operators'] = cls.FIVESIM_OPERATORS
             elif p['id'] == 'reliable_non_voip':
                 p['services'] = cls.TEXTVERIFIED_SERVICES
+                p['operators'] = cls.TEXTVERIFIED_OPERATORS
 
         return {
             'countries': countries,
@@ -641,9 +650,11 @@ class SIMProviderService:
 
         # Match package
         pkg = next((p for p in cls.US_CANADA_PACKAGES if p['id'] == package_id), cls.US_CANADA_PACKAGES[0])
-        # Match provider / operator
-        prov = next((pr for pr in cls.US_CANADA_PROVIDERS if pr['id'] == provider_id), cls.US_CANADA_PROVIDERS[0])
-        operator = prov.get('operator', 'any')
+        
+        # Match operator
+        pkg_ops = cls.FIVESIM_OPERATORS if pkg['id'] == 'basic_pool' else cls.TEXTVERIFIED_OPERATORS
+        prov = next((pr for pr in pkg_ops if pr['id'] == provider_id), pkg_ops[0])
+        operator = prov['id']
 
         order_ref = f"TGS-USCA-{uuid.uuid4().hex[:6].upper()}"
         client = cls.get_client()
@@ -654,8 +665,8 @@ class SIMProviderService:
         s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
         service_code = s_meta['code'] if s_meta else svc_lookup.replace(' ', '').lower()
         
-        # Simple package-based pricing
-        price = pkg.get('price_usd', 1.25)
+        # Operator-based pricing
+        price = prov.get('price_usd', pkg.get('price_usd', 1.25))
 
         # 1. Check if external secondary US/CA API is configured in env
         secondary_api_key = os.getenv('US_CA_API_KEY')
@@ -695,8 +706,9 @@ class SIMProviderService:
                     }
                 except Exception as e:
                     print(f"[SIMProviderService] TextVerified Error: {e}")
-                    # Fallback to mock generation if API fails for some reason
-                    pass
+                    return {'success': False, 'message': 'Provider temporarily unavailable or authentication failed.'}
+            else:
+                return {'success': False, 'message': 'TextVerified API credentials are not configured.'}
 
         # 3. Try primary client with selected operator if basic pool
         if client.is_configured and package_id == 'basic_pool':
@@ -716,28 +728,7 @@ class SIMProviderService:
                     'price': price,
                     'status': 'pending',
                 }
+            else:
+                return {'success': False, 'message': buy_res.get('message', 'Provider API error')}
 
-        # 4. Fallback: Mock generation if APIs are unavailable
-        us_area_codes = ['415', '212', '312', '404', '713', '206', '512', '305', '617', '702', '303']
-        
-        area = random.choice(us_area_codes)
-        nxx = random.randint(220, 890)
-        xxxx = random.randint(1000, 9999)
-        formatted_phone = f"+1{area}{nxx}{xxxx}"
-
-        prov_id = f"USCA-{uuid.uuid4().hex[:8].upper()}"
-
-        return {
-            'success': True,
-            'order_reference': order_ref,
-            'phone_number': formatted_phone,
-            'provider_order_id': prov_id,
-            'country_code': cc_clean,
-            'country_name': country_name,
-            'service_name': f"{svc_clean} ({pkg['name']})",
-            'package_id': pkg['id'],
-            'package_name': pkg['name'],
-            'provider_line': prov['name'],
-            'price': price,
-            'status': 'pending',
-        }
+        return {'success': False, 'message': 'No available numbers for this service at the moment.'}

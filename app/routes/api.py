@@ -223,6 +223,47 @@ def check_sms(order_id):
             'full_sms': order.get('full_sms_text', f"Your code is {order['sms_code']}")
         })
 
+    status = str(order.get('status', '')).lower()
+    
+    # 5-minute auto-refund check
+    if status == 'pending' and order.get('created_at'):
+        import datetime
+        try:
+            # Handle standard ISO formats, drop the 'Z' if present
+            cat_str = str(order.get('created_at')).replace('Z', '+00:00')
+            try:
+                created_at = datetime.datetime.fromisoformat(cat_str)
+            except ValueError:
+                # Fallback for simple format
+                created_at = datetime.datetime.strptime(cat_str, '%Y-%m-%d %H:%M:%S')
+                
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=datetime.timezone.utc)
+                
+            now = datetime.datetime.now(datetime.timezone.utc)
+            if (now - created_at).total_seconds() > 300: # 5 minutes
+                # Auto refund
+                prov_id = order.get('provider_order_id')
+                if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+                    SIMProviderService.cancel_order(str(prov_id))
+                
+                price = float(order.get('user_cost') or order.get('price') or 0.0)
+                DBService.credit_wallet_balance(
+                    user_id=user_id,
+                    amount=price,
+                    reference=f"REFUND-{order_id}",
+                    description=f"Auto Refund: Timeout ({order.get('service_name', 'SIM')})"
+                )
+                DBService.update_order_status(order_id, 'cancelled', reason="Auto-cancelled: SMS timeout (5 mins)")
+                
+                return jsonify({
+                    'success': False,
+                    'message': 'Order timed out (5 mins) and was automatically refunded to your wallet.',
+                    'auto_refunded': True
+                })
+        except Exception as e:
+            print(f"Error auto-refunding: {e}")
+
     # Query provider for incoming SMS
     sms_info = SIMProviderService.check_sms(order_id)
     if sms_info.get('has_sms') and sms_info.get('sms_code'):

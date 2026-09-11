@@ -67,6 +67,8 @@
     var pkgCards = root.querySelectorAll("[data-usca-pkg]");
     var serviceGrid = root.querySelector("[data-usca-service-grid]");
     var serviceSearch = root.querySelector("[data-usca-service-search]");
+    var operatorSection = document.getElementById("operator-step-section");
+    var operatorGrid = root.querySelector("[data-usca-operator-grid]");
 
     var reviewCountry = root.querySelector("[data-review-country]");
     var reviewPkg = root.querySelector("[data-review-pkg]");
@@ -77,14 +79,19 @@
 
     var state = {
       country: countries[0] || { country_code: "US", country_name: "United States" },
-      pkg: packages[0] || { id: "basic_pool", name: "Basic Package", price_usd: 1.25, services: [] },
-      service: null
+      pkg: packages[0] || { id: "basic_pool", name: "Basic Package", price_usd: 1.25, services: [], operators: [] },
+      service: null,
+      operator: null
     };
     
-    // Set initial services to the selected package's services
+    // Set initial services and operators
     var currentServices = state.pkg.services || [];
     if (currentServices.length > 0) {
       state.service = currentServices[0];
+    }
+    var currentOperators = state.pkg.operators || [];
+    if (currentOperators.length > 0) {
+      state.operator = currentOperators[0];
     }
 
     function priceRender() {
@@ -94,6 +101,9 @@
     }
 
     function calculatePrice() {
+      if (state.operator && state.operator.price_usd) {
+        return state.operator.price_usd;
+      }
       return state.pkg.price_usd || 1.25;
     }
 
@@ -125,16 +135,53 @@
         if (state.service && state.service.id === s.id) {
           btn.classList.add("is-selected");
         }
-        
-        var currentPrice = calculatePrice();
 
         btn.innerHTML =
           '<span class="opt-tile-check">' + svg(G.check) + "</span>" +
           '<span class="svc-ico ' + vis.cls + '">' + glyph + "</span>" +
-          '<span class="opt-tile-name">' + s.name + "</span>" +
-          '<span class="opt-tile-sub" data-usd="' + currentPrice + '">' + currentPrice + "</span>";
+          '<span class="opt-tile-name">' + s.name + "</span>";
 
         serviceGrid.appendChild(btn);
+      });
+
+      priceRender();
+    }
+
+    /* ---- Render operators grid ---- */
+    function renderOperators() {
+      if (!operatorGrid || !operatorSection) return;
+      
+      if (!currentOperators || currentOperators.length <= 1) {
+        operatorSection.style.display = "none";
+        return;
+      }
+      
+      operatorSection.style.display = "";
+      operatorGrid.innerHTML = "";
+
+      currentOperators.forEach(function (op) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "usca-country-card";
+        if (state.operator && state.operator.id === op.id) {
+          btn.classList.add("is-selected");
+        }
+        btn.dataset.opId = op.id;
+
+        btn.innerHTML =
+          '<div class="usca-country-meta">' +
+            '<span class="usca-country-name">' + op.name + '</span>' +
+            '<span class="usca-country-dial" style="margin-top: 4px;">' + op.details + ' &bull; <span data-usd="' + op.price_usd + '">$' + op.price_usd + '</span></span>' +
+          '</div>' +
+          '<span class="usca-country-check">' + svg(G.check) + '</span>';
+
+        btn.addEventListener("click", function() {
+          state.operator = op;
+          renderOperators();
+          updateReview();
+        });
+
+        operatorGrid.appendChild(btn);
       });
 
       priceRender();
@@ -152,7 +199,7 @@
       }
 
       if (reviewService && state.service) {
-        reviewService.textContent = state.service.name;
+        reviewService.textContent = state.service.name + (state.operator && currentOperators.length > 1 ? " (" + state.operator.name + ")" : "");
       }
 
       if (reviewScreen && state.pkg) {
@@ -166,7 +213,7 @@
       }
 
       if (submit) {
-        submit.disabled = !(state.country && state.pkg && state.service);
+        submit.disabled = !(state.country && state.pkg && state.service && state.operator);
       }
 
       priceRender();
@@ -182,11 +229,18 @@
         
         currentServices = p.services || [];
         if (currentServices.length > 0) {
-          // If the currently selected service exists in the new list, keep it. Else select first.
-          var existing = currentServices.filter(function(s) { return state.service && s.id === state.service.id; })[0];
-          state.service = existing || currentServices[0];
+          var existingS = currentServices.filter(function(s) { return state.service && s.id === state.service.id; })[0];
+          state.service = existingS || currentServices[0];
         } else {
           state.service = null;
+        }
+
+        currentOperators = p.operators || [];
+        if (currentOperators.length > 0) {
+          var existingO = currentOperators.filter(function(op) { return state.operator && op.id === state.operator.id; })[0];
+          state.operator = existingO || currentOperators[0];
+        } else {
+          state.operator = null;
         }
 
         pkgCards.forEach(function (el) { el.classList.remove("is-selected"); });
@@ -197,7 +251,8 @@
         } else {
           renderServices("");
         }
-
+        
+        renderOperators();
         updateReview();
       });
     });
@@ -230,7 +285,7 @@
     /* ---- Submit Purchase ---- */
     if (submit) {
       submit.addEventListener("click", function () {
-        if (submit.disabled || !state.country || !state.pkg || !state.service) return;
+        if (submit.disabled || !state.country || !state.pkg || !state.service || !state.operator) return;
 
         var origHtml = submit.innerHTML;
         submit.disabled = true;
@@ -242,7 +297,7 @@
           country_code: state.country.country_code,
           country_name: state.country.country_name,
           package_id: state.pkg.id,
-          provider_id: "auto",
+          provider_id: state.operator.id,
           service_name: state.service.name,
           price: calculatePrice()
         };
@@ -284,6 +339,7 @@
 
     /* ---- Initial paint ---- */
     renderServices("");
+    renderOperators();
     updateReview();
   }
 
