@@ -59,6 +59,8 @@
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
         {% set is_reliable = (o.provider_order_id and o.provider_order_id.startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) %}
         {% set price_formatted = '₦{:,.2f}'.format(o.price * NGN_PER_USD) %}
+        {% set is_us = (o.country_code in ['US', 'CA', 'USA', 'CAN']) or (o.country in ['usa', 'us', 'canada', 'ca']) or is_reliable or (o.order_reference and 'USCA' in o.order_reference) or (o.phone_number and o.phone_number.startswith('+1')) %}
+        {% set reorder_url = url_for('sims.us_canada') if is_us else url_for('sims.store') %}
         <tr data-order-row data-order-id="{{ o.id or o.order_reference }}" data-is-active="{{ 'true' if is_active else 'false' }}">
           <td>
             <div style="display:flex; flex-direction:column; gap:4px;">
@@ -141,17 +143,23 @@
                 </button>
               </div>
             {% elif is_done %}
-              <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
+              <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
+                <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
+                <a href="{{ reorder_url }}" class="btn btn-secondary btn-sm">Re-order</a>
+              </div>
             {% elif is_timeout and is_reliable %}
-              <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
-                      data-id="{{ o.id or o.order_reference }}"
-                      data-service="{{ o.service_name }}"
-                      data-phone="{{ o.phone_number }}"
-                      data-ref="{{ o.order_reference }}">
-                {{ icon('refresh') }} Reactivate
-              </button>
+              <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
+                <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
+                        data-id="{{ o.id or o.order_reference }}"
+                        data-service="{{ o.service_name }}"
+                        data-phone="{{ o.phone_number }}"
+                        data-ref="{{ o.order_reference }}">
+                  {{ icon('refresh') }} Reactivate
+                </button>
+                <a href="{{ reorder_url }}" class="btn btn-secondary btn-sm">Re-order</a>
+              </div>
             {% else %}
-              <a href="{{ url_for('sims.store') }}" class="btn btn-secondary btn-sm">Re-order</a>
+              <a href="{{ reorder_url }}" class="btn btn-secondary btn-sm">Re-order</a>
             {% endif %}
           </td>
         </tr>

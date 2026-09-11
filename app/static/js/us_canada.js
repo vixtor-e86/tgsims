@@ -70,14 +70,103 @@
     if (!boxEl) return;
 
     var searchInput = boxEl.querySelector("[data-search-input]");
+    var clearBtn = boxEl.querySelector("[data-clear-btn]");
+    var dropdownMenu = boxEl.querySelector("[data-dropdown-menu]");
     var selectEl = boxEl.querySelector("[data-service-select]");
     var priceEl = boxEl.querySelector("[data-price-val]");
     var submitBtn = boxEl.querySelector("[data-submit-btn]");
     var allServices = opts.services || [];
     var currentFiltered = allServices.slice();
     var selectedItem = null;
+    var highlightedIndex = -1;
+    var isOpen = false;
+
+    function openDropdown() {
+      if (!dropdownMenu) return;
+      isOpen = true;
+      dropdownMenu.classList.add("is-open");
+      dropdownMenu.style.display = "block";
+      renderDropdownItems(currentFiltered);
+      scrollHighlightedIntoView();
+    }
+
+    function closeDropdown() {
+      if (!dropdownMenu) return;
+      isOpen = false;
+      dropdownMenu.classList.remove("is-open");
+      dropdownMenu.style.display = "none";
+      highlightedIndex = -1;
+    }
+
+    function scrollHighlightedIntoView() {
+      if (!dropdownMenu || highlightedIndex < 0) return;
+      var items = dropdownMenu.querySelectorAll(".search-dropdown-item");
+      if (items[highlightedIndex]) {
+        items[highlightedIndex].scrollIntoView({ block: "nearest" });
+      }
+    }
+
+    function renderDropdownItems(items) {
+      if (!dropdownMenu) return;
+      dropdownMenu.innerHTML = "";
+
+      if (!items || items.length === 0) {
+        var emptyEl = document.createElement("div");
+        emptyEl.className = "search-dropdown-empty";
+        emptyEl.textContent = "No services match your search";
+        dropdownMenu.appendChild(emptyEl);
+        return;
+      }
+
+      items.forEach(function (s, idx) {
+        var itemEl = document.createElement("div");
+        itemEl.className = "search-dropdown-item";
+        if (selectedItem && selectedItem.id === s.id) {
+          itemEl.classList.add("is-selected");
+        }
+        if (idx === highlightedIndex) {
+          itemEl.classList.add("is-highlighted");
+        }
+
+        var iconLetter = (s.service_name || s.name || "S").charAt(0).toUpperCase();
+        var routeDesc = s.quality || (opts.type === "premium" ? "100% Non-VoIP Cellular" : "High-Delivery Pool");
+
+        itemEl.innerHTML =
+          '<div class="search-dropdown-item-left">' +
+            '<span class="search-dropdown-item-icon">' + iconLetter + '</span>' +
+            '<div class="search-dropdown-item-info">' +
+              '<span class="search-dropdown-item-name">' + (s.name || s.service_name) + '</span>' +
+              '<span class="search-dropdown-item-route">' + routeDesc + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<span class="search-dropdown-item-price">' + formatMoney(s.price_usd) + '</span>';
+
+        itemEl.addEventListener("mousedown", function (e) {
+          e.preventDefault(); // prevent input blur
+          chooseService(s);
+          closeDropdown();
+        });
+
+        dropdownMenu.appendChild(itemEl);
+      });
+    }
+
+    function chooseService(s) {
+      if (!s) return;
+      selectedItem = s;
+      if (selectEl) {
+        selectEl.value = s.id;
+      }
+      if (searchInput) {
+        searchInput.value = s.name || s.service_name;
+        if (clearBtn) clearBtn.style.display = "inline-block";
+      }
+      updatePriceDisplay();
+      if (submitBtn) submitBtn.disabled = false;
+    }
 
     function renderOptions(items, preserveSelectionId) {
+      if (!selectEl) return;
       selectEl.innerHTML = "";
 
       if (!items || items.length === 0) {
@@ -123,10 +212,21 @@
       }
     }
 
-    // Filter services on search typing
+    // Filter services on search typing & open dropdown
     if (searchInput) {
+      searchInput.addEventListener("focus", function () {
+        openDropdown();
+      });
+
+      searchInput.addEventListener("click", function () {
+        openDropdown();
+      });
+
       searchInput.addEventListener("input", function () {
         var q = searchInput.value.trim().toLowerCase();
+        if (clearBtn) {
+          clearBtn.style.display = q ? "inline-block" : "none";
+        }
         if (!q) {
           currentFiltered = allServices.slice();
         } else {
@@ -137,25 +237,74 @@
             return n.indexOf(q) > -1 || sn.indexOf(q) > -1 || ql.indexOf(q) > -1;
           });
         }
-        renderOptions(currentFiltered);
+        highlightedIndex = currentFiltered.length > 0 ? 0 : -1;
+        renderOptions(currentFiltered, selectedItem ? selectedItem.id : null);
+        openDropdown();
       });
 
-      // Quick focus helper
+      // Keyboard navigation
       searchInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
+        if (!isOpen && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+          openDropdown();
+          return;
+        }
+
+        if (e.key === "ArrowDown") {
           e.preventDefault();
-          selectEl.focus();
+          if (currentFiltered.length > 0) {
+            highlightedIndex = (highlightedIndex + 1) % currentFiltered.length;
+            renderDropdownItems(currentFiltered);
+            scrollHighlightedIntoView();
+          }
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (currentFiltered.length > 0) {
+            highlightedIndex = (highlightedIndex - 1 + currentFiltered.length) % currentFiltered.length;
+            renderDropdownItems(currentFiltered);
+            scrollHighlightedIntoView();
+          }
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (highlightedIndex >= 0 && currentFiltered[highlightedIndex]) {
+            chooseService(currentFiltered[highlightedIndex]);
+            closeDropdown();
+          } else if (currentFiltered.length > 0) {
+            chooseService(currentFiltered[0]);
+            closeDropdown();
+          }
+        } else if (e.key === "Escape") {
+          closeDropdown();
         }
       });
     }
 
+    // Clear search button
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        searchInput.value = "";
+        clearBtn.style.display = "none";
+        currentFiltered = allServices.slice();
+        renderOptions(currentFiltered, selectedItem ? selectedItem.id : null);
+        searchInput.focus();
+        openDropdown();
+      });
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener("click", function (e) {
+      if (!boxEl.contains(e.target)) {
+        closeDropdown();
+      }
+    });
+
     // Update on select change
     selectEl.addEventListener("change", function () {
       var val = selectEl.value;
-      var matched = currentFiltered.filter(function (s) { return s.id === val; })[0];
+      var matched = allServices.filter(function (s) { return s.id === val; })[0];
       if (matched) {
-        selectedItem = matched;
-        updatePriceDisplay();
+        chooseService(matched);
       }
     });
 
@@ -163,10 +312,15 @@
     document.addEventListener("currencychange", function () {
       var currId = selectedItem ? selectedItem.id : null;
       renderOptions(currentFiltered, currId);
+      if (isOpen) renderDropdownItems(currentFiltered);
     });
 
     // Initial render
     renderOptions(currentFiltered);
+    if (selectedItem && searchInput && !searchInput.value) {
+      searchInput.value = selectedItem.name || selectedItem.service_name;
+      if (clearBtn) clearBtn.style.display = "inline-block";
+    }
 
     // Submit purchase
     if (submitBtn) {
