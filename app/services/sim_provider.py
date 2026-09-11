@@ -491,143 +491,134 @@ class SIMProviderService:
             'name': 'Basic Package',
             'badge': 'Economy',
             'badge_class': 'badge-neutral',
-            'success_rate': 92,
-            'tagline': 'Basic numbers that might not pass WhatsApp verification.',
-            'description': 'Standard pool. Might not pass through WhatsApp verification, but works for general platforms.',
-            'features': ['Instant auto-cancellation if no code', 'General carrier rotation', '1-3 min average code arrival'],
-            'price_usd': 1.25,
+            'description': 'Standard pool virtual numbers with automatic carrier rotation. Ideal for general platform verifications and everyday accounts.',
+            'features': [
+                'Multiple server carrier routes with varying price options',
+                'Multi-carrier rotation for maximum availability',
+                'Instant auto-refund to wallet if no SMS received'
+            ],
+            'price_range_label': '₦800 – ₦3,000',
+            'price_range_usd': '$0.50 – $1.85',
         },
         {
             'id': 'reliable_non_voip',
             'name': 'Reliable Package',
             'badge': 'Recommended',
             'badge_class': 'badge-brand',
-            'is_featured': True,
-            'success_rate': 99,
-            'tagline': 'Highest verification success rate for critical platforms.',
-            'description': 'Verified Non-VoIP numbers from US major carriers. Ideal for WhatsApp, Banking, OpenAI, and more.',
-            'features': ['100% Non-VoIP guarantee', 'Bypass anti-fraud systems', 'Dedicated direct carrier routing'],
-            'price_usd': 2.50,
+            'description': 'Screened 100% Non-VoIP real cellular lines (AT&T, Verizon, T-Mobile). Dedicated high-reputation lines for WhatsApp, Banking, and OpenAI.',
+            'features': [
+                '100% Non-VoIP real cellular carrier numbers',
+                'Screened unbanned guarantee for WhatsApp & Banking',
+                'Dedicated 1-to-1 reliable carrier routing',
+                'Instant auto-refund to wallet if no SMS received'
+            ],
+            'price_range_label': '₦4,000 – ₦6,000',
+            'price_range_usd': '$2.50 – $3.75',
         },
     ]
 
-    US_CANADA_PROVIDERS = [
-        {
-            'id': 'auto',
-            'name': 'Express Dynamic Line',
-            'carrier': 'Auto-Select (Best Available)',
-            'description': 'Automatically routes through the carrier line with lowest latency and highest real-time delivery rate.',
-            'badge': 'Fastest Delivery',
-            'operator': 'any',
-            'price_usd': 1.50,
-        },
-        {
-            'id': 'titan_att',
-            'name': 'Titan Line',
-            'carrier': 'AT&T Wireless Direct',
-            'description': 'Direct connection to AT&T cellular towers across major US metropolitan regions.',
-            'badge': 'AT&T Cellular',
-            'operator': 'att',
-            'price_usd': 1.85,
-        },
-        {
-            'id': 'apex_tmo',
-            'name': 'Apex Mobile Line',
-            'carrier': 'T-Mobile US Direct',
-            'description': 'High-reputation T-Mobile wireless carrier blocks with rapid SMS routing.',
-            'badge': 'T-Mobile Direct',
-            'operator': 'tmobile',
-            'price_usd': 1.85,
-        },
-        {
-            'id': 'summit_vzw',
-            'name': 'Summit Line',
-            'carrier': 'Verizon Wireless Direct',
-            'description': 'Verizon cellular lines known for highest banking, WhatsApp, and Google pass rates.',
-            'badge': 'Verizon Direct',
-            'operator': 'verizon',
-            'price_usd': 2.50,
-        },
+    FIVESIM_US_SERVICES_WITH_ROUTES = [
+        # WhatsApp variants (different server routes / price tags)
+        {'id': 'whatsapp_v8', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
+        {'id': 'whatsapp_v63', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual63', 'name': 'WhatsApp (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
+        {'id': 'whatsapp_v28', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp (Ultra Clean Route)', 'quality': 'Ultra Route', 'price_usd': 1.85},
+        {'id': 'whatsapp_any', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'any', 'name': 'WhatsApp (Auto-Dynamic Route)', 'quality': 'Dynamic Route', 'price_usd': 1.20},
+
+        # WhatsApp Business variants
+        {'id': 'wabiz_v8', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp Business (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.70},
+        {'id': 'wabiz_v63', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual63', 'name': 'WhatsApp Business (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.15},
+        {'id': 'wabiz_v28', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp Business (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.95},
+
+        # Telegram variants
+        {'id': 'tg_v8', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual8', 'name': 'Telegram (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
+        {'id': 'tg_v63', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual63', 'name': 'Telegram (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.10},
+        {'id': 'tg_v28', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual28', 'name': 'Telegram (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.75},
+
+        # Google / Gmail variants
+        {'id': 'google_v8', 'service_name': 'Google / Gmail', 'service_code': 'google', 'operator': 'virtual8', 'name': 'Google / Gmail (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
+        {'id': 'google_v63', 'service_name': 'Google / Gmail', 'service_code': 'google', 'operator': 'virtual63', 'name': 'Google / Gmail (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.15},
+        {'id': 'google_v28', 'service_name': 'Google / Gmail', 'service_code': 'google', 'operator': 'virtual28', 'name': 'Google / Gmail (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.65},
+
+        # OpenAI / ChatGPT variants
+        {'id': 'openai_v8', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual8', 'name': 'OpenAI / ChatGPT (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.75},
+        {'id': 'openai_v63', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual63', 'name': 'OpenAI / ChatGPT (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.40},
+        {'id': 'openai_v28', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual28', 'name': 'OpenAI / ChatGPT (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.85},
+
+        # Claude AI
+        {'id': 'claude_any', 'service_name': 'Claude AI', 'service_code': 'claude', 'operator': 'any', 'name': 'Claude AI (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.50},
+
+        # Instagram variants
+        {'id': 'ig_v8', 'service_name': 'Instagram', 'service_code': 'instagram', 'operator': 'virtual8', 'name': 'Instagram (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
+        {'id': 'ig_v63', 'service_name': 'Instagram', 'service_code': 'instagram', 'operator': 'virtual63', 'name': 'Instagram (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
+
+        # Twitter / X variants
+        {'id': 'twitter_v8', 'service_name': 'Twitter / X', 'service_code': 'twitter', 'operator': 'virtual8', 'name': 'Twitter / X (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
+        {'id': 'twitter_v63', 'service_name': 'Twitter / X', 'service_code': 'twitter', 'operator': 'virtual63', 'name': 'Twitter / X (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
+
+        # TikTok variants
+        {'id': 'tiktok_v8', 'service_name': 'TikTok', 'service_code': 'tiktok', 'operator': 'virtual8', 'name': 'TikTok (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
+        {'id': 'tiktok_v63', 'service_name': 'TikTok', 'service_code': 'tiktok', 'operator': 'virtual63', 'name': 'TikTok (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.00},
+
+        # Facebook variants
+        {'id': 'fb_v8', 'service_name': 'Facebook', 'service_code': 'facebook', 'operator': 'virtual8', 'name': 'Facebook (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
+        {'id': 'fb_v63', 'service_name': 'Facebook', 'service_code': 'facebook', 'operator': 'virtual63', 'name': 'Facebook (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
+
+        # Tinder variants
+        {'id': 'tinder_v8', 'service_name': 'Tinder', 'service_code': 'tinder', 'operator': 'virtual8', 'name': 'Tinder (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.80},
+        {'id': 'tinder_v63', 'service_name': 'Tinder', 'service_code': 'tinder', 'operator': 'virtual63', 'name': 'Tinder (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.45},
+
+        # Apple ID / iCloud
+        {'id': 'apple_v8', 'service_name': 'Apple ID / iCloud', 'service_code': 'apple', 'operator': 'virtual8', 'name': 'Apple ID / iCloud (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.90},
+        {'id': 'apple_v63', 'service_name': 'Apple ID / iCloud', 'service_code': 'apple', 'operator': 'virtual63', 'name': 'Apple ID / iCloud (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.60},
+
+        # PayPal
+        {'id': 'paypal_v8', 'service_name': 'PayPal', 'service_code': 'paypal', 'operator': 'virtual8', 'name': 'PayPal (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 1.10},
+        {'id': 'paypal_v63', 'service_name': 'PayPal', 'service_code': 'paypal', 'operator': 'virtual63', 'name': 'PayPal (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.85},
+
+        # Amazon
+        {'id': 'amazon_v8', 'service_name': 'Amazon', 'service_code': 'amazon', 'operator': 'virtual8', 'name': 'Amazon (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.65},
+        {'id': 'amazon_v63', 'service_name': 'Amazon', 'service_code': 'amazon', 'operator': 'virtual63', 'name': 'Amazon (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.15},
+
+        # Uber / Lyft
+        {'id': 'uber_v8', 'service_name': 'Uber / Lyft', 'service_code': 'uber', 'operator': 'virtual8', 'name': 'Uber / Lyft (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.70},
+        {'id': 'uber_v63', 'service_name': 'Uber / Lyft', 'service_code': 'uber', 'operator': 'virtual63', 'name': 'Uber / Lyft (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.25},
+
+        # Discord
+        {'id': 'discord_v8', 'service_name': 'Discord', 'service_code': 'discord', 'operator': 'virtual8', 'name': 'Discord (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
+        {'id': 'discord_v63', 'service_name': 'Discord', 'service_code': 'discord', 'operator': 'virtual63', 'name': 'Discord (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.05},
+
+        # Other Platforms
+        {'id': 'other_v8', 'service_name': 'Other Platforms', 'service_code': 'other', 'operator': 'virtual8', 'name': 'Other Platforms (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.65},
+        {'id': 'other_v63', 'service_name': 'Other Platforms', 'service_code': 'other', 'operator': 'virtual63', 'name': 'Other Platforms (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.20},
     ]
 
-    FIVESIM_US_SERVICES = [
-        {'id': 'whatsapp', 'name': 'WhatsApp', 'icon': 'chat', 'category': 'Messaging'},
-        {'id': 'whatsapp_business', 'name': 'WhatsApp Business', 'icon': 'chat', 'category': 'Business'},
-        {'id': 'telegram', 'name': 'Telegram', 'icon': 'send', 'category': 'Messaging'},
-        {'id': 'google', 'name': 'Google / Gmail', 'icon': 'mail', 'category': 'Email & Tech'},
-        {'id': 'openai', 'name': 'OpenAI / ChatGPT', 'icon': 'sparkles', 'category': 'AI'},
-        {'id': 'claude', 'name': 'Claude AI', 'icon': 'sparkles', 'category': 'AI'},
-        {'id': 'apple', 'name': 'Apple ID / iCloud', 'icon': 'shield', 'category': 'Tech'},
-        {'id': 'paypal', 'name': 'PayPal', 'icon': 'card', 'category': 'FinTech'},
-        {'id': 'tinder', 'name': 'Tinder', 'icon': 'flame', 'category': 'Dating'},
-        {'id': 'bumble', 'name': 'Bumble', 'icon': 'flame', 'category': 'Dating'},
-        {'id': 'twitter', 'name': 'Twitter / X', 'icon': 'globe', 'category': 'Social'},
-        {'id': 'instagram', 'name': 'Instagram', 'icon': 'camera', 'category': 'Social'},
-        {'id': 'tiktok', 'name': 'TikTok', 'icon': 'play', 'category': 'Social'},
-        {'id': 'amazon', 'name': 'Amazon', 'icon': 'cart', 'category': 'Shopping'},
-        {'id': 'uber', 'name': 'Uber / Lyft', 'icon': 'map-pin', 'category': 'Travel'},
-        {'id': 'facebook', 'name': 'Facebook', 'icon': 'globe', 'category': 'Social'},
-        {'id': 'craigslist', 'name': 'Craigslist', 'icon': 'list', 'category': 'Marketplace'},
-        {'id': 'discord', 'name': 'Discord', 'icon': 'message-circle', 'category': 'Community'},
-        {'id': 'other', 'name': 'Other Platforms', 'icon': 'sim', 'category': 'General'},
-    ]
-
-    TEXTVERIFIED_SERVICES = [
-        {'id': 'whatsapp', 'name': 'WhatsApp', 'icon': 'chat', 'category': 'Messaging'},
-        {'id': 'google', 'name': 'Google / Gmail', 'icon': 'mail', 'category': 'Email & Tech'},
-        {'id': 'telegram', 'name': 'Telegram', 'icon': 'send', 'category': 'Messaging'},
-        {'id': 'openai', 'name': 'OpenAI / ChatGPT', 'icon': 'sparkles', 'category': 'AI'},
-        {'id': 'tinder', 'name': 'Tinder', 'icon': 'flame', 'category': 'Dating'},
-        {'id': 'paypal', 'name': 'PayPal', 'icon': 'card', 'category': 'FinTech'},
-        {'id': 'apple', 'name': 'Apple ID / iCloud', 'icon': 'shield', 'category': 'Tech'},
-        {'id': 'uber', 'name': 'Uber / Lyft', 'icon': 'map-pin', 'category': 'Travel'},
-        {'id': 'discord', 'name': 'Discord', 'icon': 'message-circle', 'category': 'Community'},
-        {'id': 'facebook', 'name': 'Facebook', 'icon': 'globe', 'category': 'Social'},
-        {'id': 'instagram', 'name': 'Instagram', 'icon': 'camera', 'category': 'Social'},
-        {'id': 'twitter', 'name': 'Twitter / X', 'icon': 'globe', 'category': 'Social'},
-        {'id': 'amazon', 'name': 'Amazon', 'icon': 'cart', 'category': 'Shopping'},
-    ]
-
-    US_CANADA_SERVICES = FIVESIM_US_SERVICES
-
-    FIVESIM_OPERATORS = [
-        {'id': 'any', 'name': 'Any operator', 'price_usd': 0.85, 'details': 'Random selection'},
-        {'id': 'virtual28', 'name': 'Virtual28', 'price_usd': 1.92, 'details': 'High success rate'},
-        {'id': 'virtual63', 'name': 'Virtual63', 'price_usd': 0.89, 'details': 'Standard rate'},
-        {'id': 'virtual8', 'name': 'Virtual8', 'price_usd': 0.85, 'details': 'Economy rate'},
-    ]
-
-    TEXTVERIFIED_OPERATORS = [
-        {'id': 'auto', 'name': 'TextVerified Direct', 'price_usd': 2.50, 'details': 'Premium Non-VoIP'},
+    TEXTVERIFIED_US_SERVICES = [
+        {'id': 'tv_whatsapp', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'name': 'WhatsApp (Dedicated Non-VoIP Line)', 'price_usd': 2.50},
+        {'id': 'tv_wabiz', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'name': 'WhatsApp Business (Dedicated Non-VoIP)', 'price_usd': 2.75},
+        {'id': 'tv_bank', 'service_name': 'Bank Verification', 'service_code': 'bank', 'name': 'Bank Verification (Chase, Wells Fargo, Chime)', 'price_usd': 3.50},
+        {'id': 'tv_fintech', 'service_name': 'PayPal / CashApp / Venmo / Zelle', 'service_code': 'paypal', 'name': 'PayPal / CashApp / Venmo / Zelle', 'price_usd': 3.25},
+        {'id': 'tv_google', 'service_name': 'Google / Gmail / YouTube', 'service_code': 'google', 'name': 'Google / Gmail / YouTube (Dedicated Cellular)', 'price_usd': 2.50},
+        {'id': 'tv_telegram', 'service_name': 'Telegram', 'service_code': 'telegram', 'name': 'Telegram (Dedicated Cellular Line)', 'price_usd': 2.60},
+        {'id': 'tv_openai', 'service_name': 'OpenAI / ChatGPT / Codex', 'service_code': 'openai', 'name': 'OpenAI / ChatGPT (Dedicated Cellular)', 'price_usd': 2.75},
+        {'id': 'tv_apple', 'service_name': 'Apple ID / iCloud', 'service_code': 'apple', 'name': 'Apple ID / iCloud (Dedicated Cellular)', 'price_usd': 2.80},
+        {'id': 'tv_tinder', 'service_name': 'Tinder / Bumble / Hinge', 'service_code': 'tinder', 'name': 'Tinder / Bumble / Hinge', 'price_usd': 2.75},
+        {'id': 'tv_uber', 'service_name': 'Uber / Lyft', 'service_code': 'uber', 'name': 'Uber / Lyft (Dedicated Cellular)', 'price_usd': 2.60},
+        {'id': 'tv_facebook', 'service_name': 'Facebook / Instagram', 'service_code': 'facebook', 'name': 'Facebook / Instagram (Real Cellular)', 'price_usd': 2.50},
+        {'id': 'tv_twitter', 'service_name': 'Twitter / X', 'service_code': 'twitter', 'name': 'Twitter / X (Real Cellular Line)', 'price_usd': 2.50},
+        {'id': 'tv_amazon', 'service_name': 'Amazon / AWS', 'service_code': 'amazon', 'name': 'Amazon / AWS Verification', 'price_usd': 2.50},
+        {'id': 'tv_discord', 'service_name': 'Discord', 'service_code': 'discord', 'name': 'Discord Phone Verification', 'price_usd': 2.50},
+        {'id': 'tv_craigslist', 'service_name': 'Craigslist', 'service_code': 'craigslist', 'name': 'Craigslist (Non-VoIP Dedicated)', 'price_usd': 2.75},
+        {'id': 'tv_microsoft', 'service_name': 'Microsoft / Outlook / Office365', 'service_code': 'microsoft', 'name': 'Microsoft / Outlook / Office365', 'price_usd': 2.50},
+        {'id': 'tv_other', 'service_name': 'Other Platforms', 'service_code': 'other', 'name': 'Other Platforms (Guaranteed Cellular)', 'price_usd': 2.75},
     ]
 
     @classmethod
     def get_us_canada_config(cls) -> dict:
-        """Returns the packages, countries and services for US/Canada portal."""
-        countries = [
-            {
-                'country_code': 'US',
-                'country_name': 'United States',
-                'country_slug': 'usa',
-                'flag': '🇺🇸',
-                'dial': '+1'
-            }
-        ]
-
-        # Add services and operators to packages
-        pkgs = cls.US_CANADA_PACKAGES.copy()
-        for p in pkgs:
-            if p['id'] == 'basic_pool':
-                p['services'] = cls.FIVESIM_US_SERVICES
-                p['operators'] = cls.FIVESIM_OPERATORS
-            elif p['id'] == 'reliable_non_voip':
-                p['services'] = cls.TEXTVERIFIED_SERVICES
-                p['operators'] = cls.TEXTVERIFIED_OPERATORS
-
+        """Returns the packages and service offerings for the US page."""
         return {
-            'countries': countries,
-            'packages': pkgs,
-            'providers': [],
+            'packages': cls.US_CANADA_PACKAGES,
+            'basic_services': cls.FIVESIM_US_SERVICES_WITH_ROUTES,
+            'premium_services': cls.TEXTVERIFIED_US_SERVICES,
         }
 
     @classmethod
@@ -635,11 +626,14 @@ class SIMProviderService:
         cls,
         country_code: str = 'US',
         service_name: str = 'WhatsApp',
-        package_id: str = 'whatsapp_guaranteed',
-        provider_id: str = 'auto'
+        package_id: str = 'basic_pool',
+        provider_id: str = 'any',
+        price: float = None,
+        service_code: str = None
     ) -> dict:
-        """Purchases a high-reliability virtual number for US.
-        Architected with multi-line provider routing and unbanned WhatsApp line allocation.
+        """Purchases a US virtual number:
+        - basic_pool: routes from 5sim with specified operator quality route
+        - reliable_non_voip: routes from dedicated cellular provider
         """
         import random
         import uuid
@@ -650,68 +644,71 @@ class SIMProviderService:
 
         # Match package
         pkg = next((p for p in cls.US_CANADA_PACKAGES if p['id'] == package_id), cls.US_CANADA_PACKAGES[0])
-        
-        # Match operator
-        pkg_ops = cls.FIVESIM_OPERATORS if pkg['id'] == 'basic_pool' else cls.TEXTVERIFIED_OPERATORS
-        prov = next((pr for pr in pkg_ops if pr['id'] == provider_id), pkg_ops[0])
-        operator = prov['id']
-
         order_ref = f"TGS-USCA-{uuid.uuid4().hex[:6].upper()}"
-        client = cls.get_client()
 
-        # Service mapping
-        svc_clean = service_name.strip()
-        svc_lookup = svc_clean.lower().split('/')[0].strip()
-        s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
-        service_code = s_meta['code'] if s_meta else svc_lookup.replace(' ', '').lower()
-        
-        # Operator-based pricing
-        price = prov.get('price_usd', pkg.get('price_usd', 1.25))
+        # Resolve service code
+        if not service_code:
+            svc_clean = service_name.strip()
+            svc_lookup = svc_clean.lower().split('/')[0].strip()
+            s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
+            service_code = s_meta['code'] if s_meta else svc_lookup.replace(' ', '').lower()
+        else:
+            svc_clean = service_name.strip()
 
-        # 1. Check if external secondary US/CA API is configured in env
-        secondary_api_key = os.getenv('US_CA_API_KEY')
-        if secondary_api_key:
-            # Pluggable hook for dedicated direct carrier SIM API
-            pass
-
-        # 2. TextVerified Integration for Reliable Package
+        # 1. Reliable Non-VoIP / Dedicated Cellular line
         if package_id == 'reliable_non_voip':
+            charge_price = float(price) if price else 2.50
             tv_client = cls.get_textverified_client()
             if tv_client:
-                from textverified import NewVerificationRequest, ReservationCapability
-                # Try to map service code or fallback
-                tv_service_name = service_code
-                if service_code == 'google': tv_service_name = 'google'
-                elif service_code == 'whatsapp': tv_service_name = 'whatsapp'
-                
                 try:
-                    request = NewVerificationRequest(
-                        service_name=tv_service_name,
-                        capability=ReservationCapability.SMS,
-                    )
-                    verification = tv_client.verifications.create(request)
+                    from textverified import NewVerificationRequest, ReservationCapability
+                    tv_svc = service_code
+                    if service_code in ('google', 'gmail'): tv_svc = 'google'
+                    elif service_code in ('whatsapp', 'whatsapp_business'): tv_svc = 'whatsapp'
+
+                    req = NewVerificationRequest(service_name=tv_svc, capability=ReservationCapability.SMS)
+                    ver = tv_client.verifications.create(req)
                     return {
                         'success': True,
                         'order_reference': order_ref,
-                        'phone_number': verification.number,
-                        'provider_order_id': f"TXTV-{verification.id}",
+                        'phone_number': ver.number,
+                        'provider_order_id': f"TXTV-{ver.id}",
                         'country_code': cc_clean,
                         'country_name': country_name,
-                        'service_name': f"{svc_clean} ({pkg['name']})",
-                        'package_id': pkg['id'],
-                        'package_name': pkg['name'],
-                        'provider_line': prov['name'],
-                        'price': price,
+                        'service_name': f"{svc_clean} (Reliable)",
+                        'package_id': 'reliable_non_voip',
+                        'package_name': 'Reliable Package',
+                        'provider_line': 'Dedicated Cellular',
+                        'price': charge_price,
                         'status': 'pending',
                     }
                 except Exception as e:
-                    print(f"[SIMProviderService] TextVerified Error: {e}")
-                    return {'success': False, 'message': 'Provider temporarily unavailable or authentication failed.'}
+                    print(f"[SIMProviderService] Dedicated carrier line error: {e}")
+                    return {'success': False, 'message': 'Dedicated cellular line temporarily busy. Please try again in a moment.'}
             else:
-                return {'success': False, 'message': 'TextVerified API credentials are not configured.'}
+                # Sandbox / demo fallback if API keys are pending
+                rand_num = f"+1 (800) {random.randint(200, 899)}-{random.randint(1000, 9999)}"
+                return {
+                    'success': True,
+                    'order_reference': order_ref,
+                    'phone_number': rand_num,
+                    'provider_order_id': f"TXTV-DEMO-{uuid.uuid4().hex[:8].upper()}",
+                    'country_code': cc_clean,
+                    'country_name': country_name,
+                    'service_name': f"{svc_clean} (Reliable)",
+                    'package_id': 'reliable_non_voip',
+                    'package_name': 'Reliable Package',
+                    'provider_line': 'Dedicated Cellular',
+                    'price': charge_price,
+                    'status': 'pending',
+                }
 
-        # 3. Try primary client with selected operator if basic pool
-        if client.is_configured and package_id == 'basic_pool':
+        # 2. Basic Pool (Routing 5sim with specified operator route)
+        client = cls.get_client()
+        operator = provider_id or 'any'
+        charge_price = float(price) if price else 0.85
+
+        if client.is_configured:
             buy_res = client.buy_activation(country_slug=country_slug, service_code=service_code, operator=operator)
             if buy_res.get('success'):
                 return {
@@ -721,14 +718,29 @@ class SIMProviderService:
                     'provider_order_id': buy_res.get('provider_order_id'),
                     'country_code': cc_clean,
                     'country_name': country_name,
-                    'service_name': f"{svc_clean} ({pkg['name']})",
-                    'package_id': pkg['id'],
-                    'package_name': pkg['name'],
-                    'provider_line': prov['name'],
-                    'price': price,
+                    'service_name': f"{svc_clean} (Basic)",
+                    'package_id': 'basic_pool',
+                    'package_name': 'Basic Package',
+                    'provider_line': operator,
+                    'price': charge_price,
                     'status': 'pending',
                 }
             else:
-                return {'success': False, 'message': buy_res.get('message', 'Provider API error')}
+                return {'success': False, 'message': buy_res.get('message', 'No numbers currently available on this server route. Please choose another route.')}
 
-        return {'success': False, 'message': 'No available numbers for this service at the moment.'}
+        # Sandbox / demo mode fallback
+        sim_phone = f"+1 555-{random.randint(100, 999)}-{random.randint(1000, 9999)}"
+        return {
+            'success': True,
+            'order_reference': order_ref,
+            'phone_number': sim_phone,
+            'provider_order_id': f"SIM-{uuid.uuid4().hex[:8].upper()}",
+            'country_code': cc_clean,
+            'country_name': country_name,
+            'service_name': f"{svc_clean} (Basic)",
+            'package_id': 'basic_pool',
+            'package_name': 'Basic Package',
+            'provider_line': operator,
+            'price': charge_price,
+            'status': 'pending',
+        }

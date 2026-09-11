@@ -55,48 +55,17 @@
   </div>
 </div>
 
-{# ---- Quick Buy + US/Canada Dedicated Service ---- #}
-<div class="grid-2 dash-mid">
-  {# Quick Buy #}
-  <section class="card card-pad quick-buy"
-           data-quick-buy
-           data-catalog='{{ catalog|tojson }}'
-           data-endpoint="{{ url_for('api.purchase_sim') }}">
-    <div class="card-head">
-      <h2 class="card-title">{{ icon('bolt') }} Quick Buy</h2>
-    </div>
-
-    <div class="field">
-      <label class="label" for="qb-country">Select Country</label>
-      <select class="select" id="qb-country" data-qb-country></select>
-    </div>
-
-    <div class="field">
-      <label class="label" for="qb-service">Select Service</label>
-      <select class="select" id="qb-service" data-qb-service></select>
-    </div>
-
-    <div class="price-box">
-      <span class="price-box-label">Price</span>
-      <span class="price-box-value" data-qb-price data-usd="0">₦0.00</span>
-    </div>
-
-    <button class="btn btn-primary btn-block btn-lg" data-qb-submit type="button">
-      Order Number Now {{ icon('arrow-right') }}
-    </button>
-    <p class="quick-buy-note">{{ icon('clock') }} Estimated delivery: <strong>Instant</strong></p>
-  </section>
-
-  {# US Guaranteed Lines Feature Card #}
+{# ---- US Dedicated Lines Feature Card ---- #}
+<div class="dash-mid">
   <section class="card card-pad us-ca-feature-card">
     <div class="feature-card-tag">
-      <span class="badge badge-brand">{{ icon('shield') }} Dedicated Lines</span>
-      <span class="badge badge-success">99.8% Success</span>
+      <span class="badge badge-brand">{{ icon('shield') }} Dedicated Cellular</span>
+      <span class="badge badge-success">High Reliability</span>
     </div>
     <h2 class="feature-card-title">Buy US Number</h2>
     <p class="feature-card-desc">
       Ultra-reliable Tier-1 cellular lines (AT&amp;T, T-Mobile, Verizon).
-      Screened specifically for <strong>WhatsApp, WhatsApp Business, Google, and Banking</strong> with guaranteed unbanned status.
+      Screened specifically for <strong>WhatsApp, WhatsApp Business, Google, OpenAI, and Banking</strong> with guaranteed unbanned status.
     </p>
 
     <div class="feature-badges-grid">
@@ -122,8 +91,8 @@
       <a href="{{ url_for('sims.us_canada') }}" class="btn btn-primary btn-lg">
         Buy US Number {{ icon('arrow-right') }}
       </a>
-      <a href="{{ url_for('sims.store') }}" class="btn btn-secondary">
-        Browse Other Countries
+      <a href="{{ url_for('sims.store') }}" class="btn btn-secondary btn-lg">
+        Buy Other Countries {{ icon('arrow-right') }}
       </a>
     </div>
   </section>

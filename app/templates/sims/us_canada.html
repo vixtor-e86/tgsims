@@ -4,138 +4,112 @@
 {% block title %}Buy US Number | {{ BRAND }}{% endblock %}
 
 {% block page %}
+{# ---- Page Head ---- #}
 <div class="page-head">
   <div>
     <div class="pill-badge-row" style="margin-bottom:var(--sp-2);">
       <span class="badge badge-brand">{{ icon('shield') }} Dedicated Cellular</span>
-      <span class="badge badge-success">{{ icon('check') }} 99.8% Success Rate</span>
+      <span class="badge badge-success">{{ icon('check') }} Real Non-VoIP</span>
       <span class="badge badge-neutral">{{ icon('refresh') }} Auto-Refund Guarantee</span>
     </div>
     <h1 class="page-title">Buy US Number</h1>
-    <p class="page-subtitle">Real non-VoIP cellular numbers screened specifically for WhatsApp, Google, and banking verification.</p>
+    <p class="page-subtitle">Screened non-VoIP cellular and standard virtual numbers for WhatsApp, Google, Banking, and all SMS verification.</p>
   </div>
 </div>
 
-<div class="grid-main-aside buy-grid"
-     data-usca
+{# ---- Package Explanation Cards (Informational / Non-Clickable) ---- #}
+<div class="pkg-overview-grid" style="margin-bottom: var(--sp-6);">
+  {% for p in config.packages %}
+  <div class="pkg-card pkg-card-static">
+    <div class="pkg-head">
+      <span class="badge {{ p.badge_class }}">{{ p.badge }}</span>
+    </div>
+    <h3 class="pkg-title">{{ p.name }}</h3>
+    <p class="pkg-desc">{{ p.description }}</p>
+    <ul class="pkg-features">
+      {% for f in p.features %}
+      <li>{{ icon('check') }} <span>{{ f }}</span></li>
+      {% endfor %}
+    </ul>
+    <div class="pkg-price-row">
+      <span class="pkg-price-label">Price Range</span>
+      <span class="pkg-price-val" data-range-ngn="{{ p.price_range_label }}" data-range-usd="{{ p.price_range_usd }}">
+        {{ p.price_range_label }}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ---- Two Side-by-Side Quick Buy Boxes ---- #}
+<div class="buy-boxes-grid"
+     data-usca-boxes
      data-config='{{ config|tojson }}'
      data-endpoint="{{ url_for('api.purchase_us_canada') }}">
 
-  {# ---- Left column: selection steps ---- #}
-  <div>
-    {# Step 1: Select Package #}
-    <section class="card card-pad buy-step">
-      <div class="step-head">
-        <div class="step-head-title">
-          <span class="step-num">1</span>
-          <h2 class="step-title">Select Package</h2>
-        </div>
-      </div>
-      <div class="pkg-grid">
-        {% for p in config.packages %}
-        <div class="pkg-card {% if p.is_featured %}is-selected is-featured{% endif %}"
-             data-usca-pkg="{{ p.id }}">
-          <div class="pkg-head">
-            <span class="badge {{ p.badge_class }}">{{ p.badge }}</span>
-            <span class="pkg-rate">{{ p.success_rate }}% Success</span>
-          </div>
-          <h3 class="pkg-title">{{ p.name }}</h3>
-          <p class="pkg-desc">{{ p.description }}</p>
-          <ul class="pkg-features">
-            {% for f in p.features %}
-            <li>{{ icon('check') }} <span>{{ f }}</span></li>
-            {% endfor %}
-          </ul>
-          <div class="pkg-price-row">
-            <span class="pkg-price-label">Price per SIM</span>
-            <span class="pkg-price-val" data-usd="{{ p.price_usd }}">
-              ₦{{ '{:,.2f}'.format(p.price_usd * NGN_PER_USD) }}
-            </span>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </section>
+  {# Box 1: Basic Package Numbers (5sim Multi-Route) #}
+  <section class="card card-pad quick-buy us-quick-box" data-box="basic">
+    <div class="card-head">
+      <h2 class="card-title">{{ icon('bolt') }} Basic Package Numbers</h2>
+      <span class="badge badge-neutral">Economy Pool</span>
+    </div>
 
-    {# Step 2: Select Service #}
-    <section class="card card-pad buy-step">
-      <div class="step-head">
-        <div class="step-head-title">
-          <span class="step-num">2</span>
-          <h2 class="step-title">Select Service</h2>
-        </div>
-        <div class="input-group step-search">
-          <span class="input-icon">{{ icon('search') }}</span>
-          <input class="input" type="search" placeholder="Search service (e.g. WhatsApp, Google)..."
-                 data-usca-service-search aria-label="Search service">
-        </div>
+    <div class="field">
+      <label class="label" for="basic-search">Search Service</label>
+      <div class="input-group">
+        <span class="input-icon">{{ icon('search') }}</span>
+        <input class="input" type="search" id="basic-search" data-search-input
+               placeholder="Type service name (e.g. WhatsApp, Google)..." autocomplete="off">
       </div>
-      <div class="tile-grid-scroll">
-        <div class="tile-grid" data-usca-service-grid>
-          {# Generated dynamically by us_canada.js #}
-        </div>
-      </div>
-    </section>
+    </div>
 
-    {# Step 3: Select Operator (Dynamic) #}
-    <section class="card card-pad buy-step" id="operator-step-section" style="display: none;">
-      <div class="step-head">
-        <div class="step-head-title">
-          <span class="step-num">3</span>
-          <h2 class="step-title">Select Operator</h2>
-        </div>
-      </div>
-      <div class="usca-country-grid" data-usca-operator-grid>
-        {# Generated dynamically by us_canada.js #}
-      </div>
-    </section>
-  </div>
+    <div class="field">
+      <label class="label" for="basic-service-select">Select Services &amp; Server Route</label>
+      <select class="select" id="basic-service-select" data-service-select></select>
+    </div>
 
-  {# ---- Right column: review & purchase ---- #}
-  <aside>
-    <section class="card card-pad review-card">
-      <div class="step-head-title" style="margin-bottom: var(--sp-5);">
-        <span class="step-num">{{ icon('shield') }}</span>
-        <h2 class="step-title">Review &amp; Purchase</h2>
-      </div>
+    <div class="price-box">
+      <span class="price-box-label">Price</span>
+      <span class="price-box-value" data-price-val data-usd="0.55">₦880.00</span>
+    </div>
 
-      <div class="review-rows">
-        <div class="review-row">
-          <span class="k">Country</span>
-          <span class="v" data-review-country>
-            <span class="flag-badge"><i>U</i><i>S</i></span>
-            <span>United States (+1)</span>
-          </span>
-        </div>
-        <div class="review-row">
-          <span class="k">Package</span>
-          <span class="v" data-review-pkg>Ultra Clean WhatsApp Line</span>
-        </div>
-        <div class="review-row">
-          <span class="k">Service</span>
-          <span class="v" data-review-service>WhatsApp</span>
-        </div>
-        <div class="review-row">
-          <span class="k">Status Screen</span>
-          <span class="badge badge-success" data-review-screen>Unbanned Guaranteed</span>
-        </div>
-        <div class="review-row">
-          <span class="k">SMS Delivery</span>
-          <span class="badge badge-brand" data-review-delivery>Instant Cellular</span>
-        </div>
-      </div>
+    <button class="btn btn-primary btn-block btn-lg" data-submit-btn type="button">
+      Order Number Now {{ icon('arrow-right') }}
+    </button>
+    <p class="quick-buy-note">{{ icon('clock') }} Estimated delivery: <strong>Instant</strong> &bull; Auto-refund if no SMS</p>
+  </section>
 
-      <div class="review-total">
-        <span class="review-total-label">Total Price</span>
-        <span class="review-total-value" data-review-price data-usd="2.50">₦4,000.00</span>
-      </div>
+  {# Box 2: Reliable Package Numbers (TextVerified Dedicated Non-VoIP) #}
+  <section class="card card-pad quick-buy us-quick-box" data-box="premium">
+    <div class="card-head">
+      <h2 class="card-title">{{ icon('shield') }} Reliable Package Numbers</h2>
+      <span class="badge badge-brand">Recommended &bull; Non-VoIP</span>
+    </div>
 
-      <button class="btn btn-primary btn-block btn-lg" data-usca-submit type="button">
-        {{ icon('cart') }} Order Number Now
-      </button>
-      <p class="review-secure">{{ icon('lock') }} Secure Wallet Payment &bull; Instant Delivery</p>
-    </section>
-  </aside>
+    <div class="field">
+      <label class="label" for="prem-search">Search Service</label>
+      <div class="input-group">
+        <span class="input-icon">{{ icon('search') }}</span>
+        <input class="input" type="search" id="prem-search" data-search-input
+               placeholder="Type service name (e.g. WhatsApp, Banking)..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="prem-service-select">Select Reliable Service</label>
+      <select class="select" id="prem-service-select" data-service-select></select>
+    </div>
+
+    <div class="price-box">
+      <span class="price-box-label">Price</span>
+      <span class="price-box-value" data-price-val data-usd="2.50">₦4,000.00</span>
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" data-submit-btn type="button">
+      Order Number Now {{ icon('arrow-right') }}
+    </button>
+    <p class="quick-buy-note">{{ icon('shield') }} <strong>100% Real Cellular Line</strong> &bull; Auto-refund if no SMS</p>
+  </section>
 </div>
 
 {# ---- Why choose section ---- #}

@@ -113,7 +113,7 @@ def purchase_sim():
 
 @api_bp.route('/purchase-us-canada', methods=['POST'])
 def purchase_us_canada():
-    """Allocate and order a dedicated high-reliability US or Canada virtual number."""
+    """Allocate and order a dedicated high-reliability US virtual number."""
     user_id = _get_current_user_id()
     if not user_id:
         return jsonify({'success': False, 'message': 'Please sign in to complete your purchase.'}), 401
@@ -121,13 +121,18 @@ def purchase_us_canada():
     data = request.json or {}
     country_code = data.get('country_code', 'US').upper()
     service_name = data.get('service_name', 'WhatsApp')
-    package_id = data.get('package_id', 'whatsapp_guaranteed')
-    provider_id = data.get('provider_id', 'auto')
+    service_code = data.get('service_code')
+    package_id = data.get('package_id', 'basic_pool')
+    provider_id = data.get('provider_id', 'any')
 
-    # Look up package
+    try:
+        price = float(data.get('price', 1.25))
+    except (ValueError, TypeError):
+        price = 1.25
+
+    # Look up package for display name
     pkg = next((p for p in SIMProviderService.US_CANADA_PACKAGES if p['id'] == package_id), SIMProviderService.US_CANADA_PACKAGES[0])
-    price = float(pkg['price_usd'])
-    country_name = 'United States' if country_code == 'US' else 'Canada'
+    country_name = 'United States'
 
     # 1. Check wallet balance
     wallet = DBService.get_wallet(user_id)
@@ -135,21 +140,23 @@ def purchase_us_canada():
     if cur_balance < price:
         return jsonify({
             'success': False,
-            'message': f'Insufficient wallet balance. You need ${price:.2f} but have ${cur_balance:.2f}. Please top up your wallet.'
+            'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price * 1600:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
         }), 400
 
-    # 2. Allocate US/Canada number
+    # 2. Allocate US number
     alloc_res = SIMProviderService.purchase_us_canada_number(
         country_code=country_code,
         service_name=service_name,
         package_id=package_id,
-        provider_id=provider_id
+        provider_id=provider_id,
+        price=price,
+        service_code=service_code
     )
 
     if not alloc_res or not alloc_res.get('success'):
         return jsonify({
             'success': False,
-            'message': 'Unable to allocate a carrier line at this moment. Please try another package or line.'
+            'message': alloc_res.get('message', 'Unable to allocate a carrier line at this moment. Please try another server route.')
         }), 503
 
     order_ref = alloc_res.get('order_reference') or f"TGS-USCA-{uuid.uuid4().hex[:6].upper()}"
@@ -165,7 +172,7 @@ def purchase_us_canada():
             'country_name': country_name,
             'country_code': country_code,
             'package_name': pkg['name'],
-            'provider_line': alloc_res.get('provider_line', 'Titan Line')
+            'provider_line': alloc_res.get('provider_line', provider_id)
         }
     )
 
@@ -179,10 +186,10 @@ def purchase_us_canada():
     order_data = {
         'order_reference': order_ref,
         'service_name': f"{service_name} ({pkg['name']})",
-        'service_code': service_name.lower().replace(' ', '_'),
+        'service_code': service_code or service_name.lower().replace(' ', '_'),
         'country_name': country_name,
         'country_code': country_code,
-        'country_slug': 'usa' if country_code == 'US' else 'canada',
+        'country_slug': 'usa',
         'phone_number': alloc_res.get('phone_number', ''),
         'user_cost': price,
         'price': price,
