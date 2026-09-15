@@ -232,7 +232,7 @@ def check_sms(order_id):
 
     status = str(order.get('status', '')).lower()
     
-    # 5-minute auto-refund check
+    # 3-minute auto-refund check
     if status in ('active', 'pending') and order.get('created_at'):
         import datetime
         try:
@@ -248,7 +248,7 @@ def check_sms(order_id):
                 created_at = created_at.replace(tzinfo=datetime.timezone.utc)
                 
             now = datetime.datetime.now(datetime.timezone.utc)
-            if (now - created_at).total_seconds() > 300: # 5 minutes
+            if (now - created_at).total_seconds() > 180: # 3 minutes total
                 # Auto refund on provider
                 prov_id = order.get('provider_order_id')
                 if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
@@ -261,12 +261,12 @@ def check_sms(order_id):
                 DBService.refund_order(
                     order_id=order_id,
                     user_id=user_id,
-                    reason="Auto-cancelled: SMS timeout (5 mins)"
+                    reason="Auto-cancelled: SMS timeout (3 mins)"
                 )
                 
                 return jsonify({
                     'success': False,
-                    'message': 'Verification timed out (5 mins). Full refund has been credited to your wallet.',
+                    'message': 'Verification timed out (3 mins). Full refund has been credited to your wallet.',
                     'auto_refunded': True
                 })
         except Exception as e:
@@ -318,6 +318,28 @@ def cancel_sim(order_id):
 
     if order.get('sms_code'):
         return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
+
+    # Cancellation is only allowed after 2 minutes (120s)
+    if order.get('created_at'):
+        import datetime
+        try:
+            cat_str = str(order.get('created_at')).replace('Z', '+00:00')
+            try:
+                created_at = datetime.datetime.fromisoformat(cat_str)
+            except ValueError:
+                created_at = datetime.datetime.strptime(cat_str, '%Y-%m-%d %H:%M:%S')
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=datetime.timezone.utc)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            elapsed = (now - created_at).total_seconds()
+            if elapsed < 120:
+                wait_sec = int(120 - elapsed)
+                return jsonify({
+                    'success': False,
+                    'message': f'Cancellation and refund become available after 2 minutes. Please wait {wait_sec} more second{"s" if wait_sec != 1 else ""}.'
+                }), 400
+        except Exception as e:
+            print(f"[cancel_sim] elapsed check error: {e}")
 
     # 2. Cancel order on verification provider (5sim or TextVerified)
     prov_id = order.get('provider_order_id')

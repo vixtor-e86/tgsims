@@ -133,11 +133,25 @@
         <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-left: none; border-radius: 0 var(--r-sm) var(--r-sm) 0; color: var(--text-muted);">%</span>
       </div>
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Added to TextVerified dedicated cellular lines.
+        Percentage profit added to TextVerified wholesale costs.
       </div>
     </div>
 
-    {# 5. Reactivation Fee #}
+    {# 5. TextVerified Min Profit Floor #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text);">
+        TextVerified Min Profit Floor ($)
+      </label>
+      <div class="input-group" style="margin-top: 0.35rem;">
+        <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); color: var(--text-muted);">$</span>
+        <input type="number" step="0.05" min="0" max="20" name="textverified_min_profit_usd" value="{{ '%.2f'|format(settings.textverified_min_profit_usd if settings.textverified_min_profit_usd is defined else 0.50) }}" class="input" required style="border-radius: 0 var(--r-sm) var(--r-sm) 0; font-weight: 700; font-size: 1rem;">
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+        Guaranteed minimum dollar profit per TextVerified non-VoIP number.
+      </div>
+    </div>
+
+    {# 6. Reactivation Fee #}
     <div class="form-group">
       <label class="form-label" style="font-weight: 700; color: var(--text);">
         Reactivation Fee ($)
@@ -202,32 +216,51 @@
   </div>
 
   {# Add Override Form #}
-  <form action="{{ url_for('admin.pricing') }}" method="POST" style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1rem; margin-bottom: 1.5rem;">
+  <form id="add-override-form" action="{{ url_for('admin.pricing') }}" method="POST" style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1.1rem; margin-bottom: 1.5rem;">
     <input type="hidden" name="action" value="add_override">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; align-items: flex-end;">
-      <div>
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Service Code</label>
-        <input type="text" name="service_code" placeholder="e.g. whatsapp" required class="input input-sm">
-      </div>
-      <div>
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Service Name</label>
-        <input type="text" name="service_name" placeholder="e.g. WhatsApp" required class="input input-sm">
-      </div>
+    <input type="hidden" name="service_code" id="override-service-code" required>
+    <input type="hidden" name="service_name" id="override-service-name" required>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.85rem; align-items: flex-end;">
       <div>
         <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Provider Pool</label>
-        <select name="provider_type" class="input input-sm">
+        <select name="provider_type" id="override-provider-type" class="input input-sm">
           <option value="5sim">5sim (Global & US Basic)</option>
           <option value="textverified">TextVerified (Reliable Cellular)</option>
         </select>
       </div>
-      <div>
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Fixed Price ($ USD)</label>
-        <input type="number" step="0.05" min="0.5" max="50" name="override_price_usd" placeholder="2.50" required class="input input-sm">
+
+      <div class="admin-search-wrapper" style="position: relative;">
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Search Service</label>
+        <div style="position: relative; display: flex; align-items: center;">
+          <input type="search" id="override-search" placeholder="Type name or code (e.g. WhatsApp)..." autocomplete="off" class="input input-sm" style="padding-right: 28px;">
+          <button type="button" id="override-clear-search" aria-label="Clear search" title="Clear search" style="position: absolute; right: 8px; background: none; border: none; font-size: 1.15rem; color: var(--text-muted); cursor: pointer; display: none; line-height: 1; padding: 0;">&times;</button>
+        </div>
+        <div id="override-search-dropdown" class="admin-search-dropdown"></div>
       </div>
+
+      <div>
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Select Service (Dropdown)</label>
+        <select id="override-service-select" class="input input-sm">
+          <option value="">-- Choose a service --</option>
+        </select>
+      </div>
+
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0;">Fixed Price ($ USD)</label>
+          <span id="override-base-badge" style="font-size: 0.72rem; color: var(--text-muted); display: none;">
+            Wholesale: <strong id="override-base-val" style="color: var(--brand);">$0.00</strong>
+          </span>
+        </div>
+        <input type="number" step="0.05" min="0.1" max="100" name="override_price_usd" id="override-price-usd" placeholder="e.g. 2.50" required class="input input-sm">
+      </div>
+
       <div>
         <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Notes (Optional)</label>
         <input type="text" name="notes" placeholder="e.g. Promo pricing" class="input input-sm">
       </div>
+
       <div>
         <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
           {{ icon('plus') }} Add Override
@@ -295,4 +328,407 @@
     </div>
   {% endif %}
 </div>
+
+<script id="admin-services-catalog" type="application/json">
+  {{ services_catalog|tojson|safe }}
+</script>
+
+<style>
+.admin-search-wrapper {
+  position: relative;
+}
+.admin-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 150;
+  background: var(--surface);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--r-md);
+  box-shadow: 0 14px 30px -4px rgba(0, 0, 0, 0.35), 0 8px 12px -4px rgba(0, 0, 0, 0.2);
+  max-height: 250px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  display: none;
+}
+.admin-search-dropdown.is-open {
+  display: block;
+}
+.admin-search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.12s ease;
+  user-select: none;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+}
+.admin-search-item:hover,
+.admin-search-item.is-highlighted {
+  background: var(--surface-2);
+}
+.admin-search-item.is-selected {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+.admin-search-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.admin-search-item-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  color: var(--brand);
+}
+.admin-search-item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.admin-search-item-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-search-item-code {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+}
+.admin-search-item-cost {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--brand);
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: var(--r-full);
+  padding: 2px 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.admin-search-empty {
+  padding: 14px 10px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+</style>
+
+<script>
+(function() {
+  var catalogEl = document.getElementById('admin-services-catalog');
+  var catalog = {};
+  if (catalogEl && catalogEl.textContent) {
+    try {
+      catalog = JSON.parse(catalogEl.textContent);
+    } catch(e) {
+      console.error('Error parsing admin-services-catalog:', e);
+    }
+  }
+
+  var form = document.getElementById('add-override-form');
+  var providerSelect = document.getElementById('override-provider-type');
+  var searchInput = document.getElementById('override-search');
+  var clearBtn = document.getElementById('override-clear-search');
+  var dropdownEl = document.getElementById('override-search-dropdown');
+  var serviceSelect = document.getElementById('override-service-select');
+  var hiddenCode = document.getElementById('override-service-code');
+  var hiddenName = document.getElementById('override-service-name');
+  var baseBadge = document.getElementById('override-base-badge');
+  var baseVal = document.getElementById('override-base-val');
+  var priceInput = document.getElementById('override-price-usd');
+
+  var POPULAR_KEYS = [
+    'whatsapp', 'telegram', 'google', 'openai', 'chatgpt', 'instagram',
+    'facebook', 'twitter', 'x', 'tinder', 'tiktok', 'uber', 'amazon',
+    'apple', 'discord', 'microsoft', 'steam', 'netflix', 'paypal', 'yahoo', 'snapchat', 'linkedin'
+  ];
+
+  var currentProvider = providerSelect ? providerSelect.value : '5sim';
+  var highlightedIndex = -1;
+  var currentFiltered = [];
+
+  function getCurrentServices() {
+    return (catalog && catalog[currentProvider]) || [];
+  }
+
+  function populateSelectDropdown() {
+    if (!serviceSelect) return;
+    serviceSelect.innerHTML = '<option value="">-- Choose a service --</option>';
+
+    var services = getCurrentServices();
+    if (!services || services.length === 0) return;
+
+    var popGroup = document.createElement('optgroup');
+    popGroup.label = 'Popular Services';
+
+    var allGroup = document.createElement('optgroup');
+    allGroup.label = 'All Services (A-Z)';
+
+    var popCount = 0;
+    var sorted = services.slice().sort(function(a, b) {
+      return (a.service_name || '').localeCompare(b.service_name || '');
+    });
+
+    sorted.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.service_code;
+      opt.setAttribute('data-name', s.service_name);
+      opt.setAttribute('data-cost', s.base_cost);
+      opt.textContent = s.service_name + ' (' + s.service_code + ') - Wholesale: $' + Number(s.base_cost).toFixed(2);
+
+      var isPop = POPULAR_KEYS.indexOf((s.service_code || '').toLowerCase()) !== -1;
+      if (isPop) {
+        popGroup.appendChild(opt.cloneNode(true));
+        popCount++;
+      }
+      allGroup.appendChild(opt);
+    });
+
+    if (popCount > 0) {
+      serviceSelect.appendChild(popGroup);
+    }
+    serviceSelect.appendChild(allGroup);
+  }
+
+  function setSelection(service) {
+    if (!service) {
+      if (hiddenCode) hiddenCode.value = '';
+      if (hiddenName) hiddenName.value = '';
+      if (baseBadge) baseBadge.style.display = 'none';
+      if (searchInput) searchInput.value = '';
+      if (clearBtn) clearBtn.style.display = 'none';
+      if (serviceSelect) serviceSelect.value = '';
+      return;
+    }
+
+    if (hiddenCode) hiddenCode.value = service.service_code;
+    if (hiddenName) hiddenName.value = service.service_name;
+
+    if (searchInput) {
+      searchInput.value = service.service_name + ' (' + service.service_code + ')';
+    }
+    if (clearBtn) clearBtn.style.display = 'block';
+
+    if (serviceSelect) {
+      serviceSelect.value = service.service_code;
+    }
+
+    if (baseBadge && baseVal) {
+      baseVal.textContent = '$' + Number(service.base_cost || 0).toFixed(2);
+      baseBadge.style.display = 'inline-block';
+    }
+
+    closeDropdown();
+  }
+
+  function openDropdown() {
+    if (!dropdownEl) return;
+    dropdownEl.classList.add('is-open');
+    dropdownEl.style.display = 'block';
+  }
+
+  function closeDropdown() {
+    if (!dropdownEl) return;
+    dropdownEl.classList.remove('is-open');
+    dropdownEl.style.display = 'none';
+    highlightedIndex = -1;
+  }
+
+  function renderSearchDropdown(items) {
+    if (!dropdownEl) return;
+    dropdownEl.innerHTML = '';
+
+    if (!items || items.length === 0) {
+      var emptyEl = document.createElement('div');
+      emptyEl.className = 'admin-search-empty';
+      emptyEl.textContent = 'No matching service found';
+      dropdownEl.appendChild(emptyEl);
+      openDropdown();
+      return;
+    }
+
+    var MAX = 120;
+    var list = items.slice(0, MAX);
+
+    list.forEach(function(s, idx) {
+      var itemEl = document.createElement('div');
+      itemEl.className = 'admin-search-item';
+      if (idx === highlightedIndex) {
+        itemEl.classList.add('is-highlighted');
+      }
+      if (hiddenCode && hiddenCode.value === s.service_code) {
+        itemEl.classList.add('is-selected');
+      }
+
+      var iconLetter = (s.service_name || 'S').charAt(0).toUpperCase();
+
+      itemEl.innerHTML =
+        '<div class="admin-search-item-left">' +
+          '<span class="admin-search-item-icon">' + iconLetter + '</span>' +
+          '<div class="admin-search-item-info">' +
+            '<span class="admin-search-item-name">' + escapeHtml(s.service_name) + '</span>' +
+            '<span class="admin-search-item-code">' + escapeHtml(s.service_code) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<span class="admin-search-item-cost">Wholesale: $' + Number(s.base_cost).toFixed(2) + '</span>';
+
+      itemEl.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setSelection(s);
+      });
+
+      dropdownEl.appendChild(itemEl);
+    });
+
+    openDropdown();
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  function filterServices(query) {
+    var q = (query || '').trim().toLowerCase();
+    var all = getCurrentServices();
+    if (!q) {
+      return all;
+    }
+    return all.filter(function(s) {
+      var nameMatch = (s.service_name || '').toLowerCase().indexOf(q) !== -1;
+      var codeMatch = (s.service_code || '').toLowerCase().indexOf(q) !== -1;
+      return nameMatch || codeMatch;
+    });
+  }
+
+  // Provider change
+  if (providerSelect) {
+    providerSelect.addEventListener('change', function() {
+      currentProvider = providerSelect.value;
+      populateSelectDropdown();
+      setSelection(null);
+    });
+  }
+
+  // Search input typing
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      var val = searchInput.value;
+      if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
+      currentFiltered = filterServices(val);
+      highlightedIndex = -1;
+      renderSearchDropdown(currentFiltered);
+    });
+
+    searchInput.addEventListener('focus', function() {
+      currentFiltered = filterServices(searchInput.value);
+      renderSearchDropdown(currentFiltered);
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+      if (!dropdownEl || !dropdownEl.classList.contains('is-open')) {
+        if (e.key === 'ArrowDown') {
+          openDropdown();
+          return;
+        }
+      }
+
+      var items = dropdownEl.querySelectorAll('.admin-search-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+        updateHighlight(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlightedIndex = Math.max(highlightedIndex - 1, 0);
+        updateHighlight(items);
+      } else if (e.key === 'Enter') {
+        if (highlightedIndex >= 0 && currentFiltered[highlightedIndex]) {
+          e.preventDefault();
+          setSelection(currentFiltered[highlightedIndex]);
+        }
+      } else if (e.key === 'Escape') {
+        closeDropdown();
+      }
+    });
+  }
+
+  function updateHighlight(items) {
+    items.forEach(function(el, idx) {
+      if (idx === highlightedIndex) {
+        el.classList.add('is-highlighted');
+        el.scrollIntoView({ block: 'nearest' });
+      } else {
+        el.classList.remove('is-highlighted');
+      }
+    });
+  }
+
+  // Clear search button
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      setSelection(null);
+      closeDropdown();
+    });
+  }
+
+  // Select dropdown change
+  if (serviceSelect) {
+    serviceSelect.addEventListener('change', function() {
+      var code = serviceSelect.value;
+      if (!code) {
+        setSelection(null);
+        return;
+      }
+      var all = getCurrentServices();
+      var found = all.find(function(s) { return s.service_code === code; });
+      if (found) {
+        setSelection(found);
+      }
+    });
+  }
+
+  // Click outside to close dropdown
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.admin-search-wrapper')) {
+      closeDropdown();
+    }
+  });
+
+  // Form submit validation
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (!hiddenCode.value) {
+        e.preventDefault();
+        alert('Please select a service from the search or dropdown first.');
+        if (searchInput) searchInput.focus();
+      }
+    });
+  }
+
+  // Initial load
+  populateSelectDropdown();
+})();
+</script>
 {% endblock %}

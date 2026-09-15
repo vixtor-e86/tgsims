@@ -632,13 +632,13 @@ class SIMProviderService:
         {'id': 'tv_other', 'service_name': 'Other Platforms', 'service_code': 'other', 'name': 'Other Platforms (Guaranteed Cellular)', 'price_usd': 2.75},
     ]
 
-    _cached_5sim_us_services = None
+    _cached_5sim_us_services_raw = None
+    _cached_textverified_us_services_raw = None
 
     @classmethod
-    def get_5sim_us_services(cls) -> list:
-        """Loads full catalog of 5sim USA services and their provider routes."""
-        if cls._cached_5sim_us_services is not None:
-            return cls._cached_5sim_us_services
+    def _load_raw_5sim_us_services(cls) -> list:
+        if cls._cached_5sim_us_services_raw is not None:
+            return cls._cached_5sim_us_services_raw
 
         import json
         import os
@@ -646,12 +646,76 @@ class SIMProviderService:
         if os.path.exists(data_path):
             try:
                 with open(data_path, 'r', encoding='utf-8') as f:
-                    cls._cached_5sim_us_services = json.load(f)
-                    return cls._cached_5sim_us_services
+                    cls._cached_5sim_us_services_raw = json.load(f)
+                    return cls._cached_5sim_us_services_raw
             except Exception as e:
                 print(f"[SIMProviderService] Error loading 5sim_us_services.json: {e}")
 
         return cls.FIVESIM_US_SERVICES_WITH_ROUTES
+
+    @classmethod
+    def get_5sim_us_services(cls, apply_markup: bool = True) -> list:
+        """Loads full catalog of 5sim USA services with dynamic admin markup applied."""
+        raw_list = cls._load_raw_5sim_us_services()
+        if not apply_markup:
+            return raw_list
+
+        try:
+            from app.services.settings_service import SettingsService
+            pct, floor = SettingsService.get_fivesim_markup()
+        except Exception:
+            pct, floor = 30.0, 0.30
+
+        mult = 1.0 + (pct / 100.0)
+        marked = []
+        for s in raw_list:
+            item = dict(s)
+            base = float(s.get('price_usd') or 0.50)
+            item['base_cost_usd'] = base
+            item['price_usd'] = round(max(base * mult, base + floor), 2)
+            marked.append(item)
+        return marked
+
+    @classmethod
+    def _load_raw_textverified_us_services(cls) -> list:
+        if cls._cached_textverified_us_services_raw is not None:
+            return cls._cached_textverified_us_services_raw
+
+        import json
+        import os
+        data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'textverified_us_services.json')
+        if os.path.exists(data_path):
+            try:
+                with open(data_path, 'r', encoding='utf-8') as f:
+                    cls._cached_textverified_us_services_raw = json.load(f)
+                    return cls._cached_textverified_us_services_raw
+            except Exception as e:
+                print(f"[SIMProviderService] Error loading textverified_us_services.json: {e}")
+
+        return cls.TEXTVERIFIED_US_SERVICES
+
+    @classmethod
+    def get_textverified_us_services(cls, apply_markup: bool = True) -> list:
+        """Loads full catalog of TextVerified USA services with dynamic admin markup applied."""
+        raw_list = cls._load_raw_textverified_us_services()
+        if not apply_markup:
+            return raw_list
+
+        try:
+            from app.services.settings_service import SettingsService
+            pct, floor = SettingsService.get_textverified_markup()
+        except Exception:
+            pct, floor = 25.0, 0.50
+
+        mult = 1.0 + (pct / 100.0)
+        marked = []
+        for s in raw_list:
+            item = dict(s)
+            base = float(s.get('price_usd') or 0.50)
+            item['base_cost_usd'] = base
+            item['price_usd'] = round(max(base * mult, base + floor), 2)
+            marked.append(item)
+        return marked
 
     @classmethod
     def get_us_canada_config(cls) -> dict:
@@ -659,7 +723,7 @@ class SIMProviderService:
         return {
             'packages': cls.US_CANADA_PACKAGES,
             'basic_services': cls.get_5sim_us_services(),
-            'premium_services': cls.TEXTVERIFIED_US_SERVICES,
+            'premium_services': cls.get_textverified_us_services(),
         }
 
     @classmethod

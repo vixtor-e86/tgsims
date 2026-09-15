@@ -222,12 +222,16 @@
 
       if (isUnfiltered) {
         var popularGroup = document.createElement("optgroup");
-        popularGroup.label = "Popular Services (WhatsApp, Google, Telegram...)";
+        popularGroup.label = opts.type === "premium"
+          ? "Popular Reliable Services (WhatsApp, Banking, Google...)"
+          : "Popular Services (WhatsApp, Google, Telegram...)";
 
         var allGroup = document.createElement("optgroup");
-        allGroup.label = "All Services (A to Z — 400+ Services)";
+        allGroup.label = opts.type === "premium"
+          ? "All Dedicated Services (A to Z — 2,000+ Services)"
+          : "All Services (A to Z — 400+ Services)";
 
-        var popularCutoff = 80;
+        var popularCutoff = opts.type === "premium" ? 28 : 80;
         items.forEach(function (s, idx) {
           var opt = document.createElement("option");
           opt.value = s.id;

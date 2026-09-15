@@ -13,6 +13,7 @@ DEFAULT_SETTINGS = {
     'fivesim_markup_percent': 30.00,
     'fivesim_min_profit_usd': 0.30,
     'textverified_markup_percent': 25.00,
+    'textverified_min_profit_usd': 0.50,
     'reactivation_fee_usd': 1.00,
     'crypto_deposit_address': '',
     'squad_enabled': True,
@@ -62,6 +63,8 @@ class SettingsService:
 
                 if 'textverified_markup_percent' in row and row['textverified_markup_percent'] is not None:
                     base['textverified_markup_percent'] = float(row['textverified_markup_percent'])
+                if 'textverified_min_profit_usd' in row and row['textverified_min_profit_usd'] is not None:
+                    base['textverified_min_profit_usd'] = float(row['textverified_min_profit_usd'])
                 if 'reactivation_fee_usd' in row and row['reactivation_fee_usd'] is not None:
                     base['reactivation_fee_usd'] = float(row['reactivation_fee_usd'])
                 if 'crypto_deposit_address' in row and row['crypto_deposit_address'] is not None:
@@ -100,10 +103,12 @@ class SettingsService:
         return pct, floor
 
     @classmethod
-    def get_textverified_markup(cls) -> float:
-        """Returns textverified_markup_percent."""
+    def get_textverified_markup(cls) -> tuple[float, float]:
+        """Returns (textverified_markup_percent, textverified_min_profit_usd)."""
         settings = cls.get_settings()
-        return float(settings.get('textverified_markup_percent', 25.00))
+        pct = float(settings.get('textverified_markup_percent', 25.00))
+        floor = float(settings.get('textverified_min_profit_usd', 0.50))
+        return pct, floor
 
     @classmethod
     def get_reactivation_fee(cls) -> float:
@@ -126,6 +131,8 @@ class SettingsService:
             clean_data['fivesim_min_profit_usd'] = float(updates['fivesim_min_profit_usd'])
         if 'textverified_markup_percent' in updates:
             clean_data['textverified_markup_percent'] = float(updates['textverified_markup_percent'])
+        if 'textverified_min_profit_usd' in updates:
+            clean_data['textverified_min_profit_usd'] = float(updates['textverified_min_profit_usd'])
         if 'reactivation_fee_usd' in updates:
             clean_data['reactivation_fee_usd'] = float(updates['reactivation_fee_usd'])
         if 'crypto_deposit_address' in updates:

@@ -103,6 +103,7 @@ def pricing():
                 fivesim_pct = float(request.form.get('fivesim_markup_percent', 30.00))
                 fivesim_floor = float(request.form.get('fivesim_min_profit_usd', 0.30))
                 tv_pct = float(request.form.get('textverified_markup_percent', 25.00))
+                tv_floor = float(request.form.get('textverified_min_profit_usd', 0.50))
                 react_fee = float(request.form.get('reactivation_fee_usd', 1.00))
                 crypto_addr = request.form.get('crypto_deposit_address', '').strip()
                 squad_on = 'squad_enabled' in request.form
@@ -114,6 +115,7 @@ def pricing():
                     'fivesim_markup_percent': fivesim_pct,
                     'fivesim_min_profit_usd': fivesim_floor,
                     'textverified_markup_percent': tv_pct,
+                    'textverified_min_profit_usd': tv_floor,
                     'reactivation_fee_usd': react_fee,
                     'crypto_deposit_address': crypto_addr,
                     'squad_enabled': squad_on,
@@ -173,11 +175,39 @@ def pricing():
         'reactivation': {'price': react_fee, 'ngn': round(react_fee * rate, 2)}
     }
 
+    f5_raw = SIMProviderService.get_5sim_us_services(apply_markup=False)
+    seen_f5 = set()
+    f5_catalog = []
+    for s in f5_raw:
+        sc = s.get('service_code')
+        if sc and sc not in seen_f5:
+            seen_f5.add(sc)
+            f5_catalog.append({
+                'service_code': sc,
+                'service_name': s.get('service_name', sc.capitalize()),
+                'base_cost': float(s.get('price_usd', 0.50))
+            })
+
+    tv_raw = SIMProviderService.get_textverified_us_services(apply_markup=False)
+    tv_catalog = []
+    for s in tv_raw:
+        tv_catalog.append({
+            'service_code': s.get('service_code'),
+            'service_name': s.get('service_name'),
+            'base_cost': float(s.get('price_usd', 0.50))
+        })
+
+    services_catalog = {
+        '5sim': f5_catalog,
+        'textverified': tv_catalog
+    }
+
     return render_template(
         'admin/pricing.html',
         settings=settings,
         overrides=overrides,
         examples=examples,
+        services_catalog=services_catalog,
         active_page='pricing'
     )
 

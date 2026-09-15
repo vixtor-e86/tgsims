@@ -52,8 +52,10 @@
         {% set dt_clean = raw_dt.replace('T', ' ') %}
         {% set day = dt_clean.split(' ')[0] %}
         {% set hm = dt_clean.split(' ')[1][:5] if ' ' in dt_clean else '' %}
-        {% set countdown = o.countdown_seconds if o.countdown_seconds is defined else 300 %}
+        {% set countdown = o.countdown_seconds if o.countdown_seconds is defined else 180 %}
+        {% set elapsed = o.elapsed_seconds if o.elapsed_seconds is defined else (180 - countdown) %}
         {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
+        {% set can_cancel = (o.can_cancel if o.can_cancel is defined else (elapsed >= 120)) and is_active %}
         {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
@@ -91,9 +93,13 @@
             {% elif is_active %}
               <div style="display:flex; flex-direction:column; gap:6px;">
                 <span class="otp-waiting" data-poll-indicator>{{ icon('refresh') }} Waiting for SMS...</span>
-                <div class="countdown-pill" data-countdown-timer data-order-id="{{ o.id or o.order_reference }}" data-seconds="{{ countdown }}" style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-family:var(--font-mono, monospace); font-weight:600; color:var(--brand); background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.25); padding:2px 8px; border-radius:var(--r-full); width:fit-content; transition:all 0.2s ease;">
+                <div class="countdown-pill" data-countdown-timer 
+                     data-order-id="{{ o.id or o.order_reference }}" 
+                     data-seconds="{{ countdown }}"
+                     data-elapsed="{{ elapsed }}"
+                     style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-family:var(--font-mono, monospace); font-weight:600; color:var(--brand); background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.25); padding:2px 8px; border-radius:var(--r-full); width:fit-content; transition:all 0.2s ease;">
                   <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse-dot 1.5s infinite;"></span>
-                  <span data-countdown-display>05:00</span>
+                  <span data-countdown-display>03:00</span>
                 </div>
               </div>
             {% elif is_timeout %}
@@ -120,15 +126,20 @@
           <td class="{{ 'strike' if (is_timeout or is_refunded) else 'td-strong' }}" data-usd="{{ '%.2f'|format(o.price) }}">{{ price_formatted }}</td>
           <td class="text-right">
             {% if is_active %}
-              <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
+              <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                 <button type="button" class="btn btn-primary btn-sm" data-action="check" data-id="{{ o.id or o.order_reference }}">Check Code</button>
                 <button type="button" class="btn btn-secondary btn-sm" data-action="cancel" 
                         data-id="{{ o.id or o.order_reference }}"
                         data-service="{{ o.service_name }}"
                         data-phone="{{ o.phone_number }}"
                         data-ref="{{ o.order_reference }}"
+                        data-price-usd="{{ '%.2f'|format(o.price) }}"
                         data-price="{{ price_formatted }}"
-                        style="color:var(--text-danger);" title="Cancel order and refund wallet">Cancel &amp; Refund</button>
+                        style="color:var(--text-danger); {% if not can_cancel %}display:none;{% endif %}"
+                        title="Cancel order and refund wallet">Cancel &amp; Refund</button>
+                <span class="cancel-unlock-notice" data-cancel-notice data-order-id="{{ o.id or o.order_reference }}" style="font-size:0.7rem; color:var(--text-muted); padding:3px 8px; border-radius:var(--r-sm); background:var(--surface-2); border:1px solid var(--border); {% if can_cancel %}display:none;{% endif %}">
+                  Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((120 - elapsed)//60)|int, ((120 - elapsed)%60)|int) if (120 - elapsed) > 0 else '00:00' }}</span>
+                </span>
               </div>
             {% elif is_done and is_reliable %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
@@ -278,12 +289,33 @@
   var modalReactivateRef = document.getElementById('modalReactivateRef');
   var btnConfirmReactivate = document.getElementById('btnConfirmReactivate');
 
-  function openCancelModal(orderId, svcName, phoneNum, orderRef, priceFormatted) {
+  function formatCurrencyAmount(usd, fallbackFormatted) {
+    if (usd !== undefined && usd !== null && usd !== '') {
+      if (window.TgCurrency && window.TgCurrency.format) {
+        return window.TgCurrency.format(usd);
+      }
+      var isUSD = (localStorage.getItem('tg_currency') === 'USD');
+      if (isUSD) {
+        return '$' + Number(usd).toFixed(2);
+      } else {
+        var rate = Number(window.TG_NGN_PER_USD) || 1600;
+        return '₦' + (Number(usd) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
+    return fallbackFormatted || '';
+  }
+
+  function openCancelModal(orderId, svcName, phoneNum, orderRef, priceFormatted, priceUsd) {
     targetOrderId = orderId;
     if (modalSvcName) modalSvcName.textContent = svcName || 'Virtual Number';
     if (modalPhoneNum) modalPhoneNum.textContent = phoneNum || '';
     if (modalOrderRef) modalOrderRef.textContent = '#' + (orderRef || orderId);
-    if (modalRefundAmount) modalRefundAmount.textContent = priceFormatted || '';
+
+    var formattedRefund = formatCurrencyAmount(priceUsd, priceFormatted);
+    if (modalRefundAmount) {
+      modalRefundAmount.setAttribute('data-usd', priceUsd || '0');
+      modalRefundAmount.textContent = formattedRefund;
+    }
     if (btnConfirmCancel) {
       btnConfirmCancel.disabled = false;
       btnConfirmCancel.textContent = 'Yes, Cancel & Refund';
@@ -303,6 +335,9 @@
     if (modalReactivateSvc) modalReactivateSvc.textContent = svcName || 'Virtual Number';
     if (modalReactivatePhone) modalReactivatePhone.textContent = phoneNum || '';
     if (modalReactivateRef) modalReactivateRef.textContent = '#' + (orderRef || orderId);
+    if (modalReactivateFee) {
+      modalReactivateFee.textContent = formatCurrencyAmount(1.00, '₦1,600.00 ($1.00)');
+    }
     if (btnConfirmReactivate) {
       btnConfirmReactivate.disabled = false;
       btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
@@ -374,7 +409,8 @@
       var phone = cancelBtn.dataset.phone;
       var ref = cancelBtn.dataset.ref;
       var price = cancelBtn.dataset.price;
-      openCancelModal(cancelId, svc, phone, ref, price);
+      var priceUsd = cancelBtn.dataset.priceUsd;
+      openCancelModal(cancelId, svc, phone, ref, price, priceUsd);
     }
 
     if (reactivateBtn) {
@@ -442,7 +478,7 @@
     });
   }
 
-  // 1-second live countdown ticker for all active orders (5 minutes limit)
+  // 1-second live countdown ticker for all active orders (3 minutes total, cancel unlocked after 2 minutes)
   var timerElements = document.querySelectorAll('[data-countdown-timer]');
   if (timerElements.length > 0) {
     function formatTime(totalSec) {
@@ -453,21 +489,49 @@
 
     var activeTimers = [];
     timerElements.forEach(function(el) {
-      var initialSec = parseInt(el.dataset.seconds || '300', 10);
+      var initialSec = parseInt(el.dataset.seconds || '180', 10);
+      var elapsed = parseInt(el.dataset.elapsed || String(180 - initialSec), 10);
       var orderId = el.dataset.orderId;
       var displaySpan = el.querySelector('[data-countdown-display]');
       
+      // Find corresponding row, cancel button, and cancel notice
+      var row = el.closest('tr[data-order-row]');
+      var cancelBtn = row ? row.querySelector('[data-action="cancel"]') : null;
+      var cancelNotice = row ? row.querySelector('[data-cancel-notice]') : null;
+      var cancelCountSpan = cancelNotice ? cancelNotice.querySelector('[data-cancel-countdown]') : null;
+
       activeTimers.push({
         element: el,
         display: displaySpan,
         orderId: orderId,
         remaining: initialSec,
+        elapsed: elapsed,
+        cancelBtn: cancelBtn,
+        cancelNotice: cancelNotice,
+        cancelCountSpan: cancelCountSpan,
         refundTriggered: false
       });
     });
 
     function updateTimerUI(item) {
       if (!item.display) return;
+
+      // 1. Dynamic cancel unlock after 2 minutes (120s elapsed / 60s remaining)
+      if (item.elapsed >= 120 || item.remaining <= 60) {
+        if (item.cancelBtn) item.cancelBtn.style.display = 'inline-block';
+        if (item.cancelNotice) item.cancelNotice.style.display = 'none';
+      } else {
+        if (item.cancelBtn) item.cancelBtn.style.display = 'none';
+        if (item.cancelNotice) {
+          item.cancelNotice.style.display = 'inline-block';
+          var waitLeft = Math.max(0, 120 - item.elapsed);
+          if (item.cancelCountSpan) {
+            item.cancelCountSpan.textContent = formatTime(waitLeft);
+          }
+        }
+      }
+
+      // 2. Countdown display
       if (item.remaining <= 0) {
         item.display.textContent = '00:00 (Auto-refunding...)';
         item.element.style.color = '#ef4444';
@@ -476,6 +540,7 @@
       } else {
         item.display.textContent = formatTime(item.remaining);
         if (item.remaining <= 60) {
+          // Final 1 minute window (cancel button is active)
           item.element.style.color = '#f59e0b';
           item.element.style.borderColor = 'rgba(245, 158, 11, 0.4)';
           item.element.style.background = 'rgba(245, 158, 11, 0.08)';
@@ -493,16 +558,17 @@
         if (item.remaining > 0) {
           allDone = false;
           item.remaining -= 1;
+          item.elapsed += 1;
           updateTimerUI(item);
 
           if (item.remaining <= 0 && !item.refundTriggered) {
             item.refundTriggered = true;
-            // Trigger automatic refund via check-sms endpoint (which executes auto-refund on 5-min timeout)
+            // Trigger automatic refund via check-sms endpoint (which executes auto-refund on 3-min timeout)
             fetch('/api/check-sms/' + encodeURIComponent(item.orderId))
               .then(function(r) { return r.json(); })
               .then(function(res) {
                 if (window.toast) {
-                  window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
+                  window.toast('Verification timed out (3 mins). Full refund credited to your wallet.', 'info');
                 }
                 setTimeout(function() { window.location.reload(); }, 1200);
               })
@@ -511,7 +577,7 @@
                 fetch('/api/cancel-sim/' + encodeURIComponent(item.orderId), { method: 'POST' })
                   .then(function() {
                     if (window.toast) {
-                      window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
+                      window.toast('Verification timed out (3 mins). Full refund credited to your wallet.', 'info');
                     }
                     setTimeout(function() { window.location.reload(); }, 1200);
                   })
@@ -556,6 +622,27 @@
         .catch(function() {});
     }, 6000);
   }
+
+  // Live currency sync for orders table and modals
+  function syncOrdersCurrency() {
+    if (window.TgCurrency && window.TgCurrency.render) {
+      window.TgCurrency.render(document.querySelector('.orders-table') || document);
+    }
+    if (modalRefundAmount && modalRefundAmount.getAttribute('data-usd')) {
+      if (window.TgCurrency && window.TgCurrency.format) {
+        modalRefundAmount.textContent = window.TgCurrency.format(modalRefundAmount.getAttribute('data-usd'));
+      }
+    }
+    if (modalReactivateFee) {
+      if (window.TgCurrency && window.TgCurrency.format) {
+        modalReactivateFee.textContent = window.TgCurrency.format(1.00);
+      }
+    }
+  }
+
+  document.addEventListener('currencychange', syncOrdersCurrency);
+  // Initial sync to ensure active currency format
+  syncOrdersCurrency();
 })();
 </script>
 
