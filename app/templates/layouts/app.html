@@ -20,12 +20,10 @@
     </main>
   </div>
 </div>
-
-{# Floating Action Button & Messenger Widget for Authenticated Users #}
-{% include "partials/support_widget.html" %}
 {% endblock %}
 
 {% block scripts %}
-  <script src="{{ url_for('static', filename='js/support.js') }}?v=2"></script>
+  {{ super() if super else '' }}
 {% endblock %}
+
 

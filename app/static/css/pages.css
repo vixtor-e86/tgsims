@@ -1880,7 +1880,7 @@
 /* Contact channels */
 .channel-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: var(--sp-5);
 }
 .channel-card { text-align: center; display: flex; flex-direction: column; align-items: center; }

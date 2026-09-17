@@ -198,7 +198,7 @@
               {# Admin Reply (Right aligned) #}
               <div style="display: flex; flex-direction: column; align-items: flex-end; max-width: 75%; align-self: flex-end;">
                 <div style="font-size: 0.75rem; color: var(--brand); font-weight: 700; margin-bottom: 0.25rem;">
-                  {{ msg.sender_name or 'Support' }} (Staff)
+                  Support
                 </div>
                 <div style="background: var(--brand); color: #fff; padding: 0.8rem 1.1rem; border-radius: var(--r-lg) var(--r-lg) var(--r-xs) var(--r-lg); box-shadow: var(--shadow-xs); font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;">
                   {{ msg.message }}
@@ -411,7 +411,7 @@
                 escapeHtml(msg.message) + ' &bull; <small>' + timeStr + '</small></span></div>';
       } else if (msg.sender_role === "admin" || msg.sender_role === "support") {
         html += '<div style="display: flex; flex-direction: column; align-items: flex-end; max-width: 75%; align-self: flex-end;">' +
-                '<div style="font-size: 0.75rem; color: var(--brand); font-weight: 700; margin-bottom: 0.25rem;">' + escapeHtml(msg.sender_name || "Support") + ' (Staff)</div>' +
+                '<div style="font-size: 0.75rem; color: var(--brand); font-weight: 700; margin-bottom: 0.25rem;">Support</div>' +
                 '<div style="background: var(--brand); color: #fff; padding: 0.8rem 1.1rem; border-radius: var(--r-lg) var(--r-lg) var(--r-xs) var(--r-lg); box-shadow: var(--shadow-xs); font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;">' + escapeHtml(msg.message) + '</div>' +
                 '<div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem;">' + timeStr + '</div></div>';
       } else {

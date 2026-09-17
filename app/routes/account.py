@@ -42,8 +42,9 @@ def support():
     ]
     channels = [
         {'icon': 'chat', 'title': 'Live Chat', 'text': 'Talk to our support team directly. Available 24/7.', 'cta': 'Start Chat', 'action': 'chat'},
-        {'icon': 'mail', 'title': 'Email Support', 'text': 'Detailed inquiries and technical escalations.', 'cta': 'Send Email', 'href': 'mailto:support@tgsims.com'},
-        {'icon': 'users', 'title': 'Telegram Community', 'text': 'Join fellow users for tips, updates, and community help.', 'cta': 'Join Telegram', 'href': 'https://t.me/tgsims'},
+        {'icon': 'phone', 'title': 'WhatsApp Support', 'text': 'Direct WhatsApp assistance at 07047886371 for instant response.', 'cta': 'Chat on WhatsApp', 'href': 'https://wa.me/2347047886371'},
+        {'icon': 'send', 'title': 'Telegram Support', 'text': 'Chat with our official Telegram support at t.me/tgsimss.', 'cta': 'Open Telegram', 'href': 'https://t.me/tgsimss'},
+        {'icon': 'mail', 'title': 'Email Support', 'text': 'Detailed inquiries and escalations: tgsimsverify@gmail.com', 'cta': 'Send Email', 'href': 'mailto:tgsimsverify@gmail.com'},
     ]
     return render_template('account/support.html', topics=topics, tickets=tickets,
                            channels=channels, user=user)

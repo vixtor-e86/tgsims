@@ -91,5 +91,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/fund.js') }}"></script>
+  {{ super() if super else '' }}
+  <script src="{{ url_for('static', filename='js/fund.js') }}"></script>
 {% endblock %}
+

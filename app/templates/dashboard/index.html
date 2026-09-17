@@ -103,6 +103,45 @@
   </section>
 </div>
 
+{# ---- Direct Fast Support (WhatsApp & Telegram) ---- #}
+<div class="dash-support-strip" style="margin-bottom: var(--sp-6);">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-4);">
+    <div class="card card-pad" style="display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); background: var(--surface);">
+      <div style="display: flex; align-items: center; gap: var(--sp-3); min-width: 0;">
+        <div style="width: 44px; height: 44px; border-radius: var(--r-full); background: rgba(37, 211, 102, 0.12); color: #25D366; display: grid; place-items: center; flex-shrink: 0; font-size: 1.25rem;">
+          {{ icon('chat') }}
+        </div>
+        <div style="min-width: 0;">
+          <div style="font-weight: 700; font-size: var(--fs-md); color: var(--text);">WhatsApp Support</div>
+          <div style="font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px;">
+            Direct Chat: <strong style="font-family: var(--font-mono); color: var(--text);">07047886371</strong>
+          </div>
+        </div>
+      </div>
+      <a href="https://wa.me/2347047886371" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-brand" style="border-color: #25D366; color: #25D366; font-weight: 700; white-space: nowrap; flex-shrink: 0;">
+        Chat WhatsApp {{ icon('arrow-right', 'i-inline') }}
+      </a>
+    </div>
+
+    <div class="card card-pad" style="display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); background: var(--surface);">
+      <div style="display: flex; align-items: center; gap: var(--sp-3); min-width: 0;">
+        <div style="width: 44px; height: 44px; border-radius: var(--r-full); background: rgba(34, 158, 217, 0.12); color: #229ED9; display: grid; place-items: center; flex-shrink: 0; font-size: 1.25rem;">
+          {{ icon('send') }}
+        </div>
+        <div style="min-width: 0;">
+          <div style="font-weight: 700; font-size: var(--fs-md); color: var(--text);">Telegram Support</div>
+          <div style="font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px;">
+            Official Chat: <strong style="font-family: var(--font-mono); color: var(--text);">t.me/tgsimss</strong>
+          </div>
+        </div>
+      </div>
+      <a href="https://t.me/tgsimss" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-brand" style="border-color: #229ED9; color: #229ED9; font-weight: 700; white-space: nowrap; flex-shrink: 0;">
+        Open Telegram {{ icon('arrow-right', 'i-inline') }}
+      </a>
+    </div>
+  </div>
+</div>
+
 {# ---- Recent Verifications ---- #}
 <section class="card recent-card">
   <div class="card-head recent-head">
@@ -149,5 +188,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  {{ super() if super else '' }}
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
+

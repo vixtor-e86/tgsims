@@ -112,5 +112,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/buy.js') }}"></script>
+  {{ super() if super else '' }}
+  <script src="{{ url_for('static', filename='js/buy.js') }}"></script>
 {% endblock %}
+

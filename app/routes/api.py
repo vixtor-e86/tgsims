@@ -605,13 +605,13 @@ def admin_send_ticket_message(ticket_id):
     if not message_text:
         return jsonify({'success': False, 'message': 'Reply message cannot be empty.'}), 400
 
-    admin_name = user.get('full_name') or 'Tgsims Support'
-    sender_role = 'support' if user.get('role') == 'support' else 'admin'
+    admin_name = 'Support'
+    sender_role = 'support'
 
     msg = DBService.add_support_message(
         ticket_id=ticket_id,
         sender_id=user.get('id'),
-        sender_name=admin_name,
+        sender_name='Support',
         sender_role=sender_role,
         message=message_text
     )
@@ -619,7 +619,7 @@ def admin_send_ticket_message(ticket_id):
     # Optional status update in same call (e.g. "Send & resolve")
     new_status = data.get('status')
     if new_status:
-        DBService.update_ticket_status(ticket_id, new_status, actor_role=sender_role, actor_name=admin_name)
+        DBService.update_ticket_status(ticket_id, new_status, actor_role=sender_role, actor_name='Support')
 
     return jsonify({'success': True, 'message': msg})
 
@@ -636,12 +636,11 @@ def admin_update_ticket_status(ticket_id):
     if not new_status:
         return jsonify({'success': False, 'message': 'Status parameter required.'}), 400
 
-    admin_name = user.get('full_name') or 'Tgsims Support'
     res = DBService.update_ticket_status(
         ticket_id=ticket_id,
         new_status=new_status,
         actor_role='admin',
-        actor_name=admin_name
+        actor_name='Support'
     )
 
     return jsonify(res)

@@ -9,42 +9,14 @@
   var chatPollTimer = null;
   var unreadPollTimer = null;
 
-  // DOM Elements
-  var fab = document.getElementById("support-fab");
-  var fabBadge = document.getElementById("support-fab-badge");
-  var widget = document.getElementById("support-widget");
-
-  // Views
-  var viewHome = document.getElementById("widget-view-home");
-  var viewCreate = document.getElementById("widget-view-create");
-  var viewChat = document.getElementById("widget-view-chat");
-
-  // Chat elements
-  var chatFeed = document.getElementById("widget-chat-feed");
-  var chatInput = document.getElementById("widget-chat-input");
-  var chatSendBtn = document.getElementById("widget-chat-send-btn");
-  var chatTicketSubject = document.getElementById("widget-chat-subject");
-  var chatTicketNum = document.getElementById("widget-chat-num");
-  var chatTicketStatus = document.getElementById("widget-chat-status");
-  var chatResolvedBanner = document.getElementById("widget-chat-resolved-banner");
-
-  // Form elements
-  var createForm = document.getElementById("widget-create-form");
-  var subjectInput = document.getElementById("widget-subject-input");
-  var messageInput = document.getElementById("widget-message-input");
-  var selectedCategory = "general";
-
-  // Topbar elements
-  var topbarMailDot = document.getElementById("mail-unread-dot");
-  var topbarMailBadge = document.getElementById("mail-unread-badge");
-  var topbarNotifsList = document.getElementById("topbar-support-notifs");
-  var markAllReadBtn = document.getElementById("mark-notifs-read-btn");
+  // DOM Elements (retrieved dynamically or cached)
+  function getEl(id) { return document.getElementById(id); }
 
   /* ---- Widget Open / Close ---- */
   function toggleWidget() {
+    var widget = getEl("support-widget");
     if (!widget) return;
-    var isOpen = widget.classList.contains("is-open");
-    if (isOpen) {
+    if (widget.classList.contains("is-open")) {
       closeWidget();
     } else {
       openWidget();
@@ -52,9 +24,29 @@
   }
 
   function openWidget(ticketId) {
+    var widget = getEl("support-widget");
+    var fab = getEl("support-fab");
+    var backdrop = getEl("support-backdrop");
+    var fabBadge = getEl("support-fab-badge");
+    var topbarMailDot = getEl("mail-unread-dot");
+    var topbarMailBadge = getEl("mail-unread-badge");
+
     if (!widget) return;
     widget.classList.add("is-open");
+    if (backdrop) backdrop.classList.add("is-open");
     if (fab) fab.classList.add("is-active");
+
+    var isAuth = widget.getAttribute("data-authenticated") === "true";
+
+    // Instant 0ms visual feedback: hide unread badges immediately on open!
+    if (fabBadge) fabBadge.style.display = "none";
+    if (topbarMailDot) topbarMailDot.style.display = "none";
+    if (topbarMailBadge) topbarMailBadge.style.display = "none";
+
+    if (!isAuth) {
+      switchView("login");
+      return;
+    }
 
     if (ticketId) {
       loadTicketConversation(ticketId);
@@ -68,8 +60,13 @@
   }
 
   function closeWidget() {
+    var widget = getEl("support-widget");
+    var fab = getEl("support-fab");
+    var backdrop = getEl("support-backdrop");
+
     if (!widget) return;
     widget.classList.remove("is-open");
+    if (backdrop) backdrop.classList.remove("is-open");
     if (fab) fab.classList.remove("is-active");
     stopChatPolling();
   }
@@ -79,6 +76,12 @@
 
   /* ---- View Switching ---- */
   function switchView(viewName) {
+    var viewLogin = getEl("widget-view-login");
+    var viewHome = getEl("widget-view-home");
+    var viewCreate = getEl("widget-view-create");
+    var viewChat = getEl("widget-view-chat");
+
+    if (viewLogin) viewLogin.style.display = viewName === "login" ? "flex" : "none";
     if (viewHome) viewHome.style.display = viewName === "home" ? "flex" : "none";
     if (viewCreate) viewCreate.style.display = viewName === "create" ? "flex" : "none";
     if (viewChat) viewChat.style.display = viewName === "chat" ? "flex" : "none";
@@ -89,7 +92,15 @@
   }
 
   window.startNewSupportTicket = function() {
+    var widget = getEl("support-widget");
+    var isAuth = widget && widget.getAttribute("data-authenticated") === "true";
+    if (!isAuth) {
+      switchView("login");
+      openWidget();
+      return;
+    }
     switchView("create");
+    var subjectInput = getEl("widget-subject-input");
     if (subjectInput) setTimeout(function() { subjectInput.focus(); }, 100);
   };
 
@@ -99,18 +110,24 @@
   };
 
   /* ---- Category Chips Selector ---- */
-  document.querySelectorAll("[data-support-cat]").forEach(function(chip) {
-    chip.addEventListener("click", function() {
+  var selectedCategory = "general";
+  document.addEventListener("click", function(e) {
+    var chip = e.target.closest("[data-support-cat]");
+    if (chip) {
       document.querySelectorAll("[data-support-cat]").forEach(function(c) { c.classList.remove("is-active"); });
       chip.classList.add("is-active");
       selectedCategory = chip.getAttribute("data-support-cat") || "general";
-    });
+    }
   });
 
   /* ---- Create Ticket with Subject ---- */
-  if (createForm) {
-    createForm.addEventListener("submit", async function(e) {
+  document.addEventListener("submit", async function(e) {
+    if (e.target && e.target.id === "widget-create-form") {
       e.preventDefault();
+      var subjectInput = getEl("widget-subject-input");
+      var messageInput = getEl("widget-message-input");
+      var submitBtn = getEl("widget-create-submit-btn");
+
       var subject = (subjectInput ? subjectInput.value : "").trim();
       var message = (messageInput ? messageInput.value : "").trim();
 
@@ -126,7 +143,6 @@
         return;
       }
 
-      var submitBtn = document.getElementById("widget-create-submit-btn");
       if (submitBtn) submitBtn.disabled = true;
 
       try {
@@ -145,7 +161,7 @@
           if (subjectInput) subjectInput.value = "";
           if (messageInput) messageInput.value = "";
           if (window.toast) window.toast("Ticket created successfully!", "success");
-          
+
           // Transition straight into Messenger chat view
           await loadTicketConversation(data.ticket.id);
           syncUnreadCounts();
@@ -157,16 +173,27 @@
       } finally {
         if (submitBtn) submitBtn.disabled = false;
       }
-    });
-  }
+    }
+  });
 
   /* ---- Load Tickets List for User ---- */
   async function loadUserTickets() {
-    var listEl = document.getElementById("widget-tickets-container");
+    var listEl = getEl("widget-tickets-container");
     if (!listEl) return;
+
+    var widget = getEl("support-widget");
+    if (widget && widget.getAttribute("data-authenticated") !== "true") {
+      switchView("login");
+      return;
+    }
 
     try {
       var res = await fetch("/api/support/tickets");
+      if (res.status === 401) {
+        if (widget) widget.setAttribute("data-authenticated", "false");
+        switchView("login");
+        return;
+      }
       var data = await res.json();
       if (data.success && data.tickets) {
         renderTicketsList(data.tickets, listEl);
@@ -216,9 +243,18 @@
     currentTicketId = ticketId;
     switchView("chat");
 
+    var chatFeed = getEl("widget-chat-feed");
     if (chatFeed) {
       chatFeed.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.85rem;">Loading conversation...</div>';
     }
+
+    // Instant 0ms clear indicator
+    var fabBadge = getEl("support-fab-badge");
+    var topbarMailDot = getEl("mail-unread-dot");
+    var topbarMailBadge = getEl("mail-unread-badge");
+    if (fabBadge) fabBadge.style.display = "none";
+    if (topbarMailDot) topbarMailDot.style.display = "none";
+    if (topbarMailBadge) topbarMailBadge.style.display = "none";
 
     try {
       var res = await fetch("/api/support/tickets/" + ticketId);
@@ -240,6 +276,11 @@
 
   function updateChatHeader(ticket) {
     if (!ticket) return;
+    var chatTicketSubject = getEl("widget-chat-subject");
+    var chatTicketNum = getEl("widget-chat-num");
+    var chatTicketStatus = getEl("widget-chat-status");
+    var chatResolvedBanner = getEl("widget-chat-resolved-banner");
+
     if (chatTicketSubject) chatTicketSubject.textContent = ticket.subject || "Support Request";
     if (chatTicketNum) chatTicketNum.textContent = "#" + (ticket.ticket_number || "");
     if (chatTicketStatus) {
@@ -253,9 +294,10 @@
   }
 
   function renderMessages(messages) {
+    var chatFeed = getEl("widget-chat-feed");
     if (!chatFeed) return;
     var html = "";
-    var isScrolledToBottom = chatFeed.scrollHeight - chatFeed.scrollTop <= chatFeed.clientHeight + 80;
+    var isScrolledToBottom = chatFeed.scrollHeight - chatFeed.scrollTop <= chatFeed.clientHeight + 90;
 
     messages.forEach(function(msg) {
       var timeStr = (msg.created_at || "").substring(11, 16);
@@ -267,8 +309,9 @@
           '<div class="chat-bubble-time">' + timeStr + '</div>' +
         '</div>';
       } else {
+        // ALWAYS display "Support" as author (never user/admin personal names)
         html += '<div class="chat-bubble-wrap is-support">' +
-          '<div class="chat-bubble-author">' + escapeHtml(msg.sender_name || "Tgsims Support") + '</div>' +
+          '<div class="chat-bubble-author">Support</div>' +
           '<div class="chat-bubble">' + escapeHtml(msg.message) + '</div>' +
           '<div class="chat-bubble-time">' + timeStr + '</div>' +
         '</div>';
@@ -283,6 +326,10 @@
 
   /* ---- Send Message ---- */
   async function sendMessage() {
+    var chatInput = getEl("widget-chat-input");
+    var chatSendBtn = getEl("widget-chat-send-btn");
+    var chatResolvedBanner = getEl("widget-chat-resolved-banner");
+
     if (!currentTicketId || !chatInput) return;
     var text = chatInput.value.trim();
     if (!text) return;
@@ -301,6 +348,7 @@
         chatInput.style.height = "auto";
         await pollChatMessages();
         if (chatResolvedBanner) chatResolvedBanner.style.display = "none";
+        syncUnreadCounts();
       } else {
         if (window.toast) window.toast(data.message || "Failed to send message", "error");
       }
@@ -310,19 +358,6 @@
       if (chatSendBtn) chatSendBtn.disabled = false;
       chatInput.focus();
     }
-  }
-
-  if (chatSendBtn) {
-    chatSendBtn.addEventListener("click", sendMessage);
-  }
-
-  if (chatInput) {
-    chatInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
   }
 
   /* ---- Realtime Chat Polling (Every 3s when chat view is active) ---- */
@@ -339,6 +374,10 @@
   }
 
   async function pollChatMessages() {
+    var widget = getEl("support-widget");
+    var chatTicketStatus = getEl("widget-chat-status");
+    var chatResolvedBanner = getEl("widget-chat-resolved-banner");
+
     if (!currentTicketId || !widget || !widget.classList.contains("is-open")) return;
     try {
       var res = await fetch("/api/support/tickets/" + currentTicketId + "/messages");
@@ -351,17 +390,31 @@
             chatResolvedBanner.style.display = data.ticket_status === "resolved" ? "block" : "none";
           }
         }
+        // Messages are now marked read on server; sync unread indicators immediately
+        syncUnreadCounts();
       }
     } catch (e) {}
   }
 
   /* ---- Sync Unread Messages & Notifications for Topbar Mail & FAB ---- */
   async function syncUnreadCounts() {
+    var widget = getEl("support-widget");
+    if (!widget || widget.getAttribute("data-authenticated") !== "true") {
+      return;
+    }
     try {
       var res = await fetch("/api/support/unread");
+      if (res.status === 401) {
+        widget.setAttribute("data-authenticated", "false");
+        if (unreadPollTimer) clearInterval(unreadPollTimer);
+        return;
+      }
       var data = await res.json();
 
       var unreadTotal = data.unread_total || 0;
+      var fabBadge = getEl("support-fab-badge");
+      var topbarMailDot = getEl("mail-unread-dot");
+      var topbarMailBadge = getEl("mail-unread-badge");
 
       // Update FAB badge
       if (fabBadge) {
@@ -386,6 +439,7 @@
       }
 
       // Render notifications in topbar dropdown
+      var topbarNotifsList = getEl("topbar-support-notifs");
       if (topbarNotifsList && data.notifications) {
         renderTopbarNotifications(data.notifications);
       }
@@ -393,6 +447,7 @@
   }
 
   function renderTopbarNotifications(notifs) {
+    var topbarNotifsList = getEl("topbar-support-notifs");
     if (!topbarNotifsList) return;
     if (!notifs || notifs.length === 0) {
       topbarNotifsList.innerHTML = '<div style="padding:2rem 1rem;text-align:center;color:var(--text-muted);font-size:0.82rem;">No support notifications</div>';
@@ -419,9 +474,17 @@
   }
 
   window.handleNotifClick = async function(ticketId, notifId) {
-    // Mark as read
+    // Instant 0ms clear
+    var topbarMailDot = getEl("mail-unread-dot");
+    var topbarMailBadge = getEl("mail-unread-badge");
+    var fabBadge = getEl("support-fab-badge");
+    if (topbarMailDot) topbarMailDot.style.display = "none";
+    if (topbarMailBadge) topbarMailBadge.style.display = "none";
+    if (fabBadge) fabBadge.style.display = "none";
+
+    // Mark as read on server
     try {
-      await fetch("/api/support/notifications/read", {
+      fetch("/api/support/notifications/read", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notification_id: notifId })
@@ -443,6 +506,13 @@
   };
 
   window.markAllSupportNotifsRead = async function() {
+    var topbarMailDot = getEl("mail-unread-dot");
+    var topbarMailBadge = getEl("mail-unread-badge");
+    var fabBadge = getEl("support-fab-badge");
+    if (topbarMailDot) topbarMailDot.style.display = "none";
+    if (topbarMailBadge) topbarMailBadge.style.display = "none";
+    if (fabBadge) fabBadge.style.display = "none";
+
     try {
       await fetch("/api/support/notifications/read", {
         method: "POST",
@@ -454,10 +524,6 @@
     } catch (e) {}
   };
 
-  if (markAllReadBtn) {
-    markAllReadBtn.addEventListener("click", window.markAllSupportNotifsRead);
-  }
-
   function escapeHtml(str) {
     if (!str) return "";
     var div = document.createElement("div");
@@ -465,13 +531,92 @@
     return div.innerHTML;
   }
 
-  /* ---- Init Event Listeners ---- */
-  if (fab) {
-    fab.addEventListener("click", toggleWidget);
-  }
+  /* ---- Event Delegations: Works Reliably on ALL Pages ---- */
 
-  // Poll unread counts periodically every 10 seconds
-  syncUnreadCounts();
-  unreadPollTimer = setInterval(syncUnreadCounts, 10000);
+  // 1. Click FAB or any support trigger
+  document.addEventListener("click", function(e) {
+    var fabTarget = e.target.closest("#support-fab, [data-support-fab], [data-support-toggle]");
+    if (fabTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleWidget();
+      return;
+    }
+
+    var openChatTarget = e.target.closest("[data-support-ticket-id]");
+    if (openChatTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+      var tid = openChatTarget.getAttribute("data-support-ticket-id");
+      openWidget(tid);
+      return;
+    }
+
+    var markReadBtn = e.target.closest("#mark-notifs-read-btn");
+    if (markReadBtn) {
+      e.preventDefault();
+      window.markAllSupportNotifsRead();
+      return;
+    }
+
+    var sendBtn = e.target.closest("#widget-chat-send-btn");
+    if (sendBtn) {
+      e.preventDefault();
+      sendMessage();
+      return;
+    }
+  });
+
+  // 2. Click outside modal closes it (Desktop + Mobile)
+  document.addEventListener("click", function(e) {
+    var widget = getEl("support-widget");
+    var fab = getEl("support-fab");
+    var backdrop = getEl("support-backdrop");
+
+    if (!widget || !widget.classList.contains("is-open")) return;
+
+    // If click is on the backdrop, close immediately
+    if (backdrop && (e.target === backdrop || backdrop.contains(e.target))) {
+      closeWidget();
+      return;
+    }
+
+    // If click is inside widget, or on FAB, or on the topbar dropdown/mail button, don't close
+    if (widget.contains(e.target) || (fab && fab.contains(e.target)) ||
+        e.target.closest("#support-fab") ||
+        e.target.closest("#support-messages-dropdown") ||
+        e.target.closest("[data-support-ticket-id]") ||
+        e.target.closest(".widget-ticket-item")) {
+      return;
+    }
+
+    // Otherwise it was an outside click: close the modal!
+    closeWidget();
+  });
+
+  // 3. Escape key closes modal
+  document.addEventListener("keydown", function(e) {
+    var widget = getEl("support-widget");
+    if (e.key === "Escape" && widget && widget.classList.contains("is-open")) {
+      closeWidget();
+    }
+  });
+
+  // 4. Enter to send message in chat textarea
+  document.addEventListener("keydown", function(e) {
+    if (e.target && e.target.id === "widget-chat-input") {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+  });
+
+  // Fast periodic unread sync (every 3.5s for snappy notification feedback for logged-in users)
+  var widgetEl = getEl("support-widget");
+  if (widgetEl && widgetEl.getAttribute("data-authenticated") === "true") {
+    syncUnreadCounts();
+    unreadPollTimer = setInterval(syncUnreadCounts, 3500);
+  }
 
 })();

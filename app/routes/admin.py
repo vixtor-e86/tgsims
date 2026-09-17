@@ -424,19 +424,19 @@ def support_reply(ticket_id):
         flash('Reply message cannot be empty.', 'error')
         return redirect(url_for('admin.support', ticket_id=ticket_id))
 
-    admin_name = user.get('full_name') or 'Tgsims Support'
-    sender_role = 'support' if user.get('role') == 'support' else 'admin'
+    admin_name = 'Support'
+    sender_role = 'support'
 
     DBService.add_support_message(
         ticket_id=ticket_id,
         sender_id=user.get('id'),
-        sender_name=admin_name,
+        sender_name='Support',
         sender_role=sender_role,
         message=reply_text
     )
 
     if new_status:
-        DBService.update_ticket_status(ticket_id, new_status, actor_role=sender_role, actor_name=admin_name)
+        DBService.update_ticket_status(ticket_id, new_status, actor_role=sender_role, actor_name='Support')
 
     flash('Reply sent successfully.', 'success')
     return redirect(url_for('admin.support', ticket_id=ticket_id))
@@ -447,13 +447,12 @@ def support_status(ticket_id):
     """Update ticket status via form POST."""
     user = session.get('user', {})
     new_status = request.form.get('status', '').strip()
-    admin_name = user.get('full_name') or 'Tgsims Support'
 
     res = DBService.update_ticket_status(
         ticket_id=ticket_id,
         new_status=new_status,
         actor_role='admin',
-        actor_name=admin_name
+        actor_name='Support'
     )
     if res.get('success'):
         flash(f'Ticket status changed to {new_status.capitalize()}.', 'success')

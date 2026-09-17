@@ -140,15 +140,15 @@ def landing():
     ]
 
     communities = [
-        {'variant': 'telegram', 'icon': 'send', 'title': 'Telegram Channel',
-         'text': 'Join 2,000+ users for instant service updates and restock alerts.',
-         'cta': 'Join Channel'},
-        {'variant': 'whatsapp', 'icon': 'chat', 'title': 'WhatsApp Group',
-         'text': 'Connect with our community and get tips on the best services.',
-         'cta': 'Join Group'},
-        {'variant': 'support', 'icon': 'headset', 'title': 'Direct Support',
-         'text': 'Need help with a specific issue? Our team is available 24/7.',
-         'cta': 'Chat with Us'},
+        {'variant': 'telegram', 'icon': 'send', 'title': 'Telegram Support',
+         'text': 'Connect directly to our official Telegram chat at t.me/tgsimss for real-time updates.',
+         'cta': 'Open Telegram', 'href': 'https://t.me/tgsimss'},
+        {'variant': 'whatsapp', 'icon': 'chat', 'title': 'WhatsApp Support',
+         'text': 'Direct chat on WhatsApp: 07047886371 for fast assistance and verification support.',
+         'cta': 'Chat on WhatsApp', 'href': 'https://wa.me/2347047886371'},
+        {'variant': 'support', 'icon': 'headset', 'title': '24/7 Support Desk',
+         'text': 'Email tgsimsverify@gmail.com or log in to access 24/7 realtime messenger support.',
+         'cta': 'Open Support Desk', 'href': '/account/support'},
     ]
 
     return render_template(

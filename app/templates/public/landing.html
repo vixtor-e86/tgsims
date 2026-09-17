@@ -251,7 +251,7 @@
           <span class="lp-comm-ico">{{ icon(c.icon) }}</span>
           <h3 class="lp-comm-title">{{ c.title }}</h3>
           <p class="lp-comm-text">{{ c.text }}</p>
-          <a href="#" class="btn lp-comm-btn">{{ c.cta }}</a>
+          <a href="{{ c.href }}" {% if c.href.startswith('http') %}target="_blank" rel="noopener noreferrer"{% endif %} class="btn lp-comm-btn">{{ c.cta }}</a>
         </div>
         {% endfor %}
       </div>
@@ -282,11 +282,12 @@
       <a href="#">Privacy Policy</a>
       <a href="#">Terms</a>
       <a href="{{ url_for('account.support') if current_user else url_for('auth.login') }}">Support</a>
-      <a href="#">Contact</a>
+      <a href="mailto:tgsimsverify@gmail.com">Contact</a>
     </nav>
     <div class="lp-footer-social">
-      <a href="#" class="lp-social" aria-label="Website">{{ icon("globe") }}</a>
-      <a href="#" class="lp-social" aria-label="Telegram">{{ icon("send") }}</a>
+      <a href="https://t.me/tgsimss" target="_blank" rel="noopener noreferrer" class="lp-social" aria-label="Telegram" title="Telegram: t.me/tgsimss">{{ icon("send") }}</a>
+      <a href="https://wa.me/2347047886371" target="_blank" rel="noopener noreferrer" class="lp-social" aria-label="WhatsApp" title="WhatsApp: 07047886371">{{ icon("chat") }}</a>
+      <a href="mailto:tgsimsverify@gmail.com" class="lp-social" aria-label="Email" title="Email: tgsimsverify@gmail.com">{{ icon("mail") }}</a>
     </div>
   </div>
   <div class="container lp-footer-copy">

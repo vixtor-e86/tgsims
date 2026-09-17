@@ -12,6 +12,16 @@ class DBService:
     """Unified Database Service for user wallets, transactions, SIM orders, and SMS messages."""
 
     @staticmethod
+    def _is_uuid(val: str) -> bool:
+        if not val or not isinstance(val, str):
+            return False
+        try:
+            uuid.UUID(str(val))
+            return True
+        except (ValueError, TypeError, AttributeError):
+            return False
+
+    @staticmethod
     def get_wallet(user_id: str) -> dict:
         """Fetch user wallet. Initializes wallet with 0.00 if not present."""
         if not user_id or user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
@@ -871,7 +881,7 @@ class DBService:
         admin = get_supabase_admin()
 
         # Try Supabase insert
-        if admin:
+        if admin and DBService._is_uuid(user_id):
             try:
                 ticket_data = {
                     'ticket_number': ticket_code,
@@ -892,7 +902,7 @@ class DBService:
                     if initial_message and initial_message.strip():
                         admin.table('support_messages').insert({
                             'ticket_id': ticket['id'],
-                            'sender_id': user_id,
+                            'sender_id': user_id if DBService._is_uuid(user_id) else None,
                             'sender_role': 'user',
                             'sender_name': user_name or 'User',
                             'message': initial_message.strip(),
@@ -967,7 +977,7 @@ class DBService:
     def get_user_tickets(user_id: str, limit: int = 50) -> list:
         """Fetch all tickets for a specific user."""
         admin = get_supabase_admin()
-        if admin:
+        if admin and DBService._is_uuid(user_id):
             try:
                 res = admin.table('support_tickets') \
                     .select('*') \
@@ -987,16 +997,16 @@ class DBService:
     def get_ticket_by_id(ticket_id: str, user_id: str = None, is_admin: bool = False) -> dict:
         """Fetch single ticket by ID. Validates ownership if not admin."""
         admin = get_supabase_admin()
-        if admin:
+        if admin and DBService._is_uuid(ticket_id):
             try:
                 q = admin.table('support_tickets').select('*').eq('id', ticket_id).limit(1)
-                if not is_admin and user_id:
+                if not is_admin and user_id and DBService._is_uuid(user_id):
                     q = q.eq('user_id', user_id)
                 res = q.execute()
                 if res.data and len(res.data) > 0:
                     ticket = res.data[0]
                     # Fetch user profile info for admin view
-                    if is_admin and ticket.get('user_id'):
+                    if is_admin and ticket.get('user_id') and DBService._is_uuid(ticket['user_id']):
                         try:
                             prof = admin.table('profiles').select('full_name, email, phone_number').eq('id', ticket['user_id']).limit(1).execute()
                             if prof.data and len(prof.data) > 0:
@@ -1021,10 +1031,10 @@ class DBService:
                             mark_read: bool = True) -> list:
         """Fetch all chat messages for a ticket, sorted chronologically."""
         admin = get_supabase_admin()
-        if admin:
+        if admin and DBService._is_uuid(ticket_id):
             try:
                 # Check authorization
-                if not is_admin and user_id:
+                if not is_admin and user_id and DBService._is_uuid(user_id):
                     t_check = admin.table('support_tickets').select('id').eq('id', ticket_id).eq('user_id', user_id).limit(1).execute()
                     if not t_check.data:
                         return []
@@ -1074,12 +1084,15 @@ class DBService:
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         admin = get_supabase_admin()
 
-        if admin:
+        if sender_role in ('admin', 'support'):
+            sender_name = 'Support'
+
+        if admin and DBService._is_uuid(ticket_id):
             try:
                 # 1. Insert message
                 msg_data = {
                     'ticket_id': ticket_id,
-                    'sender_id': sender_id,
+                    'sender_id': sender_id if DBService._is_uuid(sender_id) else None,
                     'sender_role': sender_role,
                     'sender_name': sender_name or 'Support',
                     'message': message.strip(),
@@ -1170,7 +1183,7 @@ class DBService:
 
     @staticmethod
     def update_ticket_status(ticket_id: str, new_status: str, actor_role: str = 'admin',
-                             actor_name: str = 'Admin') -> dict:
+                             actor_name: str = 'Support') -> dict:
         """Update ticket status ('open', 'pending', 'resolved', 'closed') and notify user if resolved."""
         valid_statuses = ('open', 'pending', 'resolved', 'closed')
         if new_status not in valid_statuses:
@@ -1179,7 +1192,7 @@ class DBService:
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         admin = get_supabase_admin()
 
-        if admin:
+        if admin and DBService._is_uuid(ticket_id):
             try:
                 t_res = admin.table('support_tickets').select('*').eq('id', ticket_id).limit(1).execute()
                 if not t_res.data:
@@ -1197,7 +1210,7 @@ class DBService:
                     'ticket_id': ticket_id,
                     'sender_role': 'system',
                     'sender_name': 'System',
-                    'message': f'Ticket marked as {status_label} by {actor_name}.',
+                    'message': f'Ticket marked as {status_label} by Support.',
                     'is_read': True
                 }).execute()
 
@@ -1232,7 +1245,7 @@ class DBService:
                     'ticket_id': ticket_id,
                     'sender_role': 'system',
                     'sender_name': 'System',
-                    'message': f'Ticket marked as {new_status.capitalize()} by {actor_name}.',
+                    'message': f'Ticket marked as {new_status.capitalize()} by Support.',
                     'is_read': True,
                     'created_at': now_iso
                 })
@@ -1270,7 +1283,7 @@ class DBService:
                 tickets = res.data or []
 
                 # Fetch profiles map for user names/emails
-                user_ids = list({t['user_id'] for t in tickets if t.get('user_id')})
+                user_ids = list({t['user_id'] for t in tickets if t.get('user_id') and DBService._is_uuid(t.get('user_id'))})
                 if user_ids:
                     try:
                         p_res = admin.table('profiles').select('id, full_name, email, phone_number').in_('id', user_ids).execute()
@@ -1339,7 +1352,7 @@ class DBService:
     def get_user_support_unread(user_id: str) -> dict:
         """Get unread message count and unread notifications for topbar badge & floating widget."""
         admin = get_supabase_admin()
-        if admin:
+        if admin and DBService._is_uuid(user_id):
             try:
                 # 1. Sum unread messages across user tickets
                 t_res = admin.table('support_tickets').select('unread_user_count').eq('user_id', user_id).execute()
@@ -1375,15 +1388,22 @@ class DBService:
     def mark_notifications_read(user_id: str, notif_id: str = None) -> bool:
         """Mark specific or all notifications as read for a user."""
         admin = get_supabase_admin()
-        if admin:
+        if admin and DBService._is_uuid(user_id):
             try:
                 q = admin.table('support_notifications').update({'is_read': True}).eq('user_id', user_id)
-                if notif_id and notif_id != 'all':
+                if notif_id and notif_id != 'all' and DBService._is_uuid(notif_id):
                     q = q.eq('id', notif_id)
                 q.execute()
                 return True
             except Exception as e:
                 print(f"[DBService] mark_notifications_read error: {e}")
+
+        # Fallback
+        for n in mock_db.support_notifications:
+            if n.get('user_id') == user_id:
+                if not notif_id or notif_id == 'all' or n.get('id') == notif_id:
+                    n['is_read'] = True
+        return True
 
         # Fallback
         for n in mock_db.support_notifications:

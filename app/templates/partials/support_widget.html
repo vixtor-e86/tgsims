@@ -9,11 +9,65 @@
   <span class="support-fab-badge" id="support-fab-badge" style="display: none;">0</span>
 </button>
 
+{# Dimmed backdrop for mobile & outside click closing #}
+<div class="support-backdrop" id="support-backdrop" aria-hidden="true"></div>
+
 {# Messenger Chat Widget Shell #}
-<div class="support-widget" id="support-widget" role="region" aria-label="Live Support Chat">
+<div class="support-widget" id="support-widget" data-authenticated="{{ 'true' if current_user else 'false' }}" role="region" aria-label="Live Support Chat">
+
+  {# VIEW 0: LOGIN REQUIRED FOR LIVE CHAT #}
+  <div class="widget-view" id="widget-view-login" style="display: {% if not current_user %}flex{% else %}none{% endif %}; flex-direction: column;">
+    <div class="widget-header">
+      <div class="widget-header-title">
+        <div class="widget-avatar">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }}" style="width: 22px; height: 22px;">
+        </div>
+        <div>
+          <div class="widget-title-text">{{ BRAND }} Support</div>
+          <div class="widget-sub-text">
+            <span class="widget-online-dot"></span> Online &bull; Live Help
+          </div>
+        </div>
+      </div>
+      <button type="button" class="widget-header-btn" onclick="closeSupportWidget()" aria-label="Minimize support widget">
+        {{ icon('x') }}
+      </button>
+    </div>
+
+    <div class="widget-form-body" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2.25rem 1.5rem; flex: 1;">
+      <div style="width: 60px; height: 60px; border-radius: var(--r-full); background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; margin-bottom: 1.2rem;">
+        {{ icon('chat') }}
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text);">
+        Please Log In to Chat
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 1.5rem; max-width: 290px;">
+        To create a support ticket and chat in real-time with our agents, please log in to your account.
+      </p>
+
+      <a href="{{ url_for('auth.login', next=request.path) }}" class="btn btn-primary btn-block btn-lg" style="margin-bottom: 0.75rem; font-weight: 700;">
+        Log In to Live Chat
+      </a>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-block" style="font-weight: 600; margin-bottom: 1.5rem;">
+        Create Free Account
+      </a>
+
+      <div style="width: 100%; border-top: 1px solid var(--border); padding-top: 1.25rem; font-size: 0.78rem; color: var(--text-muted);">
+        <div style="margin-bottom: 0.6rem; font-weight: 600;">Reach us directly without logging in:</div>
+        <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+          <a href="https://wa.me/2347047886371" target="_blank" rel="noopener noreferrer" style="color: #25D366; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+            {{ icon('chat') }} WhatsApp: 07047886371
+          </a>
+          <a href="https://t.me/tgsimss" target="_blank" rel="noopener noreferrer" style="color: #229ED9; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+            {{ icon('send') }} Telegram: t.me/tgsimss
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   {# VIEW 1: HOME & CONVERSATION HISTORY #}
-  <div class="widget-view" id="widget-view-home" style="display: flex;">
+  <div class="widget-view" id="widget-view-home" style="display: {% if current_user %}flex{% else %}none{% endif %};">
     <div class="widget-header">
       <div class="widget-header-title">
         <div class="widget-avatar">

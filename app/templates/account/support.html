@@ -101,7 +101,7 @@
     {% if c.action == 'chat' %}
     <button type="button" class="btn btn-primary btn-block" onclick="window.openSupportWidget && window.openSupportWidget()">{{ c.cta }}</button>
     {% elif c.href %}
-    <a href="{{ c.href }}" target="_blank" class="btn btn-secondary btn-block">{{ c.cta }}</a>
+    <a href="{{ c.href }}" {% if c.href.startswith('http') or c.href.startswith('mailto') %}target="_blank" rel="noopener noreferrer"{% endif %} class="btn btn-secondary btn-block">{{ c.cta }}</a>
     {% else %}
     <a href="#" class="btn btn-secondary btn-block">{{ c.cta }}</a>
     {% endif %}
