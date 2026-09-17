@@ -19,15 +19,16 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 @admin_bp.before_request
 def require_admin():
-    """Ensure user is logged in and possesses administrator privileges."""
+    """Ensure user is logged in and possesses administrator or support privileges."""
     user = session.get('user')
     if not user or not isinstance(user, dict):
         flash('Please sign in with administrator credentials.', 'error')
         return redirect(url_for('auth.login', next=request.path))
 
-    if user.get('role') != 'admin':
+    if user.get('role') not in ('admin', 'support'):
         flash('Access restricted. Administrator privileges required.', 'error')
         return redirect(url_for('dashboard.index'))
+
 
 
 @admin_bp.route('')
@@ -370,3 +371,94 @@ def adjust_user_balance(user_id):
         flash(f'Error adjusting balance: {e}', 'error')
 
     return redirect(url_for('admin.users'))
+
+
+# =============================================================================
+# SUPPORT TICKETS & COMPLAINTS DESK
+# =============================================================================
+
+@admin_bp.route('/support')
+@admin_bp.route('/support/<ticket_id>')
+def support(ticket_id=None):
+    """Customer Support & Complaints Desk.
+    Provides realtime ticket management, message history, instant reply, and status updates.
+    """
+    status_filter = request.args.get('status', 'all')
+    search_q = request.args.get('q', '').strip()
+    selected_id = ticket_id or request.args.get('ticket_id', '').strip()
+
+    tickets = DBService.get_all_tickets_admin(status_filter=status_filter, search=search_q)
+    stats = DBService.get_admin_support_stats()
+
+    selected_ticket = None
+    messages = []
+
+    if selected_id:
+        selected_ticket = DBService.get_ticket_by_id(selected_id, is_admin=True)
+        if selected_ticket:
+            messages = DBService.get_ticket_messages(selected_ticket['id'], is_admin=True, mark_read=True)
+    elif tickets:
+        selected_ticket = tickets[0]
+        messages = DBService.get_ticket_messages(selected_ticket['id'], is_admin=True, mark_read=True)
+
+    return render_template(
+        'admin/support.html',
+        tickets=tickets,
+        selected_ticket=selected_ticket,
+        messages=messages,
+        stats=stats,
+        status_filter=status_filter,
+        search_q=search_q,
+        active_page='support'
+    )
+
+
+@admin_bp.route('/support/<ticket_id>/reply', methods=['POST'])
+def support_reply(ticket_id):
+    """Standard form POST fallback for replying to a ticket."""
+    user = session.get('user', {})
+    reply_text = request.form.get('message', '').strip()
+    new_status = request.form.get('status')
+
+    if not reply_text:
+        flash('Reply message cannot be empty.', 'error')
+        return redirect(url_for('admin.support', ticket_id=ticket_id))
+
+    admin_name = user.get('full_name') or 'Tgsims Support'
+    sender_role = 'support' if user.get('role') == 'support' else 'admin'
+
+    DBService.add_support_message(
+        ticket_id=ticket_id,
+        sender_id=user.get('id'),
+        sender_name=admin_name,
+        sender_role=sender_role,
+        message=reply_text
+    )
+
+    if new_status:
+        DBService.update_ticket_status(ticket_id, new_status, actor_role=sender_role, actor_name=admin_name)
+
+    flash('Reply sent successfully.', 'success')
+    return redirect(url_for('admin.support', ticket_id=ticket_id))
+
+
+@admin_bp.route('/support/<ticket_id>/status', methods=['POST'])
+def support_status(ticket_id):
+    """Update ticket status via form POST."""
+    user = session.get('user', {})
+    new_status = request.form.get('status', '').strip()
+    admin_name = user.get('full_name') or 'Tgsims Support'
+
+    res = DBService.update_ticket_status(
+        ticket_id=ticket_id,
+        new_status=new_status,
+        actor_role='admin',
+        actor_name=admin_name
+    )
+    if res.get('success'):
+        flash(f'Ticket status changed to {new_status.capitalize()}.', 'success')
+    else:
+        flash(res.get('message', 'Failed to update ticket status.'), 'error')
+
+    return redirect(url_for('admin.support', ticket_id=ticket_id))
+

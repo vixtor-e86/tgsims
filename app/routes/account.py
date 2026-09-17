@@ -29,6 +29,10 @@ def support():
     if not user:
         return redirect(url_for('auth.login'))
 
+    from app.services.db_service import DBService
+    user_id = user.get('id', 'demo-user-id')
+    tickets = DBService.get_user_tickets(user_id)
+
     topics = [
         {'icon': 'rocket', 'title': 'Getting Started', 'text': 'Account creation, basics, and platform overview.'},
         {'icon': 'sim', 'title': 'eSIM Setup', 'text': 'Installation guides for iOS, Android, and specific carriers.'},
@@ -36,15 +40,10 @@ def support():
         {'icon': 'wallet', 'title': 'Billing & Wallet', 'text': 'Invoices, payment methods, and balance top-ups.'},
         {'icon': 'wrench', 'title': 'Troubleshooting', 'text': 'Resolve common errors, connectivity drops, and delivery delays swiftly.'},
     ]
-    tickets = [
-        {'id': 'TK-8821', 'subject': 'SMS activation issue', 'status': 'resolved', 'updated': 'Oct 24, 2026'},
-        {'id': 'TK-8845', 'subject': 'Wallet refund request', 'status': 'open', 'updated': 'Oct 26, 2026'},
-        {'id': 'TK-8902', 'subject': 'eSIM activation help', 'status': 'pending', 'updated': 'Oct 27, 2026'},
-    ]
     channels = [
-        {'icon': 'chat', 'title': 'Live Chat', 'text': 'Talk to our support team directly. Available 24/7.', 'cta': 'Start Chat'},
-        {'icon': 'mail', 'title': 'Email Support', 'text': 'Detailed inquiries and technical escalations.', 'cta': 'Send Email'},
-        {'icon': 'users', 'title': 'Telegram Community', 'text': 'Join fellow users for tips, updates, and community help.', 'cta': 'Join Telegram'},
+        {'icon': 'chat', 'title': 'Live Chat', 'text': 'Talk to our support team directly. Available 24/7.', 'cta': 'Start Chat', 'action': 'chat'},
+        {'icon': 'mail', 'title': 'Email Support', 'text': 'Detailed inquiries and technical escalations.', 'cta': 'Send Email', 'href': 'mailto:support@tgsims.com'},
+        {'icon': 'users', 'title': 'Telegram Community', 'text': 'Join fellow users for tips, updates, and community help.', 'cta': 'Join Telegram', 'href': 'https://t.me/tgsims'},
     ]
     return render_template('account/support.html', topics=topics, tickets=tickets,
                            channels=channels, user=user)

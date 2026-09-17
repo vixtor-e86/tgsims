@@ -1,0 +1,444 @@
+{% extends "admin/layout.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Support Desk & Complaints | Admin Console{% endblock %}
+
+{% block admin_content %}
+<div style="display: flex; flex-direction: column; gap: 1.5rem; height: calc(100vh - 120px); min-height: 700px;">
+
+  {# Top KPI row #}
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; flex-shrink: 0;">
+    <div class="card card-pad" style="display: flex; align-items: center; gap: 1rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--r-md); background: var(--brand-50); color: var(--brand-600); display: grid; place-items: center; font-size: 1.25rem;">
+        {{ icon('headset') }}
+      </div>
+      <div>
+        <div class="text-muted" style="font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase;">Total Tickets</div>
+        <div style="font-size: var(--fs-xl); font-weight: 800; line-height: 1.1;">{{ stats.total }}</div>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="display: flex; align-items: center; gap: 1rem; border-left: 3px solid var(--hue-danger);">
+      <div style="width: 44px; height: 44px; border-radius: var(--r-md); background: rgba(239, 68, 68, 0.1); color: var(--hue-danger); display: grid; place-items: center; font-size: 1.25rem;">
+        {{ icon('bolt') }}
+      </div>
+      <div>
+        <div class="text-muted" style="font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase;">Open / Needs Action</div>
+        <div style="font-size: var(--fs-xl); font-weight: 800; line-height: 1.1; color: var(--hue-danger);">{{ stats.open }}</div>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="display: flex; align-items: center; gap: 1rem; border-left: 3px solid var(--hue-warning);">
+      <div style="width: 44px; height: 44px; border-radius: var(--r-md); background: rgba(245, 158, 11, 0.1); color: var(--hue-warning); display: grid; place-items: center; font-size: 1.25rem;">
+        {{ icon('history') }}
+      </div>
+      <div>
+        <div class="text-muted" style="font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase;">Pending User</div>
+        <div style="font-size: var(--fs-xl); font-weight: 800; line-height: 1.1; color: var(--hue-warning);">{{ stats.pending }}</div>
+      </div>
+    </div>
+
+    <div class="card card-pad" style="display: flex; align-items: center; gap: 1rem; border-left: 3px solid var(--hue-success);">
+      <div style="width: 44px; height: 44px; border-radius: var(--r-md); background: rgba(16, 185, 129, 0.1); color: var(--hue-success); display: grid; place-items: center; font-size: 1.25rem;">
+        {{ icon('check-circle') }}
+      </div>
+      <div>
+        <div class="text-muted" style="font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase;">Resolved</div>
+        <div style="font-size: var(--fs-xl); font-weight: 800; line-height: 1.1; color: var(--hue-success);">{{ stats.resolved }}</div>
+      </div>
+    </div>
+  </div>
+
+  {# Split-Pane Desk Shell #}
+  <div class="card" style="flex: 1; display: flex; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow-sm); min-height: 0;">
+
+    {# LEFT COLUMN: Tickets List #}
+    <div style="width: 380px; border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--surface); flex-shrink: 0;">
+      
+      {# Search & Filters #}
+      <div style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.75rem;">
+        <form method="GET" action="{{ url_for('admin.support') }}" style="display: flex; gap: 0.5rem;">
+          <input type="hidden" name="status" value="{{ status_filter }}">
+          <div class="input-group" style="flex: 1;">
+            <span class="input-icon">{{ icon('search') }}</span>
+            <input class="input" type="search" name="q" value="{{ search_q }}" placeholder="Search ticket #, subject..." style="font-size: 0.85rem; height: 38px;">
+          </div>
+          {% if search_q %}
+          <a href="{{ url_for('admin.support', status=status_filter) }}" class="btn btn-secondary btn-sm" style="align-self: center;" title="Clear search">&times;</a>
+          {% endif %}
+        </form>
+
+        {# Filter Chips #}
+        <div style="display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 2px;">
+          <a href="{{ url_for('admin.support', status='all', q=search_q) }}" 
+             class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'all' %}background: var(--brand); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
+            All
+          </a>
+          <a href="{{ url_for('admin.support', status='open', q=search_q) }}" 
+             class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'open' %}background: var(--hue-danger); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
+            Open ({{ stats.open }})
+          </a>
+          <a href="{{ url_for('admin.support', status='pending', q=search_q) }}" 
+             class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'pending' %}background: var(--hue-warning); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
+            Pending
+          </a>
+          <a href="{{ url_for('admin.support', status='resolved', q=search_q) }}" 
+             class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'resolved' %}background: var(--hue-success); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
+            Resolved
+          </a>
+        </div>
+      </div>
+
+      {# Tickets Scrollable List #}
+      <div id="admin-ticket-list" style="flex: 1; overflow-y: auto;">
+        {% if tickets %}
+          {% for t in tickets %}
+          <a href="{{ url_for('admin.support', ticket_id=t.id, status=status_filter, q=search_q) }}" 
+             class="ticket-list-item" 
+             style="display: block; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); text-decoration: none; color: inherit; transition: background 0.15s ease; {% if selected_ticket and selected_ticket.id == t.id %}background: var(--brand-50); border-left: 4px solid var(--brand);{% endif %}">
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="font-weight: 700; font-size: 0.85rem; color: var(--brand); font-family: var(--font-mono);">
+                #{{ t.ticket_number }}
+              </span>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                {% if t.unread_admin_count and t.unread_admin_count > 0 %}
+                <span class="badge" style="background: var(--hue-danger); color: #fff; font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 999px;">
+                  {{ t.unread_admin_count }} new
+                </span>
+                {% endif %}
+                <span class="badge badge-dot {% if t.status == 'open' %}badge-danger{% elif t.status == 'pending' %}badge-warning{% elif t.status == 'resolved' %}badge-success{% else %}badge-secondary{% endif %}" style="font-size: 0.72rem; text-transform: capitalize;">
+                  {{ t.status }}
+                </span>
+              </div>
+            </div>
+
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {{ t.subject }}
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {{ t.last_message or 'No messages yet' }}
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; color: var(--text-dim);">
+              <span>{{ t.user_name or 'User' }} &bull; {{ t.user_email or '' }}</span>
+              <span>{{ t.updated_at[:10] if t.updated_at else '' }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        {% else %}
+          <div style="padding: 3rem 1.5rem; text-align: center; color: var(--text-muted);">
+            <div style="margin-bottom: 0.5rem; color: var(--text-dim);">{{ icon('chat') }}</div>
+            <div style="font-weight: 600;">No support tickets found</div>
+            <div style="font-size: 0.82rem; margin-top: 0.25rem;">Tickets submitted by users will appear here.</div>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    {# RIGHT COLUMN: Ticket Conversation & Management Pane #}
+    <div style="flex: 1; display: flex; flex-direction: column; background: var(--bg); min-width: 0;">
+      {% if selected_ticket %}
+        
+        {# Conversation Header #}
+        <div style="padding: 1rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.25rem;">
+              <span style="font-size: 1.15rem; font-weight: 800; font-family: var(--font-mono); color: var(--brand);">
+                #{{ selected_ticket.ticket_number }}
+              </span>
+              <span class="badge" style="background: var(--surface-alt); border: 1px solid var(--border); text-transform: uppercase; font-size: 0.7rem; font-weight: 700;">
+                {{ selected_ticket.category or 'general' }}
+              </span>
+              <span id="ticket-status-badge" class="badge badge-dot {% if selected_ticket.status == 'open' %}badge-danger{% elif selected_ticket.status == 'pending' %}badge-warning{% elif selected_ticket.status == 'resolved' %}badge-success{% else %}badge-secondary{% endif %}" style="text-transform: capitalize; font-weight: 700;">
+                {{ selected_ticket.status }}
+              </span>
+            </div>
+            <h1 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text);">
+              {{ selected_ticket.subject }}
+            </h1>
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem; display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+              <span><strong>User:</strong> {{ selected_ticket.user_name or 'User' }} ({{ selected_ticket.user_email or 'No email' }})</span>
+              {% if selected_ticket.user_phone %}
+              <span><strong>Phone:</strong> {{ selected_ticket.user_phone }}</span>
+              {% endif %}
+              <a href="{{ url_for('admin.users', q=selected_ticket.user_email or '') }}" target="_blank" style="color: var(--brand); text-decoration: none; font-weight: 600;">
+                {{ icon('external', 'i-inline') }} View User Profile
+              </a>
+            </div>
+          </div>
+
+          {# Status Actions Dropdown / Quick Buttons #}
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <select id="status-select" class="input input-sm" style="width: 140px; font-weight: 600;" onchange="updateTicketStatus(this.value)">
+              <option value="open" {% if selected_ticket.status == 'open' %}selected{% endif %}>🔴 Open</option>
+              <option value="pending" {% if selected_ticket.status == 'pending' %}selected{% endif %}>🟡 Pending</option>
+              <option value="resolved" {% if selected_ticket.status == 'resolved' %}selected{% endif %}>🟢 Resolved</option>
+              <option value="closed" {% if selected_ticket.status == 'closed' %}selected{% endif %}>⚪ Closed</option>
+            </select>
+
+            <button type="button" class="btn btn-sm btn-secondary" onclick="reloadMessages()" title="Refresh messages">
+              {{ icon('refresh') }}
+            </button>
+          </div>
+        </div>
+
+        {# Message Thread #}
+        <div id="admin-chat-feed" style="flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+          {% for msg in messages %}
+            {% if msg.sender_role == 'system' %}
+              <div style="text-align: center; margin: 0.5rem 0;">
+                <span class="badge" style="background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-muted); font-size: 0.76rem; padding: 0.35rem 0.85rem; border-radius: 999px;">
+                  {{ msg.message }} &bull; <small>{{ msg.created_at[:16] if msg.created_at else '' }}</small>
+                </span>
+              </div>
+            {% elif msg.sender_role in ('admin', 'support') %}
+              {# Admin Reply (Right aligned) #}
+              <div style="display: flex; flex-direction: column; align-items: flex-end; max-width: 75%; align-self: flex-end;">
+                <div style="font-size: 0.75rem; color: var(--brand); font-weight: 700; margin-bottom: 0.25rem;">
+                  {{ msg.sender_name or 'Support' }} (Staff)
+                </div>
+                <div style="background: var(--brand); color: #fff; padding: 0.8rem 1.1rem; border-radius: var(--r-lg) var(--r-lg) var(--r-xs) var(--r-lg); box-shadow: var(--shadow-xs); font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;">
+                  {{ msg.message }}
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem;">
+                  {{ msg.created_at[:16] if msg.created_at else '' }}
+                </div>
+              </div>
+            {% else %}
+              {# User Message (Left aligned) #}
+              <div style="display: flex; flex-direction: column; align-items: flex-start; max-width: 75%; align-self: flex-start;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; margin-bottom: 0.25rem;">
+                  {{ msg.sender_name or selected_ticket.user_name or 'User' }}
+                </div>
+                <div style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 0.8rem 1.1rem; border-radius: var(--r-lg) var(--r-lg) var(--r-lg) var(--r-xs); box-shadow: var(--shadow-xs); font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;">
+                  {{ msg.message }}
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem;">
+                  {{ msg.created_at[:16] if msg.created_at else '' }}
+                </div>
+              </div>
+            {% endif %}
+          {% else %}
+            <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
+              No messages in this ticket yet.
+            </div>
+          {% endfor %}
+        </div>
+
+        {# Reply Composer Bar #}
+        <div style="padding: 1rem 1.5rem; background: var(--surface); border-top: 1px solid var(--border);">
+          <form id="admin-reply-form" onsubmit="handleAdminReply(event)">
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <textarea id="admin-reply-input" class="input" rows="3" placeholder="Type your response to the customer... (Press Enter to send, Shift+Enter for new line)" style="resize: vertical; font-size: 0.92rem; padding: 0.75rem 1rem;" required></textarea>
+              
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="font-size: 0.78rem; color: var(--text-muted);">
+                  Auto-syncs live with customer every 3s
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <button type="button" class="btn btn-sm btn-secondary" onclick="sendReplyWithStatus('resolved')">
+                    {{ icon('check') }} Reply & Resolve
+                  </button>
+                  <button type="submit" id="admin-send-btn" class="btn btn-sm btn-primary" style="font-weight: 700;">
+                    {{ icon('send') }} Send Reply
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+      {% else %}
+        {# No ticket selected state #}
+        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; color: var(--text-muted);">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-size: 1.8rem; margin-bottom: 1rem;">
+            {{ icon('chat') }}
+          </div>
+          <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem;">Tgsims Support Desk</h2>
+          <p style="max-width: 420px; font-size: 0.9rem; line-height: 1.5;">
+            Select any ticket from the left panel to inspect the complaint, reply in realtime to the customer, or update the resolution status.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  var currentTicketId = "{{ selected_ticket.id if selected_ticket else '' }}";
+  var chatFeed = document.getElementById("admin-chat-feed");
+  var replyInput = document.getElementById("admin-reply-input");
+  var pollTimer = null;
+
+  // Scroll to bottom on load
+  function scrollToBottom() {
+    if (chatFeed) {
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+  }
+  scrollToBottom();
+
+  // Enter to send
+  if (replyInput) {
+    replyInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById("admin-reply-form").requestSubmit();
+      }
+    });
+  }
+
+  // Handle Send Reply
+  window.handleAdminReply = async function(e) {
+    if (e) e.preventDefault();
+    if (!currentTicketId || !replyInput) return;
+
+    var text = replyInput.value.trim();
+    if (!text) return;
+
+    var btn = document.getElementById("admin-send-btn");
+    btn.disabled = true;
+
+    try {
+      var res = await fetch("/api/admin/support/tickets/" + currentTicketId + "/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
+      var data = await res.json();
+      if (data.success) {
+        replyInput.value = "";
+        await reloadMessages();
+      } else {
+        if (window.toast) window.toast(data.message || "Failed to send message", "error");
+      }
+    } catch (err) {
+      if (window.toast) window.toast("Network error", "error");
+    } finally {
+      btn.disabled = false;
+      replyInput.focus();
+    }
+  };
+
+  // Reply & Resolve button
+  window.sendReplyWithStatus = async function(status) {
+    if (!currentTicketId || !replyInput) return;
+    var text = replyInput.value.trim();
+    if (!text) {
+      if (window.toast) window.toast("Please enter a reply message before resolving.", "info");
+      replyInput.focus();
+      return;
+    }
+
+    try {
+      var res = await fetch("/api/admin/support/tickets/" + currentTicketId + "/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, status: status })
+      });
+      var data = await res.json();
+      if (data.success) {
+        replyInput.value = "";
+        await reloadMessages();
+        updateStatusBadge(status);
+        if (window.toast) window.toast("Reply sent and ticket resolved!", "success");
+      }
+    } catch (err) {
+      if (window.toast) window.toast("Failed to resolve ticket", "error");
+    }
+  };
+
+  // Update Ticket Status
+  window.updateTicketStatus = async function(newStatus) {
+    if (!currentTicketId) return;
+    try {
+      var res = await fetch("/api/admin/support/tickets/" + currentTicketId + "/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      var data = await res.json();
+      if (data.success) {
+        updateStatusBadge(newStatus);
+        await reloadMessages();
+        if (window.toast) window.toast("Ticket status set to " + newStatus, "success");
+      } else {
+        if (window.toast) window.toast(data.message || "Failed to update status", "error");
+      }
+    } catch (err) {
+      if (window.toast) window.toast("Error updating status", "error");
+    }
+  };
+
+  function updateStatusBadge(st) {
+    var b = document.getElementById("ticket-status-badge");
+    if (!b) return;
+    b.className = "badge badge-dot";
+    if (st === "open") b.classList.add("badge-danger");
+    else if (st === "pending") b.classList.add("badge-warning");
+    else if (st === "resolved") b.classList.add("badge-success");
+    else b.classList.add("badge-secondary");
+    b.textContent = st;
+  }
+
+  // Realtime reload messages
+  window.reloadMessages = async function() {
+    if (!currentTicketId || !chatFeed) return;
+    try {
+      var res = await fetch("/api/admin/support/tickets/" + currentTicketId);
+      var data = await res.json();
+      if (data.success && data.messages) {
+        renderMessages(data.messages, data.ticket);
+      }
+    } catch (e) {}
+  };
+
+  function renderMessages(msgs, ticket) {
+    if (!chatFeed) return;
+    var html = "";
+    var isScrolledToBottom = chatFeed.scrollHeight - chatFeed.scrollTop <= chatFeed.clientHeight + 80;
+
+    msgs.forEach(function(msg) {
+      var timeStr = (msg.created_at || "").substring(0, 16).replace("T", " ");
+      if (msg.sender_role === "system") {
+        html += '<div style="text-align: center; margin: 0.5rem 0;">' +
+                '<span class="badge" style="background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-muted); font-size: 0.76rem; padding: 0.35rem 0.85rem; border-radius: 999px;">' +
+                escapeHtml(msg.message) + ' &bull; <small>' + timeStr + '</small></span></div>';
+      } else if (msg.sender_role === "admin" || msg.sender_role === "support") {
+        html += '<div style="display: flex; flex-direction: column; align-items: flex-end; max-width: 75%; align-self: flex-end;">' +
+                '<div style="font-size: 0.75rem; color: var(--brand); font-weight: 700; margin-bottom: 0.25rem;">' + escapeHtml(msg.sender_name || "Support") + ' (Staff)</div>' +
+                '<div style="background: var(--brand); color: #fff; padding: 0.8rem 1.1rem; border-radius: var(--r-lg) var(--r-lg) var(--r-xs) var(--r-lg); box-shadow: var(--shadow-xs); font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;">' + escapeHtml(msg.message) + '</div>' +
+                '<div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem;">' + timeStr + '</div></div>';
+      } else {
+        html += '<div style="display: flex; flex-direction: column; align-items: flex-start; max-width: 75%; align-self: flex-start;">' +
+                '<div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; margin-bottom: 0.25rem;">' + escapeHtml(msg.sender_name || (ticket ? ticket.user_name : "User")) + '</div>' +
+                '<div style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 0.8rem 1.1rem; border-radius: var(--r-lg) var(--r-lg) var(--r-lg) var(--r-xs); box-shadow: var(--shadow-xs); font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;">' + escapeHtml(msg.message) + '</div>' +
+                '<div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.25rem;">' + timeStr + '</div></div>';
+      }
+    });
+
+    chatFeed.innerHTML = html;
+    if (isScrolledToBottom) {
+      scrollToBottom();
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Poll every 3 seconds for realtime replies from users
+  if (currentTicketId) {
+    pollTimer = setInterval(reloadMessages, 3000);
+  }
+})();
+</script>
+{% endblock %}

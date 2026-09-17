@@ -855,3 +855,540 @@ class DBService:
         except Exception as e:
             print(f"[DBService] update_user_role_admin error: {e}")
             return False
+
+    # =========================================================================
+    # SUPPORT TICKET SYSTEM METHODS
+    # =========================================================================
+
+    @staticmethod
+    def create_support_ticket(user_id: str, subject: str, initial_message: str = None,
+                              category: str = 'general', priority: str = 'normal',
+                              user_name: str = 'User', user_email: str = None) -> dict:
+        """Create a new support ticket with subject, and optionally post the initial message."""
+        import random
+        ticket_code = f"TK-{random.randint(1000, 9999)}"
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        admin = get_supabase_admin()
+
+        # Try Supabase insert
+        if admin:
+            try:
+                ticket_data = {
+                    'ticket_number': ticket_code,
+                    'user_id': user_id,
+                    'subject': subject.strip(),
+                    'category': category or 'general',
+                    'status': 'open',
+                    'priority': priority or 'normal',
+                    'unread_user_count': 0,
+                    'unread_admin_count': 1,
+                    'last_message': initial_message[:150] if initial_message else 'Ticket created',
+                    'last_message_at': now_iso
+                }
+                res = admin.table('support_tickets').insert(ticket_data).execute()
+                if res.data and len(res.data) > 0:
+                    ticket = res.data[0]
+                    # Add initial message if provided
+                    if initial_message and initial_message.strip():
+                        admin.table('support_messages').insert({
+                            'ticket_id': ticket['id'],
+                            'sender_id': user_id,
+                            'sender_role': 'user',
+                            'sender_name': user_name or 'User',
+                            'message': initial_message.strip(),
+                            'is_read': False
+                        }).execute()
+
+                    # Add notification for user confirming ticket opened
+                    try:
+                        admin.table('support_notifications').insert({
+                            'user_id': user_id,
+                            'ticket_id': ticket['id'],
+                            'title': f'Ticket {ticket_code} Created',
+                            'message': f'Your ticket "{subject[:40]}" has been received. Our support team will reply shortly.',
+                            'type': 'ticket_opened',
+                            'is_read': False
+                        }).execute()
+                    except Exception:
+                        pass
+
+                    return ticket
+            except Exception as e:
+                print(f"[DBService] create_support_ticket Supabase error: {e}")
+
+        # Fallback to in-memory mock_db
+        new_ticket_id = f"tk-{uuid.uuid4().hex[:8]}"
+        ticket_obj = {
+            'id': new_ticket_id,
+            'ticket_number': ticket_code,
+            'user_id': user_id,
+            'user_name': user_name,
+            'user_email': user_email,
+            'subject': subject.strip(),
+            'category': category or 'general',
+            'status': 'open',
+            'priority': priority or 'normal',
+            'unread_user_count': 0,
+            'unread_admin_count': 1,
+            'last_message': initial_message[:150] if initial_message else 'Ticket created',
+            'last_message_at': now_iso,
+            'created_at': now_iso,
+            'updated_at': now_iso
+        }
+        mock_db.support_tickets.insert(0, ticket_obj)
+
+        if initial_message and initial_message.strip():
+            msg_obj = {
+                'id': f"msg-{uuid.uuid4().hex[:8]}",
+                'ticket_id': new_ticket_id,
+                'sender_id': user_id,
+                'sender_role': 'user',
+                'sender_name': user_name or 'User',
+                'message': initial_message.strip(),
+                'is_read': False,
+                'created_at': now_iso
+            }
+            mock_db.support_messages.append(msg_obj)
+
+        mock_db.support_notifications.insert(0, {
+            'id': f"notif-{uuid.uuid4().hex[:8]}",
+            'user_id': user_id,
+            'ticket_id': new_ticket_id,
+            'title': f'Ticket {ticket_code} Created',
+            'message': f'Your ticket "{subject[:40]}" has been received. Our team will reply shortly.',
+            'type': 'ticket_opened',
+            'is_read': False,
+            'created_at': now_iso
+        })
+
+        return ticket_obj
+
+    @staticmethod
+    def get_user_tickets(user_id: str, limit: int = 50) -> list:
+        """Fetch all tickets for a specific user."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                res = admin.table('support_tickets') \
+                    .select('*') \
+                    .eq('user_id', user_id) \
+                    .order('updated_at', desc=True) \
+                    .limit(limit) \
+                    .execute()
+                if res.data is not None:
+                    return res.data
+            except Exception as e:
+                print(f"[DBService] get_user_tickets error: {e}")
+
+        # Fallback
+        return [t for t in mock_db.support_tickets if t.get('user_id') == user_id]
+
+    @staticmethod
+    def get_ticket_by_id(ticket_id: str, user_id: str = None, is_admin: bool = False) -> dict:
+        """Fetch single ticket by ID. Validates ownership if not admin."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                q = admin.table('support_tickets').select('*').eq('id', ticket_id).limit(1)
+                if not is_admin and user_id:
+                    q = q.eq('user_id', user_id)
+                res = q.execute()
+                if res.data and len(res.data) > 0:
+                    ticket = res.data[0]
+                    # Fetch user profile info for admin view
+                    if is_admin and ticket.get('user_id'):
+                        try:
+                            prof = admin.table('profiles').select('full_name, email, phone_number').eq('id', ticket['user_id']).limit(1).execute()
+                            if prof.data and len(prof.data) > 0:
+                                ticket['user_name'] = prof.data[0].get('full_name') or 'User'
+                                ticket['user_email'] = prof.data[0].get('email') or ''
+                                ticket['user_phone'] = prof.data[0].get('phone_number') or ''
+                        except Exception:
+                            pass
+                    return ticket
+            except Exception as e:
+                print(f"[DBService] get_ticket_by_id error: {e}")
+
+        # Fallback
+        for t in mock_db.support_tickets:
+            if t.get('id') == ticket_id or t.get('ticket_number') == ticket_id:
+                if is_admin or not user_id or t.get('user_id') == user_id:
+                    return t
+        return None
+
+    @staticmethod
+    def get_ticket_messages(ticket_id: str, user_id: str = None, is_admin: bool = False,
+                            mark_read: bool = True) -> list:
+        """Fetch all chat messages for a ticket, sorted chronologically."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                # Check authorization
+                if not is_admin and user_id:
+                    t_check = admin.table('support_tickets').select('id').eq('id', ticket_id).eq('user_id', user_id).limit(1).execute()
+                    if not t_check.data:
+                        return []
+
+                res = admin.table('support_messages') \
+                    .select('*') \
+                    .eq('ticket_id', ticket_id) \
+                    .order('created_at', desc=False) \
+                    .execute()
+
+                messages = res.data or []
+
+                if mark_read:
+                    if is_admin:
+                        # Mark user messages as read
+                        admin.table('support_messages').update({'is_read': True}).eq('ticket_id', ticket_id).eq('sender_role', 'user').execute()
+                        admin.table('support_tickets').update({'unread_admin_count': 0}).eq('id', ticket_id).execute()
+                    elif user_id:
+                        # Mark admin messages as read
+                        admin.table('support_messages').update({'is_read': True}).eq('ticket_id', ticket_id).neq('sender_role', 'user').execute()
+                        admin.table('support_tickets').update({'unread_user_count': 0}).eq('id', ticket_id).execute()
+
+                return messages
+            except Exception as e:
+                print(f"[DBService] get_ticket_messages error: {e}")
+
+        # Fallback
+        msgs = [m for m in mock_db.support_messages if m.get('ticket_id') == ticket_id]
+        if mark_read:
+            for m in msgs:
+                if is_admin and m.get('sender_role') == 'user':
+                    m['is_read'] = True
+                elif not is_admin and m.get('sender_role') != 'user':
+                    m['is_read'] = True
+            for t in mock_db.support_tickets:
+                if t.get('id') == ticket_id:
+                    if is_admin:
+                        t['unread_admin_count'] = 0
+                    else:
+                        t['unread_user_count'] = 0
+        return msgs
+
+    @staticmethod
+    def add_support_message(ticket_id: str, sender_id: str, sender_name: str,
+                            sender_role: str, message: str) -> dict:
+        """Append a message to a ticket. Updates ticket timestamp, last message, and unread badges."""
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        admin = get_supabase_admin()
+
+        if admin:
+            try:
+                # 1. Insert message
+                msg_data = {
+                    'ticket_id': ticket_id,
+                    'sender_id': sender_id,
+                    'sender_role': sender_role,
+                    'sender_name': sender_name or 'Support',
+                    'message': message.strip(),
+                    'is_read': False
+                }
+                res = admin.table('support_messages').insert(msg_data).execute()
+                new_msg = res.data[0] if res.data else msg_data
+
+                # 2. Update ticket status & unread counters
+                t_res = admin.table('support_tickets').select('*').eq('id', ticket_id).limit(1).execute()
+                if t_res.data and len(t_res.data) > 0:
+                    cur_ticket = t_res.data[0]
+                    update_fields = {
+                        'last_message': message[:150].strip(),
+                        'last_message_at': now_iso,
+                        'updated_at': now_iso
+                    }
+                    if sender_role == 'user':
+                        update_fields['unread_admin_count'] = (cur_ticket.get('unread_admin_count') or 0) + 1
+                        # If user replies to a resolved/closed ticket, automatically reopen it
+                        if cur_ticket.get('status') in ('resolved', 'closed'):
+                            update_fields['status'] = 'open'
+                    else:
+                        # Support / admin replied
+                        update_fields['unread_user_count'] = (cur_ticket.get('unread_user_count') or 0) + 1
+                        if cur_ticket.get('status') == 'open':
+                            update_fields['status'] = 'pending'
+
+                        # Create notification for user
+                        try:
+                            admin.table('support_notifications').insert({
+                                'user_id': cur_ticket['user_id'],
+                                'ticket_id': ticket_id,
+                                'title': f'Support Reply: #{cur_ticket.get("ticket_number")}',
+                                'message': message[:120].strip(),
+                                'type': 'reply',
+                                'is_read': False
+                            }).execute()
+                        except Exception:
+                            pass
+
+                    admin.table('support_tickets').update(update_fields).eq('id', ticket_id).execute()
+
+                return new_msg
+            except Exception as e:
+                print(f"[DBService] add_support_message error: {e}")
+
+        # Fallback
+        new_msg = {
+            'id': f"msg-{uuid.uuid4().hex[:8]}",
+            'ticket_id': ticket_id,
+            'sender_id': sender_id,
+            'sender_role': sender_role,
+            'sender_name': sender_name,
+            'message': message.strip(),
+            'is_read': False,
+            'created_at': now_iso
+        }
+        mock_db.support_messages.append(new_msg)
+
+        for t in mock_db.support_tickets:
+            if t.get('id') == ticket_id:
+                t['last_message'] = message[:150].strip()
+                t['last_message_at'] = now_iso
+                t['updated_at'] = now_iso
+                if sender_role == 'user':
+                    t['unread_admin_count'] = (t.get('unread_admin_count') or 0) + 1
+                    if t.get('status') in ('resolved', 'closed'):
+                        t['status'] = 'open'
+                else:
+                    t['unread_user_count'] = (t.get('unread_user_count') or 0) + 1
+                    if t.get('status') == 'open':
+                        t['status'] = 'pending'
+
+                    mock_db.support_notifications.insert(0, {
+                        'id': f"notif-{uuid.uuid4().hex[:8]}",
+                        'user_id': t.get('user_id'),
+                        'ticket_id': ticket_id,
+                        'title': f'Support Reply: #{t.get("ticket_number")}',
+                        'message': message[:120].strip(),
+                        'type': 'reply',
+                        'is_read': False,
+                        'created_at': now_iso
+                    })
+                break
+
+        return new_msg
+
+    @staticmethod
+    def update_ticket_status(ticket_id: str, new_status: str, actor_role: str = 'admin',
+                             actor_name: str = 'Admin') -> dict:
+        """Update ticket status ('open', 'pending', 'resolved', 'closed') and notify user if resolved."""
+        valid_statuses = ('open', 'pending', 'resolved', 'closed')
+        if new_status not in valid_statuses:
+            return {'success': False, 'message': f'Invalid status. Allowed: {", ".join(valid_statuses)}'}
+
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        admin = get_supabase_admin()
+
+        if admin:
+            try:
+                t_res = admin.table('support_tickets').select('*').eq('id', ticket_id).limit(1).execute()
+                if not t_res.data:
+                    return {'success': False, 'message': 'Ticket not found.'}
+
+                cur_ticket = t_res.data[0]
+                admin.table('support_tickets').update({
+                    'status': new_status,
+                    'updated_at': now_iso
+                }).eq('id', ticket_id).execute()
+
+                # Add system audit message in the chat thread
+                status_label = new_status.capitalize()
+                admin.table('support_messages').insert({
+                    'ticket_id': ticket_id,
+                    'sender_role': 'system',
+                    'sender_name': 'System',
+                    'message': f'Ticket marked as {status_label} by {actor_name}.',
+                    'is_read': True
+                }).execute()
+
+                # Notify user if resolved or closed
+                if new_status == 'resolved':
+                    try:
+                        admin.table('support_notifications').insert({
+                            'user_id': cur_ticket['user_id'],
+                            'ticket_id': ticket_id,
+                            'title': f'Ticket #{cur_ticket.get("ticket_number")} Resolved',
+                            'message': f'Your support ticket "{cur_ticket.get("subject", "")[:35]}" has been resolved. Let us know if you need anything else!',
+                            'type': 'ticket_resolved',
+                            'is_read': False
+                        }).execute()
+                    except Exception:
+                        pass
+
+                return {'success': True, 'status': new_status}
+            except Exception as e:
+                print(f"[DBService] update_ticket_status error: {e}")
+
+        # Fallback
+        found = False
+        for t in mock_db.support_tickets:
+            if t.get('id') == ticket_id:
+                t['status'] = new_status
+                t['updated_at'] = now_iso
+                found = True
+
+                mock_db.support_messages.append({
+                    'id': f"msg-{uuid.uuid4().hex[:8]}",
+                    'ticket_id': ticket_id,
+                    'sender_role': 'system',
+                    'sender_name': 'System',
+                    'message': f'Ticket marked as {new_status.capitalize()} by {actor_name}.',
+                    'is_read': True,
+                    'created_at': now_iso
+                })
+
+                if new_status == 'resolved':
+                    mock_db.support_notifications.insert(0, {
+                        'id': f"notif-{uuid.uuid4().hex[:8]}",
+                        'user_id': t.get('user_id'),
+                        'ticket_id': ticket_id,
+                        'title': f'Ticket #{t.get("ticket_number")} Resolved',
+                        'message': f'Your support ticket "{t.get("subject", "")[:35]}" has been resolved.',
+                        'type': 'ticket_resolved',
+                        'is_read': False,
+                        'created_at': now_iso
+                    })
+                break
+
+        if found:
+            return {'success': True, 'status': new_status}
+        return {'success': False, 'message': 'Ticket not found.'}
+
+    @staticmethod
+    def get_all_tickets_admin(status_filter: str = None, search: str = None, limit: int = 100) -> list:
+        """Fetch all tickets for admin support desk, joined with user profile info."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                q = admin.table('support_tickets').select('*')
+                if status_filter and status_filter != 'all':
+                    q = q.eq('status', status_filter)
+                if search:
+                    q = q.or_(f"ticket_number.ilike.%{search}%,subject.ilike.%{search}%")
+
+                res = q.order('updated_at', desc=True).limit(limit).execute()
+                tickets = res.data or []
+
+                # Fetch profiles map for user names/emails
+                user_ids = list({t['user_id'] for t in tickets if t.get('user_id')})
+                if user_ids:
+                    try:
+                        p_res = admin.table('profiles').select('id, full_name, email, phone_number').in_('id', user_ids).execute()
+                        pmap = {p['id']: p for p in (p_res.data or [])}
+                        for t in tickets:
+                            prof = pmap.get(t.get('user_id'), {})
+                            t['user_name'] = prof.get('full_name') or 'User'
+                            t['user_email'] = prof.get('email') or 'N/A'
+                            t['user_phone'] = prof.get('phone_number') or ''
+                    except Exception:
+                        pass
+
+                return tickets
+            except Exception as e:
+                print(f"[DBService] get_all_tickets_admin error: {e}")
+
+        # Fallback
+        results = []
+        for t in mock_db.support_tickets:
+            if status_filter and status_filter != 'all' and t.get('status') != status_filter:
+                continue
+            if search:
+                s_lower = search.lower()
+                if s_lower not in t.get('ticket_number', '').lower() and \
+                   s_lower not in t.get('subject', '').lower() and \
+                   s_lower not in t.get('user_email', '').lower():
+                    continue
+            results.append(t)
+        return results[:limit]
+
+    @staticmethod
+    def get_admin_support_stats() -> dict:
+        """Summary counts for Admin Support Desk."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                # We can query count of open, pending, resolved
+                all_t = admin.table('support_tickets').select('status, unread_admin_count').execute()
+                rows = all_t.data or []
+                total = len(rows)
+                open_cnt = sum(1 for r in rows if r.get('status') == 'open')
+                pending_cnt = sum(1 for r in rows if r.get('status') == 'pending')
+                resolved_cnt = sum(1 for r in rows if r.get('status') == 'resolved')
+                unread_cnt = sum(r.get('unread_admin_count', 0) for r in rows)
+                return {
+                    'total': total,
+                    'open': open_cnt,
+                    'pending': pending_cnt,
+                    'resolved': resolved_cnt,
+                    'unread_admin': unread_cnt
+                }
+            except Exception as e:
+                print(f"[DBService] get_admin_support_stats error: {e}")
+
+        # Fallback
+        rows = mock_db.support_tickets
+        return {
+            'total': len(rows),
+            'open': sum(1 for r in rows if r.get('status') == 'open'),
+            'pending': sum(1 for r in rows if r.get('status') == 'pending'),
+            'resolved': sum(1 for r in rows if r.get('status') == 'resolved'),
+            'unread_admin': sum(r.get('unread_admin_count', 0) for r in rows)
+        }
+
+    @staticmethod
+    def get_user_support_unread(user_id: str) -> dict:
+        """Get unread message count and unread notifications for topbar badge & floating widget."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                # 1. Sum unread messages across user tickets
+                t_res = admin.table('support_tickets').select('unread_user_count').eq('user_id', user_id).execute()
+                unread_msgs = sum(r.get('unread_user_count', 0) for r in (t_res.data or []))
+
+                # 2. Unread notifications
+                n_res = admin.table('support_notifications').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(8).execute()
+                notifs = n_res.data or []
+                unread_notifs = sum(1 for n in notifs if not n.get('is_read'))
+
+                return {
+                    'unread_total': max(unread_msgs, unread_notifs),
+                    'unread_messages': unread_msgs,
+                    'unread_notifications': unread_notifs,
+                    'notifications': notifs
+                }
+            except Exception as e:
+                print(f"[DBService] get_user_support_unread error: {e}")
+
+        # Fallback
+        notifs = [n for n in mock_db.support_notifications if n.get('user_id') == user_id]
+        t_rows = [t for t in mock_db.support_tickets if t.get('user_id') == user_id]
+        unread_msgs = sum(t.get('unread_user_count', 0) for t in t_rows)
+        unread_notifs = sum(1 for n in notifs if not n.get('is_read'))
+        return {
+            'unread_total': max(unread_msgs, unread_notifs),
+            'unread_messages': unread_msgs,
+            'unread_notifications': unread_notifs,
+            'notifications': notifs[:8]
+        }
+
+    @staticmethod
+    def mark_notifications_read(user_id: str, notif_id: str = None) -> bool:
+        """Mark specific or all notifications as read for a user."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                q = admin.table('support_notifications').update({'is_read': True}).eq('user_id', user_id)
+                if notif_id and notif_id != 'all':
+                    q = q.eq('id', notif_id)
+                q.execute()
+                return True
+            except Exception as e:
+                print(f"[DBService] mark_notifications_read error: {e}")
+
+        # Fallback
+        for n in mock_db.support_notifications:
+            if n.get('user_id') == user_id:
+                if not notif_id or notif_id == 'all' or n.get('id') == notif_id:
+                    n['is_read'] = True
+        return True
+

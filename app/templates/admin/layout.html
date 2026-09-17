@@ -35,6 +35,9 @@
         <a href="{{ url_for('admin.users') }}" class="btn btn-sm {% if active_page == 'users' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600;">
           {{ icon('users') }} Users
         </a>
+        <a href="{{ url_for('admin.support') }}" class="btn btn-sm {% if active_page == 'support' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600; position: relative;">
+          {{ icon('headset') }} Support Desk
+        </a>
       </nav>
 
       {# Right Controls #}

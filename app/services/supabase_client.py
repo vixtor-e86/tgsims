@@ -166,5 +166,49 @@ class MockDatabase:
                 'created_at': '2026-08-07 18:30:00'
             }
         ]
+        self.support_tickets = [
+            {
+                'id': 'tk-sample-1',
+                'ticket_number': 'TK-8821',
+                'user_id': 'demo-user-id',
+                'user_email': 'tgconceptt@gmail.com',
+                'user_name': 'Tunde Komolafe',
+                'subject': 'SMS activation delay on WhatsApp',
+                'category': 'virtual_sim',
+                'status': 'open',
+                'priority': 'normal',
+                'unread_user_count': 0,
+                'unread_admin_count': 1,
+                'last_message': 'Hi, I paid for a US WhatsApp number but no SMS code has arrived after 5 minutes.',
+                'last_message_at': '2026-09-17 14:30:00',
+                'created_at': '2026-09-17 14:30:00',
+                'updated_at': '2026-09-17 14:30:00'
+            }
+        ]
+        self.support_messages = [
+            {
+                'id': 'msg-sample-1',
+                'ticket_id': 'tk-sample-1',
+                'sender_id': 'demo-user-id',
+                'sender_role': 'user',
+                'sender_name': 'Tunde Komolafe',
+                'message': 'Hi, I paid for a US WhatsApp number but no SMS code has arrived after 5 minutes.',
+                'is_read': True,
+                'created_at': '2026-09-17 14:30:00'
+            }
+        ]
+        self.support_notifications = [
+            {
+                'id': 'notif-sample-1',
+                'user_id': 'demo-user-id',
+                'ticket_id': 'tk-sample-1',
+                'title': 'Ticket Received',
+                'message': 'Your support ticket #TK-8821 was created. An agent will respond shortly.',
+                'type': 'ticket_opened',
+                'is_read': False,
+                'created_at': '2026-09-17 14:30:00'
+            }
+        ]
 
 mock_db = MockDatabase()
+

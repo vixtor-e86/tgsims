@@ -4,6 +4,11 @@
    ========================================================================== #}
 {% extends "layouts/base.html" %}
 
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/support.css') }}?v=2">
+  {{ super() if super else '' }}
+{% endblock %}
+
 {% block body %}
 <a class="skip-link" href="#main">Skip to content</a>
 <div class="app">
@@ -15,4 +20,12 @@
     </main>
   </div>
 </div>
+
+{# Floating Action Button & Messenger Widget for Authenticated Users #}
+{% include "partials/support_widget.html" %}
 {% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/support.js') }}?v=2"></script>
+{% endblock %}
+

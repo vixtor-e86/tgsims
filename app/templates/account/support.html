@@ -33,8 +33,13 @@
 {# ---- Recent support tickets ---- #}
 <section class="card card-pad" style="margin-bottom:var(--sp-8);">
   <div class="card-head">
-    <h2 class="card-title">Recent Support Tickets</h2>
-    <a href="#" class="link-more">View All {{ icon('arrow-right', 'i-inline') }}</a>
+    <div>
+      <h2 class="card-title">Recent Support Tickets</h2>
+      <div class="text-muted" style="font-size: var(--fs-xs);">Track your conversations and live agent responses</div>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" onclick="window.startNewSupportTicket && window.startNewSupportTicket()">
+      {{ icon('plus') }} Create New Ticket
+    </button>
   </div>
   <div class="table-wrap">
     <table class="table">
@@ -44,26 +49,42 @@
           <th>Subject</th>
           <th>Status</th>
           <th>Last Updated</th>
+          <th style="text-align: right;">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for tk in tickets %}
         <tr>
-          <td><a href="#" class="ticket-id">#{{ tk.id }}</a></td>
-          <td>{{ tk.subject }}</td>
+          <td>
+            <a href="javascript:void(0)" onclick="window.openSupportWidget && window.openSupportWidget('{{ tk.id }}')" class="ticket-id" style="font-family: var(--font-mono); font-weight: 700;">
+              #{{ tk.ticket_number or tk.id }}
+            </a>
+          </td>
+          <td>
+            <a href="javascript:void(0)" onclick="window.openSupportWidget && window.openSupportWidget('{{ tk.id }}')" style="color: var(--text); text-decoration: none; font-weight: 600;">
+              {{ tk.subject }}
+            </a>
+          </td>
           <td>
             {% if tk.status == 'resolved' %}
               <span class="badge badge-success badge-dot">Resolved</span>
             {% elif tk.status == 'open' %}
               <span class="badge badge-danger badge-dot">Open</span>
-            {% else %}
+            {% elif tk.status == 'pending' %}
               <span class="badge badge-warning badge-dot">Pending</span>
+            {% else %}
+              <span class="badge badge-secondary badge-dot">{{ tk.status|capitalize }}</span>
             {% endif %}
           </td>
-          <td class="td-dim">{{ tk.updated }}</td>
+          <td class="td-dim">{{ (tk.updated_at or tk.updated or '')[:10] }}</td>
+          <td style="text-align: right;">
+            <button type="button" class="btn btn-xs btn-outline-brand" onclick="window.openSupportWidget && window.openSupportWidget('{{ tk.id }}')">
+              {{ icon('chat') }} Chat
+            </button>
+          </td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="td-dim text-center" style="padding:var(--sp-12);">No tickets yet.</td></tr>
+        <tr><td colspan="5" class="td-dim text-center" style="padding:var(--sp-12);">No tickets yet. Click "Create New Ticket" to reach out to our team.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -77,7 +98,13 @@
     <span class="channel-ico">{{ icon(c.icon) }}</span>
     <div class="channel-title">{{ c.title }}</div>
     <p class="channel-text">{{ c.text }}</p>
+    {% if c.action == 'chat' %}
+    <button type="button" class="btn btn-primary btn-block" onclick="window.openSupportWidget && window.openSupportWidget()">{{ c.cta }}</button>
+    {% elif c.href %}
+    <a href="{{ c.href }}" target="_blank" class="btn btn-secondary btn-block">{{ c.cta }}</a>
+    {% else %}
     <a href="#" class="btn btn-secondary btn-block">{{ c.cta }}</a>
+    {% endif %}
   </div>
   {% endfor %}
 </div>

@@ -1,0 +1,146 @@
+{# ==========================================================================
+   support_widget.html  -  Floating Action Button & Realtime Messenger Widget
+   ========================================================================== #}
+{% from "partials/icons.html" import icon %}
+
+{# Floating Action Button (bottom right) #}
+<button class="support-fab" id="support-fab" type="button" aria-label="Open support chat" title="Chat with support">
+  {{ icon('chat') }}
+  <span class="support-fab-badge" id="support-fab-badge" style="display: none;">0</span>
+</button>
+
+{# Messenger Chat Widget Shell #}
+<div class="support-widget" id="support-widget" role="region" aria-label="Live Support Chat">
+
+  {# VIEW 1: HOME & CONVERSATION HISTORY #}
+  <div class="widget-view" id="widget-view-home" style="display: flex;">
+    <div class="widget-header">
+      <div class="widget-header-title">
+        <div class="widget-avatar">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }}" style="width: 22px; height: 22px;">
+        </div>
+        <div>
+          <div class="widget-title-text">{{ BRAND }} Support</div>
+          <div class="widget-sub-text">
+            <span class="widget-online-dot"></span> Online &bull; Replies in minutes
+          </div>
+        </div>
+      </div>
+      <button type="button" class="widget-header-btn" onclick="closeSupportWidget()" aria-label="Minimize support widget">
+        {{ icon('x') }}
+      </button>
+    </div>
+
+    <div class="widget-hero-card">
+      <div class="widget-hero-title">How can we help today?</div>
+      <p class="widget-hero-desc">
+        Have a question about a virtual number, eSIM setup, or wallet deposit? Chat directly with our team.
+      </p>
+      <button type="button" class="btn btn-primary btn-block btn-sm" onclick="startNewSupportTicket()" style="font-weight: 700;">
+        {{ icon('plus') }} Send Us a Message
+      </button>
+    </div>
+
+    <div class="widget-section-header">Your Conversations</div>
+    <div class="widget-ticket-list" id="widget-tickets-container">
+      <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+        Loading conversations...
+      </div>
+    </div>
+  </div>
+
+  {# VIEW 2: CREATE TICKET FORM (Subject is required first) #}
+  <div class="widget-view" id="widget-view-create" style="display: none;">
+    <div class="widget-header">
+      <div class="widget-header-title">
+        <button type="button" class="widget-header-btn" onclick="backToSupportHome()" aria-label="Back to conversations">
+          {{ icon('chevron-left') }}
+        </button>
+        <div>
+          <div class="widget-title-text">Start Conversation</div>
+          <div class="widget-sub-text">Create a ticket to begin chatting</div>
+        </div>
+      </div>
+      <button type="button" class="widget-header-btn" onclick="closeSupportWidget()" aria-label="Minimize support widget">
+        {{ icon('x') }}
+      </button>
+    </div>
+
+    <form id="widget-create-form" class="widget-form-body">
+      <div>
+        <label for="widget-subject-input" class="label" style="font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem;">
+          Subject <span style="color: var(--hue-danger);">*</span>
+        </label>
+        <input type="text" id="widget-subject-input" class="input" placeholder="e.g. WhatsApp verification code delay" required style="font-size: 0.88rem;">
+      </div>
+
+      <div>
+        <label class="label" style="font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem;">
+          Category
+        </label>
+        <div class="widget-category-chips">
+          <button type="button" class="widget-chip is-active" data-support-cat="general">General</button>
+          <button type="button" class="widget-chip" data-support-cat="virtual_sim">Virtual SIM</button>
+          <button type="button" class="widget-chip" data-support-cat="esim">eSIM</button>
+          <button type="button" class="widget-chip" data-support-cat="deposit">Deposit & Wallet</button>
+          <button type="button" class="widget-chip" data-support-cat="account">Account</button>
+        </div>
+      </div>
+
+      <div style="flex: 1; display: flex; flex-direction: column;">
+        <label for="widget-message-input" class="label" style="font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem;">
+          Message <span style="color: var(--hue-danger);">*</span>
+        </label>
+        <textarea id="widget-message-input" class="input" rows="4" placeholder="Please describe your issue or question in detail..." required style="flex: 1; resize: none; font-size: 0.88rem;"></textarea>
+      </div>
+
+      <button type="submit" id="widget-create-submit-btn" class="btn btn-primary btn-block" style="font-weight: 700;">
+        {{ icon('send') }} Start Live Chat
+      </button>
+    </form>
+  </div>
+
+  {# VIEW 3: LIVE MESSENGER CHAT #}
+  <div class="widget-view" id="widget-view-chat" style="display: none;">
+    <div class="widget-header">
+      <div class="widget-header-title" style="min-width: 0;">
+        <button type="button" class="widget-header-btn" onclick="backToSupportHome()" aria-label="Back to conversations">
+          {{ icon('chevron-left') }}
+        </button>
+        <div style="min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 0.4rem;">
+            <span id="widget-chat-num" style="font-size: 0.85rem; font-weight: 800; font-family: var(--font-mono); opacity: 0.95;">#TK-0000</span>
+            <span id="widget-chat-status" class="badge badge-dot badge-success" style="font-size: 0.68rem; text-transform: capitalize;">open</span>
+          </div>
+          <div id="widget-chat-subject" style="font-size: 0.78rem; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">
+            Ticket subject
+          </div>
+        </div>
+      </div>
+      <button type="button" class="widget-header-btn" onclick="closeSupportWidget()" aria-label="Minimize support widget">
+        {{ icon('x') }}
+      </button>
+    </div>
+
+    {# Resolved Notice #}
+    <div id="widget-chat-resolved-banner" class="chat-resolved-alert" style="display: none;">
+      This ticket has been marked as resolved. Sending a new message will automatically reopen it.
+    </div>
+
+    {# Message Thread #}
+    <div class="widget-chat-messages" id="widget-chat-feed">
+      <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+        Loading messages...
+      </div>
+    </div>
+
+    {# Input Composer #}
+    <div class="widget-chat-input-bar">
+      <textarea id="widget-chat-input" class="widget-chat-textarea" placeholder="Type a message... (Press Enter to send)" rows="1"></textarea>
+      <button type="button" id="widget-chat-send-btn" class="widget-chat-send-btn" aria-label="Send message">
+        {{ icon('send') }}
+      </button>
+    </div>
+  </div>
+
+</div>

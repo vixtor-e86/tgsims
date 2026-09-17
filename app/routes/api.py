@@ -409,3 +409,240 @@ def reactivate_order(order_id):
     res = SIMProviderService.reactivate_order(order_id, user_id=user_id)
     status_code = 200 if res.get('success') else 400
     return jsonify(res), status_code
+
+
+# =============================================================================
+# SUPPORT TICKET SYSTEM & LIVE MESSAGING APIS
+# =============================================================================
+
+def _get_current_user():
+    user = session.get('user')
+    if isinstance(user, dict):
+        return user
+    return None
+
+
+def _is_support_or_admin():
+    user = _get_current_user()
+    return bool(user and user.get('role') in ('admin', 'support'))
+
+
+@api_bp.route('/support/tickets', methods=['GET'])
+def get_user_tickets():
+    """Retrieve all tickets belonging to the current authenticated user."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    tickets = DBService.get_user_tickets(user['id'])
+    return jsonify({'success': True, 'tickets': tickets})
+
+
+@api_bp.route('/support/tickets', methods=['POST'])
+def create_user_ticket():
+    """Create a new ticket with required subject and initial message."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    data = request.json or {}
+    subject = (data.get('subject') or '').strip()
+    initial_message = (data.get('message') or '').strip()
+    category = (data.get('category') or 'general').strip()
+
+    if not subject or len(subject) < 3:
+        return jsonify({'success': False, 'message': 'Please provide a subject for your ticket (at least 3 characters).'}), 400
+
+    if not initial_message:
+        return jsonify({'success': False, 'message': 'Please provide a message describing your request or issue.'}), 400
+
+    user_name = user.get('full_name') or user.get('username') or 'User'
+    user_email = user.get('email')
+
+    ticket = DBService.create_support_ticket(
+        user_id=user['id'],
+        subject=subject,
+        initial_message=initial_message,
+        category=category,
+        user_name=user_name,
+        user_email=user_email
+    )
+
+    return jsonify({
+        'success': True,
+        'message': 'Ticket created successfully.',
+        'ticket': ticket
+    }), 201
+
+
+@api_bp.route('/support/tickets/<ticket_id>', methods=['GET'])
+def get_ticket_details(ticket_id):
+    """Retrieve details and messages for a specific user ticket."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    ticket = DBService.get_ticket_by_id(ticket_id, user_id=user['id'], is_admin=False)
+    if not ticket:
+        return jsonify({'success': False, 'message': 'Ticket not found.'}), 404
+
+    messages = DBService.get_ticket_messages(ticket['id'], user_id=user['id'], is_admin=False, mark_read=True)
+    return jsonify({
+        'success': True,
+        'ticket': ticket,
+        'messages': messages
+    })
+
+
+@api_bp.route('/support/tickets/<ticket_id>/messages', methods=['GET'])
+def get_ticket_messages(ticket_id):
+    """Fetch realtime messages for a ticket."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    ticket = DBService.get_ticket_by_id(ticket_id, user_id=user['id'], is_admin=False)
+    if not ticket:
+        return jsonify({'success': False, 'message': 'Ticket not found.'}), 404
+
+    messages = DBService.get_ticket_messages(ticket['id'], user_id=user['id'], is_admin=False, mark_read=True)
+    return jsonify({'success': True, 'ticket_status': ticket.get('status'), 'messages': messages})
+
+
+@api_bp.route('/support/tickets/<ticket_id>/messages', methods=['POST'])
+def send_ticket_message(ticket_id):
+    """Send a user message on an existing ticket."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    ticket = DBService.get_ticket_by_id(ticket_id, user_id=user['id'], is_admin=False)
+    if not ticket:
+        return jsonify({'success': False, 'message': 'Ticket not found.'}), 404
+
+    data = request.json or {}
+    message_text = (data.get('message') or '').strip()
+    if not message_text:
+        return jsonify({'success': False, 'message': 'Message cannot be empty.'}), 400
+
+    user_name = user.get('full_name') or user.get('username') or 'User'
+
+    msg = DBService.add_support_message(
+        ticket_id=ticket['id'],
+        sender_id=user['id'],
+        sender_name=user_name,
+        sender_role='user',
+        message=message_text
+    )
+
+    return jsonify({'success': True, 'message': msg})
+
+
+@api_bp.route('/support/unread', methods=['GET'])
+def get_support_unread():
+    """Returns unread message count and support notifications for topbar badge & widget."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'unread_total': 0, 'unread_messages': 0, 'unread_notifications': 0, 'notifications': []})
+
+    data = DBService.get_user_support_unread(user['id'])
+    return jsonify(data)
+
+
+@api_bp.route('/support/notifications/read', methods=['POST'])
+def mark_notifications_read():
+    """Mark support notifications as read."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    data = request.json or {}
+    notif_id = data.get('notification_id', 'all')
+    DBService.mark_notifications_read(user['id'], notif_id)
+    return jsonify({'success': True})
+
+
+# -----------------------------------------------------------------------------
+# ADMIN / SUPPORT DESK APIS
+# -----------------------------------------------------------------------------
+
+@api_bp.route('/admin/support/tickets', methods=['GET'])
+def admin_get_tickets():
+    """Fetch tickets list for admin desk."""
+    if not _is_support_or_admin():
+        return jsonify({'success': False, 'message': 'Admin privileges required.'}), 403
+
+    status = request.args.get('status')
+    search = request.args.get('search')
+    tickets = DBService.get_all_tickets_admin(status_filter=status, search=search)
+    stats = DBService.get_admin_support_stats()
+    return jsonify({'success': True, 'tickets': tickets, 'stats': stats})
+
+
+@api_bp.route('/admin/support/tickets/<ticket_id>', methods=['GET'])
+def admin_get_ticket_detail(ticket_id):
+    """Fetch ticket details and full conversation for admin view."""
+    if not _is_support_or_admin():
+        return jsonify({'success': False, 'message': 'Admin privileges required.'}), 403
+
+    ticket = DBService.get_ticket_by_id(ticket_id, is_admin=True)
+    if not ticket:
+        return jsonify({'success': False, 'message': 'Ticket not found.'}), 404
+
+    messages = DBService.get_ticket_messages(ticket['id'], is_admin=True, mark_read=True)
+    return jsonify({'success': True, 'ticket': ticket, 'messages': messages})
+
+
+@api_bp.route('/admin/support/tickets/<ticket_id>/messages', methods=['POST'])
+def admin_send_ticket_message(ticket_id):
+    """Admin or support agent replies to a ticket."""
+    if not _is_support_or_admin():
+        return jsonify({'success': False, 'message': 'Admin privileges required.'}), 403
+
+    user = _get_current_user()
+    data = request.json or {}
+    message_text = (data.get('message') or '').strip()
+    if not message_text:
+        return jsonify({'success': False, 'message': 'Reply message cannot be empty.'}), 400
+
+    admin_name = user.get('full_name') or 'Tgsims Support'
+    sender_role = 'support' if user.get('role') == 'support' else 'admin'
+
+    msg = DBService.add_support_message(
+        ticket_id=ticket_id,
+        sender_id=user.get('id'),
+        sender_name=admin_name,
+        sender_role=sender_role,
+        message=message_text
+    )
+
+    # Optional status update in same call (e.g. "Send & resolve")
+    new_status = data.get('status')
+    if new_status:
+        DBService.update_ticket_status(ticket_id, new_status, actor_role=sender_role, actor_name=admin_name)
+
+    return jsonify({'success': True, 'message': msg})
+
+
+@api_bp.route('/admin/support/tickets/<ticket_id>/status', methods=['POST'])
+def admin_update_ticket_status(ticket_id):
+    """Admin updates ticket status ('open', 'pending', 'resolved', 'closed')."""
+    if not _is_support_or_admin():
+        return jsonify({'success': False, 'message': 'Admin privileges required.'}), 403
+
+    user = _get_current_user()
+    data = request.json or {}
+    new_status = data.get('status')
+    if not new_status:
+        return jsonify({'success': False, 'message': 'Status parameter required.'}), 400
+
+    admin_name = user.get('full_name') or 'Tgsims Support'
+    res = DBService.update_ticket_status(
+        ticket_id=ticket_id,
+        new_status=new_status,
+        actor_role='admin',
+        actor_name=admin_name
+    )
+
+    return jsonify(res)
+
