@@ -48,20 +48,22 @@
       </thead>
       <tbody>
         {% for o in orders %}
-        {% set raw_dt = o.created_at|string %}
+        {% set ord_price = (o.price if (o.price is defined and o.price is not none) else (o.user_cost if (o.user_cost is defined and o.user_cost is not none) else 0.0))|float %}
+        {% set ngn_rate = (NGN_PER_USD|float) if (NGN_PER_USD is defined and NGN_PER_USD) else 1600.0 %}
+        {% set raw_dt = (o.created_at|string) if (o.created_at is defined and o.created_at is not none) else '' %}
         {% set dt_clean = raw_dt.replace('T', ' ') %}
-        {% set day = dt_clean.split(' ')[0] %}
-        {% set hm = dt_clean.split(' ')[1][:5] if ' ' in dt_clean else '' %}
-        {% set countdown = o.countdown_seconds if o.countdown_seconds is defined else 180 %}
-        {% set elapsed = o.elapsed_seconds if o.elapsed_seconds is defined else (180 - countdown) %}
+        {% set day = dt_clean.split(' ')[0] if dt_clean else '-' %}
+        {% set hm = dt_clean.split(' ')[1][:5] if (' ' in dt_clean and dt_clean.split(' ')|length > 1) else '' %}
+        {% set countdown = (o.countdown_seconds|int) if (o.countdown_seconds is defined and o.countdown_seconds is not none) else 180 %}
+        {% set elapsed = (o.elapsed_seconds|int) if (o.elapsed_seconds is defined and o.elapsed_seconds is not none) else (180 - countdown) %}
         {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
         {% set can_cancel = (o.can_cancel if o.can_cancel is defined else (elapsed >= 120)) and is_active %}
         {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
-        {% set is_reliable = (o.provider_order_id and o.provider_order_id.startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) %}
-        {% set price_formatted = '₦{:,.2f}'.format(o.price * NGN_PER_USD) %}
-        {% set is_us = (o.country_code in ['US', 'CA', 'USA', 'CAN']) or (o.country in ['usa', 'us', 'canada', 'ca']) or is_reliable or (o.order_reference and 'USCA' in o.order_reference) or (o.phone_number and o.phone_number.startswith('+1')) %}
+        {% set is_reliable = (o.provider_order_id and (o.provider_order_id|string).startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) %}
+        {% set price_formatted = '₦{:,.2f}'.format(ord_price * ngn_rate) %}
+        {% set is_us = (o.country_code in ['US', 'CA', 'USA', 'CAN']) or (o.country in ['usa', 'us', 'canada', 'ca']) or is_reliable or (o.order_reference and 'USCA' in (o.order_reference|string)) or (o.phone_number and (o.phone_number|string).startswith('+1')) %}
         {% set reorder_url = url_for('sims.us_canada') if is_us else url_for('sims.store') %}
         <tr data-order-row data-order-id="{{ o.id or o.order_reference }}" data-is-active="{{ 'true' if is_active else 'false' }}">
           <td>
@@ -123,7 +125,7 @@
             {% endif %}
           </td>
           <td class="td-dim">{{ day }}<span class="stack-sub">{{ hm }}</span></td>
-          <td class="{{ 'strike' if (is_timeout or is_refunded) else 'td-strong' }}" data-usd="{{ '%.2f'|format(o.price) }}">{{ price_formatted }}</td>
+          <td class="{{ 'strike' if (is_timeout or is_refunded) else 'td-strong' }}" data-usd="{{ '%.2f'|format(ord_price) }}">{{ price_formatted }}</td>
           <td class="text-right">
             {% if is_active %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
@@ -133,7 +135,7 @@
                         data-service="{{ o.service_name }}"
                         data-phone="{{ o.phone_number }}"
                         data-ref="{{ o.order_reference }}"
-                        data-price-usd="{{ '%.2f'|format(o.price) }}"
+                        data-price-usd="{{ '%.2f'|format(ord_price) }}"
                         data-price="{{ price_formatted }}"
                         style="color:var(--text-danger); {% if not can_cancel %}display:none;{% endif %}"
                         title="Cancel order and refund wallet">Cancel &amp; Refund</button>
@@ -597,8 +599,8 @@
   var activePollers = document.querySelectorAll('[data-poll-indicator]');
   if (activePollers.length > 0) {
     var pollInterval = setInterval(function() {
-      var firstActiveRow = document.querySelector('tr[data-order-row]:has([data-poll-indicator])') ||
-                           document.querySelector('[data-action="check"]');
+      var pollIndicator = document.querySelector('[data-poll-indicator]');
+      var firstActiveRow = pollIndicator ? pollIndicator.closest('tr[data-order-row]') : document.querySelector('[data-action="check"]');
       if (!firstActiveRow) {
         clearInterval(pollInterval);
         return;

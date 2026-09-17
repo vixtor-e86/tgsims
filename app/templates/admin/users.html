@@ -85,17 +85,15 @@
                     {{ icon('wallet') }} Adjust Balance
                   </button>
 
-                  {# Toggle Role #}
-                  <form action="{{ url_for('admin.update_user_role', user_id=u.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Change role for {{ u.email }} to {% if u.role == 'admin' %}USER{% else %}ADMIN{% endif %}?');">
-                    <input type="hidden" name="role" value="{% if u.role == 'admin' %}user{% else %}admin{% endif %}">
-                    <button type="submit" class="btn btn-ghost btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.55rem;" title="Toggle Admin/User">
-                      {% if u.role == 'admin' %}
-                        Demote
-                      {% else %}
-                        Make Admin
-                      {% endif %}
-                    </button>
-                  </form>
+                  {# Toggle Role Button (triggers modal instead of browser confirm) #}
+                  <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.55rem;" 
+                          onclick="openRoleModal('{{ u.id }}', '{{ u.email }}', '{% if u.role == 'admin' %}user{% else %}admin{% endif %}')">
+                    {% if u.role == 'admin' %}
+                      Demote
+                    {% else %}
+                      Make Admin
+                    {% endif %}
+                  </button>
                 </div>
               </td>
             </tr>
@@ -113,47 +111,87 @@
 </div>
 
 {# Balance Adjustment Modal #}
-<div id="balanceModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; padding: 1rem;">
-  <div class="card card-pad" style="max-width: 440px; width: 100%; position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-lg);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-      <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">Adjust User Balance</h3>
-      <button type="button" onclick="closeBalanceModal()" style="background: none; border: none; color: var(--text); font-size: 1.3rem; cursor: pointer;">&times;</button>
+<div id="balanceModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span style="color: var(--brand);">{{ icon('wallet') }}</span>
+        <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">Adjust User Balance</h3>
+      </div>
+      <button type="button" class="modal-close" onclick="closeBalanceModal()" aria-label="Close modal">&times;</button>
     </div>
 
     <form id="balanceForm" method="POST">
-      <div style="margin-bottom: 1rem;">
-        <span style="font-size: 0.85rem; color: var(--text-muted);">Target User:</span>
-        <div id="modalUserEmail" style="font-weight: 600; color: var(--text);"></div>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
-          Current Balance: <strong id="modalCurrentBal" style="color: var(--hue-success);"></strong>
+      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Customer Account:</div>
+          <div id="modalUserEmail" style="font-weight: 700; color: var(--text); font-size: 0.95rem; margin-top: 0.15rem;"></div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">
+            Current Balance: <strong id="modalCurrentBal" style="color: var(--hue-success);"></strong>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.4rem;">Action Type</label>
+          <div style="display: flex; gap: 1.25rem; color: var(--text);">
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
+              <input type="radio" name="adjustment_type" value="credit" checked> <strong>Credit</strong> (Add Funds)
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
+              <input type="radio" name="adjustment_type" value="debit"> <strong>Debit</strong> (Deduct Funds)
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.35rem;">Amount ($ USD)</label>
+          <input type="number" step="0.01" min="0.01" max="5000" name="amount" placeholder="10.00" required class="input" style="font-weight: 700; font-size: 1rem;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.5rem;">
+          <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.35rem;">Audit Reason / Note</label>
+          <input type="text" name="reason" placeholder="e.g. Bank deposit verified or compensation" required class="input">
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Action Type</label>
-        <div style="display: flex; gap: 1rem; margin-top: 0.35rem; color: var(--text);">
-          <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
-            <input type="radio" name="adjustment_type" value="credit" checked> Credit (Add Funds)
-          </label>
-          <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
-            <input type="radio" name="adjustment_type" value="debit"> Debit (Deduct Funds)
-          </label>
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-bottom: 1rem;">
-        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Amount ($ USD)</label>
-        <input type="number" step="0.01" min="0.01" max="5000" name="amount" placeholder="10.00" required class="input" style="font-weight: 700;">
-      </div>
-
-      <div class="form-group" style="margin-bottom: 1.5rem;">
-        <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text);">Audit Reason / Note</label>
-        <input type="text" name="reason" placeholder="e.g. Bank transfer verified manually or compensation" required class="input">
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
         <button type="button" onclick="closeBalanceModal()" class="btn btn-secondary btn-sm">Cancel</button>
         <button type="submit" class="btn btn-primary btn-sm">Confirm Adjustment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# Role Change Confirmation Modal (replaces browser confirm) #}
+<div id="roleModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span style="color: var(--brand);">{{ icon('users') }}</span>
+        <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">Change User Role</h3>
+      </div>
+      <button type="button" class="modal-close" onclick="closeRoleModal()" aria-label="Close modal">&times;</button>
+    </div>
+
+    <form id="roleForm" method="POST">
+      <input type="hidden" name="role" id="roleTargetInput">
+      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+        <p style="font-size: 0.9rem; color: var(--text); margin: 0 0 1rem 0; line-height: 1.5;">
+          Are you sure you want to change the privileges for <strong id="roleUserEmail"></strong>?
+        </p>
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+            <span style="color: var(--text-muted);">New Role Status:</span>
+            <span id="roleBadgeDisplay" class="badge" style="font-weight: 700;"></span>
+          </div>
+        </div>
+        <p id="roleNote" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.85rem; line-height: 1.4; margin-bottom: 0;">
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
+        <button type="button" onclick="closeRoleModal()" class="btn btn-secondary btn-sm">Cancel</button>
+        <button type="submit" id="roleSubmitBtn" class="btn btn-primary btn-sm">Confirm Role Change</button>
       </div>
     </form>
   </div>
@@ -168,12 +206,63 @@ function openBalanceModal(userId, email, currentBal) {
   
   form.action = '/admin/users/' + encodeURIComponent(userId) + '/adjust-balance';
   emailEl.textContent = email;
-  balEl.textContent = '$' + Number(currentBal).toFixed(2);
-  modal.style.display = 'flex';
+  balEl.textContent = '$' + Number(currentBal || 0).toFixed(2);
+  modal.classList.add('is-open');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeBalanceModal() {
-  document.getElementById('balanceModal').style.display = 'none';
+  var modal = document.getElementById('balanceModal');
+  if (modal) {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
 }
+
+function openRoleModal(userId, email, newRole) {
+  var modal = document.getElementById('roleModal');
+  var form = document.getElementById('roleForm');
+  var emailEl = document.getElementById('roleUserEmail');
+  var inputEl = document.getElementById('roleTargetInput');
+  var badgeEl = document.getElementById('roleBadgeDisplay');
+  var noteEl = document.getElementById('roleNote');
+  var submitBtn = document.getElementById('roleSubmitBtn');
+
+  form.action = '/admin/users/' + encodeURIComponent(userId) + '/update-role';
+  emailEl.textContent = email;
+  inputEl.value = newRole;
+
+  if (newRole === 'admin') {
+    badgeEl.className = 'badge badge-brand';
+    badgeEl.textContent = 'ADMINISTRATOR';
+    noteEl.textContent = 'This will grant the user full access to the Admin Console, including platform pricing, order management, and deposit verifications.';
+    submitBtn.textContent = 'Grant Admin Role';
+    submitBtn.className = 'btn btn-primary btn-sm';
+  } else {
+    badgeEl.className = 'badge badge-muted';
+    badgeEl.textContent = 'REGULAR USER';
+    noteEl.textContent = 'This will revoke all administrative privileges. The user will only have standard access to their personal dashboard and orders.';
+    submitBtn.textContent = 'Demote to User';
+    submitBtn.className = 'btn btn-secondary btn-sm';
+  }
+
+  modal.classList.add('is-open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRoleModal() {
+  var modal = document.getElementById('roleModal');
+  if (modal) {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  var bModal = document.getElementById('balanceModal');
+  var rModal = document.getElementById('roleModal');
+  if (bModal && e.target === bModal) closeBalanceModal();
+  if (rModal && e.target === rModal) closeRoleModal();
+});
 </script>
 {% endblock %}

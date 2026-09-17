@@ -239,14 +239,29 @@ class SIMProviderService:
         return cls._client
 
     @classmethod
-    def calculate_retail_price(cls, base_cost: float) -> tuple[float, float]:
-        """Calculates retail price and profit margin in USD using admin-configured markup."""
+    def calculate_retail_price(cls, base_cost: float, service_code: str = None, provider_type: str = '5sim') -> tuple[float, float]:
+        """Calculates retail price and profit margin in USD using admin-configured markup and overrides."""
         if base_cost <= 0:
             return 1.50, 1.50
 
         try:
             from app.services.settings_service import SettingsService
-            pct, floor = SettingsService.get_fivesim_markup()
+            if provider_type == 'textverified':
+                pct, floor = SettingsService.get_textverified_markup()
+            else:
+                pct, floor = SettingsService.get_fivesim_markup()
+
+            if service_code:
+                sc = service_code.strip().lower()
+                all_overrides = SettingsService.get_price_overrides()
+                overrides = {
+                    o['service_code'].strip().lower(): float(o['override_price_usd'])
+                    for o in all_overrides
+                    if o.get('provider_type') in (provider_type, 'all') and o.get('is_active', True)
+                }
+                if sc in overrides:
+                    override_p = overrides[sc]
+                    return override_p, round(override_p - base_cost, 4)
         except Exception:
             pct, floor = 30.0, 0.30
 
@@ -256,15 +271,12 @@ class SIMProviderService:
         profit_margin = round(retail_price - base_cost, 4)
         return retail_price, profit_margin
 
-    _cached_catalog = None
+    _cached_raw_catalog = None
 
     @classmethod
-    def get_catalog(cls) -> list:
-        """Returns country and service catalog loaded from app/data/catalog.json.
-        Covers all 153 countries from 5sim with all platforms and dynamic markups.
-        """
-        if cls._cached_catalog is not None:
-            return cls._cached_catalog
+    def _load_raw_catalog(cls) -> list:
+        if cls._cached_raw_catalog is not None:
+            return cls._cached_raw_catalog
 
         import json
         json_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'catalog.json')
@@ -273,31 +285,66 @@ class SIMProviderService:
                 with open(json_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     if data and isinstance(data, list) and len(data) > 0:
-                        # Filter out US from the other countries catalog
                         filtered_data = [c for c in data if c.get('country_code', '').upper() != 'US']
-                        cls._cached_catalog = filtered_data
+                        cls._cached_raw_catalog = filtered_data
                         return filtered_data
             except Exception as e:
                 print(f"[SIMProviderService] Error reading catalog.json: {e}")
+        return []
 
-        # Curated fallback countries & services
-        return [
-            {
-                'country_code': 'US',
-                'country_name': 'United States',
-                'country_slug': 'usa',
-                'flag': '🇺🇸',
-                'dial': '+1',
-                'services': [
-                    {'name': 'WhatsApp', 'price': 1.25, 'available': 46790, 'category': 'SMS Verification'},
-                    {'name': 'Telegram', 'price': 1.10, 'available': 12500, 'category': 'SMS Verification'},
-                    {'name': 'OpenAI / ChatGPT', 'price': 1.40, 'available': 8200, 'category': 'SMS Verification'},
-                    {'name': 'Google / Gmail', 'price': 0.95, 'available': 35400, 'category': 'SMS Verification'},
-                    {'name': 'Instagram', 'price': 0.85, 'available': 24100, 'category': 'SMS Verification'},
-                    {'name': 'Tinder', 'price': 1.20, 'available': 6100, 'category': 'SMS Verification'}
-                ]
+    @classmethod
+    def get_catalog(cls) -> list:
+        """Returns country and service catalog loaded from app/data/catalog.json.
+        Covers all 153 countries from 5sim with all platforms and dynamic markups and overrides applied.
+        """
+        raw_countries = cls._load_raw_catalog()
+        if not raw_countries:
+            return [
+                {
+                    'country_code': 'GB',
+                    'country_name': 'United Kingdom',
+                    'country_slug': 'england',
+                    'flag': '🇬🇧',
+                    'dial': '+44',
+                    'services': [
+                        {'name': 'WhatsApp', 'code': 'whatsapp', 'price': 1.25, 'available': 46790, 'category': 'SMS Verification'},
+                        {'name': 'Telegram', 'code': 'telegram', 'price': 1.10, 'available': 12500, 'category': 'SMS Verification'},
+                        {'name': 'Google / Gmail', 'code': 'google', 'price': 0.95, 'available': 35400, 'category': 'SMS Verification'}
+                    ]
+                }
+            ]
+
+        try:
+            from app.services.settings_service import SettingsService
+            pct, floor = SettingsService.get_fivesim_markup()
+            all_overrides = SettingsService.get_price_overrides()
+            overrides = {
+                o['service_code'].strip().lower(): float(o['override_price_usd'])
+                for o in all_overrides
+                if o.get('provider_type') in ('5sim', 'all') and o.get('is_active', True) and o.get('service_code')
             }
-        ]
+        except Exception:
+            pct, floor = 30.0, 0.30
+            overrides = {}
+
+        mult = 1.0 + (pct / 100.0)
+        dynamic_catalog = []
+        for c in raw_countries:
+            c_copy = dict(c)
+            services_list = []
+            for s in c.get('services', []):
+                s_copy = dict(s)
+                sc = str(s.get('code') or s.get('service_code') or s.get('name', '')).strip().lower().split('/')[0].strip()
+                base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.50))
+                s_copy['base_cost'] = base
+                if sc in overrides:
+                    s_copy['price'] = overrides[sc]
+                else:
+                    s_copy['price'] = round(max(base * mult, base + floor), 2)
+                services_list.append(s_copy)
+            c_copy['services'] = services_list
+            dynamic_catalog.append(c_copy)
+        return dynamic_catalog
 
     @classmethod
     def purchase_number(cls, country_code: str, service_name: str, operator: str = 'any') -> dict:
@@ -655,7 +702,7 @@ class SIMProviderService:
 
     @classmethod
     def get_5sim_us_services(cls, apply_markup: bool = True) -> list:
-        """Loads full catalog of 5sim USA services with dynamic admin markup applied."""
+        """Loads full catalog of 5sim USA services with dynamic admin markup and price overrides applied."""
         raw_list = cls._load_raw_5sim_us_services()
         if not apply_markup:
             return raw_list
@@ -663,8 +710,15 @@ class SIMProviderService:
         try:
             from app.services.settings_service import SettingsService
             pct, floor = SettingsService.get_fivesim_markup()
+            all_overrides = SettingsService.get_price_overrides()
+            overrides = {
+                o['service_code'].strip().lower(): float(o['override_price_usd'])
+                for o in all_overrides
+                if o.get('provider_type') in ('5sim', 'all') and o.get('is_active', True) and o.get('service_code')
+            }
         except Exception:
             pct, floor = 30.0, 0.30
+            overrides = {}
 
         mult = 1.0 + (pct / 100.0)
         marked = []
@@ -672,7 +726,12 @@ class SIMProviderService:
             item = dict(s)
             base = float(s.get('price_usd') or 0.50)
             item['base_cost_usd'] = base
-            item['price_usd'] = round(max(base * mult, base + floor), 2)
+            sc = str(s.get('service_code') or '').strip().lower()
+            if sc in overrides:
+                item['price_usd'] = overrides[sc]
+                item['is_override'] = True
+            else:
+                item['price_usd'] = round(max(base * mult, base + floor), 2)
             marked.append(item)
         return marked
 
@@ -696,7 +755,7 @@ class SIMProviderService:
 
     @classmethod
     def get_textverified_us_services(cls, apply_markup: bool = True) -> list:
-        """Loads full catalog of TextVerified USA services with dynamic admin markup applied."""
+        """Loads full catalog of TextVerified USA services with dynamic admin markup and price overrides applied."""
         raw_list = cls._load_raw_textverified_us_services()
         if not apply_markup:
             return raw_list
@@ -704,8 +763,15 @@ class SIMProviderService:
         try:
             from app.services.settings_service import SettingsService
             pct, floor = SettingsService.get_textverified_markup()
+            all_overrides = SettingsService.get_price_overrides()
+            overrides = {
+                o['service_code'].strip().lower(): float(o['override_price_usd'])
+                for o in all_overrides
+                if o.get('provider_type') in ('textverified', 'all') and o.get('is_active', True) and o.get('service_code')
+            }
         except Exception:
             pct, floor = 25.0, 0.50
+            overrides = {}
 
         mult = 1.0 + (pct / 100.0)
         marked = []
@@ -713,7 +779,12 @@ class SIMProviderService:
             item = dict(s)
             base = float(s.get('price_usd') or 0.50)
             item['base_cost_usd'] = base
-            item['price_usd'] = round(max(base * mult, base + floor), 2)
+            sc = str(s.get('service_code') or '').strip().lower()
+            if sc in overrides:
+                item['price_usd'] = overrides[sc]
+                item['is_override'] = True
+            else:
+                item['price_usd'] = round(max(base * mult, base + floor), 2)
             marked.append(item)
         return marked
 

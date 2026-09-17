@@ -446,6 +446,14 @@
           });
       });
     }
+
+    document.addEventListener("currencychange", function () {
+      updatePriceDisplay();
+      renderOptions(currentFiltered, selectedItem ? selectedItem.id : null);
+      if (isOpen) {
+        renderDropdownItems(currentFiltered);
+      }
+    });
   }
 
   function init() {

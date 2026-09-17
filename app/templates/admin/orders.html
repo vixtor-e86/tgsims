@@ -78,7 +78,7 @@
 
               {# Provider Route #}
               <td style="padding: 0.75rem 0.5rem;">
-                {% if ord.provider_order_id and 'TXTV' in ord.provider_order_id %}
+                {% if ord.provider_order_id and 'TXTV' in (ord.provider_order_id|string) %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified</span>
                 {% else %}
                   <span class="badge badge-success" style="font-size: 0.75rem;">5sim</span>
@@ -95,10 +95,10 @@
 
               {# Price #}
               <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-weight: 700; color: var(--hue-success);">${{ '%.2f'|format(ord.price or ord.user_cost or 0) }}</span>
+                <span style="font-weight: 700; color: var(--hue-success);">${{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}</span>
                 {% if ord.provider_cost %}
                   <div style="font-size: 0.7rem; color: var(--text-muted);">
-                    Cost: ${{ '%.2f'|format(ord.provider_cost) }}
+                    Cost: ${{ '%.2f'|format((ord.provider_cost or 0)|float) }}
                   </div>
                 {% endif %}
               </td>
@@ -130,13 +130,10 @@
               {# Action #}
               <td style="padding: 0.75rem 0.5rem; text-align: right;">
                 {% if ord.status not in ('refunded', 'cancelled') %}
-                  <form action="{{ url_for('admin.manual_refund_order', order_id=ord.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Issue manual refund of ${{ '%.2f'|format(ord.price or ord.user_cost or 0) }} to user wallet?');">
-                    <input type="hidden" name="user_id" value="{{ ord.user_id }}">
-                    <input type="hidden" name="reason" value="Admin manual refund">
-                    <button type="submit" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                      {{ icon('refresh') }} Refund
-                    </button>
-                  </form>
+                  <button type="button" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;" 
+                          onclick="openRefundModal('{{ ord.id }}', '{{ ord.user_id }}', '{{ ord.order_reference }}', '{{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}')">
+                    {{ icon('refresh') }} Refund
+                  </button>
                 {% else %}
                   <span style="font-size: 0.75rem; color: var(--text-muted);">Refunded</span>
                 {% endif %}
@@ -154,4 +151,72 @@
     </div>
   {% endif %}
 </div>
+
+{# Admin Order Refund Confirmation Modal #}
+<div id="refundModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span style="color: var(--text-danger);">{{ icon('refresh') }}</span>
+        <h3 class="modal-title" style="margin: 0; font-size: 1.1rem;">Confirm Manual Refund</h3>
+      </div>
+      <button type="button" class="modal-close" onclick="closeRefundModal()" aria-label="Close modal">&times;</button>
+    </div>
+    <form id="refundForm" method="POST">
+      <input type="hidden" name="user_id" id="refundUserId">
+      <input type="hidden" name="reason" value="Admin manual refund">
+      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+        <p style="font-size: 0.9rem; color: var(--text); margin: 0 0 1rem 0; line-height: 1.5;">
+          Are you sure you want to issue a full manual refund for order <strong id="refundOrderRef"></strong>?
+        </p>
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
+            <span>Refund Amount</span>
+            <strong style="color: var(--hue-success); font-size: 1rem;" id="refundOrderAmount">$0.00</strong>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.85rem; line-height: 1.4;">
+          The amount will be credited back to the customer's wallet balance immediately and the order marked as refunded.
+        </p>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeRefundModal()">Cancel</button>
+        <button type="submit" class="btn btn-danger btn-sm" style="background: #ef4444; border-color: #ef4444; color: #fff;">Confirm Refund</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openRefundModal(orderId, userId, orderRef, amount) {
+  var modal = document.getElementById('refundModal');
+  var form = document.getElementById('refundForm');
+  var userEl = document.getElementById('refundUserId');
+  var refEl = document.getElementById('refundOrderRef');
+  var amtEl = document.getElementById('refundOrderAmount');
+
+  form.action = '/admin/orders/' + encodeURIComponent(orderId) + '/refund';
+  userEl.value = userId;
+  refEl.textContent = '#' + orderRef;
+  amtEl.textContent = '$' + Number(amount).toFixed(2);
+
+  modal.classList.add('is-open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRefundModal() {
+  var modal = document.getElementById('refundModal');
+  if (modal) {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  var modal = document.getElementById('refundModal');
+  if (modal && e.target === modal) {
+    closeRefundModal();
+  }
+});
+</script>
 {% endblock %}

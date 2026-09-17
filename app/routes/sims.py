@@ -74,6 +74,10 @@ def my_sims():
         has_code = bool(o.get('sms_code'))
         is_active = status in ('active', 'pending') and not has_code
         o['is_active_sim'] = is_active
+        try:
+            o['price'] = float(o.get('price') or o.get('user_cost') or 0.00)
+        except (ValueError, TypeError):
+            o['price'] = 0.00
 
         remaining = 180
         elapsed = 0

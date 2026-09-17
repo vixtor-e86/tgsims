@@ -309,13 +309,10 @@
                 {{ ov.notes or '-' }}
               </td>
               <td style="padding: 0.75rem 0.5rem; text-align: right;">
-                <form action="{{ url_for('admin.pricing') }}" method="POST" style="display: inline;" onsubmit="return confirm('Remove price override?');">
-                  <input type="hidden" name="action" value="delete_override">
-                  <input type="hidden" name="override_id" value="{{ ov.id }}">
-                  <button type="submit" class="btn btn-ghost btn-sm text-danger" style="padding: 0.2rem 0.5rem;" title="Delete">
-                    {{ icon('trash') }}
-                  </button>
-                </form>
+                <button type="button" class="btn btn-ghost btn-sm text-danger" style="padding: 0.2rem 0.5rem;" title="Delete"
+                        onclick="openDeleteOverrideModal('{{ ov.id }}', '{{ ov.service_name }}', '{{ ov.provider_type }}', '{{ '%.2f'|format(ov.override_price_usd) }}')">
+                  {{ icon('trash') }}
+                </button>
               </td>
             </tr>
           {% endfor %}
@@ -721,8 +718,15 @@
     form.addEventListener('submit', function(e) {
       if (!hiddenCode.value) {
         e.preventDefault();
-        alert('Please select a service from the search or dropdown first.');
-        if (searchInput) searchInput.focus();
+        if (window.toast) {
+          window.toast('Please select a service from the search or dropdown first.', 'error');
+        } else {
+          searchInput.classList.add('is-invalid');
+        }
+        if (searchInput) {
+          searchInput.focus();
+          openDropdown();
+        }
       }
     });
   }
@@ -730,5 +734,76 @@
   // Initial load
   populateSelectDropdown();
 })();
+
+function openDeleteOverrideModal(overrideId, serviceName, providerType, price) {
+  var modal = document.getElementById('deleteOverrideModal');
+  var inputId = document.getElementById('delOverrideId');
+  var nameEl = document.getElementById('delOverrideServiceName');
+  var provEl = document.getElementById('delOverrideProvider');
+  var priceEl = document.getElementById('delOverridePrice');
+
+  inputId.value = overrideId;
+  nameEl.textContent = serviceName;
+  provEl.textContent = providerType === 'textverified' ? 'TextVerified' : '5sim';
+  priceEl.textContent = '$' + price;
+
+  modal.classList.add('is-open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDeleteOverrideModal() {
+  var modal = document.getElementById('deleteOverrideModal');
+  if (modal) {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  var dModal = document.getElementById('deleteOverrideModal');
+  if (dModal && e.target === dModal) closeDeleteOverrideModal();
+});
 </script>
+
+{# Delete Price Override Confirmation Modal #}
+<div id="deleteOverrideModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span style="color: var(--text-danger);">{{ icon('trash') }}</span>
+        <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">Remove Price Override</h3>
+      </div>
+      <button type="button" class="modal-close" onclick="closeDeleteOverrideModal()" aria-label="Close modal">&times;</button>
+    </div>
+
+    <form action="{{ url_for('admin.pricing') }}" method="POST">
+      <input type="hidden" name="action" value="delete_override">
+      <input type="hidden" name="override_id" id="delOverrideId">
+
+      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+        <p style="font-size: 0.9rem; color: var(--text); margin: 0 0 1rem 0; line-height: 1.5;">
+          Are you sure you want to remove the fixed price override for <strong id="delOverrideServiceName"></strong>?
+        </p>
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+            <span>Provider Pool:</span>
+            <strong style="color: var(--text);" id="delOverrideProvider"></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
+            <span>Active Fixed Price:</span>
+            <strong style="color: var(--hue-success);" id="delOverridePrice"></strong>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.85rem; line-height: 1.4; margin-bottom: 0;">
+          Once removed, this service will automatically follow standard dynamic percentage markup rules.
+        </p>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
+        <button type="button" onclick="closeDeleteOverrideModal()" class="btn btn-secondary btn-sm">Cancel</button>
+        <button type="submit" class="btn btn-danger btn-sm" style="background: #ef4444; border-color: #ef4444; color: #fff;">Remove Override</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

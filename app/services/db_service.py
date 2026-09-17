@@ -100,8 +100,13 @@ class DBService:
             # Map user_cost -> price for template compatibility
             orders = res.data or []
             for o in orders:
-                if 'price' not in o:
-                    o['price'] = float(o.get('user_cost', 0.00))
+                val = o.get('price')
+                if val is None:
+                    val = o.get('user_cost', 0.00)
+                try:
+                    o['price'] = float(val or 0.00)
+                except (ValueError, TypeError):
+                    o['price'] = 0.00
             return orders
         except Exception as e:
             print(f"[DBService] get_orders error: {e}")
