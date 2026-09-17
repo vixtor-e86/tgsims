@@ -239,8 +239,11 @@ class SIMProviderService:
         return cls._client
 
     @classmethod
-    def calculate_retail_price(cls, base_cost: float, service_code: str = None, provider_type: str = '5sim') -> tuple[float, float]:
-        """Calculates retail price and profit margin in USD using admin-configured markup and overrides."""
+    def calculate_retail_price(cls, base_cost: float, service_code: str = None, provider_type: str = '5sim', country_code: str = 'US') -> tuple[float, float]:
+        """Calculates retail price and profit margin in USD using admin-configured markup and overrides.
+        Fixed service price overrides apply exclusively to US numbers (5sim US Basic & TextVerified US Reliable).
+        Global numbers (GB, NG, etc.) strictly follow provider dynamic markup.
+        """
         if base_cost <= 0:
             return 1.50, 1.50
 
@@ -251,7 +254,9 @@ class SIMProviderService:
             else:
                 pct, floor = SettingsService.get_fivesim_markup()
 
-            if service_code:
+            # Overrides apply strictly to US numbers
+            is_us = (provider_type == 'textverified') or (country_code and str(country_code).strip().upper() in ('US', 'USA'))
+            if is_us and service_code:
                 sc = service_code.strip().lower()
                 all_overrides = SettingsService.get_price_overrides()
                 overrides = {
@@ -317,15 +322,8 @@ class SIMProviderService:
         try:
             from app.services.settings_service import SettingsService
             pct, floor = SettingsService.get_fivesim_markup()
-            all_overrides = SettingsService.get_price_overrides()
-            overrides = {
-                o['service_code'].strip().lower(): float(o['override_price_usd'])
-                for o in all_overrides
-                if o.get('provider_type') in ('5sim', 'all') and o.get('is_active', True) and o.get('service_code')
-            }
         except Exception:
             pct, floor = 30.0, 0.30
-            overrides = {}
 
         mult = 1.0 + (pct / 100.0)
         dynamic_catalog = []
@@ -334,13 +332,10 @@ class SIMProviderService:
             services_list = []
             for s in c.get('services', []):
                 s_copy = dict(s)
-                sc = str(s.get('code') or s.get('service_code') or s.get('name', '')).strip().lower().split('/')[0].strip()
                 base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.50))
                 s_copy['base_cost'] = base
-                if sc in overrides:
-                    s_copy['price'] = overrides[sc]
-                else:
-                    s_copy['price'] = round(max(base * mult, base + floor), 2)
+                # Worldwide catalog uses 5sim dynamic profit margin % and floor (US overrides apply exclusively to US numbers)
+                s_copy['price'] = round(max(base * mult, base + floor), 2)
                 services_list.append(s_copy)
             c_copy['services'] = services_list
             dynamic_catalog.append(c_copy)
@@ -389,7 +384,7 @@ class SIMProviderService:
             prov_id = buy_res.get('provider_order_id')
             phone = buy_res.get('phone_number')
             prov_cost = buy_res.get('provider_cost', 0.0)
-            retail_price, margin = cls.calculate_retail_price(prov_cost)
+            retail_price, margin = cls.calculate_retail_price(base_cost=prov_cost, service_code=service_code, provider_type='5sim', country_code=cc_clean)
 
             return {
                 'success': True,

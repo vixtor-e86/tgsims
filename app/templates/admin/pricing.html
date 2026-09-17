@@ -207,10 +207,10 @@
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
     <div>
       <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
-        {{ icon('tag') }} Fixed Service Price Overrides
+        {{ icon('tag') }} Fixed Service Price Overrides (US Numbers)
       </h2>
       <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.85rem;">
-        Set a fixed price for specific popular services (e.g. WhatsApp, Telegram, Google) regardless of provider price fluctuations.
+        Set fixed retail prices for specific US services under 5sim (Basic) or TextVerified (Reliable). Global store countries will strictly use your standard dynamic profit margin and min floor.
       </p>
     </div>
   </div>
@@ -223,10 +223,10 @@
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.85rem; align-items: flex-end;">
       <div>
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Provider Pool</label>
+        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">US Provider Pool</label>
         <select name="provider_type" id="override-provider-type" class="input input-sm">
-          <option value="5sim">5sim (Global & US Basic)</option>
-          <option value="textverified">TextVerified (Reliable Cellular)</option>
+          <option value="5sim">5sim (US Basic Package)</option>
+          <option value="textverified">TextVerified (US Reliable Package)</option>
         </select>
       </div>
 
@@ -294,9 +294,9 @@
               </td>
               <td style="padding: 0.75rem 0.5rem;">
                 {% if ov.provider_type == 'textverified' %}
-                  <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified</span>
+                  <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified (US Reliable)</span>
                 {% else %}
-                  <span class="badge badge-success" style="font-size: 0.75rem;">5sim</span>
+                  <span class="badge badge-success" style="font-size: 0.75rem;">5sim (US Basic)</span>
                 {% endif %}
               </td>
               <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--hue-success);">
@@ -744,7 +744,7 @@ function openDeleteOverrideModal(overrideId, serviceName, providerType, price) {
 
   inputId.value = overrideId;
   nameEl.textContent = serviceName;
-  provEl.textContent = providerType === 'textverified' ? 'TextVerified' : '5sim';
+  provEl.textContent = providerType === 'textverified' ? 'TextVerified (US Reliable)' : '5sim (US Basic)';
   priceEl.textContent = '$' + price;
 
   modal.classList.add('is-open');

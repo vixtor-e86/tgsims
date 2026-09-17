@@ -57,6 +57,8 @@
               <td style="padding: 0.75rem 0.5rem;">
                 {% if u.role == 'admin' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem; font-weight: 700;">ADMIN</span>
+                {% elif u.role == 'support' %}
+                  <span class="badge" style="font-size: 0.75rem; font-weight: 700; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">SUPPORT</span>
                 {% else %}
                   <span class="badge badge-muted" style="font-size: 0.75rem;">USER</span>
                 {% endif %}
@@ -85,15 +87,20 @@
                     {{ icon('wallet') }} Adjust Balance
                   </button>
 
-                  {# Toggle Role Button (triggers modal instead of browser confirm) #}
-                  <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.55rem;" 
-                          onclick="openRoleModal('{{ u.id }}', '{{ u.email }}', '{% if u.role == 'admin' %}user{% else %}admin{% endif %}')">
-                    {% if u.role == 'admin' %}
+                  {# Toggle Role Button (Make Support / Demote) #}
+                  {% if u.role == 'admin' %}
+                    <span class="badge badge-brand" style="font-size: 0.72rem; padding: 0.25rem 0.5rem;">Admin</span>
+                  {% elif u.role == 'support' %}
+                    <button type="button" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.25rem 0.55rem;" 
+                            onclick="openRoleModal('{{ u.id }}', '{{ u.email }}', 'user')">
                       Demote
-                    {% else %}
-                      Make Admin
-                    {% endif %}
-                  </button>
+                    </button>
+                  {% else %}
+                    <button type="button" class="btn btn-ghost btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.55rem; color: var(--brand); font-weight: 600;" 
+                            onclick="openRoleModal('{{ u.id }}', '{{ u.email }}', 'support')">
+                      Make Support
+                    </button>
+                  {% endif %}
                 </div>
               </td>
             </tr>
@@ -228,20 +235,35 @@ function openRoleModal(userId, email, newRole) {
   var noteEl = document.getElementById('roleNote');
   var submitBtn = document.getElementById('roleSubmitBtn');
 
-  form.action = '/admin/users/' + encodeURIComponent(userId) + '/update-role';
+  form.action = '/admin/users/' + encodeURIComponent(userId) + '/role';
   emailEl.textContent = email;
   inputEl.value = newRole;
 
-  if (newRole === 'admin') {
+  if (newRole === 'support') {
+    badgeEl.className = 'badge';
+    badgeEl.style.background = 'rgba(245, 158, 11, 0.15)';
+    badgeEl.style.color = '#f59e0b';
+    badgeEl.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+    badgeEl.textContent = 'SUPPORT AGENT';
+    noteEl.textContent = 'This will grant the user Support Agent status so they can assist customers and handle user inquiries.';
+    submitBtn.textContent = 'Make Support';
+    submitBtn.className = 'btn btn-primary btn-sm';
+  } else if (newRole === 'admin') {
     badgeEl.className = 'badge badge-brand';
+    badgeEl.style.background = '';
+    badgeEl.style.color = '';
+    badgeEl.style.border = '';
     badgeEl.textContent = 'ADMINISTRATOR';
-    noteEl.textContent = 'This will grant the user full access to the Admin Console, including platform pricing, order management, and deposit verifications.';
+    noteEl.textContent = 'This will grant full access to the Admin Console, including platform pricing, order management, and deposit verifications.';
     submitBtn.textContent = 'Grant Admin Role';
     submitBtn.className = 'btn btn-primary btn-sm';
   } else {
     badgeEl.className = 'badge badge-muted';
+    badgeEl.style.background = '';
+    badgeEl.style.color = '';
+    badgeEl.style.border = '';
     badgeEl.textContent = 'REGULAR USER';
-    noteEl.textContent = 'This will revoke all administrative privileges. The user will only have standard access to their personal dashboard and orders.';
+    noteEl.textContent = 'This will revoke support privileges. The account will return to a standard user.';
     submitBtn.textContent = 'Demote to User';
     submitBtn.className = 'btn btn-secondary btn-sm';
   }

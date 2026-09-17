@@ -189,13 +189,17 @@ def pricing():
             })
 
     tv_raw = SIMProviderService.get_textverified_us_services(apply_markup=False)
+    seen_tv = set()
     tv_catalog = []
     for s in tv_raw:
-        tv_catalog.append({
-            'service_code': s.get('service_code'),
-            'service_name': s.get('service_name'),
-            'base_cost': float(s.get('price_usd', 0.50))
-        })
+        sc = s.get('service_code')
+        if sc and sc not in seen_tv:
+            seen_tv.add(sc)
+            tv_catalog.append({
+                'service_code': sc,
+                'service_name': s.get('service_name', sc.capitalize()),
+                'base_cost': float(s.get('price_usd', 0.50))
+            })
 
     services_catalog = {
         '5sim': f5_catalog,
@@ -316,8 +320,9 @@ def users():
 
 
 @admin_bp.route('/users/<user_id>/role', methods=['POST'])
+@admin_bp.route('/users/<user_id>/update-role', methods=['POST'])
 def update_user_role(user_id):
-    """Promote or demote a user role."""
+    """Promote or demote a user role ('user', 'support', 'admin')."""
     new_role = request.form.get('role', 'user')
     current_admin = session.get('user', {})
     if user_id == current_admin.get('id') and new_role != 'admin':
@@ -326,9 +331,10 @@ def update_user_role(user_id):
 
     ok = DBService.update_user_role_admin(user_id, new_role)
     if ok:
-        flash(f'User role updated to {new_role.upper()}.', 'success')
+        role_label = 'SUPPORT AGENT' if new_role == 'support' else ('ADMINISTRATOR' if new_role == 'admin' else 'STANDARD USER')
+        flash(f'User role successfully updated to {role_label}.', 'success')
     else:
-        flash('Failed to update user role.', 'error')
+        flash(f'Failed to update user role to {new_role}. Please ensure database constraint allows support role.', 'error')
 
     return redirect(url_for('admin.users'))
 

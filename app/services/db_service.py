@@ -843,8 +843,8 @@ class DBService:
 
     @staticmethod
     def update_user_role_admin(user_id: str, new_role: str) -> bool:
-        """Promote or demote user role ('admin' or 'user')."""
-        if new_role not in ('user', 'admin'):
+        """Promote or demote user role ('admin', 'support', or 'user')."""
+        if new_role not in ('user', 'admin', 'support'):
             return False
         admin = get_supabase_admin()
         if not admin:
