@@ -251,7 +251,11 @@
           <span class="lp-comm-ico">{{ icon(c.icon) }}</span>
           <h3 class="lp-comm-title">{{ c.title }}</h3>
           <p class="lp-comm-text">{{ c.text }}</p>
-          <a href="{{ c.href }}" {% if c.variant == 'support' %}onclick="if(window.openSupportWidget){window.openSupportWidget();return false;}"{% elif c.href.startswith('http') %}target="_blank" rel="noopener noreferrer"{% endif %} class="btn lp-comm-btn">{{ c.cta }}</a>
+          {% if c.variant == 'support' %}
+            <a href="{{ url_for('auth.login', next=url_for('account.support')) if not current_user else url_for('account.support') }}" class="btn lp-comm-btn">{{ c.cta }}</a>
+          {% else %}
+            <a href="{{ c.href }}" {% if c.href.startswith('http') %}target="_blank" rel="noopener noreferrer"{% endif %} class="btn lp-comm-btn">{{ c.cta }}</a>
+          {% endif %}
         </div>
         {% endfor %}
       </div>

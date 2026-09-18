@@ -148,7 +148,7 @@ def landing():
          'cta': 'Chat on WhatsApp', 'href': 'https://wa.me/2348058098494'},
         {'variant': 'support', 'icon': 'headset', 'title': '24/7 Support Desk',
          'text': 'Email tgsimsverify@gmail.com or log in to access 24/7 realtime messenger support.',
-         'cta': 'Open Support Desk', 'href': '/support'},
+         'cta': 'Open Support Desk', 'href': '/auth/login?next=/account/support'},
     ]
 
     return render_template(

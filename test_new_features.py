@@ -23,7 +23,8 @@ class TestNewFeatures(unittest.TestCase):
         self.assertEqual(r_referral.status_code, 302, "/account/referral must redirect to login, not 404")
 
     def test_user_notification_system_and_api(self):
-        test_uid = "00000000-0000-0000-0000-000000000001"
+        users = DBService.get_all_users_admin()
+        test_uid = users[0]['id'] if users else None
         
         # 1. Create notification via DBService
         notif = DBService.create_user_notification(
