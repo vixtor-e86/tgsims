@@ -105,15 +105,15 @@
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">5sim API (Global Pool)</span>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">Used for 150+ countries & US Basic</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">150+ countries &amp; USA Basic lines</div>
         </div>
         <div style="text-align: right;">
           {% if fivesim_balance %}
-            <div style="font-weight: 800; font-size: 1.1rem; color: var(--hue-success);">
+            <div style="font-weight: 800; font-size: 1.15rem; color: var(--hue-success);">
               {{ fivesim_balance.balance }} {{ fivesim_balance.currency }}
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">
-              ≈ ${{ '%.2f'|format(fivesim_balance.usd_estimate) }} USD
+            <div style="font-size: 0.72rem; color: var(--text-muted);" data-usd="{{ '%.2f'|format(fivesim_balance.usd_estimate) }}">
+              ≈ ${{ '%.2f'|format(fivesim_balance.usd_estimate) }} USD (₦{{ '{:,.2f}'.format(fivesim_balance.usd_estimate * settings.ngn_per_usd_rate) }})
             </div>
           {% else %}
             <span class="badge badge-warning" style="font-size: 0.75rem;">{{ fivesim_err or 'Check API Key' }}</span>
@@ -126,11 +126,24 @@
     <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">TextVerified (Reliable Non-VoIP)</span>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">Dedicated cellular lines with reactivation</div>
+          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">TextVerified (USA Reliable)</span>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">
+            {% if tv_balance and tv_balance.username %}
+              Account: <span style="font-family: var(--font-mono); color: var(--text);">{{ tv_balance.username }}</span>
+            {% else %}
+              Dedicated cellular lines with reactivation
+            {% endif %}
+          </div>
         </div>
         <div style="text-align: right;">
-          {% if tv_status.configured %}
+          {% if tv_balance %}
+            <div style="font-weight: 800; font-size: 1.15rem; color: var(--hue-success);" data-usd="{{ '%.2f'|format(tv_balance.balance) }}">
+              ${{ '%.2f'|format(tv_balance.balance) }} {{ tv_balance.currency }}
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              ≈ ₦{{ '{:,.2f}'.format(tv_balance.balance * settings.ngn_per_usd_rate) }}
+            </div>
+          {% elif tv_status.configured %}
             <span class="badge badge-success" style="font-size: 0.75rem;">Connected</span>
           {% else %}
             <span class="badge badge-muted" style="font-size: 0.75rem;">{{ tv_status.status }}</span>

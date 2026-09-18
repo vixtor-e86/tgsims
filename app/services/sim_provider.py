@@ -46,6 +46,22 @@ class FiveSimClient:
         except Exception as e:
             return {'success': False, 'message': str(e)}
 
+    def get_balance(self) -> dict:
+        """Fetch account balance, currency (RUB), and approximate USD estimate."""
+        prof = self.get_profile()
+        if prof.get('success'):
+            bal_rub = float(prof.get('balance', 0.0))
+            usd_est = round(bal_rub / 92.0, 2)
+            return {
+                'success': True,
+                'balance': round(bal_rub, 2),
+                'currency': 'RUB',
+                'usd_estimate': usd_est,
+                'rating': prof.get('rating', 0),
+                'active_orders': prof.get('active_orders', 0)
+            }
+        return prof
+
     def get_products(self, country_slug: str, operator: str = 'any') -> dict:
         """Fetch product list, inventory count, and cost for a country."""
         try:

@@ -4,10 +4,120 @@
 {% block title %}Push Notifications & Announcements | {{ BRAND }} Admin{% endblock %}
 
 {% block admin_content %}
-<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+<style>
+  .admin-notif-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .admin-notif-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text);
+  }
+  .admin-notif-subtitle {
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    font-size: 0.95rem;
+  }
+  .admin-notif-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .notif-audience-group {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .notif-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.5rem;
+  }
+  .notif-type-pill {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    background: var(--surface);
+    transition: all 0.15s ease;
+  }
+  .notif-type-pill:hover {
+    border-color: var(--brand-300);
+  }
+  .notif-template-btn {
+    text-align: left;
+    justify-content: flex-start;
+    font-size: 0.82rem;
+    padding: 0.6rem 0.75rem;
+    line-height: 1.35;
+    white-space: normal;
+  }
+  .notif-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (max-width: 900px) {
+    .admin-notif-grid {
+      grid-template-columns: 1fr !important;
+      gap: 1.25rem !important;
+      margin-bottom: 1.5rem !important;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .admin-notif-header {
+      margin-bottom: 1rem !important;
+    }
+    .admin-notif-title {
+      font-size: 1.35rem !important;
+    }
+    .admin-notif-subtitle {
+      font-size: 0.84rem !important;
+    }
+    .notif-audience-group {
+      gap: 0.65rem !important;
+    }
+    .notif-audience-group label {
+      font-size: 0.85rem !important;
+    }
+    .notif-type-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 0.45rem !important;
+    }
+    .notif-type-pill {
+      padding: 0.5rem 0.6rem !important;
+      font-size: 0.82rem !important;
+    }
+    #push-notif-form input,
+    #push-notif-form textarea,
+    #push-notif-form select {
+      font-size: 16px !important; /* Prevents iOS auto-zoom */
+    }
+    .notif-table-header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 0.5rem !important;
+    }
+  }
+</style>
+
+<div class="admin-notif-header">
   <div>
-    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text);">Push Notifications &amp; Broadcasts</h1>
-    <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem;">
+    <h1 class="admin-notif-title">Push Notifications &amp; Broadcasts</h1>
+    <p class="admin-notif-subtitle">
       Send in-app notifications and promotional announcements directly to customer dashboards and topbar alert feeds.
     </p>
   </div>
@@ -17,7 +127,7 @@
 </div>
 
 {# Compose Grid: Left = Form, Right = Quick Templates & Info #}
-<div style="display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+<div class="admin-notif-grid">
   
   {# Notification Composer Card #}
   <div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
@@ -36,7 +146,7 @@
         <label class="label" style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem; display: block;">
           Target Audience
         </label>
-        <div style="display: flex; gap: 1.5rem; margin-bottom: 0.75rem;">
+        <div class="notif-audience-group">
           <label style="display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
             <input type="radio" name="target" value="all" checked onchange="toggleTargetUser(false)">
             <span>All Users (Global Broadcast)</span>
@@ -65,20 +175,20 @@
         <label class="label" style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.4rem; display: block;">
           Notification Type
         </label>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem;">
-          <label class="notif-type-pill" style="border: 1px solid var(--border); padding: 0.5rem 0.75rem; border-radius: var(--r-sm); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;">
+        <div class="notif-type-grid">
+          <label class="notif-type-pill">
             <input type="radio" name="type" value="promo" checked>
             <span>🎉 Promotion</span>
           </label>
-          <label class="notif-type-pill" style="border: 1px solid var(--border); padding: 0.5rem 0.75rem; border-radius: var(--r-sm); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;">
+          <label class="notif-type-pill">
             <input type="radio" name="type" value="update">
             <span>🚀 Platform Update</span>
           </label>
-          <label class="notif-type-pill" style="border: 1px solid var(--border); padding: 0.5rem 0.75rem; border-radius: var(--r-sm); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;">
+          <label class="notif-type-pill">
             <input type="radio" name="type" value="deposit">
             <span>💳 Wallet Alert</span>
           </label>
-          <label class="notif-type-pill" style="border: 1px solid var(--border); padding: 0.5rem 0.75rem; border-radius: var(--r-sm); cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;">
+          <label class="notif-type-pill">
             <input type="radio" name="type" value="system">
             <span>⚠️ System Alert</span>
           </label>
@@ -126,13 +236,13 @@
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-        <button type="button" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; font-size: 0.8rem;" onclick="applyTemplate('promo', '🎉 Weekend Special: 20% Off All US WhatsApp Lines!', 'Get instant WhatsApp & WhatsApp Business verification with screened non-VoIP carrier lines. Limited stock available.', '/sims/us-canada')">
+        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('promo', '🎉 Weekend Special: 20% Off All US WhatsApp Lines!', 'Get instant WhatsApp & WhatsApp Business verification with screened non-VoIP carrier lines. Limited stock available.', '/sims/us-canada')">
           {{ icon('tag') }} 20% Off US Numbers Promo
         </button>
-        <button type="button" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; font-size: 0.8rem;" onclick="applyTemplate('update', '🚀 New Cellular Route Stock Active', 'Fresh Tier-1 AT&T and Verizon cellular lines have been added for Google, Telegram, and Banking verifications.', '/sims/us-canada')">
+        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('update', '🚀 New Cellular Route Stock Active', 'Fresh Tier-1 AT&T and Verizon cellular lines have been added for Google, Telegram, and Banking verifications.', '/sims/us-canada')">
           {{ icon('refresh') }} Fresh Line Stock Restock
         </button>
-        <button type="button" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; font-size: 0.8rem;" onclick="applyTemplate('deposit', '💳 Instant Bank Transfer Depositing is Active', 'Fund your wallet effortlessly via Squad virtual account or crypto transfer. Instant automated crediting within seconds.', '/wallet/fund')">
+        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('deposit', '💳 Instant Bank Transfer Depositing is Active', 'Fund your wallet effortlessly via Squad virtual account or crypto transfer. Instant automated crediting within seconds.', '/wallet/fund')">
           {{ icon('wallet') }} Instant Deposit Notice
         </button>
       </div>
@@ -154,7 +264,7 @@
 
 {# Sent Notifications History Log #}
 <div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+  <div class="notif-table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
     <div>
       <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text);">
         Sent Notifications Log
@@ -165,8 +275,8 @@
   </div>
 
   {% if notifications and notifications|length > 0 %}
-    <div style="overflow-x: auto;">
-      <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+    <div class="notif-table-scroll">
+      <table class="data-table" style="min-width: 620px; width: 100%; text-align: left; border-collapse: collapse;">
         <thead>
           <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
             <th style="padding: 0.75rem 0.5rem;">Target</th>

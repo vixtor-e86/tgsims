@@ -58,13 +58,27 @@ def index():
     except Exception as e:
         fivesim_err = str(e)
 
-    # Query TextVerified client status
+    # Query TextVerified client status & live balance
+    tv_balance = None
     tv_status = {'configured': False, 'status': 'Unknown'}
     try:
         tv_client = SIMProviderService.get_textverified_client()
         if tv_client:
             tv_status['configured'] = True
             tv_status['status'] = 'Active & Connected'
+            try:
+                acc = tv_client.account
+                acc_bal = getattr(acc, 'balance', None)
+                if callable(acc_bal):
+                    acc_bal = acc_bal()
+                if acc_bal is not None:
+                    tv_balance = {
+                        'balance': float(acc_bal),
+                        'currency': 'USD',
+                        'username': getattr(acc, 'username', '')
+                    }
+            except Exception as tv_e:
+                print(f"[Admin] Error fetching TextVerified balance: {tv_e}")
         else:
             tv_status['configured'] = False
             tv_status['status'] = 'Not Configured (Missing TEXTVERIFIED_API_KEY)'
@@ -82,6 +96,7 @@ def index():
         fivesim_balance=fivesim_balance,
         fivesim_err=fivesim_err,
         tv_status=tv_status,
+        tv_balance=tv_balance,
         pending_deposits=pending_deposits,
         recent_orders=recent_orders,
         active_page='overview'
