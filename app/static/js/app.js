@@ -362,9 +362,7 @@
         var isUnread = !n.is_read;
         var meta = getTypeMeta(n.type);
         var timeStr = formatTimeAgo(n.created_at);
-        var linkAttr = n.link ? ' data-link="' + escapeHtml(n.link) + '"' : "";
-
-        html += '<div class="user-notif-item' + (isUnread ? ' is-unread' : '') + '" data-notif-id="' + escapeHtml(n.id) + '"' + linkAttr + ' style="display: flex; gap: 0.75rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s ease; position: relative;' + (isUnread ? ' background: rgba(37, 99, 235, 0.05);' : '') + '">';
+        html += '<div class="user-notif-item' + (isUnread ? ' is-unread' : '') + '" data-notif-id="' + escapeHtml(n.id) + '" style="display: flex; gap: 0.75rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); cursor: default; user-select: text; transition: background 0.15s ease; position: relative;' + (isUnread ? ' background: rgba(37, 99, 235, 0.05);' : '') + '">';
         
         // Icon / avatar
         html += '<div style="width: 32px; height: 32px; border-radius: var(--r-full); background: ' + meta.bg + '; color: ' + meta.color + '; display: grid; place-items: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0; margin-top: 2px;">' + meta.icon + '</div>';
@@ -437,13 +435,12 @@
       syncNotifications(true);
     });
 
-    // Mark single notification as read & navigate if link exists
+    // Mark single notification as read quietly on click without reloading or navigating away
     notifContainer.addEventListener("click", function (e) {
       var item = e.target.closest(".user-notif-item");
       if (!item) return;
 
       var notifId = item.getAttribute("data-notif-id");
-      var link = item.getAttribute("data-link");
 
       if (item.classList.contains("is-unread")) {
         item.classList.remove("is-unread");
@@ -458,10 +455,6 @@
         }).then(function () {
           syncNotifications(false);
         }).catch(function () {});
-      }
-
-      if (link) {
-        window.location.href = link;
       }
     });
 

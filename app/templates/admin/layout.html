@@ -2,61 +2,176 @@
 {% from "partials/icons.html" import icon %}
 
 {% block body %}
+<style>
+  .admin-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.55rem 1.25rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-xs);
+  }
+  .admin-header-inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .admin-nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--surface-2);
+    padding: 3px;
+    border-radius: var(--r-md);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+  }
+  .admin-nav-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: var(--r-sm);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .admin-nav-link svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .admin-nav-link:hover {
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .admin-nav-link.is-active {
+    color: var(--brand);
+    background: var(--surface);
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border-color: var(--border);
+  }
+  [data-theme="dark"] .admin-nav-link.is-active {
+    background: var(--surface);
+    color: var(--brand);
+    border-color: var(--border-strong);
+  }
+  [data-theme="dark"] .admin-nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .admin-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+  }
+  .admin-btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.32rem 0.6rem;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .admin-btn-back:hover {
+    background: var(--surface);
+    color: var(--brand);
+    border-color: var(--brand);
+  }
+  .admin-btn-back svg {
+    width: 13px;
+    height: 13px;
+  }
+  @media (max-width: 1080px) {
+    .admin-header-inner {
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    .admin-nav-bar {
+      order: 3;
+      width: 100%;
+      overflow-x: auto;
+    }
+  }
+</style>
+
 <div class="admin-shell" style="min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text);">
   {# Admin Top Navigation Bar #}
-  <header class="admin-header" style="background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.85rem 1.5rem; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-xs);">
-    <div style="max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+  <header class="admin-header">
+    <div class="admin-header-inner">
       
       {# Brand & Admin Tag #}
-      <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <a href="{{ url_for('admin.index') }}" style="display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: inherit;">
-          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }}" style="width: 32px; height: 32px;">
-          <span style="font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; color: var(--text);">{{ BRAND }}</span>
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+        <a href="{{ url_for('admin.index') }}" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit;">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }}" style="width: 26px; height: 26px;">
+          <span style="font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--text);">{{ BRAND }}</span>
         </a>
-        <span class="badge" style="background: var(--brand-soft); color: var(--brand); border: 1px solid var(--border-strong); font-weight: 700; font-size: 0.72rem; padding: 0.25rem 0.6rem; border-radius: var(--r-xs); text-transform: uppercase; letter-spacing: 0.04em;">
-          Admin Console
+        <span class="badge" style="background: var(--brand-soft); color: var(--brand); border: 1px solid var(--border-strong); font-weight: 700; font-size: 0.65rem; padding: 0.15rem 0.45rem; border-radius: var(--r-xs); text-transform: uppercase; letter-spacing: 0.04em;">
+          Admin
         </span>
       </div>
 
       {# Admin Navigation Tabs #}
-      <nav style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-        <a href="{{ url_for('admin.index') }}" class="btn btn-sm {% if active_page == 'overview' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600;">
-          {{ icon('grid') }} Overview
+      <nav class="admin-nav-bar" aria-label="Admin Sections">
+        <a href="{{ url_for('admin.index') }}" class="admin-nav-link {% if request.endpoint == 'admin.index' or active_page == 'overview' %}is-active{% endif %}">
+          {{ icon('grid') }} <span>Overview</span>
         </a>
-        <a href="{{ url_for('admin.pricing') }}" class="btn btn-sm {% if active_page == 'pricing' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600;">
-          {{ icon('tag') }} Pricing & Margins
+        <a href="{{ url_for('admin.pricing') }}" class="admin-nav-link {% if request.endpoint == 'admin.pricing' or active_page == 'pricing' %}is-active{% endif %}">
+          {{ icon('tag') }} <span>Pricing</span>
         </a>
-        <a href="{{ url_for('admin.deposits') }}" class="btn btn-sm {% if active_page == 'deposits' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600;">
-          {{ icon('wallet') }} Verify Deposits
+        <a href="{{ url_for('admin.deposits') }}" class="admin-nav-link {% if request.endpoint == 'admin.deposits' or active_page == 'deposits' %}is-active{% endif %}">
+          {{ icon('wallet') }} <span>Deposits</span>
         </a>
-        <a href="{{ url_for('admin.orders') }}" class="btn btn-sm {% if active_page == 'orders' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600;">
-          {{ icon('list') }} All Orders
+        <a href="{{ url_for('admin.orders') }}" class="admin-nav-link {% if request.endpoint == 'admin.orders' or active_page == 'orders' %}is-active{% endif %}">
+          {{ icon('list') }} <span>Orders</span>
         </a>
-        <a href="{{ url_for('admin.users') }}" class="btn btn-sm {% if active_page == 'users' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600;">
-          {{ icon('users') }} Users
+        <a href="{{ url_for('admin.users') }}" class="admin-nav-link {% if request.endpoint == 'admin.users' or active_page == 'users' %}is-active{% endif %}">
+          {{ icon('users') }} <span>Users</span>
         </a>
-        <a href="{{ url_for('admin.support') }}" class="btn btn-sm {% if active_page == 'support' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600; position: relative;">
-          {{ icon('headset') }} Support Desk
+        <a href="{{ url_for('admin.support') }}" class="admin-nav-link {% if request.endpoint == 'admin.support' or active_page == 'support' %}is-active{% endif %}">
+          {{ icon('headset') }} <span>Support</span>
         </a>
-        <a href="{{ url_for('admin.notifications') }}" class="btn btn-sm {% if active_page == 'notifications' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600; position: relative;">
-          {{ icon('bell') }} Push Notifications
+        <a href="{{ url_for('admin.notifications') }}" class="admin-nav-link {% if request.endpoint == 'admin.notifications' or active_page == 'notifications' %}is-active{% endif %}">
+          {{ icon('bell') }} <span>Notifications</span>
         </a>
       </nav>
 
       {# Right Controls #}
-      <div style="display: flex; align-items: center; gap: 0.8rem;">
+      <div class="admin-controls-bar">
         {# Admin Currency Switcher #}
-        <div class="cur-switch" role="group" aria-label="Currency" style="margin-right: 0.2rem;">
+        <div class="cur-switch" role="group" aria-label="Currency" style="scale: 0.88; transform-origin: center;">
           <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
           <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
         </div>
-        <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-brand btn-sm" style="font-size: 0.82rem; border-radius: var(--r-sm); font-weight: 600;">
-          {{ icon('arrow-left') }} Back to App
+        <a href="{{ url_for('dashboard.index') }}" class="admin-btn-back" title="Return to Customer App">
+          {{ icon('arrow-left') }} <span>App</span>
         </a>
-        <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+        <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme" style="width: 30px; height: 30px;">
           {{ icon('sun', 'i-sun') }}{{ icon('moon', 'i-moon') }}
         </button>
-        <a href="{{ url_for('auth.logout') }}" class="icon-btn text-danger" title="Logout" aria-label="Logout">
+        <a href="{{ url_for('auth.logout') }}" class="icon-btn text-danger" title="Logout" aria-label="Logout" style="width: 30px; height: 30px;">
           {{ icon('logout') }}
         </a>
       </div>
