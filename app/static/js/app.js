@@ -303,6 +303,200 @@
     });
   }
 
+  /* ---- User In-App Notifications & Topbar Bell Center ------------------- */
+  function initUserNotifications() {
+    var bellTrigger = document.getElementById("topbar-bell-trigger");
+    var bellDot = document.getElementById("bell-unread-dot");
+    var bellBadge = document.getElementById("bell-unread-badge");
+    var headerBadge = document.getElementById("bell-header-badge");
+    var notifContainer = document.getElementById("topbar-user-notifs");
+    var markAllBtn = document.getElementById("mark-user-notifs-read-btn");
+
+    if (!bellTrigger || !notifContainer) return;
+
+    function formatTimeAgo(isoStr) {
+      if (!isoStr) return "";
+      try {
+        var cleanStr = isoStr.replace("Z", "+00:00").replace(" ", "T");
+        var d = new Date(cleanStr);
+        var diff = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (isNaN(diff) || diff < 0) return "Just now";
+        if (diff < 60) return "Just now";
+        if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+        if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+        var days = Math.floor(diff / 86400);
+        if (days === 1) return "Yesterday";
+        if (days < 7) return days + "d ago";
+        return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function getTypeMeta(type) {
+      var t = (type || "system").toLowerCase();
+      if (t === "deposit") {
+        return { label: "Deposit", bg: "rgba(16, 185, 129, 0.12)", color: "#10b981", icon: "↓" };
+      } else if (t === "wallet" || t === "debit") {
+        return { label: "Wallet", bg: "rgba(37, 99, 235, 0.12)", color: "var(--brand)", icon: "₦" };
+      } else if (t === "order" || t === "purchase") {
+        return { label: "Order", bg: "rgba(16, 185, 129, 0.12)", color: "#10b981", icon: "✓" };
+      } else if (t === "refund") {
+        return { label: "Refund", bg: "rgba(245, 158, 11, 0.12)", color: "#f59e0b", icon: "↺" };
+      } else if (t === "promo") {
+        return { label: "Promo", bg: "rgba(236, 72, 153, 0.12)", color: "#ec4899", icon: "★" };
+      } else if (t === "update") {
+        return { label: "Update", bg: "rgba(6, 182, 212, 0.12)", color: "#06b6d4", icon: "ℹ" };
+      }
+      return { label: "System", bg: "rgba(100, 116, 139, 0.12)", color: "var(--text-muted)", icon: "•" };
+    }
+
+    function renderNotifications(items) {
+      if (!items || items.length === 0) {
+        notifContainer.innerHTML = '<div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">No notifications yet</div>';
+        return;
+      }
+
+      var html = "";
+      items.forEach(function (n) {
+        var isUnread = !n.is_read;
+        var meta = getTypeMeta(n.type);
+        var timeStr = formatTimeAgo(n.created_at);
+        var linkAttr = n.link ? ' data-link="' + escapeHtml(n.link) + '"' : "";
+
+        html += '<div class="user-notif-item' + (isUnread ? ' is-unread' : '') + '" data-notif-id="' + escapeHtml(n.id) + '"' + linkAttr + ' style="display: flex; gap: 0.75rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s ease; position: relative;' + (isUnread ? ' background: rgba(37, 99, 235, 0.05);' : '') + '">';
+        
+        // Icon / avatar
+        html += '<div style="width: 32px; height: 32px; border-radius: var(--r-full); background: ' + meta.bg + '; color: ' + meta.color + '; display: grid; place-items: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0; margin-top: 2px;">' + meta.icon + '</div>';
+        
+        // Content
+        html += '<div style="flex: 1; min-width: 0;">';
+        html += '<div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 0.15rem;">';
+        html += '<span style="font-size: 0.8rem; font-weight: ' + (isUnread ? '800' : '600') + '; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + escapeHtml(n.title || 'Notification') + '</span>';
+        html += '<span style="font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; flex-shrink: 0;">' + timeStr + '</span>';
+        html += '</div>';
+
+        html += '<div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; word-break: break-word;">' + escapeHtml(n.message || '') + '</div>';
+
+        html += '<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.35rem;">';
+        html += '<span style="display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 4px; background: ' + meta.bg + '; color: ' + meta.color + ';">' + meta.label + '</span>';
+        if (isUnread) {
+          html += '<span style="width: 7px; height: 7px; border-radius: 50%; background: var(--brand); display: inline-block;"></span>';
+        }
+        html += '</div>';
+
+        html += '</div></div>';
+      });
+
+      notifContainer.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      var div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function updateBadgeUI(count) {
+      var unread = parseInt(count, 10) || 0;
+      if (unread > 0) {
+        if (bellDot) bellDot.style.display = "block";
+        if (bellBadge) {
+          bellBadge.style.display = "block";
+          bellBadge.textContent = unread > 99 ? "99+" : unread;
+        }
+        if (headerBadge) {
+          headerBadge.style.display = "inline-block";
+          headerBadge.textContent = unread + " new";
+        }
+      } else {
+        if (bellDot) bellDot.style.display = "none";
+        if (bellBadge) bellBadge.style.display = "none";
+        if (headerBadge) headerBadge.style.display = "none";
+      }
+    }
+
+    async function syncNotifications(full) {
+      var url = full ? "/api/notifications" : "/api/notifications/unread";
+      try {
+        var res = await fetch(url);
+        if (!res.ok) return;
+        var data = await res.json();
+        if (data.success) {
+          updateBadgeUI(data.unread_count);
+          if (data.notifications) {
+            renderNotifications(data.notifications);
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Trigger on open
+    bellTrigger.addEventListener("click", function () {
+      syncNotifications(true);
+    });
+
+    // Mark single notification as read & navigate if link exists
+    notifContainer.addEventListener("click", function (e) {
+      var item = e.target.closest(".user-notif-item");
+      if (!item) return;
+
+      var notifId = item.getAttribute("data-notif-id");
+      var link = item.getAttribute("data-link");
+
+      if (item.classList.contains("is-unread")) {
+        item.classList.remove("is-unread");
+        item.style.background = "";
+        var dot = item.querySelector('span[style*="border-radius: 50%"]');
+        if (dot) dot.remove();
+
+        fetch("/api/notifications/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notification_id: notifId })
+        }).then(function () {
+          syncNotifications(false);
+        }).catch(function () {});
+      }
+
+      if (link) {
+        window.location.href = link;
+      }
+    });
+
+    // Mark all read
+    if (markAllBtn) {
+      markAllBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        updateBadgeUI(0);
+        notifContainer.querySelectorAll(".user-notif-item.is-unread").forEach(function (el) {
+          el.classList.remove("is-unread");
+          el.style.background = "";
+          var dot = el.querySelector('span[style*="border-radius: 50%"]');
+          if (dot) dot.remove();
+        });
+
+        fetch("/api/notifications/read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notification_id: "all" })
+        }).then(function () {
+          if (window.toast) window.toast("All notifications marked as read", "info");
+          syncNotifications(false);
+        }).catch(function () {});
+      });
+    }
+
+    // Initial sync & periodic 5-second polling
+    syncNotifications(false);
+    setInterval(function () {
+      syncNotifications(false);
+    }, 5000);
+  }
+
   /* ---- Boot -------------------------------------------------------------- */
   function init() {
     initSidebar();
@@ -315,6 +509,7 @@
     initPasswordToggles();
     initFlashes();
     initFormSubmitSpinners();
+    initUserNotifications();
   }
 
   if (document.readyState === "loading") {

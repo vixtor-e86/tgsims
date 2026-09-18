@@ -9,6 +9,7 @@ def _require_user():
 
 
 @account_bp.route('/settings')
+@account_bp.route('/account/settings')
 def settings():
     user = _require_user()
     if not user:
@@ -17,17 +18,18 @@ def settings():
     profile = {
         'full_name': user.get('full_name', 'Tunde Komolafe'),
         'email': user.get('email', 'tgconceptt@gmail.com'),
-        'phone': '07047886371',
+        'phone': '08058098494',
         'country': 'Nigeria',
     }
     return render_template('account/settings.html', profile=profile, user=user)
 
 
 @account_bp.route('/support')
+@account_bp.route('/account/support')
 def support():
     user = _require_user()
     if not user:
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.login', next=url_for('account.support')))
 
     from app.services.db_service import DBService
     user_id = user.get('id', 'demo-user-id')
@@ -42,7 +44,7 @@ def support():
     ]
     channels = [
         {'icon': 'chat', 'title': 'Live Chat', 'text': 'Talk to our support team directly. Available 24/7.', 'cta': 'Start Chat', 'action': 'chat'},
-        {'icon': 'phone', 'title': 'WhatsApp Support', 'text': 'Direct WhatsApp assistance at 07047886371 for instant response.', 'cta': 'Chat on WhatsApp', 'href': 'https://wa.me/2347047886371'},
+        {'icon': 'phone', 'title': 'WhatsApp Support', 'text': 'Direct WhatsApp assistance at 08058098494 for instant response.', 'cta': 'Chat on WhatsApp', 'href': 'https://wa.me/2348058098494'},
         {'icon': 'send', 'title': 'Telegram Support', 'text': 'Chat with our official Telegram support at t.me/tgsimss.', 'cta': 'Open Telegram', 'href': 'https://t.me/tgsimss'},
         {'icon': 'mail', 'title': 'Email Support', 'text': 'Detailed inquiries and escalations: tgsimsverify@gmail.com', 'cta': 'Send Email', 'href': 'mailto:tgsimsverify@gmail.com'},
     ]
@@ -51,6 +53,7 @@ def support():
 
 
 @account_bp.route('/referral')
+@account_bp.route('/account/referral')
 def referral():
     user = _require_user()
     if not user:

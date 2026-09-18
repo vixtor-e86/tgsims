@@ -644,7 +644,9 @@ class DBService:
             return {
                 'success': True,
                 'message': f"Deposit verified! ${amount:.2f} credited to user wallet.",
-                'new_balance': wallet['balance']
+                'new_balance': wallet['balance'],
+                'user_id': user_id,
+                'amount': amount
             }
 
         try:
@@ -702,7 +704,9 @@ class DBService:
             return {
                 'success': True,
                 'message': f"Deposit successfully verified! ${amount:.2f} credited to user wallet.",
-                'new_balance': new_bal
+                'new_balance': new_bal,
+                'user_id': user_id,
+                'amount': amount
             }
         except Exception as e:
             print(f"[DBService] verify_deposit_admin error: {e}")
@@ -1405,10 +1409,112 @@ class DBService:
                     n['is_read'] = True
         return True
 
-        # Fallback
-        for n in mock_db.support_notifications:
-            if n.get('user_id') == user_id:
-                if not notif_id or notif_id == 'all' or n.get('id') == notif_id:
+    # =========================================================================
+    # USER NOTIFICATIONS & ADMIN BROADCASTS
+    # =========================================================================
+
+    @staticmethod
+    def create_user_notification(user_id: str = None, title: str = '', message: str = '',
+                                 type: str = 'system', link: str = None, metadata: dict = None) -> dict:
+        """Create an activity notification for a user or broadcast to all users (user_id=None)."""
+        now_str = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        notif_id = str(uuid.uuid4())
+        record = {
+            'id': notif_id,
+            'user_id': user_id if (user_id and DBService._is_uuid(user_id)) else None,
+            'title': title,
+            'message': message,
+            'type': type,
+            'link': link,
+            'metadata': metadata or {},
+            'is_read': False,
+            'created_at': now_str
+        }
+
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                res = admin.table('user_notifications').insert(record).execute()
+                if res.data:
+                    return res.data[0]
+            except Exception as e:
+                print(f"[DBService] create_user_notification Supabase error (falling back to mock): {e}")
+
+        # In-memory / Mock fallback
+        if not hasattr(mock_db, 'user_notifications'):
+            mock_db.user_notifications = []
+        mock_db.user_notifications.insert(0, record)
+        return record
+
+    @staticmethod
+    def get_user_notifications(user_id: str, limit: int = 30) -> list:
+        """Retrieve notifications for a user, including global broadcasts (user_id IS NULL)."""
+        admin = get_supabase_admin()
+        if admin and DBService._is_uuid(user_id):
+            try:
+                res = admin.table('user_notifications').select('*').or_(f"user_id.eq.{user_id},user_id.is.null").order('created_at', desc=True).limit(limit).execute()
+                if res.data is not None:
+                    return res.data
+            except Exception as e:
+                print(f"[DBService] get_user_notifications Supabase error: {e}")
+
+        items = getattr(mock_db, 'user_notifications', [])
+        user_items = [n for n in items if n.get('user_id') == user_id or n.get('user_id') is None]
+        user_items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
+        return user_items[:limit]
+
+    @staticmethod
+    def get_user_unread_notifications_count(user_id: str) -> int:
+        """Return the count of unread notifications for a user."""
+        notifs = DBService.get_user_notifications(user_id, limit=50)
+        return sum(1 for n in notifs if not n.get('is_read'))
+
+    @staticmethod
+    def mark_user_notifications_read(user_id: str, notification_id: str = None) -> bool:
+        """Mark a specific notification or all notifications as read for a user."""
+        admin = get_supabase_admin()
+        if admin and DBService._is_uuid(user_id):
+            try:
+                if notification_id and notification_id != 'all' and DBService._is_uuid(notification_id):
+                    admin.table('user_notifications').update({'is_read': True}).eq('id', notification_id).execute()
+                else:
+                    admin.table('user_notifications').update({'is_read': True}).or_(f"user_id.eq.{user_id},user_id.is.null").execute()
+                return True
+            except Exception as e:
+                print(f"[DBService] mark_user_notifications_read Supabase error: {e}")
+
+        items = getattr(mock_db, 'user_notifications', [])
+        for n in items:
+            if n.get('user_id') == user_id or n.get('user_id') is None:
+                if not notification_id or notification_id == 'all' or n.get('id') == notification_id:
                     n['is_read'] = True
         return True
+
+    @staticmethod
+    def get_all_notifications_admin(limit: int = 50) -> list:
+        """Fetch all notifications for admin audit / broadcast view."""
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                res = admin.table('user_notifications').select('*').order('created_at', desc=True).limit(limit).execute()
+                if res.data is not None:
+                    items = res.data
+                    user_ids = list(set([it['user_id'] for it in items if it.get('user_id')]))
+                    if user_ids:
+                        try:
+                            p_res = admin.table('profiles').select('id, email, full_name').in_('id', user_ids).execute()
+                            p_map = {p['id']: p for p in (p_res.data or [])}
+                            for it in items:
+                                prof = p_map.get(it.get('user_id'), {})
+                                it['user_email'] = prof.get('email', 'Direct User')
+                                it['user_name'] = prof.get('full_name', '')
+                        except Exception:
+                            pass
+                    return items
+            except Exception as e:
+                print(f"[DBService] get_all_notifications_admin Supabase error: {e}")
+
+        items = getattr(mock_db, 'user_notifications', [])
+        items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
+        return items[:limit]
 

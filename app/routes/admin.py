@@ -246,6 +246,18 @@ def verify_deposit(tx_id):
 
     res = DBService.verify_deposit_admin(tx_id, admin_user_id=admin_id, admin_notes=admin_notes)
     if res.get('success'):
+        # Dispatch notification to user
+        u_id = res.get('user_id')
+        amt = float(res.get('amount', 0.00))
+        rate = float(SettingsService.get_settings().get('ngn_per_usd_rate', 1600.00))
+        if u_id:
+            DBService.create_user_notification(
+                user_id=u_id,
+                title="Deposit Verified & Credited! 💳",
+                message=f"Your deposit of ${amt:.2f} (≈ ₦{amt * rate:,.2f}) has been verified and added to your wallet balance.",
+                type="deposit",
+                link="/wallet"
+            )
         flash(res.get('message', 'Deposit verified and wallet credited!'), 'success')
     else:
         flash(res.get('message', 'Failed to verify deposit.'), 'error')
@@ -364,6 +376,23 @@ def adjust_user_balance(user_id):
         )
 
         if res.get('success'):
+            rate = float(SettingsService.get_settings().get('ngn_per_usd_rate', 1600.00))
+            if adjustment_type == 'credit':
+                DBService.create_user_notification(
+                    user_id=user_id,
+                    title="Funds Added to Wallet 💰",
+                    message=f"An administrator credited ${amount:.2f} (≈ ₦{amount * rate:,.2f}) to your wallet. Reason: {reason}",
+                    type="admin_credit",
+                    link="/wallet"
+                )
+            else:
+                DBService.create_user_notification(
+                    user_id=user_id,
+                    title="Funds Deducted from Wallet ⚠️",
+                    message=f"An administrator deducted ${amount:.2f} (≈ ₦{amount * rate:,.2f}) from your wallet. Reason: {reason}",
+                    type="admin_debit",
+                    link="/wallet"
+                )
             flash(f"Wallet successfully adjusted by ${signed_amount:+.2f}. New balance: ${res.get('new_balance', 0):.2f}", 'success')
         else:
             flash(res.get('message', 'Failed to adjust balance.'), 'error')
@@ -460,4 +489,49 @@ def support_status(ticket_id):
         flash(res.get('message', 'Failed to update ticket status.'), 'error')
 
     return redirect(url_for('admin.support', ticket_id=ticket_id))
+
+
+# =============================================================================
+# ADMIN PUSH NOTIFICATIONS & BROADCASTS
+# =============================================================================
+
+@admin_bp.route('/notifications', methods=['GET', 'POST'])
+def notifications():
+    """Admin Push Notification Console: broadcast to all users or target a specific user."""
+    if request.method == 'POST':
+        target = request.form.get('target', 'all')
+        target_user_id = request.form.get('target_user_id', '').strip() or None
+        title = request.form.get('title', '').strip()
+        message = request.form.get('message', '').strip()
+        notif_type = request.form.get('type', 'promo')
+        link = request.form.get('link', '').strip() or None
+
+        if not title or not message:
+            flash('Title and message are required to broadcast a notification.', 'error')
+            return redirect(url_for('admin.notifications'))
+
+        recipient_id = target_user_id if target == 'single' else None
+        notif = DBService.create_user_notification(
+            user_id=recipient_id,
+            title=title,
+            message=message,
+            type=notif_type,
+            link=link
+        )
+        if notif:
+            target_desc = f"user ({recipient_id})" if recipient_id else "all registered users"
+            flash(f"Notification successfully pushed to {target_desc}!", 'success')
+        else:
+            flash('Failed to dispatch notification.', 'error')
+        return redirect(url_for('admin.notifications'))
+
+    all_notifs = DBService.get_all_notifications_admin(limit=50)
+    all_users = DBService.get_all_users_admin()
+    return render_template(
+        'admin/notifications.html',
+        notifications=all_notifs,
+        users=all_users,
+        active_page='notifications'
+    )
+
 

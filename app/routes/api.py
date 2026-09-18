@@ -103,6 +103,18 @@ def purchase_sim():
         'created_at': saved_order.get('created_at', datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'))
     }
 
+    # Trigger user notification
+    try:
+        DBService.create_user_notification(
+            user_id=user_id,
+            title=f"{service_name} Number Allocated 📱",
+            message=f"Your {country_name} number ({sim_result.get('phone_number', '')}) is active. Waiting for incoming SMS.",
+            type="purchase",
+            link="/sims/my-sims"
+        )
+    except Exception:
+        pass
+
     return jsonify({
         'success': True,
         'message': 'Virtual number activated successfully!',
@@ -202,6 +214,18 @@ def purchase_us_canada():
     }
     saved_order = DBService.create_order(user_id, order_data)
 
+    # Trigger user notification
+    try:
+        DBService.create_user_notification(
+            user_id=user_id,
+            title=f"{service_name} US Number Allocated 📱",
+            message=f"Your dedicated cellular line ({alloc_res.get('phone_number', '')}) is ready. Waiting for SMS code.",
+            type="purchase",
+            link="/sims/my-sims"
+        )
+    except Exception:
+        pass
+
     return jsonify({
         'success': True,
         'message': f"{country_name} {service_name} number activated successfully!",
@@ -227,6 +251,8 @@ def check_sms(order_id):
         return jsonify({
             'success': True,
             'sms_code': order['sms_code'],
+            'phone_number': order.get('phone_number', ''),
+            'service_name': order.get('service_name', 'Service'),
             'full_sms': order.get('full_sms_text', f"Your code is {order['sms_code']}")
         })
 
@@ -236,12 +262,10 @@ def check_sms(order_id):
     if status in ('active', 'pending') and order.get('created_at'):
         import datetime
         try:
-            # Handle standard ISO formats, drop the 'Z' if present
             cat_str = str(order.get('created_at')).replace('Z', '+00:00')
             try:
                 created_at = datetime.datetime.fromisoformat(cat_str)
             except ValueError:
-                # Fallback for simple format
                 created_at = datetime.datetime.strptime(cat_str, '%Y-%m-%d %H:%M:%S')
                 
             if created_at.tzinfo is None:
@@ -249,7 +273,6 @@ def check_sms(order_id):
                 
             now = datetime.datetime.now(datetime.timezone.utc)
             if (now - created_at).total_seconds() > 180: # 3 minutes total
-                # Auto refund on provider
                 prov_id = order.get('provider_order_id')
                 if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
                     try:
@@ -264,6 +287,19 @@ def check_sms(order_id):
                     reason="Auto-cancelled: SMS timeout (3 mins)"
                 )
                 
+                # Trigger user notification
+                try:
+                    cost = float(order.get('price', order.get('user_cost', 0.00)))
+                    DBService.create_user_notification(
+                        user_id=user_id,
+                        title="Order Timed Out & Refunded ⏱️",
+                        message=f"${cost:.2f} was returned to your wallet for order #{order.get('order_reference', order_id)} after reaching 3-minute timeout.",
+                        type="refund",
+                        link="/wallet"
+                    )
+                except Exception:
+                    pass
+
                 return jsonify({
                     'success': False,
                     'message': 'Verification timed out (3 mins). Full refund has been credited to your wallet.',
@@ -284,9 +320,25 @@ def check_sms(order_id):
             sender=order.get('service_name', 'Verification'),
             provider_sms_id=sms_info.get('provider_sms_id', '')
         )
+
+        # Trigger user notification
+        try:
+            DBService.create_user_notification(
+                user_id=user_id,
+                title="Verification Code Received! 🔑",
+                message=f"Your {order.get('service_name', 'Verification')} code is: {code} ({order.get('phone_number', '')}).",
+                type="purchase",
+                link="/sims/my-sims",
+                metadata={'sms_code': code, 'phone_number': order.get('phone_number', '')}
+            )
+        except Exception:
+            pass
+
         return jsonify({
             'success': True,
             'sms_code': code,
+            'phone_number': order.get('phone_number', ''),
+            'service_name': order.get('service_name', 'Service'),
             'full_sms': text
         })
 
@@ -360,6 +412,19 @@ def cancel_sim(order_id):
     refund_result = DBService.refund_order(order_id, user_id, reason="Cancelled by user before receiving code")
     if not refund_result.get('success'):
         return jsonify(refund_result), 400
+
+    # Trigger user notification
+    try:
+        cost = float(order.get('price', order.get('user_cost', 0.00)))
+        DBService.create_user_notification(
+            user_id=user_id,
+            title="Order Cancelled & Refunded 🔄",
+            message=f"${cost:.2f} has been refunded to your wallet for order #{order.get('order_reference', order_id)}.",
+            type="refund",
+            link="/wallet"
+        )
+    except Exception:
+        pass
 
     return jsonify(refund_result)
 
@@ -644,4 +709,57 @@ def admin_update_ticket_status(ticket_id):
     )
 
     return jsonify(res)
+
+
+# =============================================================================
+# USER IN-APP NOTIFICATIONS & BELL ALERTS APIS
+# =============================================================================
+
+@api_bp.route('/notifications', methods=['GET'])
+def get_user_notifications():
+    """Retrieve in-app notifications and announcements for the logged-in user."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    notifs = DBService.get_user_notifications(user['id'], limit=30)
+    unread_count = sum(1 for n in notifs if not n.get('is_read'))
+
+    return jsonify({
+        'success': True,
+        'notifications': notifs,
+        'unread_count': unread_count
+    })
+
+
+@api_bp.route('/notifications/unread', methods=['GET'])
+def get_user_notifications_unread():
+    """Quick periodic polling endpoint for the topbar bell icon and badge."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'unread_count': 0, 'notifications': []}), 401
+
+    notifs = DBService.get_user_notifications(user['id'], limit=8)
+    unread_count = sum(1 for n in notifs if not n.get('is_read'))
+
+    return jsonify({
+        'success': True,
+        'unread_count': unread_count,
+        'notifications': notifs
+    })
+
+
+@api_bp.route('/notifications/read', methods=['POST'])
+def mark_user_notifications_read():
+    """Mark a specific notification or all notifications as read."""
+    user = _get_current_user()
+    if not user:
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    data = request.json or {}
+    notif_id = data.get('notification_id')
+
+    ok = DBService.mark_user_notifications_read(user['id'], notif_id)
+    return jsonify({'success': ok})
+
 

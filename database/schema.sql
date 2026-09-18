@@ -598,3 +598,25 @@ CREATE TABLE IF NOT EXISTS public.support_notifications (
 CREATE INDEX IF NOT EXISTS idx_support_notifications_user_id ON public.support_notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_support_notifications_unread ON public.support_notifications(user_id, is_read);
 
+-- ==============================================================================
+-- 9. USER NOTIFICATIONS & ADMIN BROADCASTS
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.user_notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type VARCHAR(50) DEFAULT 'system' CHECK (type IN ('deposit', 'purchase', 'refund', 'admin_credit', 'admin_debit', 'promo', 'update', 'system')),
+    link VARCHAR(255),
+    metadata JSONB DEFAULT '{}'::jsonb,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id ON public.user_notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_created_at ON public.user_notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_unread ON public.user_notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_user_notifications_type ON public.user_notifications(type);
+
+

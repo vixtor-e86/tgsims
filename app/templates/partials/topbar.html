@@ -32,7 +32,27 @@
       <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
     </div>
 
-    <button class="icon-btn desktop-only" type="button" aria-label="Notifications">{{ icon('bell') }}<span class="dot"></span></button>
+    <div class="dropdown desktop-only" data-dropdown id="user-notifications-dropdown">
+      <button class="icon-btn" data-dropdown-trigger type="button" aria-label="Notifications" id="topbar-bell-trigger" style="position: relative;">
+        {{ icon('bell') }}
+        <span class="dot" id="bell-unread-dot" style="display: none; background: var(--brand); position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--surface);"></span>
+        <span class="badge" id="bell-unread-badge" style="display: none; position: absolute; top: -3px; right: -3px; font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 700; line-height: 1;">0</span>
+      </button>
+      <div class="dropdown-menu" role="menu" style="width: min(350px, calc(100vw - 24px)); max-height: 440px; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface-2);">
+          <div style="display: flex; align-items: center; gap: 0.45rem;">
+            <span style="font-weight: 700; font-size: 0.85rem; color: var(--text);">Notifications</span>
+            <span class="badge badge-brand" id="bell-header-badge" style="display: none; font-size: 0.65rem; padding: 0.1rem 0.4rem;">0 new</span>
+          </div>
+          <button type="button" id="mark-user-notifs-read-btn" style="background: none; border: none; font-size: 0.75rem; color: var(--brand); cursor: pointer; font-weight: 600;">Mark all read</button>
+        </div>
+        <div id="topbar-user-notifs" style="overflow-y: auto; max-height: 340px; flex: 1;">
+          <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">
+            No notifications yet
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="dropdown desktop-only" data-dropdown id="support-messages-dropdown">
       <button class="icon-btn" data-dropdown-trigger type="button" aria-label="Support Messages" id="topbar-mail-trigger" style="position: relative;">
         {{ icon('mail') }}

@@ -60,7 +60,7 @@
       <span>DEPOSIT VOLUME</span>
       {{ icon('trending-up') }}
     </div>
-    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text);">
+    <div style="font-size: 1.85rem; font-weight: 800; margin-top: 0.5rem; color: var(--text);" data-usd="{{ '%.2f'|format(stats.total_deposit_volume_usd) }}">
       ${{ '%.2f'|format(stats.total_deposit_volume_usd) }}
     </div>
     <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">

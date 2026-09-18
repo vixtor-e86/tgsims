@@ -95,7 +95,7 @@
 
               {# Price #}
               <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-weight: 700; color: var(--hue-success);">${{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}</span>
+                <span style="font-weight: 700; color: var(--hue-success);" data-usd="{{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}">${{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}</span>
                 {% if ord.provider_cost %}
                   <div style="font-size: 0.7rem; color: var(--text-muted);">
                     Cost: ${{ '%.2f'|format((ord.provider_cost or 0)|float) }}

@@ -38,10 +38,18 @@
         <a href="{{ url_for('admin.support') }}" class="btn btn-sm {% if active_page == 'support' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600; position: relative;">
           {{ icon('headset') }} Support Desk
         </a>
+        <a href="{{ url_for('admin.notifications') }}" class="btn btn-sm {% if active_page == 'notifications' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm); font-weight: 600; position: relative;">
+          {{ icon('bell') }} Push Notifications
+        </a>
       </nav>
 
       {# Right Controls #}
       <div style="display: flex; align-items: center; gap: 0.8rem;">
+        {# Admin Currency Switcher #}
+        <div class="cur-switch" role="group" aria-label="Currency" style="margin-right: 0.2rem;">
+          <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
+          <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
+        </div>
         <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-brand btn-sm" style="font-size: 0.82rem; border-radius: var(--r-sm); font-weight: 600;">
           {{ icon('arrow-left') }} Back to App
         </a>

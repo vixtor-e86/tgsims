@@ -274,6 +274,69 @@
   </div>
 </div>
 
+{# ---- OTP Code Drop Pop-up Modal ---- #}
+<div class="modal" id="otpDropModal" aria-hidden="true" role="dialog" aria-labelledby="otpDropModalTitle">
+  <div class="modal-box" style="max-width: 480px; text-align: center; overflow: hidden; padding: 0;">
+    <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(16, 185, 129, 0.15) 100%); padding: 1.75rem 1.5rem 1.25rem; position: relative;">
+      <button type="button" class="modal-close" data-modal-otp-close aria-label="Close modal" style="position: absolute; top: 12px; right: 12px;">&times;</button>
+      <div style="width: 56px; height: 56px; margin: 0 auto 0.75rem; border-radius: 50%; background: #10b981; color: #fff; display: grid; place-items: center; box-shadow: 0 8px 22px rgba(16, 185, 129, 0.4); animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        {{ icon('check') }}
+      </div>
+      <h3 class="modal-title" id="otpDropModalTitle" style="font-size: 1.35rem; font-weight: 800; color: var(--text); margin-bottom: 0.3rem;">
+        OTP Code Received!
+      </h3>
+      <p style="font-size: 0.86rem; color: var(--text-muted); margin: 0;">
+        Your verification code has dropped successfully.
+      </p>
+    </div>
+
+    <div class="modal-body" style="padding: 1.5rem;">
+      {# Service & Phone Number Row #}
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 0.85rem 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; text-align: left;">
+        <div style="min-width: 0;">
+          <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; color: var(--text-dim);" id="otpModalService">
+            Service
+          </div>
+          <div style="font-size: 1.05rem; font-weight: 800; font-family: var(--font-mono); color: var(--text); margin-top: 2px;" id="otpModalPhone">
+            +1 000 000 0000
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary" id="btnCopyPhone" style="font-weight: 600; font-size: 0.78rem; padding: 0.4rem 0.75rem; gap: 0.35rem; flex-shrink: 0;">
+          {{ icon('copy') }} <span id="copyPhoneText">Copy Number</span>
+        </button>
+      </div>
+
+      {# Prominent OTP Code Card #}
+      <div style="border: 2px dashed var(--brand); background: rgba(37, 99, 235, 0.05); border-radius: var(--r-lg); padding: 1.35rem 1rem; margin-bottom: 1.25rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--brand); margin-bottom: 0.35rem;">
+          Verification Code
+        </div>
+        <div id="otpModalCode" style="font-size: 2.3rem; font-weight: 900; font-family: var(--font-mono); letter-spacing: 0.15em; color: var(--text); padding: 0.35rem 0; user-select: all;">
+          ------
+        </div>
+        <button type="button" class="btn btn-primary btn-block" id="btnCopyOtp" style="margin-top: 0.85rem; font-weight: 800; font-size: 0.95rem; padding: 0.68rem 1.2rem; gap: 0.45rem;">
+          {{ icon('copy') }} <span id="copyOtpText">Copy OTP Code</span>
+        </button>
+      </div>
+
+      {# Optional Full SMS snippet #}
+      <div id="otpModalSmsWrap" style="display: none; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 0.85rem; text-align: left; margin-bottom: 1.25rem;">
+        <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-dim); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em;">
+          Full SMS Message
+        </div>
+        <div id="otpModalSmsText" style="font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.45; word-break: break-word;"></div>
+      </div>
+
+      {# Footer / Close Button #}
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary btn-block" data-modal-otp-close style="font-weight: 600;">
+          Cancel / Done
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   var cancelModal = document.getElementById('cancelModal');
@@ -290,6 +353,100 @@
   var modalReactivatePhone = document.getElementById('modalReactivatePhone');
   var modalReactivateRef = document.getElementById('modalReactivateRef');
   var btnConfirmReactivate = document.getElementById('btnConfirmReactivate');
+
+  // OTP Drop Pop-up Modal elements
+  var otpDropModal = document.getElementById('otpDropModal');
+  var otpModalService = document.getElementById('otpModalService');
+  var otpModalPhone = document.getElementById('otpModalPhone');
+  var otpModalCode = document.getElementById('otpModalCode');
+  var otpModalSmsWrap = document.getElementById('otpModalSmsWrap');
+  var otpModalSmsText = document.getElementById('otpModalSmsText');
+  var btnCopyPhone = document.getElementById('btnCopyPhone');
+  var copyPhoneText = document.getElementById('copyPhoneText');
+  var btnCopyOtp = document.getElementById('btnCopyOtp');
+  var copyOtpText = document.getElementById('copyOtpText');
+
+  var currentOtpCode = '';
+  var currentOtpPhone = '';
+
+  function showOtpDropModal(info) {
+    currentOtpCode = info.code || '';
+    currentOtpPhone = info.phone || '';
+
+    if (otpModalService) otpModalService.textContent = info.service || 'Virtual SIM';
+    if (otpModalPhone) otpModalPhone.textContent = currentOtpPhone || 'Private Line';
+    if (otpModalCode) otpModalCode.textContent = currentOtpCode || '------';
+
+    if (copyPhoneText) copyPhoneText.textContent = 'Copy Number';
+    if (copyOtpText) copyOtpText.textContent = 'Copy OTP Code';
+
+    if (info.fullSms && info.fullSms.trim() && info.fullSms !== info.code) {
+      if (otpModalSmsWrap) otpModalSmsWrap.style.display = 'block';
+      if (otpModalSmsText) otpModalSmsText.textContent = info.fullSms;
+    } else {
+      if (otpModalSmsWrap) otpModalSmsWrap.style.display = 'none';
+    }
+
+    if (otpDropModal) {
+      otpDropModal.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  function closeOtpDropModal() {
+    if (otpDropModal) {
+      otpDropModal.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+    setTimeout(function() {
+      window.location.reload();
+    }, 250);
+  }
+
+  document.querySelectorAll('[data-modal-otp-close]').forEach(function(el) {
+    el.addEventListener('click', closeOtpDropModal);
+  });
+  if (otpDropModal) {
+    otpDropModal.addEventListener('click', function(e) {
+      if (e.target === otpDropModal) closeOtpDropModal();
+    });
+  }
+
+  if (btnCopyPhone) {
+    btnCopyPhone.addEventListener('click', function() {
+      if (!currentOtpPhone) return;
+      var done = function() {
+        if (copyPhoneText) copyPhoneText.textContent = 'Copied!';
+        if (window.toast) window.toast('Phone number copied to clipboard', 'success');
+        setTimeout(function() {
+          if (copyPhoneText) copyPhoneText.textContent = 'Copy Number';
+        }, 2500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(currentOtpPhone).then(done).catch(done);
+      } else {
+        done();
+      }
+    });
+  }
+
+  if (btnCopyOtp) {
+    btnCopyOtp.addEventListener('click', function() {
+      if (!currentOtpCode) return;
+      var done = function() {
+        if (copyOtpText) copyOtpText.textContent = 'Copied!';
+        if (window.toast) window.toast('OTP code copied to clipboard', 'success');
+        setTimeout(function() {
+          if (copyOtpText) copyOtpText.textContent = 'Copy OTP Code';
+        }, 2500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(currentOtpCode).then(done).catch(done);
+      } else {
+        done();
+      }
+    });
+  }
 
   function formatCurrencyAmount(usd, fallbackFormatted) {
     if (usd !== undefined && usd !== null && usd !== '') {
@@ -387,8 +544,18 @@
         .then(function(r) { return r.json(); })
           .then(function(data) {
             if (data.success && data.sms_code) {
+              checkBtn.disabled = false;
+              checkBtn.textContent = 'Check Code';
+              var row = checkBtn.closest('tr');
+              var rowPhone = row ? (row.querySelector('.num-cell .td-mono') ? row.querySelector('.num-cell .td-mono').textContent.trim() : '') : '';
+              var rowSvc = row ? (row.querySelector('.svc .td-strong') ? row.querySelector('.svc .td-strong').textContent.trim() : '') : '';
               if (window.toast) window.toast('Verification code received: ' + data.sms_code, 'success');
-              setTimeout(function() { window.location.reload(); }, 600);
+              showOtpDropModal({
+                code: data.sms_code,
+                phone: data.phone_number || rowPhone,
+                service: data.service_name || rowSvc,
+                fullSms: data.full_sms
+              });
             } else if (data.auto_refunded) {
               if (window.toast) window.toast(data.message, 'warning');
               setTimeout(function() { window.location.reload(); }, 1500);
@@ -613,8 +780,16 @@
         .then(function(res) {
           if (res.success && res.sms_code) {
             clearInterval(pollInterval);
+            var row = firstActiveRow ? (firstActiveRow.closest('tr') || firstActiveRow) : null;
+            var rowPhone = row ? (row.querySelector('.num-cell .td-mono') ? row.querySelector('.num-cell .td-mono').textContent.trim() : '') : '';
+            var rowSvc = row ? (row.querySelector('.svc .td-strong') ? row.querySelector('.svc .td-strong').textContent.trim() : '') : '';
             if (window.toast) window.toast('Verification code received: ' + res.sms_code, 'success');
-            setTimeout(function() { window.location.reload(); }, 700);
+            showOtpDropModal({
+              code: res.sms_code,
+              phone: res.phone_number || rowPhone,
+              service: res.service_name || rowSvc,
+              fullSms: res.full_sms
+            });
           } else if (res.auto_refunded) {
             clearInterval(pollInterval);
             if (window.toast) window.toast(res.message, 'warning');
@@ -652,6 +827,11 @@
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.25; transform: scale(0.7); }
+}
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
 }
 </style>
 {% endblock %}

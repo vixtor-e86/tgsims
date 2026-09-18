@@ -66,7 +66,7 @@
 
               {# Balance #}
               <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-weight: 800; color: var(--hue-success); font-size: 1.05rem;">
+                <span style="font-weight: 800; color: var(--hue-success); font-size: 1.05rem;" data-usd="{{ '%.2f'|format(u.wallet_balance or 0) }}">
                   ${{ '%.2f'|format(u.wallet_balance or 0) }}
                 </span>
                 <div style="font-size: 0.75rem; color: var(--text-muted);">

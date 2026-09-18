@@ -209,6 +209,30 @@ class MockDatabase:
                 'created_at': '2026-09-17 14:30:00'
             }
         ]
+        self.user_notifications = [
+            {
+                'id': 'unotif-sample-1',
+                'user_id': 'demo-user-id',
+                'title': 'Welcome to Tgsims! 🎉',
+                'message': 'Welcome to Tgsims SMS platform. Your account is active and ready to verify numbers.',
+                'type': 'system',
+                'link': '/dashboard',
+                'metadata': {},
+                'is_read': False,
+                'created_at': '2026-09-18 10:00:00'
+            },
+            {
+                'id': 'unotif-sample-2',
+                'user_id': None,  # broadcast
+                'title': 'High Delivery Route Update',
+                'message': 'Tier-1 US Non-VoIP lines for WhatsApp & Telegram are now replenished with fresh routes.',
+                'type': 'update',
+                'link': '/sims/us-canada',
+                'metadata': {},
+                'is_read': False,
+                'created_at': '2026-09-18 12:00:00'
+            }
+        ]
 
 mock_db = MockDatabase()
 
