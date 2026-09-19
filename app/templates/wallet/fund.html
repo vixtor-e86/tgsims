@@ -64,6 +64,31 @@
       </div>
     </div>
 
+    {# ---- Crypto details (only for crypto method) ---- #}
+    <div class="crypto-fields" data-crypto-fields style="display: none; margin-top: var(--sp-4);">
+      <label class="fund-label" for="crypto-currency-select">Select Cryptocurrency & Network</label>
+      <select id="crypto-currency-select" class="input" style="width: 100%; font-weight: 600; padding: 0.65rem 0.85rem;" data-crypto-select>
+        {% for c in crypto_currencies %}
+        <option value="{{ c.ticker }}" data-network="{{ c.network }}" data-symbol="{{ c.symbol }}" data-badge="{{ c.badge }}" {% if c.ticker == 'usdttrc20' %}selected{% endif %}>
+          {{ c.name }} &bull; {{ c.network }} ({{ c.badge }})
+        </option>
+        {% endfor %}
+      </select>
+      <div style="font-size: 0.82rem; color: var(--text-dim); margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--hue-success, #10b981);"></span>
+        <span>Dedicated visual payment address with QR code &bull; 0% platform processing fee &bull; Instant auto-credit.</span>
+      </div>
+      <div id="crypto-min-notice" style="font-size: 0.78rem; color: var(--hue-warning, #f59e0b); margin-top: 0.35rem; display: none;">
+        Minimum deposit for this coin is <strong id="crypto-min-val">$19.00</strong>.
+      </div>
+    </div>
+
+    {# ---- Bank transfer details (only for bank method) ---- #}
+    <div class="bank-fields" data-bank-fields style="display: none; margin-top: var(--sp-4); padding: var(--sp-4); background: var(--surface-2); border-radius: var(--r-md); border: 1px dashed var(--border);">
+      <div style="font-weight: 700; margin-bottom: 0.35rem; color: var(--text);">Direct Bank Transfer Instructions</div>
+      <p style="font-size: 0.85rem; color: var(--text-dim); white-space: pre-wrap; margin: 0; line-height: 1.5;">{{ settings.manual_bank_details or 'Please contact support to complete manual bank wire or fund via Crypto / Card for instant automated crediting.' }}</p>
+    </div>
+
     {# ---- Order summary ---- #}
     <div class="order-summary">
       <div class="summary-row">
@@ -88,6 +113,95 @@
     <p class="fund-secure">{{ icon('lock') }} Payments are secure and encrypted.</p>
   </section>
 </div>
+
+{# ---- Dedicated NOWPayments Crypto Modal ---- #}
+<div class="modal" id="crypto-payment-modal" data-crypto-modal>
+  <div class="modal-box" style="max-width: 480px; text-align: center;">
+    <div class="modal-header">
+      <div style="text-align: left;">
+        <h3 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+          <span style="color: var(--brand-primary, #6366f1);">{{ icon('crypto') }}</span>
+          <span id="modal-crypto-title">Deposit Cryptocurrency</span>
+        </h3>
+        <p style="font-size: 0.78rem; color: var(--text-dim); margin: 0.2rem 0 0 0;">
+          Order ID: <span id="modal-crypto-order-id" style="font-family: var(--font-mono); color: var(--text); font-weight: 600;">---</span>
+        </p>
+      </div>
+      <button type="button" class="modal-close" data-close-crypto-modal aria-label="Close modal">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+      <!-- Real-time Status Badge -->
+      <div id="crypto-status-container" style="margin-bottom: 1.25rem;">
+        <span class="badge" id="crypto-status-pill" style="padding: 0.45rem 0.95rem; font-size: 0.85rem; font-weight: 700; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 999px;">
+          <span class="crypto-pulse-dot"></span>
+          <span id="crypto-status-text">Waiting for transaction...</span>
+        </span>
+      </div>
+
+      <!-- QR Code Display -->
+      <div style="display: inline-block; padding: 0.65rem; background: #ffffff; border-radius: var(--r-md); box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-bottom: 1.25rem; border: 1px solid var(--border);">
+        <img id="crypto-qr-code" src="" alt="Payment QR Code" style="width: 190px; height: 190px; display: block; image-rendering: pixelated; margin: 0 auto;">
+      </div>
+
+      <!-- Amount Box with Copy -->
+      <div style="margin-bottom: 0.85rem; text-align: left; background: var(--surface-2); padding: 0.75rem 1rem; border-radius: var(--r-md); border: 1px solid var(--border);">
+        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; letter-spacing: 0.04em;">Exact Amount to Send</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; gap: 0.5rem;">
+          <span style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--text);" id="crypto-modal-amount">0.00</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-amount" style="padding: 0.3rem 0.7rem; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.35rem;">
+            {{ icon('copy') }} <span>Copy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Address Box with Copy -->
+      <div style="margin-bottom: 1rem; text-align: left; background: var(--surface-2); padding: 0.75rem 1rem; border-radius: var(--r-md); border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; letter-spacing: 0.04em;">Deposit Address</div>
+          <span class="badge badge-info" id="crypto-modal-network" style="font-size: 0.7rem; padding: 0.15rem 0.5rem; text-transform: uppercase;">TRC20</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; gap: 0.5rem;">
+          <span style="font-size: 0.82rem; font-family: var(--font-mono); color: var(--text); word-break: break-all; line-height: 1.3;" id="crypto-modal-address">---</span>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-copy-address" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.35rem;">
+            {{ icon('copy') }} <span>Copy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Safety Notice -->
+      <div style="font-size: 0.78rem; color: #f59e0b; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--r-sm); padding: 0.65rem 0.85rem; text-align: left; margin-bottom: 1.25rem; line-height: 1.45;">
+        <strong>Safety Note:</strong> Send only <strong id="crypto-notice-symbol">USDT</strong> via the <strong id="crypto-notice-network">Tron (TRC20)</strong> network. Sending via another network or sending less than the required amount may result in delays or lost funds.
+      </div>
+
+      <!-- Control Buttons -->
+      <div style="display: flex; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary btn-block" id="btn-check-crypto-status" style="font-weight: 700;">
+          {{ icon('refresh') }} Check Status Now
+        </button>
+        <button type="button" class="btn btn-ghost" data-close-crypto-modal style="padding: 0 1.2rem;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.crypto-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: cryptoPulseAnim 1.6s ease-in-out infinite;
+}
+@keyframes cryptoPulseAnim {
+  0% { transform: scale(0.85); opacity: 0.4; }
+  50% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(0.85); opacity: 0.4; }
+}
+</style>
 {% endblock %}
 
 {% block scripts %}

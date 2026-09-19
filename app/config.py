@@ -19,3 +19,6 @@ class Config:
     DEV_PASSWORD = os.getenv('DEV_PASSWORD', 'Icui4cu')
     TEXTVERIFIED_API_KEY = (os.getenv('TEXTVERIFIED_API_KEY') or '').strip()
     TEXTVERIFIED_USERNAME = (os.getenv('TEXTVERIFIED_USERNAME') or '').strip()
+    NOWPAYMENTS_API_KEY = (os.getenv('NOWPAYMENTS_API_KEY') or '').strip()
+    NOWPAYMENTS_IPN_SECRET = (os.getenv('NOWPAYMENTS_IPN_SECRET') or '').strip()
+    NOWPAYMENTS_BASE_URL = (os.getenv('NOWPAYMENTS_BASE_URL') or 'https://api.nowpayments.io/v1').strip().rstrip('/')

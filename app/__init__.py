@@ -35,10 +35,12 @@ def create_app(config_class=Config):
     @app.before_request
     def dev_gate_protect():
         """Ensure visitor has entered access password before viewing any page."""
-        # Whitelist static assets, favicon, and the unlock page
+        # Whitelist static assets, favicon, the unlock page, and payment webhooks
         if request.path.startswith('/static') or request.path == '/favicon.ico' or request.endpoint == 'static':
             return None
         if request.endpoint == 'public.site_unlock':
+            return None
+        if request.path.startswith('/api/payments/crypto/webhook') or request.path.startswith('/api/payments/nowpayments'):
             return None
 
         # Check if site is unlocked in this browser session

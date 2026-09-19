@@ -45,8 +45,14 @@ def fund():
         {'id': 'crypto', 'label': 'Cryptocurrency', 'note': 'BTC, USDT, ETH', 'icon': 'crypto'},
         {'id': 'bank', 'label': 'Bank Transfer', 'note': 'Local / Wire', 'icon': 'bank'},
     ]
-    fee_rate = 0.015  # 1.5% processing fee
+    settings = DBService.get_platform_settings()
+    from app.services.nowpayments_service import NOWPaymentsService
+    crypto_currencies = NOWPaymentsService.SUPPORTED_CURRENCIES
+    nowpayments_active = NOWPaymentsService.is_configured()
 
     return render_template('wallet/fund.html', wallet=wallet,
                            presets_ngn=presets_ngn, methods=methods,
-                           fee_rate=fee_rate, user=user)
+                           fee_rate=fee_rate, user=user,
+                           settings=settings,
+                           crypto_currencies=crypto_currencies,
+                           nowpayments_active=nowpayments_active)

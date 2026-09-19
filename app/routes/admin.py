@@ -42,6 +42,8 @@ def require_admin():
             'admin.users',
             'admin.update_user_role',
             'admin.adjust_user_balance',
+            'admin.verify_deposit',
+            'admin.reject_deposit',
         )
         if any(endpoint.startswith(ep) for ep in admin_only_endpoints):
             flash('Access restricted. Support staff permissions are limited to Support, Notifications, Orders, and Deposits.', 'error')
@@ -274,6 +276,10 @@ def deposits():
 def verify_deposit(tx_id):
     """Admin manually approves and credits a pending deposit."""
     admin_user = session.get('user', {})
+    if admin_user.get('role') != 'admin':
+        flash('Permission denied. Only administrators can verify and credit deposits.', 'error')
+        return redirect(url_for('admin.deposits'))
+
     admin_id = admin_user.get('id', 'admin')
     admin_notes = request.form.get('admin_notes', f"Verified by {admin_user.get('full_name', 'Admin')}")
 
@@ -302,6 +308,10 @@ def verify_deposit(tx_id):
 def reject_deposit(tx_id):
     """Admin rejects a pending deposit."""
     admin_user = session.get('user', {})
+    if admin_user.get('role') != 'admin':
+        flash('Permission denied. Only administrators can reject deposits.', 'error')
+        return redirect(url_for('admin.deposits'))
+
     admin_id = admin_user.get('id', 'admin')
     reason = request.form.get('reason', 'Payment not received or invalid reference')
 

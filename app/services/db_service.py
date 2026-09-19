@@ -757,6 +757,262 @@ class DBService:
             return {'success': False, 'message': f"Error rejecting deposit: {e}"}
 
     @staticmethod
+    def record_pending_crypto_deposit(user_id: str, amount_usd: float, payment_id: str,
+                                      pay_address: str, pay_amount: float, pay_currency: str,
+                                      network: str = '', order_id: str = '',
+                                      extra_meta: dict = None) -> dict:
+        """Records a pending crypto deposit transaction for real-time tracking."""
+        ref = f"NP-{payment_id}"
+        meta = {
+            'payment_id': str(payment_id),
+            'pay_address': pay_address,
+            'pay_amount': pay_amount,
+            'pay_currency': pay_currency,
+            'network': network,
+            'order_id': order_id,
+            'gateway': 'nowpayments'
+        }
+        if extra_meta:
+            meta.update(extra_meta)
+
+        desc = f"Crypto Deposit ({pay_currency.upper()}) via NOWPayments"
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        if not admin or not DBService._is_uuid(user_id):
+            existing = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
+            if existing:
+                return {'success': True, 'transaction': existing}
+            mock_tx = {
+                'id': f"np-tx-{len(mock_db.transactions) + 1}",
+                'user_id': user_id,
+                'amount': amount_usd,
+                'type': 'deposit',
+                'status': 'pending',
+                'reference': ref,
+                'description': desc,
+                'payment_channel': 'crypto_nowpayments',
+                'metadata': meta,
+                'created_at': now_iso
+            }
+            mock_db.transactions.insert(0, mock_tx)
+            return {'success': True, 'transaction': mock_tx}
+
+        try:
+            chk = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
+            if chk.data:
+                return {'success': True, 'transaction': chk.data[0]}
+
+            tx_data = {
+                'user_id': user_id,
+                'amount': amount_usd,
+                'type': 'deposit',
+                'status': 'pending',
+                'reference': ref,
+                'description': desc,
+                'payment_channel': 'crypto_nowpayments',
+                'metadata': meta
+            }
+            ins = admin.table('wallet_transactions').insert(tx_data).execute()
+            created_tx = ins.data[0] if ins.data else tx_data
+            return {'success': True, 'transaction': created_tx}
+        except Exception as e:
+            print(f"[DBService] record_pending_crypto_deposit error: {e}")
+            return {'success': False, 'message': str(e)}
+
+    @staticmethod
+    def get_crypto_deposit_by_payment_id(payment_id: str, user_id: str = None) -> dict:
+        """Looks up a crypto deposit transaction by its NOWPayments payment ID."""
+        ref = f"NP-{payment_id}"
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                q = admin.table('wallet_transactions').select('*').eq('reference', ref)
+                if user_id:
+                    q = q.eq('user_id', user_id)
+                res = q.limit(1).execute()
+                if res.data:
+                    return res.data[0]
+            except Exception as e:
+                print(f"[DBService] get_crypto_deposit_by_payment_id error: {e}")
+
+        tx = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
+        if tx and (not user_id or tx.get('user_id') == user_id):
+            return tx
+        return None
+
+    @staticmethod
+    def complete_crypto_deposit(payment_id: str, actually_paid: float = None,
+                                notes: str = 'Automated NOWPayments IPN verification',
+                                metadata_update: dict = None) -> dict:
+        """
+        Idempotently marks a NOWPayments crypto deposit as completed and credits the user's wallet.
+        Guarantees protection against double-crediting.
+        """
+        ref = f"NP-{payment_id}"
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        if admin:
+            try:
+                tx_res = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
+                if not tx_res.data:
+                    tx_res = admin.table('wallet_transactions').select('*').eq('metadata->>payment_id', str(payment_id)).limit(1).execute()
+
+                if not tx_res.data:
+                    # Check mock fallback (e.g. demo users or local tests)
+                    tx_mock = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
+                    if not tx_mock:
+                        return {'success': False, 'message': f'Transaction for NOWPayments ID {payment_id} not found.'}
+                else:
+                    tx_mock = None
+
+                if tx_mock:
+                    tx = tx_mock
+                    tx_id = tx['id']
+                    user_id = tx['user_id']
+                    amount_usd = float(tx.get('amount', 0.00))
+
+                    if tx.get('status') == 'completed':
+                        return {'success': True, 'already_completed': True, 'amount': amount_usd, 'user_id': user_id}
+
+                    tx['status'] = 'completed'
+                    tx['verified_at'] = now_iso
+                    wallet = mock_db.wallets.get(user_id, {'balance': 0.00, 'currency': 'USD'})
+                    wallet['balance'] += amount_usd
+                    mock_db.wallets[user_id] = wallet
+
+                    return {
+                        'success': True,
+                        'already_completed': False,
+                        'new_balance': wallet['balance'],
+                        'user_id': user_id,
+                        'amount': amount_usd
+                    }
+
+                tx = tx_res.data[0]
+                tx_id = tx['id']
+                user_id = tx['user_id']
+                amount_usd = float(tx.get('amount', 0.00))
+
+                # IDEMPOTENCY CHECK: Never credit twice
+                if tx.get('status') == 'completed':
+                    return {
+                        'success': True,
+                        'already_completed': True,
+                        'message': 'Transaction was already credited.',
+                        'user_id': user_id,
+                        'amount': amount_usd
+                    }
+
+                meta = tx.get('metadata') or {}
+                if metadata_update:
+                    meta.update(metadata_update)
+                if actually_paid is not None:
+                    meta['actually_paid'] = actually_paid
+                meta['verified_at'] = now_iso
+                meta['verified_by_system'] = 'NOWPayments IPN'
+
+                existing_cols = set(tx.keys())
+                upd_data = {
+                    'status': 'completed',
+                    'metadata': meta
+                }
+                if 'verified_at' in existing_cols:
+                    upd_data['verified_at'] = now_iso
+                if 'admin_notes' in existing_cols:
+                    upd_data['admin_notes'] = notes
+
+                admin.table('wallet_transactions').update(upd_data).eq('id', tx_id).execute()
+
+                # Credit user wallet
+                w_res = admin.table('wallets').select('id, balance').eq('user_id', user_id).limit(1).execute()
+                if w_res.data:
+                    cur_bal = float(w_res.data[0].get('balance', 0.00))
+                    new_bal = round(cur_bal + amount_usd, 2)
+                    admin.table('wallets').update({
+                        'balance': new_bal,
+                        'updated_at': now_iso
+                    }).eq('user_id', user_id).execute()
+                else:
+                    new_bal = round(amount_usd, 2)
+                    admin.table('wallets').insert({
+                        'user_id': user_id,
+                        'balance': new_bal,
+                        'currency': 'USD'
+                    }).execute()
+
+                # Send in-app notification
+                pay_curr = (meta.get('pay_currency') or 'crypto').upper()
+                DBService.create_user_notification(
+                    user_id=user_id,
+                    title="Crypto Deposit Credited!",
+                    message=f"Your {pay_curr} deposit of ${amount_usd:.2f} has been verified and added to your wallet balance.",
+                    type="deposit",
+                    link="/wallet",
+                    metadata={'payment_id': payment_id, 'amount': amount_usd}
+                )
+
+                return {
+                    'success': True,
+                    'already_completed': False,
+                    'new_balance': new_bal,
+                    'user_id': user_id,
+                    'amount': amount_usd,
+                    'message': f"Successfully credited ${amount_usd:.2f} to wallet."
+                }
+            except Exception as e:
+                print(f"[DBService] complete_crypto_deposit error: {e}")
+                return {'success': False, 'message': str(e)}
+
+        # Mock fallback
+        tx = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
+        if not tx:
+            return {'success': False, 'message': 'Mock transaction not found.'}
+
+        if tx.get('status') == 'completed':
+            return {'success': True, 'already_completed': True, 'amount': tx['amount'], 'user_id': tx['user_id']}
+
+        tx['status'] = 'completed'
+        tx['verified_at'] = now_iso
+        user_id = tx['user_id']
+        amount_usd = float(tx.get('amount', 0.00))
+
+        wallet = mock_db.wallets.get(user_id, {'balance': 0.00, 'currency': 'USD'})
+        wallet['balance'] += amount_usd
+        mock_db.wallets[user_id] = wallet
+
+        return {
+            'success': True,
+            'already_completed': False,
+            'new_balance': wallet['balance'],
+            'user_id': user_id,
+            'amount': amount_usd
+        }
+
+    @staticmethod
+    def fail_crypto_deposit(payment_id: str, reason: str = 'Payment expired or failed in gateway') -> dict:
+        """Marks a pending crypto deposit as failed/cancelled."""
+        ref = f"NP-{payment_id}"
+        admin = get_supabase_admin()
+        if admin:
+            try:
+                tx_res = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
+                if tx_res.data:
+                    tx = tx_res.data[0]
+                    if tx.get('status') != 'completed':
+                        meta = tx.get('metadata') or {}
+                        meta['failure_reason'] = reason
+                        admin.table('wallet_transactions').update({
+                            'status': 'failed',
+                            'metadata': meta
+                        }).eq('id', tx['id']).execute()
+                        return {'success': True}
+            except Exception as e:
+                print(f"[DBService] fail_crypto_deposit error: {e}")
+        return {'success': False}
+
+    @staticmethod
     def get_all_orders_admin(status_filter: str = None, limit: int = 100) -> list:
         """Fetch all user SIM orders across the platform."""
         admin = get_supabase_admin()

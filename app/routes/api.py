@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 from app.services.sim_provider import SIMProviderService
 from app.services.db_service import DBService
+from app.services.nowpayments_service import NOWPaymentsService
 import datetime
 import uuid
 
@@ -462,6 +463,121 @@ def deposit():
         'message': f'Wallet funded with ${amount:.2f} successfully!',
         'new_balance': credit_res.get('new_balance')
     })
+
+
+# =============================================================================
+# NOWPAYMENTS CRYPTOCURRENCY GATEWAY APIS
+# =============================================================================
+
+@api_bp.route('/payments/crypto/currencies', methods=['GET'])
+def get_crypto_currencies():
+    """Returns supported cryptocurrency payment options and gateway status."""
+    currencies = []
+    for c in NOWPaymentsService.SUPPORTED_CURRENCIES:
+        item = dict(c)
+        currencies.append(item)
+    return jsonify({
+        'success': True,
+        'currencies': currencies,
+        'gateway_active': NOWPaymentsService.is_configured()
+    })
+
+
+@api_bp.route('/payments/crypto/create', methods=['POST'])
+def create_crypto_payment():
+    """Generates a dedicated crypto deposit address with QR code for the authenticated user."""
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in to make a deposit.'}), 401
+
+    data = request.json or {}
+    try:
+        amount = float(data.get('amount', 0))
+    except (ValueError, TypeError):
+        amount = 0.0
+
+    pay_currency = (data.get('currency') or 'usdttrc20').strip().lower()
+
+    if amount <= 0:
+        return jsonify({'success': False, 'message': 'Deposit amount must be greater than zero.'}), 400
+
+    user_data = session.get('user', {})
+    user_email = user_data.get('email', '')
+
+    proto = request.headers.get('X-Forwarded-Proto') or request.scheme
+    host = request.headers.get('X-Forwarded-Host') or request.host
+    callback_url = f"{proto}://{host}/api/payments/crypto/webhook"
+
+    res = NOWPaymentsService.create_payment(
+        amount_usd=amount,
+        pay_currency=pay_currency,
+        user_id=user_id,
+        user_email=user_email,
+        ipn_callback_url=callback_url
+    )
+
+    status_code = 200 if res.get('success') else 400
+    return jsonify(res), status_code
+
+
+@api_bp.route('/payments/crypto/status/<payment_id>', methods=['GET'])
+def check_crypto_payment_status(payment_id):
+    """
+    Checks the real-time status of a crypto payment session.
+    Protected to only allow the owner or admin to inspect.
+    """
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    tx = DBService.get_crypto_deposit_by_payment_id(payment_id)
+    user_role = session.get('user', {}).get('role')
+    if tx and tx.get('user_id') != user_id and user_role != 'admin':
+        return jsonify({'success': False, 'message': 'Forbidden'}), 403
+
+    if tx and tx.get('status') == 'completed':
+        wallet = DBService.get_wallet(user_id)
+        return jsonify({
+            'success': True,
+            'status': 'finished',
+            'is_completed': True,
+            'balance': wallet.get('balance', 0.00),
+            'message': 'Deposit credited successfully.'
+        })
+
+    res = NOWPaymentsService.process_payment_update(payment_id)
+    wallet = DBService.get_wallet(user_id)
+    res['balance'] = wallet.get('balance', 0.00)
+    res['is_completed'] = (res.get('status') in ('finished', 'confirmed', 'sending'))
+    return jsonify(res)
+
+
+@api_bp.route('/payments/crypto/webhook', methods=['POST'])
+@api_bp.route('/payments/nowpayments/ipn', methods=['POST'])
+def nowpayments_ipn_webhook():
+    """
+    Public webhook receiver for NOWPayments Instant Payment Notifications (IPN).
+    Enforces HMAC-SHA512 cryptographic signature validation and out-of-band verification.
+    """
+    received_sig = request.headers.get('x-nowpayments-sig')
+    if not received_sig:
+        print("[NOWPayments Webhook] Rejected: Missing x-nowpayments-sig header.")
+        return jsonify({'error': 'Missing signature header'}), 400
+
+    payload = request.get_json(force=True, silent=True) or {}
+    if not payload:
+        return jsonify({'error': 'Invalid JSON body'}), 400
+
+    is_valid = NOWPaymentsService.verify_ipn_signature(payload, received_sig)
+    if not is_valid:
+        print(f"[NOWPayments Webhook] CRITICAL SECURITY ALERT: Invalid HMAC signature for payment {payload.get('payment_id')}.")
+        return jsonify({'error': 'Invalid signature'}), 403
+
+    payment_id = payload.get('payment_id')
+    print(f"[NOWPayments Webhook] Verified signature for payment_id: {payment_id}, status: {payload.get('payment_status')}")
+
+    res = NOWPaymentsService.process_payment_update(payment_id, webhook_payload=payload)
+    return jsonify({'status': 'ok', 'result': res}), 200
 
 
 @api_bp.route('/reactivate-order/<order_id>', methods=['POST'])

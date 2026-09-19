@@ -186,6 +186,8 @@ def register():
                 msg = 'An account with this email already exists. Please log in.'
             elif 'rate limit' in err.lower():
                 msg = 'Email rate limit reached. In Supabase Dashboard > Authentication > Providers > Email, turn off "Confirm email" for instant registrations.'
+            elif 'profiles_username_key' in err or 'duplicate key value violates unique constraint' in err:
+                msg = 'This username is blocked by a database uniqueness rule. Please run Migration 007 in your Supabase SQL Editor to allow duplicate usernames.'
             else:
                 msg = f"Registration error: {err}"
             flash(msg, 'error')

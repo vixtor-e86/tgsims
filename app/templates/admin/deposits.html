@@ -62,8 +62,15 @@
               <td style="padding: 0.75rem 0.5rem;">
                 {% if dep.payment_channel == 'squad' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">Squad (Bank/Card)</span>
-                {% elif dep.payment_channel == 'crypto' %}
-                  <span class="badge" style="background: var(--warning-bg); color: var(--warning); border: 1px solid var(--border); font-size: 0.75rem;">Crypto</span>
+                {% elif dep.payment_channel == 'crypto_nowpayments' or dep.payment_channel == 'crypto' %}
+                  <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.75rem;">
+                    Crypto (NOWPayments)
+                  </span>
+                  {% if dep.metadata and dep.metadata.pay_currency %}
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; font-weight: 600;">
+                      {{ dep.metadata.pay_currency|upper }} {% if dep.metadata.network %}({{ dep.metadata.network|upper }}){% endif %}
+                    </div>
+                  {% endif %}
                 {% elif dep.payment_channel == 'card' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">Debit Card</span>
                 {% else %}
@@ -84,7 +91,11 @@
               {# Reference #}
               <td style="padding: 0.75rem 0.5rem;">
                 <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ dep.reference }}</code>
-                {% if dep.metadata and dep.metadata.hash %}
+                {% if dep.metadata and dep.metadata.pay_address %}
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; font-family: var(--font-mono); word-break: break-all;">
+                    {{ dep.metadata.pay_address[:12] }}...{{ dep.metadata.pay_address[-6:] }}
+                  </div>
+                {% elif dep.metadata and dep.metadata.hash %}
                   <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
                     Hash: {{ dep.metadata.hash }}
                   </div>
@@ -96,11 +107,15 @@
                 {% if dep.status == 'completed' %}
                   <span class="badge badge-success" style="font-size: 0.75rem;">Completed</span>
                 {% elif dep.status == 'pending' %}
-                  <span class="badge badge-warning" style="font-size: 0.75rem;">Pending Approval</span>
+                  <span class="badge badge-warning" style="font-size: 0.75rem;">Pending Confirmation</span>
                 {% else %}
                   <span class="badge badge-danger" style="font-size: 0.75rem;">{{ dep.status|capitalize }}</span>
                 {% endif %}
-                {% if dep.verified_at %}
+                {% if dep.metadata and dep.metadata.verified_by_system %}
+                  <div style="font-size: 0.7rem; color: var(--hue-success); margin-top: 0.15rem; font-weight: 600;">
+                    ✓ Automated IPN
+                  </div>
+                {% elif dep.verified_at %}
                   <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
                     Audited: {{ dep.verified_at[:10] }}
                   </div>
@@ -115,24 +130,28 @@
               {# Action #}
               <td style="padding: 0.75rem 0.5rem; text-align: right;">
                 {% if dep.status == 'pending' %}
-                  <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
-                    {# Verify Button #}
-                    <form action="{{ url_for('admin.verify_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Verify and credit ${{ '%.2f'|format(dep.amount) }} (₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}) to {{ dep.user_name or dep.user_email }}?');">
-                      <input type="hidden" name="return_status" value="{{ status_filter }}">
-                      <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                        {{ icon('check') }} Verify & Credit
-                      </button>
-                    </form>
+                  {% if current_user and current_user.role == 'admin' %}
+                    <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                      {# Verify Button #}
+                      <form action="{{ url_for('admin.verify_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Verify and credit ${{ '%.2f'|format(dep.amount) }} (₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}) to {{ dep.user_name or dep.user_email }}?');">
+                        <input type="hidden" name="return_status" value="{{ status_filter }}">
+                        <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                          {{ icon('check') }} Verify & Credit
+                        </button>
+                      </form>
 
-                    {# Reject Button #}
-                    <form action="{{ url_for('admin.reject_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Reject this deposit?');">
-                      <input type="hidden" name="return_status" value="{{ status_filter }}">
-                      <input type="hidden" name="reason" value="Deposit rejected by admin">
-                      <button type="submit" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                        {{ icon('x') }} Reject
-                      </button>
-                    </form>
-                  </div>
+                      {# Reject Button #}
+                      <form action="{{ url_for('admin.reject_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Reject this deposit?');">
+                        <input type="hidden" name="return_status" value="{{ status_filter }}">
+                        <input type="hidden" name="reason" value="Deposit rejected by admin">
+                        <button type="submit" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                          {{ icon('x') }} Reject
+                        </button>
+                      </form>
+                    </div>
+                  {% else %}
+                    <span class="badge badge-muted" style="font-size: 0.72rem; padding: 0.25rem 0.5rem;">View Only (Admin Required)</span>
+                  {% endif %}
                 {% else %}
                   <span style="font-size: 0.8rem; color: var(--text-muted);">Processed</span>
                 {% endif %}
