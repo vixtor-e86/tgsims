@@ -45,7 +45,9 @@ def fund():
         {'id': 'crypto', 'label': 'Cryptocurrency', 'note': 'BTC, USDT, ETH', 'icon': 'crypto'},
         {'id': 'bank', 'label': 'Bank Transfer', 'note': 'Local / Wire', 'icon': 'bank'},
     ]
-    settings = DBService.get_platform_settings()
+    fee_rate = 0.015  # 1.5% processing fee
+    from app.services.settings_service import SettingsService
+    settings = SettingsService.get_settings()
     from app.services.nowpayments_service import NOWPaymentsService
     crypto_currencies = NOWPaymentsService.SUPPORTED_CURRENCIES
     nowpayments_active = NOWPaymentsService.is_configured()

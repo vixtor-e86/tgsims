@@ -1774,3 +1774,10 @@ class DBService:
         items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
         return items[:limit]
 
+    @staticmethod
+    def get_platform_settings():
+        """Retrieve cached platform pricing and configuration settings."""
+        from app.services.settings_service import SettingsService
+        return SettingsService.get_settings()
+
+
