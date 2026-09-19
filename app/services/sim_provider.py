@@ -450,20 +450,44 @@ class SIMProviderService:
         """Polls 5sim for incoming SMS."""
         client = cls.get_client()
 
-        # Find order in DB to get provider_order_id
+        # Find order in DB to get provider_order_id and created_at
+        from app.services.supabase_client import get_supabase_admin, reset_supabase_admin
         admin = get_supabase_admin()
         prov_order_id = None
+        order = None
         if admin:
-            try:
-                res = admin.table('sim_orders').select('provider_order_id').or_(f"id.eq.{order_id},order_reference.eq.{order_id}").limit(1).execute()
-                if res.data and len(res.data) > 0:
-                    prov_order_id = res.data[0].get('provider_order_id')
-            except Exception:
-                pass
+            for attempt in range(2):
+                try:
+                    import uuid
+                    is_valid_uuid = False
+                    try:
+                        uuid.UUID(str(order_id))
+                        is_valid_uuid = True
+                    except (ValueError, TypeError):
+                        is_valid_uuid = False
+
+                    if is_valid_uuid:
+                        q = admin.table('sim_orders').select('*').or_(f"id.eq.{order_id},order_reference.eq.{order_id}")
+                    else:
+                        q = admin.table('sim_orders').select('*').eq('order_reference', order_id)
+                    res = q.limit(1).execute()
+                    if res.data and len(res.data) > 0:
+                        order = res.data[0]
+                        prov_order_id = order.get('provider_order_id')
+                    break
+                except Exception as e:
+                    err_str = str(e).lower()
+                    if ('10054' in err_str or 'connection' in err_str or 'closed' in err_str) and attempt == 0:
+                        reset_supabase_admin()
+                        admin = get_supabase_admin(fresh=True)
+                        continue
+                    print(f"[check_sms] error looking up order: {e}")
+                    break
 
         if not prov_order_id:
             for o in mock_db.sim_orders:
                 if o.get('id') == order_id or o.get('order_reference') == order_id:
+                    order = o
                     prov_order_id = o.get('provider_order_id')
                     break
 
@@ -479,11 +503,43 @@ class SIMProviderService:
             tv_client = cls.get_textverified_client()
             if tv_client:
                 try:
+                    import dateutil.parser
                     verification = tv_client.verifications.details(tv_id)
                     sms_list = tv_client.sms.list(data=verification)
                     items = list(sms_list)
                     if items:
-                        sms = items[-1]  # Latest SMS code received
+                        # Sort newest SMS first
+                        items.sort(
+                            key=lambda s: getattr(s, 'created_at', None) or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+                            reverse=True
+                        )
+                        sms = items[0]  # Absolute newest SMS received
+
+                        # Check if order was reactivated and if this SMS arrived during current activation window
+                        order_created = order.get('created_at') if order else None
+                        if order_created and hasattr(sms, 'created_at') and sms.created_at:
+                            try:
+                                if isinstance(order_created, str):
+                                    order_dt = dateutil.parser.parse(order_created)
+                                else:
+                                    order_dt = order_created
+                                if order_dt.tzinfo is None:
+                                    order_dt = order_dt.replace(tzinfo=datetime.timezone.utc)
+                                sms_dt = sms.created_at
+                                if sms_dt.tzinfo is None:
+                                    sms_dt = sms_dt.replace(tzinfo=datetime.timezone.utc)
+
+                                # If latest SMS is older than order activation window (with 15s grace), wait for new code!
+                                if (sms_dt - order_dt).total_seconds() < -15:
+                                    return {
+                                        'has_sms': False,
+                                        'sms_code': None,
+                                        'full_sms': None,
+                                        'status': 'PENDING'
+                                    }
+                            except Exception as ex:
+                                print(f"[SIMProviderService] Reactivation date check error: {ex}")
+
                         code = sms.parsed_code
                         text = sms.sms_content
                         sms_id = getattr(sms, 'id', str(len(items)))
@@ -1079,19 +1135,22 @@ class SIMProviderService:
 
     @classmethod
     def _reset_order_for_new_otp(cls, db_order_id: str, admin=None):
-        """Resets order status to active and clears previous SMS code for a fresh OTP."""
+        """Resets order status to pending and clears previous SMS code for a fresh OTP."""
         import datetime
         import uuid
         now_utc = datetime.datetime.now(datetime.timezone.utc)
-        now_str = now_utc.strftime('%Y-%m-%d %H:%M:%S')
+        now_iso = now_utc.isoformat()
 
         update_payload = {
-            'status': 'active',
+            'status': 'pending',
             'sms_code': None,
             'full_sms_text': 'Line reactivated - waiting for new verification code...',
-            'created_at': now_str,
-            'updated_at': now_str
+            'created_at': now_iso,
+            'updated_at': now_iso
         }
+
+        if not admin:
+            admin = get_supabase_admin()
 
         if admin:
             try:
@@ -1111,8 +1170,9 @@ class SIMProviderService:
 
         for o in mock_db.sim_orders:
             if o.get('id') == db_order_id or o.get('order_reference') == db_order_id:
-                o['status'] = 'active'
+                o['status'] = 'pending'
                 o['sms_code'] = None
                 o['full_sms_text'] = 'Line reactivated - waiting for new verification code...'
-                o['updated_at'] = now_str
+                o['created_at'] = now_iso
+                o['updated_at'] = now_iso
                 break

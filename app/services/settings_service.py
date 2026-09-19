@@ -1,11 +1,10 @@
-"""Platform Settings Service for Tgsims.
-Manages FX conversion rates (USD/NGN), provider markup percentages (5sim & TextVerified),
-reactivation fees, price overrides, and payment channel configurations.
-Uses an in-memory cache with immediate invalidation on admin updates.
-"""
+import os
+import json
 import time
 from typing import Dict, Any, List, Optional
-from app.services.supabase_client import get_supabase_admin
+from app.services.supabase_client import get_supabase_admin, reset_supabase_admin
+
+SETTINGS_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'platform_settings.json')
 
 # Default fallbacks
 DEFAULT_SETTINGS = {
@@ -30,59 +29,96 @@ class SettingsService:
     _CACHE_TTL: float = 60.0  # Cache for 60 seconds
 
     @classmethod
+    def _load_file_settings(cls) -> Dict[str, Any]:
+        """Loads settings from local persistent JSON file if present."""
+        try:
+            if os.path.exists(SETTINGS_FILE):
+                with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if isinstance(data, dict):
+                        return data
+        except Exception as e:
+            print(f"[SettingsService] Error reading {SETTINGS_FILE}: {e}")
+        return {}
+
+    @classmethod
+    def _save_file_settings(cls, data: Dict[str, Any]):
+        """Saves current settings to local persistent JSON file."""
+        try:
+            os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
+            with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"[SettingsService] Error saving {SETTINGS_FILE}: {e}")
+
+    @classmethod
     def get_settings(cls, force_refresh: bool = False) -> Dict[str, Any]:
-        """Fetch platform settings with in-memory caching."""
+        """Fetch platform settings with persistent disk cache & Supabase sync."""
         now = time.time()
         if not force_refresh and cls._cache is not None and (now - cls._cache_time) < cls._CACHE_TTL:
             return dict(cls._cache)
 
-        admin = get_supabase_admin()
-        base = dict(cls._cache) if cls._cache else dict(DEFAULT_SETTINGS)
+        # Start with default settings, then overlay saved local settings
+        file_settings = cls._load_file_settings()
+        base = dict(DEFAULT_SETTINGS)
+        base.update(file_settings)
 
+        admin = get_supabase_admin()
         if not admin:
             cls._cache = base
             cls._cache_time = now
             return dict(base)
 
-        try:
-            res = admin.table('platform_settings').select('*').limit(1).execute()
-            if res.data and len(res.data) > 0:
-                row = res.data[0]
-                # Merge DB fields dynamically
-                if 'ngn_per_usd_rate' in row and row['ngn_per_usd_rate'] is not None:
-                    base['ngn_per_usd_rate'] = float(row['ngn_per_usd_rate'])
-                if 'fivesim_markup_percent' in row and row['fivesim_markup_percent'] is not None:
-                    base['fivesim_markup_percent'] = float(row['fivesim_markup_percent'])
-                elif 'default_markup_percent' in row and row['default_markup_percent'] is not None:
-                    base['fivesim_markup_percent'] = float(row['default_markup_percent'])
+        for attempt in range(2):
+            try:
+                res = admin.table('platform_settings').select('*').limit(1).execute()
+                if res.data and len(res.data) > 0:
+                    row = res.data[0]
+                    # Merge DB fields dynamically
+                    if 'ngn_per_usd_rate' in row and row['ngn_per_usd_rate'] is not None:
+                        base['ngn_per_usd_rate'] = float(row['ngn_per_usd_rate'])
+                    if 'fivesim_markup_percent' in row and row['fivesim_markup_percent'] is not None:
+                        base['fivesim_markup_percent'] = float(row['fivesim_markup_percent'])
+                    elif 'default_markup_percent' in row and row['default_markup_percent'] is not None:
+                        base['fivesim_markup_percent'] = float(row['default_markup_percent'])
 
-                if 'fivesim_min_profit_usd' in row and row['fivesim_min_profit_usd'] is not None:
-                    base['fivesim_min_profit_usd'] = float(row['fivesim_min_profit_usd'])
-                elif 'min_profit_usd' in row and row['min_profit_usd'] is not None:
-                    base['fivesim_min_profit_usd'] = float(row['min_profit_usd'])
+                    if 'fivesim_min_profit_usd' in row and row['fivesim_min_profit_usd'] is not None:
+                        base['fivesim_min_profit_usd'] = float(row['fivesim_min_profit_usd'])
+                    elif 'min_profit_usd' in row and row['min_profit_usd'] is not None:
+                        base['fivesim_min_profit_usd'] = float(row['min_profit_usd'])
 
-                if 'textverified_markup_percent' in row and row['textverified_markup_percent'] is not None:
-                    base['textverified_markup_percent'] = float(row['textverified_markup_percent'])
-                if 'textverified_min_profit_usd' in row and row['textverified_min_profit_usd'] is not None:
-                    base['textverified_min_profit_usd'] = float(row['textverified_min_profit_usd'])
-                if 'reactivation_fee_usd' in row and row['reactivation_fee_usd'] is not None:
-                    base['reactivation_fee_usd'] = float(row['reactivation_fee_usd'])
-                if 'crypto_deposit_address' in row and row['crypto_deposit_address'] is not None:
-                    base['crypto_deposit_address'] = row['crypto_deposit_address']
-                if 'squad_enabled' in row and row['squad_enabled'] is not None:
-                    base['squad_enabled'] = bool(row['squad_enabled'])
-                if 'crypto_enabled' in row and row['crypto_enabled'] is not None:
-                    base['crypto_enabled'] = bool(row['crypto_enabled'])
-                if 'manual_bank_details' in row and row['manual_bank_details'] is not None:
-                    base['manual_bank_details'] = row['manual_bank_details']
+                    if 'textverified_markup_percent' in row and row['textverified_markup_percent'] is not None:
+                        base['textverified_markup_percent'] = float(row['textverified_markup_percent'])
+                    if 'textverified_min_profit_usd' in row and row['textverified_min_profit_usd'] is not None:
+                        base['textverified_min_profit_usd'] = float(row['textverified_min_profit_usd'])
+                    if 'reactivation_fee_usd' in row and row['reactivation_fee_usd'] is not None:
+                        base['reactivation_fee_usd'] = float(row['reactivation_fee_usd'])
+                    if 'crypto_deposit_address' in row and row['crypto_deposit_address'] is not None:
+                        base['crypto_deposit_address'] = row['crypto_deposit_address']
+                    if 'squad_enabled' in row and row['squad_enabled'] is not None:
+                        base['squad_enabled'] = bool(row['squad_enabled'])
+                    if 'crypto_enabled' in row and row['crypto_enabled'] is not None:
+                        base['crypto_enabled'] = bool(row['crypto_enabled'])
+                    if 'manual_bank_details' in row and row['manual_bank_details'] is not None:
+                        base['manual_bank_details'] = row['manual_bank_details']
 
-                base['id'] = row.get('id')
-                base['updated_at'] = row.get('updated_at', base.get('updated_at'))
-                cls._cache = base
-                cls._cache_time = now
-                return dict(base)
-        except Exception as e:
-            print(f"[SettingsService] Error loading platform settings: {e}")
+                    base['id'] = row.get('id')
+                    base['updated_at'] = row.get('updated_at', base.get('updated_at'))
+
+                    # Always sync fresh DB settings to disk cache so they persist across reboots
+                    cls._save_file_settings(base)
+                    cls._cache = base
+                    cls._cache_time = now
+                    return dict(base)
+                break
+            except Exception as e:
+                err_str = str(e).lower()
+                if ('10054' in err_str or 'connection' in err_str or 'closed' in err_str) and attempt == 0:
+                    reset_supabase_admin()
+                    admin = get_supabase_admin(fresh=True)
+                    continue
+                print(f"[SettingsService] Error loading platform settings from DB (retaining persistent settings): {e}")
+                break
 
         cls._cache = base
         cls._cache_time = now
@@ -118,8 +154,7 @@ class SettingsService:
 
     @classmethod
     def update_settings(cls, updates: Dict[str, Any]) -> bool:
-        """Persists updated settings and updates cache."""
-        admin = get_supabase_admin()
+        """Persists updated settings to disk and Supabase immediately."""
         now_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
 
         clean_data = {}
@@ -146,40 +181,51 @@ class SettingsService:
 
         clean_data['updated_at'] = now_iso
 
-        # Update cache immediately
+        # 1. Update cache and save to disk FIRST (guaranteed persistent override)
         if cls._cache is None:
             cls._cache = dict(DEFAULT_SETTINGS)
+            cls._cache.update(cls._load_file_settings())
         cls._cache.update(clean_data)
         cls._cache_time = time.time()
+        cls._save_file_settings(cls._cache)
 
+        admin = get_supabase_admin()
         if not admin:
             return True
 
-        try:
-            res = admin.table('platform_settings').select('*').limit(1).execute()
-            if res.data and len(res.data) > 0:
-                row = res.data[0]
-                row_id = row['id']
-                existing_cols = set(row.keys())
+        # 2. Persist to Supabase with automatic reconnect retry
+        for attempt in range(2):
+            try:
+                res = admin.table('platform_settings').select('*').limit(1).execute()
+                if res.data and len(res.data) > 0:
+                    row = res.data[0]
+                    row_id = row['id']
+                    existing_cols = set(row.keys())
 
-                # Build payload matching only existing columns
-                payload = {}
-                for k, v in clean_data.items():
-                    if k in existing_cols:
-                        payload[k] = v
+                    # Build payload matching existing columns
+                    payload = {}
+                    for k, v in clean_data.items():
+                        if k in existing_cols:
+                            payload[k] = v
 
-                # Handle legacy column names if present
-                if 'default_markup_percent' in existing_cols and 'fivesim_markup_percent' in clean_data:
-                    payload['default_markup_percent'] = clean_data['fivesim_markup_percent']
-                if 'min_profit_usd' in existing_cols and 'fivesim_min_profit_usd' in clean_data:
-                    payload['min_profit_usd'] = clean_data['fivesim_min_profit_usd']
+                    # Handle legacy column names if present
+                    if 'default_markup_percent' in existing_cols and 'fivesim_markup_percent' in clean_data:
+                        payload['default_markup_percent'] = clean_data['fivesim_markup_percent']
+                    if 'min_profit_usd' in existing_cols and 'fivesim_min_profit_usd' in clean_data:
+                        payload['min_profit_usd'] = clean_data['fivesim_min_profit_usd']
 
-                if payload:
-                    admin.table('platform_settings').update(payload).eq('id', row_id).execute()
-            return True
-        except Exception as e:
-            print(f"[SettingsService] Error persisting settings to DB: {e}")
-            return True
+                    if payload:
+                        admin.table('platform_settings').update(payload).eq('id', row_id).execute()
+                return True
+            except Exception as e:
+                err_str = str(e).lower()
+                if ('10054' in err_str or 'connection' in err_str or 'closed' in err_str) and attempt == 0:
+                    reset_supabase_admin()
+                    admin = get_supabase_admin(fresh=True)
+                    continue
+                print(f"[SettingsService] Error persisting settings to DB: {e}")
+                return True
+        return True
 
     @classmethod
     def get_price_overrides(cls) -> List[Dict[str, Any]]:

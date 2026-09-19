@@ -58,15 +58,23 @@ def create_supabase_client():
         return None
 
 
-def get_supabase_admin():
-    """Admin client with Service Role Key for server-level operations (bypasses RLS, admin auth)."""
+def reset_supabase_admin():
+    """Resets the cached admin client so a fresh HTTP connection is established on next request."""
+    global _supabase_admin
+    _supabase_admin = None
+
+
+def get_supabase_admin(fresh: bool = False):
+    """Admin client with Service Role Key for server-level operations (bypasses RLS, admin auth).
+    Pass fresh=True to force a new HTTP session if a socket reset occurred.
+    """
     global _supabase_admin
     url = get_supabase_url()
     key = get_supabase_service_role_key()
     if not (url and key and key != 'your-supabase-service-role-key' and url != 'https://your-supabase-project.supabase.co'):
         return None
 
-    if _supabase_admin is None:
+    if fresh or _supabase_admin is None:
         try:
             from supabase import create_client
             _supabase_admin = create_client(url, key)
