@@ -54,10 +54,10 @@
         {% set dt_clean = raw_dt.replace('T', ' ') %}
         {% set day = dt_clean.split(' ')[0] if dt_clean else '-' %}
         {% set hm = dt_clean.split(' ')[1][:5] if (' ' in dt_clean and dt_clean.split(' ')|length > 1) else '' %}
-        {% set countdown = (o.countdown_seconds|int) if (o.countdown_seconds is defined and o.countdown_seconds is not none) else 180 %}
-        {% set elapsed = (o.elapsed_seconds|int) if (o.elapsed_seconds is defined and o.elapsed_seconds is not none) else (180 - countdown) %}
+        {% set countdown = (o.countdown_seconds|int) if (o.countdown_seconds is defined and o.countdown_seconds is not none) else 300 %}
+        {% set elapsed = (o.elapsed_seconds|int) if (o.elapsed_seconds is defined and o.elapsed_seconds is not none) else (300 - countdown) %}
         {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
-        {% set can_cancel = (o.can_cancel if o.can_cancel is defined else (elapsed >= 120)) and is_active %}
+        {% set can_cancel = (o.can_cancel if o.can_cancel is defined else (elapsed >= 180)) and is_active %}
         {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
@@ -101,7 +101,7 @@
                      data-elapsed="{{ elapsed }}"
                      style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-family:var(--font-mono, monospace); font-weight:600; color:var(--brand); background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.25); padding:2px 8px; border-radius:var(--r-full); width:fit-content; transition:all 0.2s ease;">
                   <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse-dot 1.5s infinite;"></span>
-                  <span data-countdown-display>03:00</span>
+                  <span data-countdown-display>05:00</span>
                 </div>
               </div>
             {% elif is_timeout %}
@@ -140,7 +140,7 @@
                         style="color:var(--text-danger); {% if not can_cancel %}display:none;{% endif %}"
                         title="Cancel order and refund wallet">Cancel &amp; Refund</button>
                 <span class="cancel-unlock-notice" data-cancel-notice data-order-id="{{ o.id or o.order_reference }}" style="font-size:0.7rem; color:var(--text-muted); padding:3px 8px; border-radius:var(--r-sm); background:var(--surface-2); border:1px solid var(--border); {% if can_cancel %}display:none;{% endif %}">
-                  Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((120 - elapsed)//60)|int, ((120 - elapsed)%60)|int) if (120 - elapsed) > 0 else '00:00' }}</span>
+                  Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((180 - elapsed)//60)|int, ((180 - elapsed)%60)|int) if (180 - elapsed) > 0 else '00:00' }}</span>
                 </span>
               </div>
             {% elif is_done and is_reliable %}
@@ -560,7 +560,7 @@
               if (window.toast) window.toast(data.message, 'warning');
               setTimeout(function() { window.location.reload(); }, 1500);
             } else {
-              if (window.toast) window.toast(data.message || 'Still waiting for code. Please allow up to 2 minutes.', 'info');
+              if (window.toast) window.toast(data.message || 'Still waiting for code. Waiting period is 3 to 5 minutes.', 'info');
               checkBtn.disabled = false;
               checkBtn.textContent = 'Check Code';
             }
@@ -647,7 +647,7 @@
     });
   }
 
-  // 1-second live countdown ticker for all active orders (3 minutes total, cancel unlocked after 2 minutes)
+  // 1-second live countdown ticker for all active orders (5 minutes total, cancel unlocked after 3 minutes)
   var timerElements = document.querySelectorAll('[data-countdown-timer]');
   if (timerElements.length > 0) {
     function formatTime(totalSec) {
@@ -658,8 +658,8 @@
 
     var activeTimers = [];
     timerElements.forEach(function(el) {
-      var initialSec = parseInt(el.dataset.seconds || '180', 10);
-      var elapsed = parseInt(el.dataset.elapsed || String(180 - initialSec), 10);
+      var initialSec = parseInt(el.dataset.seconds || '300', 10);
+      var elapsed = parseInt(el.dataset.elapsed || String(300 - initialSec), 10);
       var orderId = el.dataset.orderId;
       var displaySpan = el.querySelector('[data-countdown-display]');
       
@@ -685,15 +685,15 @@
     function updateTimerUI(item) {
       if (!item.display) return;
 
-      // 1. Dynamic cancel unlock after 2 minutes (120s elapsed / 60s remaining)
-      if (item.elapsed >= 120 || item.remaining <= 60) {
+      // 1. Dynamic cancel unlock after 3 minutes (180s elapsed / 120s remaining)
+      if (item.elapsed >= 180 || item.remaining <= 120) {
         if (item.cancelBtn) item.cancelBtn.style.display = 'inline-block';
         if (item.cancelNotice) item.cancelNotice.style.display = 'none';
       } else {
         if (item.cancelBtn) item.cancelBtn.style.display = 'none';
         if (item.cancelNotice) {
           item.cancelNotice.style.display = 'inline-block';
-          var waitLeft = Math.max(0, 120 - item.elapsed);
+          var waitLeft = Math.max(0, 180 - item.elapsed);
           if (item.cancelCountSpan) {
             item.cancelCountSpan.textContent = formatTime(waitLeft);
           }
@@ -708,8 +708,8 @@
         item.element.style.background = 'rgba(239, 68, 68, 0.08)';
       } else {
         item.display.textContent = formatTime(item.remaining);
-        if (item.remaining <= 60) {
-          // Final 1 minute window (cancel button is active)
+        if (item.remaining <= 120) {
+          // Final 2 minute window (cancel button is active)
           item.element.style.color = '#f59e0b';
           item.element.style.borderColor = 'rgba(245, 158, 11, 0.4)';
           item.element.style.background = 'rgba(245, 158, 11, 0.08)';
@@ -732,12 +732,12 @@
 
           if (item.remaining <= 0 && !item.refundTriggered) {
             item.refundTriggered = true;
-            // Trigger automatic refund via check-sms endpoint (which executes auto-refund on 3-min timeout)
+            // Trigger automatic refund via check-sms endpoint (which executes auto-refund on 5-min timeout)
             fetch('/api/check-sms/' + encodeURIComponent(item.orderId))
               .then(function(r) { return r.json(); })
               .then(function(res) {
                 if (window.toast) {
-                  window.toast('Verification timed out (3 mins). Full refund credited to your wallet.', 'info');
+                  window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
                 }
                 setTimeout(function() { window.location.reload(); }, 1200);
               })
@@ -746,7 +746,7 @@
                 fetch('/api/cancel-sim/' + encodeURIComponent(item.orderId), { method: 'POST' })
                   .then(function() {
                     if (window.toast) {
-                      window.toast('Verification timed out (3 mins). Full refund credited to your wallet.', 'info');
+                      window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
                     }
                     setTimeout(function() { window.location.reload(); }, 1200);
                   })

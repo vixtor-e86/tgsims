@@ -273,7 +273,7 @@ def check_sms(order_id):
                 created_at = created_at.replace(tzinfo=datetime.timezone.utc)
                 
             now = datetime.datetime.now(datetime.timezone.utc)
-            if (now - created_at).total_seconds() > 180: # 3 minutes total
+            if (now - created_at).total_seconds() > 300: # 5 minutes total
                 prov_id = order.get('provider_order_id')
                 if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
                     try:
@@ -285,7 +285,7 @@ def check_sms(order_id):
                 DBService.refund_order(
                     order_id=order_id,
                     user_id=user_id,
-                    reason="Auto-cancelled: SMS timeout (3 mins)"
+                    reason="Auto-cancelled: SMS timeout (5 mins)"
                 )
                 
                 # Trigger user notification
@@ -294,7 +294,7 @@ def check_sms(order_id):
                     DBService.create_user_notification(
                         user_id=user_id,
                         title="Order Timed Out & Refunded ⏱️",
-                        message=f"${cost:.2f} was returned to your wallet for order #{order.get('order_reference', order_id)} after reaching 3-minute timeout.",
+                        message=f"${cost:.2f} was returned to your wallet for order #{order.get('order_reference', order_id)} after reaching 5-minute timeout.",
                         type="refund",
                         link="/wallet"
                     )
@@ -303,7 +303,7 @@ def check_sms(order_id):
 
                 return jsonify({
                     'success': False,
-                    'message': 'Verification timed out (3 mins). Full refund has been credited to your wallet.',
+                    'message': 'Verification timed out (5 mins). Full refund has been credited to your wallet.',
                     'auto_refunded': True
                 })
         except Exception as e:
@@ -372,7 +372,7 @@ def cancel_sim(order_id):
     if order.get('sms_code'):
         return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
 
-    # Cancellation is only allowed after 2 minutes (120s)
+    # Cancellation is only allowed after 3 minutes (180s)
     if order.get('created_at'):
         import datetime
         try:
@@ -385,11 +385,11 @@ def cancel_sim(order_id):
                 created_at = created_at.replace(tzinfo=datetime.timezone.utc)
             now = datetime.datetime.now(datetime.timezone.utc)
             elapsed = (now - created_at).total_seconds()
-            if elapsed < 120:
-                wait_sec = int(120 - elapsed)
+            if elapsed < 180:
+                wait_sec = int(180 - elapsed)
                 return jsonify({
                     'success': False,
-                    'message': f'Cancellation and refund become available after 2 minutes. Please wait {wait_sec} more second{"s" if wait_sec != 1 else ""}.'
+                    'message': f'Cancellation and refund become available after 3 minutes. Please wait {wait_sec} more second{"s" if wait_sec != 1 else ""}.'
                 }), 400
         except Exception as e:
             print(f"[cancel_sim] elapsed check error: {e}")

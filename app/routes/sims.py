@@ -79,7 +79,7 @@ def my_sims():
         except (ValueError, TypeError):
             o['price'] = 0.00
 
-        remaining = 180
+        remaining = 300
         elapsed = 0
         if o.get('created_at'):
             try:
@@ -91,22 +91,22 @@ def my_sims():
                 if c_dt.tzinfo is None:
                     c_dt = c_dt.replace(tzinfo=datetime.timezone.utc)
                 elapsed = max(0, int((now_utc - c_dt).total_seconds()))
-                remaining = max(0, int(180 - elapsed))
+                remaining = max(0, int(300 - elapsed))
             except Exception:
                 remaining = 0
-                elapsed = 180
+                elapsed = 300
 
         o['countdown_seconds'] = remaining
         o['elapsed_seconds'] = elapsed
-        o['can_cancel'] = (elapsed >= 120)  # Cancel & Refund unlocks only after 2 mins (120s)
+        o['can_cancel'] = (elapsed >= 180)  # Cancel & Refund unlocks after 3 mins (180s)
 
-        # If active order exceeded 3 minutes (180s), trigger automatic refund immediately
+        # If active order exceeded 5 minutes (300s), trigger automatic refund immediately
         if is_active and remaining <= 0:
             try:
                 prov_id = o.get('provider_order_id')
                 if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
                     SIMProviderService.cancel_order(str(prov_id))
-                DBService.refund_order(o.get('id') or o.get('order_reference'), user['id'], reason="Auto-refunded: SMS timeout (3 mins)")
+                DBService.refund_order(o.get('id') or o.get('order_reference'), user['id'], reason="Auto-refunded: SMS timeout (5 mins)")
                 o['status'] = 'refunded'
                 o['is_active_sim'] = False
             except Exception as e:
