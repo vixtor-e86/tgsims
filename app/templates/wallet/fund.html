@@ -22,11 +22,25 @@
              min="0" step="any" placeholder="0.00" autocomplete="off" data-amount-input>
     </div>
 
-    <div class="preset-row">
+    {# Default presets for Card and Bank Transfer #}
+    <div class="preset-row" id="default-presets" data-default-presets>
       {% for p in presets_ngn %}
       <button type="button" class="preset-btn" data-preset
               data-usd="{{ '%.4f'|format(p / NGN_PER_USD) }}" data-decimals="0">₦{{ '{:,.0f}'.format(p) }}</button>
       {% endfor %}
+    </div>
+
+    {# Dedicated Crypto presets ($20, $30, $50, $100) #}
+    <div class="preset-row" id="crypto-presets" data-crypto-presets style="display: none;">
+      <button type="button" class="preset-btn" data-preset data-usd="20.0000" data-decimals="2">$20 (≈ ₦32k)</button>
+      <button type="button" class="preset-btn" data-preset data-usd="30.0000" data-decimals="2">$30 (≈ ₦48k)</button>
+      <button type="button" class="preset-btn" data-preset data-usd="50.0000" data-decimals="2">$50 (≈ ₦80k)</button>
+      <button type="button" class="preset-btn" data-preset data-usd="100.0000" data-decimals="2">$100 (≈ ₦160k)</button>
+    </div>
+
+    {# Live warning when crypto deposit is less than $20 #}
+    <div id="crypto-min-warning" style="display: none; font-size: 0.8rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--r-sm); padding: 0.5rem 0.75rem; margin-top: 0.65rem; font-weight: 600;">
+      ⚠️ Minimum Cryptocurrency deposit is <strong>$20.00 USD</strong> (≈ ₦32,000). Current: <span id="crypto-curr-entered">$0.00</span>
     </div>
 
     <hr class="divider">
@@ -78,8 +92,16 @@
         <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--hue-success, #10b981);"></span>
         <span>Dedicated visual payment address with QR code &bull; 0% platform processing fee &bull; Instant auto-credit.</span>
       </div>
-      <div id="crypto-min-notice" style="font-size: 0.78rem; color: var(--hue-warning, #f59e0b); margin-top: 0.35rem; display: none;">
-        Minimum deposit for this coin is <strong id="crypto-min-val">$19.00</strong>.
+      <div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--r-md); display: flex; align-items: flex-start; gap: 0.65rem;">
+        <span style="font-size: 1.1rem; color: #6366f1; line-height: 1;">⚡</span>
+        <div>
+          <div style="font-weight: 700; font-size: 0.85rem; color: var(--text);">
+            Minimum Crypto Deposit: <span style="color: #6366f1;">$20.00 USD</span> <span style="color: var(--text-dim); font-weight: normal;">(≈ ₦32,000)</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 0.2rem;">
+            Blockchain networks enforce transfer thresholds. Deposits of $20.00+ are automatically verified and credited with 0% platform fee.
+          </div>
+        </div>
       </div>
     </div>
 

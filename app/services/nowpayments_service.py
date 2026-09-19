@@ -191,11 +191,12 @@ class NOWPaymentsService:
             return {'success': False, 'message': 'Cryptocurrency gateway is currently offline (API key missing).'}
 
         pay_currency = pay_currency.lower().strip()
-        min_amt = cls.get_min_amount(pay_currency)
-        if amount_usd < min_amt:
+        is_stablecoin = pay_currency in ('usdttrc20', 'usdtbsc', 'usdterc20', 'usdt', 'usdc', 'usdcbsc', 'usdcerc20')
+        min_amt = max(20.0, cls.get_min_amount(pay_currency))
+        if amount_usd < 20.0:
             return {
                 'success': False,
-                'message': f"Minimum deposit for {pay_currency.upper()} is ${min_amt:.2f}. Please increase the amount."
+                'message': f"Minimum deposit for Cryptocurrency is $20.00 USD (~ NGN {int(20.0 * 1600):,}). Please enter $20.00 or more."
             }
 
         order_id = f"TGS-DEP-{uuid.uuid4().hex[:10].upper()}"
@@ -207,6 +208,9 @@ class NOWPaymentsService:
             'order_description': f"Tgsims Wallet Top-up (${amount_usd:.2f})",
             'is_fee_paid_by_user': False
         }
+        # For USDT/USDC, enforce exact 1:1 USD amount so user sends clean $20 instead of 19.968958
+        if is_stablecoin:
+            payload['pay_amount'] = float(amount_usd)
 
         if ipn_callback_url:
             payload['ipn_callback_url'] = ipn_callback_url
@@ -224,7 +228,14 @@ class NOWPaymentsService:
                 data = resp.json()
                 payment_id = str(data.get('payment_id'))
                 pay_address = data.get('pay_address')
-                pay_amount = float(data.get('pay_amount') or 0.0)
+                raw_pay_amount = float(data.get('pay_amount') or (amount_usd if is_stablecoin else 0.0))
+                if is_stablecoin:
+                    pay_amount = round(raw_pay_amount, 2)
+                    pay_amount_str = f"{pay_amount:.2f}"
+                else:
+                    pay_amount = raw_pay_amount
+                    pay_amount_str = f"{pay_amount:.6f}".rstrip('0').rstrip('.')
+
                 network = data.get('network') or ''
                 expiration = data.get('expiration_estimate_date') or ''
 
@@ -250,7 +261,7 @@ class NOWPaymentsService:
                     'success': True,
                     'payment_id': payment_id,
                     'pay_address': pay_address,
-                    'pay_amount': pay_amount,
+                    'pay_amount': pay_amount_str,
                     'pay_currency': pay_currency.upper(),
                     'network': network.upper() if network else pay_currency.upper(),
                     'price_amount_usd': amount_usd,

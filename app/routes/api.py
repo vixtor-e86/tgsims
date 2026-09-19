@@ -501,6 +501,12 @@ def create_crypto_payment():
     if amount <= 0:
         return jsonify({'success': False, 'message': 'Deposit amount must be greater than zero.'}), 400
 
+    if amount < 20.0:
+        return jsonify({
+            'success': False,
+            'message': 'The minimum deposit for Cryptocurrency is $20.00 USD (~ NGN 32,000). Please enter $20.00 or more.'
+        }), 400
+
     user_data = session.get('user', {})
     user_email = user_data.get('email', '')
 

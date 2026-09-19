@@ -26,6 +26,10 @@
   var summaryAmount = container.querySelector("[data-summary-amount]");
   var summaryFee = container.querySelector("[data-summary-fee]");
   var summaryTotal = container.querySelector("[data-summary-total]");
+  var defaultPresets = container.querySelector("[data-default-presets]");
+  var cryptoPresets = container.querySelector("[data-crypto-presets]");
+  var cryptoMinWarning = document.getElementById("crypto-min-warning");
+  var cryptoCurrEntered = document.getElementById("crypto-curr-entered");
 
   // Modal elements
   var cryptoModal = document.getElementById("crypto-payment-modal");
@@ -83,10 +87,28 @@
     if (summaryTotal) summaryTotal.setAttribute("data-usd", totalUSD.toFixed(4));
     cur().render(container);
 
+    var isCrypto = (methodId === "crypto");
+    var isUnderCryptoMin = isCrypto && currentUSD > 0 && currentUSD < 19.999;
+
+    if (cryptoMinWarning && cryptoCurrEntered) {
+      if (isUnderCryptoMin) {
+        cryptoMinWarning.style.display = "";
+        var valFormatted = "$" + currentUSD.toFixed(2);
+        if (cur().symbol !== "$") {
+          valFormatted += " (≈ " + cur().format(currentUSD * cur().rate, { decimals: 0 }) + ")";
+        }
+        cryptoCurrEntered.textContent = valFormatted;
+      } else {
+        cryptoMinWarning.style.display = "none";
+      }
+    }
+
     if (confirmLabel) {
       if (currentUSD <= 0) {
         confirmLabel.textContent = "Confirm Deposit";
-      } else if (methodId === "crypto") {
+      } else if (isUnderCryptoMin) {
+        confirmLabel.textContent = "Minimum $20.00 Required for Crypto";
+      } else if (isCrypto) {
         confirmLabel.textContent = "Generate " + getSelectedCryptoName() + " Deposit Address";
       } else if (methodId === "bank") {
         confirmLabel.textContent = "View Bank Transfer Details (" + cur().format(totalUSD, { decimals: 2 }) + ")";
@@ -94,7 +116,9 @@
         confirmLabel.textContent = "Confirm Deposit of " + cur().format(totalUSD, { decimals: 2 });
       }
     }
-    if (submitBtn) submitBtn.disabled = currentUSD <= 0;
+    if (submitBtn) {
+      submitBtn.disabled = (currentUSD <= 0 || isUnderCryptoMin);
+    }
   }
 
   function getSelectedCryptoName() {
@@ -134,6 +158,11 @@
     if (cardFields) cardFields.style.display = (methodId === "card") ? "" : "none";
     if (cryptoFields) cryptoFields.style.display = (methodId === "crypto") ? "" : "none";
     if (bankFields) bankFields.style.display = (methodId === "bank") ? "" : "none";
+
+    // Toggle presets between fiat/card and dedicated crypto amounts
+    if (defaultPresets) defaultPresets.style.display = (methodId === "crypto") ? "none" : "";
+    if (cryptoPresets) cryptoPresets.style.display = (methodId === "crypto") ? "" : "none";
+
     syncSummary();
   }
 
@@ -314,6 +343,13 @@
 
       // CASE 3: CRYPTOCURRENCY VIA NOWPAYMENTS
       if (methodId === "crypto") {
+        if (currentUSD < 19.999) {
+          if (window.toast) {
+            window.toast("The minimum deposit for Cryptocurrency is $20.00 USD (≈ ₦" + Math.round(20 * cur().rate).toLocaleString() + ").", "error");
+          }
+          return;
+        }
+
         var selectedCoin = cryptoSelect ? cryptoSelect.value : "usdttrc20";
         var selectedOpt = cryptoSelect ? cryptoSelect.options[cryptoSelect.selectedIndex] : null;
         var selectedSymbol = selectedOpt ? selectedOpt.getAttribute("data-symbol") : "USDT";
