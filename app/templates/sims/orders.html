@@ -61,7 +61,7 @@
         {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
-        {% set is_reliable = (o.provider_order_id and (o.provider_order_id|string).startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) %}
+        {% set is_reliable = (o.provider_order_id and (o.provider_order_id|string).startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) or ('reliable' in (o.package_id|lower if o.package_id else '')) or ('reliable' in (o.package_name|lower if o.package_name else '')) %}
         {% set price_formatted = '₦{:,.2f}'.format(ord_price * ngn_rate) %}
         {% set is_us = (o.country_code in ['US', 'CA', 'USA', 'CAN']) or (o.country in ['usa', 'us', 'canada', 'ca']) or is_reliable or (o.order_reference and 'USCA' in (o.order_reference|string)) or (o.phone_number and (o.phone_number|string).startswith('+1')) %}
         {% set reorder_url = url_for('sims.us_canada') if is_us else url_for('sims.store') %}
@@ -81,8 +81,8 @@
           <td>
             <span class="num-cell">
               <span class="flag">{{ o.country_code }}</span>
-              <span class="td-mono {{ 'strike' if (is_timeout or is_refunded) else 'td-dim' }}">{{ o.phone_number }}</span>
-              {% if not (is_timeout or is_refunded) %}
+              <span class="td-mono {{ 'strike' if (is_timeout or is_refunded) and not is_reliable else 'td-dim' }}">{{ o.phone_number }}</span>
+              {% if not (is_timeout or is_refunded) or is_reliable %}
               <button class="copy-btn" data-copy="{{ o.phone_number }}" type="button" aria-label="Copy phone number" title="Copy phone number">{{ icon('copy') }}</button>
               {% endif %}
             </span>
@@ -143,9 +143,11 @@
                   Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((180 - elapsed)//60)|int, ((180 - elapsed)%60)|int) if (180 - elapsed) > 0 else '00:00' }}</span>
                 </span>
               </div>
-            {% elif is_done and is_reliable %}
-              <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
-                <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
+            {% elif is_reliable %}
+              <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                {% if is_done or o.sms_code %}
+                  <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
+                {% endif %}
                 <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
                         data-id="{{ o.id or o.order_reference }}"
                         data-service="{{ o.service_name }}"
@@ -154,21 +156,11 @@
                         title="Reactivate this number to receive another OTP code">
                   {{ icon('refresh') }} Reactivate
                 </button>
-              </div>
-            {% elif is_done %}
-              <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
-                <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
                 <a href="{{ reorder_url }}" class="btn btn-secondary btn-sm">Re-order</a>
               </div>
-            {% elif is_timeout and is_reliable %}
-              <div style="display:inline-flex; gap:var(--sp-2); align-items:center;">
-                <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
-                        data-id="{{ o.id or o.order_reference }}"
-                        data-service="{{ o.service_name }}"
-                        data-phone="{{ o.phone_number }}"
-                        data-ref="{{ o.order_reference }}">
-                  {{ icon('refresh') }} Reactivate
-                </button>
+            {% elif is_done %}
+              <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
                 <a href="{{ reorder_url }}" class="btn btn-secondary btn-sm">Re-order</a>
               </div>
             {% else %}

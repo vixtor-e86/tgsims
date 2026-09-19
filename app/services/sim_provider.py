@@ -1094,7 +1094,7 @@ class SIMProviderService:
                     cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
                     return {
                         'success': True,
-                        'message': 'Number reactivated successfully ($1.00)! Line is now open for your new OTP code.',
+                        'message': f'Number reactivated successfully (${REACTIVATION_FEE:.2f})! Line is now open for your new OTP code.',
                         'order_reference': order.get('order_reference')
                     }
                 else:
@@ -1110,7 +1110,18 @@ class SIMProviderService:
                     return {'success': False, 'message': 'Could not reactivate this line with carrier. The reactivation window may have closed.'}
             except Exception as e:
                 print(f"[SIMProviderService] TextVerified reactivate error: {e}")
-                # Refund the $1.00 reactivation fee on carrier failure
+                err_str = str(e).lower()
+
+                # If carrier line is already active or reactivated, reset order to pending and allow user to receive OTP
+                if 'already' in err_str and any(w in err_str for w in ['active', 'pending', 'open', 'reactivated']):
+                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': True,
+                        'message': 'Number line is already active! Line is open for your OTP code.',
+                        'order_reference': order.get('order_reference')
+                    }
+
+                # Refund the reactivation fee on carrier failure
                 if fee_deducted and user_id:
                     try:
                         DBService.credit_wallet_balance(
@@ -1124,7 +1135,8 @@ class SIMProviderService:
                     except Exception as ex:
                         print(f"[SIMProviderService] Error refunding reactivation fee: {ex}")
 
-                err_str = str(e).lower()
+                if 'insufficient balance' in err_str or 'insufficientbalance' in err_str:
+                    return {'success': False, 'message': 'Carrier service balance is currently low. Please contact support.'}
                 if 'cannot be reactivated' in err_str:
                     return {'success': False, 'message': 'This number cannot be reactivated at this moment (it may still be in use, or the carrier reactivation window has ended).'}
                 if '404' in err_str or 'not found' in err_str:
