@@ -25,9 +25,27 @@ def require_admin():
         flash('Please sign in with administrator credentials.', 'error')
         return redirect(url_for('auth.login', next=request.path))
 
-    if user.get('role') not in ('admin', 'support'):
+    role = user.get('role')
+    if role not in ('admin', 'support'):
         flash('Access restricted. Administrator privileges required.', 'error')
         return redirect(url_for('dashboard.index'))
+
+    # Role-based restriction for 'support' staff:
+    # Support staff are strictly limited to Support, Notifications, Orders, and Deposits.
+    if role == 'support':
+        endpoint = request.endpoint or ''
+        if endpoint in ('admin.index', ''):
+            return redirect(url_for('admin.support'))
+
+        admin_only_endpoints = (
+            'admin.pricing',
+            'admin.users',
+            'admin.update_user_role',
+            'admin.adjust_user_balance',
+        )
+        if any(endpoint.startswith(ep) for ep in admin_only_endpoints):
+            flash('Access restricted. Support staff permissions are limited to Support, Notifications, Orders, and Deposits.', 'error')
+            return redirect(url_for('admin.support'))
 
 
 
@@ -436,6 +454,7 @@ def support(ticket_id=None):
 
     selected_ticket = None
     messages = []
+    has_explicit_selection = bool(selected_id)
 
     if selected_id:
         selected_ticket = DBService.get_ticket_by_id(selected_id, is_admin=True)
@@ -453,6 +472,7 @@ def support(ticket_id=None):
         stats=stats,
         status_filter=status_filter,
         search_q=search_q,
+        has_explicit_selection=has_explicit_selection,
         active_page='support'
     )
 

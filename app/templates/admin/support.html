@@ -70,8 +70,8 @@
       gap: 0.5rem;
     }
     
-    /* When a ticket is active on mobile, hide the KPI row so chat gets maximum viewport */
-    .has-selected-ticket .admin-support-kpi-grid {
+    /* When a ticket was explicitly selected on mobile, hide the KPI row so chat gets maximum viewport */
+    .has-explicit-ticket .admin-support-kpi-grid {
       display: none !important;
     }
 
@@ -97,7 +97,7 @@
     }
 
     /* Single pane view on mobile: switch between list and conversation */
-    {% if selected_ticket %}
+    {% if has_explicit_selection and selected_ticket %}
       .admin-support-list-col {
         display: none !important;
       }
@@ -158,7 +158,7 @@
   }
 </style>
 
-<div class="admin-support-desk-wrap {% if selected_ticket %}has-selected-ticket{% endif %}">
+<div class="admin-support-desk-wrap {% if has_explicit_selection and selected_ticket %}has-explicit-ticket{% endif %}">
 
   {# Top KPI row #}
   <div class="admin-support-kpi-grid">

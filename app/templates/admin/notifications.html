@@ -121,8 +121,8 @@
       Send in-app notifications and promotional announcements directly to customer dashboards and topbar alert feeds.
     </p>
   </div>
-  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
-    {{ icon('arrow-left') }} Back to Overview
+  <a href="{{ url_for('admin.support') if (current_user and current_user.role == 'support') else url_for('admin.index') }}" class="btn btn-secondary btn-sm">
+    {{ icon('arrow-left') }} {{ 'Back to Support' if (current_user and current_user.role == 'support') else 'Back to Overview' }}
   </a>
 </div>
 

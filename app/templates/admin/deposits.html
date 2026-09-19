@@ -11,8 +11,8 @@
       Review and approve incoming user wallet deposits across Squad, Crypto, and Bank Transfers.
     </p>
   </div>
-  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
-    {{ icon('arrow-left') }} Back to Overview
+  <a href="{{ url_for('admin.support') if (current_user and current_user.role == 'support') else url_for('admin.index') }}" class="btn btn-secondary btn-sm">
+    {{ icon('arrow-left') }} {{ 'Back to Support' if (current_user and current_user.role == 'support') else 'Back to Overview' }}
   </a>
 </div>
 

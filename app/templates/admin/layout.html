@@ -6,7 +6,7 @@
   .admin-header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 0.55rem 1.25rem;
+    padding: 0.45rem 1rem;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -16,9 +16,89 @@
     max-width: 1440px;
     margin: 0 auto;
     display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .admin-top-line {
+    display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    width: 100%;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+  .admin-brand-group {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .admin-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  .admin-brand-name {
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .admin-role-badge {
+    background: var(--brand-soft);
+    color: var(--brand);
+    border: 1px solid var(--border-strong);
+    font-weight: 700;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--r-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .admin-controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .admin-controls-bar .cur-switch {
+    scale: 0.85;
+    transform-origin: right center;
+  }
+  .admin-controls-bar .icon-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-grid;
+    place-items: center;
+  }
+  .admin-btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.28rem 0.55rem;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .admin-btn-back:hover {
+    background: var(--surface);
+    color: var(--brand);
+    border-color: var(--brand);
+  }
+  .admin-btn-back svg {
+    width: 12px;
+    height: 12px;
   }
   .admin-nav-bar {
     display: flex;
@@ -32,6 +112,7 @@
     scrollbar-width: none;
     -ms-overflow-style: none;
     white-space: nowrap;
+    width: 100%;
   }
   .admin-nav-bar::-webkit-scrollbar {
     display: none;
@@ -40,7 +121,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.35rem 0.65rem;
+    padding: 0.32rem 0.62rem;
     font-size: 0.78rem;
     font-weight: 600;
     border-radius: var(--r-sm);
@@ -74,115 +155,91 @@
   [data-theme="dark"] .admin-nav-link:hover {
     background: rgba(255, 255, 255, 0.05);
   }
-  .admin-controls-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    flex-shrink: 0;
-  }
-  .admin-btn-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.32rem 0.6rem;
-    border-radius: var(--r-sm);
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    color: var(--text);
-    text-decoration: none;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-  }
-  .admin-btn-back:hover {
-    background: var(--surface);
-    color: var(--brand);
-    border-color: var(--brand);
-  }
-  .admin-btn-back svg {
-    width: 13px;
-    height: 13px;
-  }
-  @media (max-width: 1080px) {
-    .admin-header-inner {
-      flex-wrap: wrap;
-      gap: 0.45rem;
-    }
-    .admin-nav-bar {
-      order: 3;
-      width: 100%;
-      overflow-x: auto;
-    }
-  }
   @media (max-width: 768px) {
+    .admin-header {
+      padding: 0.35rem 0.65rem;
+    }
+    .admin-brand-name {
+      font-size: 0.95rem;
+    }
+    .admin-controls-bar {
+      gap: 0.28rem;
+    }
+    .hide-xs {
+      display: none !important;
+    }
     .admin-body {
       padding: 0.75rem 0.75rem !important;
-    }
-    .admin-header {
-      padding: 0.5rem 0.75rem;
     }
   }
 </style>
 
 <div class="admin-shell" style="min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text);">
-  {# Admin Top Navigation Bar #}
+  {# Admin Top Navigation Bar (Strictly 2 Rows) #}
   <header class="admin-header">
     <div class="admin-header-inner">
       
-      {# Brand & Admin Tag #}
-      <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-        <a href="{{ url_for('admin.index') }}" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: inherit;">
-          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }}" style="width: 26px; height: 26px;">
-          <span style="font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; color: var(--text);">{{ BRAND }}</span>
-        </a>
-        <span class="badge" style="background: var(--brand-soft); color: var(--brand); border: 1px solid var(--border-strong); font-weight: 700; font-size: 0.65rem; padding: 0.15rem 0.45rem; border-radius: var(--r-xs); text-transform: uppercase; letter-spacing: 0.04em;">
-          Admin
-        </span>
+      {# ROW 1: Brand + Role Badge on Left; Currency, Theme, App, Logout on Right #}
+      <div class="admin-top-line">
+        <div class="admin-brand-group">
+          <a href="{{ url_for('admin.support') if (current_user and current_user.role == 'support') else url_for('admin.index') }}" class="admin-brand-link">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }}" style="width: 24px; height: 24px;">
+            <span class="admin-brand-name">{{ BRAND }}</span>
+          </a>
+          <span class="badge admin-role-badge">
+            {{ 'Support' if (current_user and current_user.role == 'support') else 'Admin' }}
+          </span>
+        </div>
+
+        {# Controls: Currency switcher, Theme toggle, App link, Logout #}
+        <div class="admin-controls-bar">
+          {# Admin Currency Switcher #}
+          <div class="cur-switch" role="group" aria-label="Currency">
+            <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
+            <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
+          </div>
+          <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+            {{ icon('sun', 'i-sun') }}{{ icon('moon', 'i-moon') }}
+          </button>
+          <a href="{{ url_for('dashboard.index') }}" class="admin-btn-back" title="Return to Customer App">
+            {{ icon('arrow-left') }} <span class="hide-xs">App</span>
+          </a>
+          <a href="{{ url_for('auth.logout') }}" class="icon-btn text-danger" title="Logout" aria-label="Logout">
+            {{ icon('logout') }}
+          </a>
+        </div>
       </div>
 
-      {# Admin Navigation Tabs #}
+      {# ROW 2: Navigation Tabs (Filtered for Support Staff vs Admin) #}
       <nav class="admin-nav-bar" aria-label="Admin Sections">
+        {% if not current_user or current_user.role == 'admin' %}
         <a href="{{ url_for('admin.index') }}" class="admin-nav-link {% if request.endpoint == 'admin.index' or active_page == 'overview' %}is-active{% endif %}">
           {{ icon('grid') }} <span>Overview</span>
         </a>
         <a href="{{ url_for('admin.pricing') }}" class="admin-nav-link {% if request.endpoint == 'admin.pricing' or active_page == 'pricing' %}is-active{% endif %}">
           {{ icon('tag') }} <span>Pricing</span>
         </a>
-        <a href="{{ url_for('admin.deposits') }}" class="admin-nav-link {% if request.endpoint == 'admin.deposits' or active_page == 'deposits' %}is-active{% endif %}">
-          {{ icon('wallet') }} <span>Deposits</span>
-        </a>
-        <a href="{{ url_for('admin.orders') }}" class="admin-nav-link {% if request.endpoint == 'admin.orders' or active_page == 'orders' %}is-active{% endif %}">
-          {{ icon('list') }} <span>Orders</span>
-        </a>
-        <a href="{{ url_for('admin.users') }}" class="admin-nav-link {% if request.endpoint == 'admin.users' or active_page == 'users' %}is-active{% endif %}">
-          {{ icon('users') }} <span>Users</span>
-        </a>
+        {% endif %}
+
         <a href="{{ url_for('admin.support') }}" class="admin-nav-link {% if request.endpoint == 'admin.support' or active_page == 'support' %}is-active{% endif %}">
           {{ icon('headset') }} <span>Support</span>
         </a>
         <a href="{{ url_for('admin.notifications') }}" class="admin-nav-link {% if request.endpoint == 'admin.notifications' or active_page == 'notifications' %}is-active{% endif %}">
           {{ icon('bell') }} <span>Notifications</span>
         </a>
-      </nav>
+        <a href="{{ url_for('admin.orders') }}" class="admin-nav-link {% if request.endpoint == 'admin.orders' or active_page == 'orders' %}is-active{% endif %}">
+          {{ icon('list') }} <span>Orders</span>
+        </a>
+        <a href="{{ url_for('admin.deposits') }}" class="admin-nav-link {% if request.endpoint == 'admin.deposits' or active_page == 'deposits' %}is-active{% endif %}">
+          {{ icon('wallet') }} <span>Deposits</span>
+        </a>
 
-      {# Right Controls #}
-      <div class="admin-controls-bar">
-        {# Admin Currency Switcher #}
-        <div class="cur-switch" role="group" aria-label="Currency" style="scale: 0.88; transform-origin: center;">
-          <button type="button" data-currency-set="NGN" aria-pressed="true">₦</button>
-          <button type="button" data-currency-set="USD" aria-pressed="false">$</button>
-        </div>
-        <a href="{{ url_for('dashboard.index') }}" class="admin-btn-back" title="Return to Customer App">
-          {{ icon('arrow-left') }} <span>App</span>
+        {% if not current_user or current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.users') }}" class="admin-nav-link {% if request.endpoint == 'admin.users' or active_page == 'users' %}is-active{% endif %}">
+          {{ icon('users') }} <span>Users</span>
         </a>
-        <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme" style="width: 30px; height: 30px;">
-          {{ icon('sun', 'i-sun') }}{{ icon('moon', 'i-moon') }}
-        </button>
-        <a href="{{ url_for('auth.logout') }}" class="icon-btn text-danger" title="Logout" aria-label="Logout" style="width: 30px; height: 30px;">
-          {{ icon('logout') }}
-        </a>
-      </div>
+        {% endif %}
+      </nav>
 
     </div>
   </header>

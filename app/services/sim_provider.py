@@ -47,16 +47,15 @@ class FiveSimClient:
             return {'success': False, 'message': str(e)}
 
     def get_balance(self) -> dict:
-        """Fetch account balance, currency (RUB), and approximate USD estimate."""
+        """Fetch account balance (denominated in USD)."""
         prof = self.get_profile()
         if prof.get('success'):
-            bal_rub = float(prof.get('balance', 0.0))
-            usd_est = round(bal_rub / 92.0, 2)
+            bal_usd = float(prof.get('balance', 0.0))
             return {
                 'success': True,
-                'balance': round(bal_rub, 2),
-                'currency': 'RUB',
-                'usd_estimate': usd_est,
+                'balance': round(bal_usd, 2),
+                'currency': 'USD',
+                'usd_estimate': round(bal_usd, 2),
                 'rating': prof.get('rating', 0),
                 'active_orders': prof.get('active_orders', 0)
             }

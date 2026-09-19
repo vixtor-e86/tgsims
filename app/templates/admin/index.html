@@ -109,11 +109,11 @@
         </div>
         <div style="text-align: right;">
           {% if fivesim_balance %}
-            <div style="font-weight: 800; font-size: 1.15rem; color: var(--hue-success);">
-              {{ fivesim_balance.balance }} {{ fivesim_balance.currency }}
+            <div style="font-weight: 800; font-size: 1.15rem; color: var(--hue-success);" data-usd="{{ '%.2f'|format(fivesim_balance.balance) }}">
+              ${{ '%.2f'|format(fivesim_balance.balance) }} {{ fivesim_balance.currency }}
             </div>
-            <div style="font-size: 0.72rem; color: var(--text-muted);" data-usd="{{ '%.2f'|format(fivesim_balance.usd_estimate) }}">
-              ≈ ${{ '%.2f'|format(fivesim_balance.usd_estimate) }} USD (₦{{ '{:,.2f}'.format(fivesim_balance.usd_estimate * settings.ngn_per_usd_rate) }})
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+              ≈ ₦{{ '{:,.2f}'.format(fivesim_balance.balance * settings.ngn_per_usd_rate) }}
             </div>
           {% else %}
             <span class="badge badge-warning" style="font-size: 0.75rem;">{{ fivesim_err or 'Check API Key' }}</span>
