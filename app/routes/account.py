@@ -36,12 +36,42 @@ def support():
     user_id = user.get('id', 'demo-user-id')
     tickets = DBService.get_user_tickets(user_id)
 
-    topics = [
-        {'icon': 'rocket', 'title': 'Getting Started', 'text': 'Account creation, basics, and platform overview.'},
-        {'icon': 'sim', 'title': 'eSIM Setup', 'text': 'Installation guides for iOS, Android, and specific carriers.'},
-        {'icon': 'chat', 'title': 'Virtual SMS', 'text': 'Troubleshooting reception issues and sender IDs.'},
-        {'icon': 'wallet', 'title': 'Billing & Wallet', 'text': 'Invoices, payment methods, and balance top-ups.'},
-        {'icon': 'wrench', 'title': 'Troubleshooting', 'text': 'Resolve common errors, connectivity drops, and delivery delays swiftly.'},
+    faqs = [
+        {
+            'category': 'Wallet & Deposits',
+            'q': 'Can I withdraw or cash out money deposited into my Tgsims wallet?',
+            'a': 'No. In accordance with our platform terms, all funds deposited into your account (via Bank Transfer, Card, or Crypto) are digital prepaid service credits designated exclusively for purchasing virtual numbers and SMS verifications. Money deposited into your account cannot be withdrawn, refunded to a bank account, or cashed out. Funds remain safely stored in your balance with no expiration date until spent.'
+        },
+        {
+            'category': 'Refund Policy',
+            'q': "What happens if my number doesn't receive a verification SMS code?",
+            'a': 'You are never charged for a missed code. If an SMS does not arrive within the active countdown window, or if you cancel an active order after 3 minutes without receiving a code, 100% of the purchase price is automatically and immediately refunded back to your internal Tgsims wallet balance so you can try another number.'
+        },
+        {
+            'category': 'Referral Program',
+            'q': 'How does the 5% Referral Program and Referral Wallet work?',
+            'a': 'Every user has a unique 5-character referral code (found on your Referral Program page). When friends sign up with your code or link, you earn a 5% commission on all their spendings. Your earnings accumulate in your Referral Wallet. Once your accumulated referral earnings reach $1.00 USD, you can withdraw them directly into your main wallet balance to spend on verifications!'
+        },
+        {
+            'category': 'Numbers & Carrier Routing',
+            'q': 'Are these real cellular numbers? Will they work on WhatsApp and Telegram?',
+            'a': 'Yes. We supply genuine Non-VoIP carrier lines that bypass strict VoIP filters. For WhatsApp, Telegram, Google, and banking services, we recommend selecting our "Buy US Number" dedicated cellular lines for guaranteed unbanned status.'
+        },
+        {
+            'category': 'Activation Lifespan',
+            'q': 'How long does a verification number stay active?',
+            'a': 'Single-use verification sessions stay active for 15 to 20 minutes from the time of order. Once your SMS verification code is received or the session expires, the line is closed. For US numbers, you can also request re-activations or extra codes on the same line if needed.'
+        },
+        {
+            'category': 'Wallet & Deposits',
+            'q': 'How quickly do wallet top-ups reflect?',
+            'a': 'Bank transfers via dedicated virtual accounts, card payments, and cryptocurrency deposits (USDT, BTC) are automated and credited to your wallet balance within seconds of transaction confirmation.'
+        },
+        {
+            'category': 'Support Desk',
+            'q': 'How do I speak to a real human agent?',
+            'a': 'Click "Create New Ticket" or "Start Chat" below for our 24/7 in-app ticket desk, or message us directly on WhatsApp at +234 805 809 8494 or Telegram at t.me/tgsimss.'
+        }
     ]
     channels = [
         {'icon': 'chat', 'title': 'Live Chat', 'text': 'Talk to our support team directly. Available 24/7.', 'cta': 'Start Chat', 'action': 'chat'},
@@ -49,7 +79,7 @@ def support():
         {'icon': 'send', 'title': 'Telegram Support', 'text': 'Chat with our official Telegram support at t.me/tgsimss.', 'cta': 'Open Telegram', 'href': 'https://t.me/tgsimss'},
         {'icon': 'mail', 'title': 'Email Support', 'text': 'Detailed inquiries and escalations: tgsimsverify@gmail.com', 'cta': 'Send Email', 'href': 'mailto:tgsimsverify@gmail.com'},
     ]
-    return render_template('account/support.html', topics=topics, tickets=tickets,
+    return render_template('account/support.html', faqs=faqs, tickets=tickets,
                            channels=channels, user=user)
 
 

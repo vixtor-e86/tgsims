@@ -1,0 +1,113 @@
+{% extends "layouts/base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Privacy &amp; Refund Policy | {{ BRAND }}{% endblock %}
+{% block meta_desc %}Privacy and Refund Policies for {{ BRAND }} SMS Verification Platform.{% endblock %}
+
+{% block body %}
+<header class="auth-top">
+  <a class="brand" href="{{ url_for('public.landing') }}">
+    <span class="brand-logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo" style="width:38px;height:38px;"></span>
+    <span class="brand-name">{{ BRAND }}</span>
+  </a>
+  <div class="lp-nav-actions">
+    <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+      {{ icon("sun", "i-sun") }}{{ icon("moon", "i-moon") }}
+    </button>
+    {% if session.get('user') %}
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-sm">Dashboard</a>
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Login</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Register</a>
+    {% endif %}
+  </div>
+</header>
+
+<main class="legal-page">
+  <div class="legal-container">
+    <div class="legal-header">
+      <div class="legal-meta">
+        <span class="badge badge-success">{{ BRAND }} Privacy</span>
+        <span>Last Updated: September 2026</span>
+        <span>GDPR &amp; NDPR Compliant</span>
+      </div>
+      <h1 class="legal-title">Privacy &amp; Refund Policy</h1>
+      <p class="text-muted" style="font-size:var(--fs-sm);">
+        How we protect your identity and manage our transparent wallet refund system.
+      </p>
+    </div>
+
+    <div class="legal-card">
+      {# ---- PROMINENT POLICY SUMMARY ALERT ---- #}
+      <div class="legal-alert">
+        <div class="legal-alert-title">
+          {{ icon('alert-triangle') }} SUMMARY: WALLET REFUND &amp; DEPOSIT POLICY
+        </div>
+        <div class="legal-alert-text">
+          <strong>1. Deposits Are Non-Withdrawable:</strong> Funds deposited into your account cannot be withdrawn back to bank accounts or crypto addresses; they are digital credits for purchasing verification services.<br>
+          <strong>2. Zero Charge for Failed Codes:</strong> If an SMS code is not delivered within the countdown window, your purchase cost is 100% refunded back into your {{ BRAND }} wallet balance immediately.
+        </div>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('shield') }} 1. Privacy-First Architecture</h2>
+        <p class="legal-p">
+          At {{ BRAND }}, privacy is our core founding mission. We believe users have the fundamental right to protect their personal cellular numbers from online tracking, marketing databases, and identity scraping.
+        </p>
+        <p class="legal-p">
+          We collect only the minimal data required to maintain your account: your chosen username, email address, and transaction references. We do not store sensitive payment card details; all financial processing is tokenized through PCI-DSS certified gateway partners.
+        </p>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('eye-off') }} 2. Ephemeral SMS Delivery</h2>
+        <p class="legal-p">
+          Incoming verification codes and SMS texts transmitted through our carrier networks are processed on a temporary, ephemeral basis:
+        </p>
+        <ul class="legal-list">
+          <li>SMS messages are decrypted in transit and made accessible solely to the authorized account holder who ordered the line.</li>
+          <li>Temporary numbers expire after the completion or timeout of the session window.</li>
+          <li>We never sell, rent, or trade your verification logs to data brokers, ad networks, or third parties.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('refresh') }} 3. Comprehensive Refund Policy</h2>
+        <p class="legal-p">
+          Our refund policy is simple, fair, and automated:
+        </p>
+        <ul class="legal-list">
+          <li><strong>Failed Verifications:</strong> If an ordered number does not receive an SMS verification code within the allotted countdown period, your order will automatically cancel and 100% of the funds spent on that order will immediately be refunded to your {{ BRAND }} wallet.</li>
+          <li><strong>Manual Cancellation:</strong> If you are waiting for a code and wish to try a different service or country, you may manually cancel the order after 3 minutes to receive an instant 100% wallet refund.</li>
+          <li><strong>No Cash Withdrawals of Deposited Funds:</strong> Because funds deposited into the site are digital service credits, they cannot be withdrawn to external bank accounts. They remain permanently safe in your account balance until spent.</li>
+          <li><strong>Referral Wallet Redemptions:</strong> Referral bonus commissions (earned at 5% from friends' spending) accumulate in your Referral Wallet and can be redeemed into your main wallet once reaching $1.00.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('lock') }} 4. Security &amp; Encryption Standards</h2>
+        <p class="legal-p">
+          We protect your session and account credentials with industry standard security protocols:
+        </p>
+        <ul class="legal-list">
+          <li>All web traffic is enforced over strict TLS 1.3 encryption (HTTPS).</li>
+          <li>Passwords are irreversibly hashed using standard cryptographic algorithms (Argon2 / bcrypt).</li>
+          <li>Database records are isolated using PostgreSQL Row-Level Security (RLS).</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('headset') }} 5. Contacting Privacy Support</h2>
+        <p class="legal-p">
+          If you have questions about your privacy, wish to delete your account, or need verification guidance, contact our team:
+        </p>
+        <ul class="legal-list">
+          <li><strong>Email:</strong> <a href="mailto:tgsimsverify@gmail.com">tgsimsverify@gmail.com</a></li>
+          <li><strong>WhatsApp:</strong> <a href="https://wa.me/2348058098494" target="_blank" rel="noopener noreferrer">+234 805 809 8494</a></li>
+          <li><strong>Telegram:</strong> <a href="https://t.me/tgsimss" target="_blank" rel="noopener noreferrer">t.me/tgsimss</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

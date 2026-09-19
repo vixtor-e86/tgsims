@@ -2205,4 +2205,170 @@
   margin-right: 3px;
 }
 
+/* ==========================================================================
+   LEGAL / POLICY PAGES (Terms & Privacy)
+   ========================================================================== */
+.legal-page {
+  padding: var(--sp-8) var(--sp-4) var(--sp-12);
+  min-height: 80vh;
+}
+.legal-container {
+  max-width: 880px;
+  margin: 0 auto;
+}
+.legal-header {
+  margin-bottom: var(--sp-6);
+  text-align: left;
+}
+.legal-title {
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: var(--sp-2);
+}
+.legal-meta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.legal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-8);
+  box-shadow: var(--shadow-sm);
+}
+@media (max-width: 640px) {
+  .legal-card { padding: var(--sp-5); }
+}
+.legal-section {
+  margin-bottom: var(--sp-8);
+}
+.legal-section:last-child {
+  margin-bottom: 0;
+}
+.legal-h2 {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.legal-p {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: var(--sp-3);
+}
+.legal-list {
+  padding-left: var(--sp-5);
+  margin-bottom: var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.legal-list li {
+  margin-bottom: var(--sp-2);
+}
+.legal-alert {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  margin: var(--sp-4) 0 var(--sp-6);
+}
+[data-theme="dark"] .legal-alert {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.legal-alert-title {
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: #d97706;
+  margin-bottom: var(--sp-1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+[data-theme="dark"] .legal-alert-title {
+  color: #fbbf24;
+}
+.legal-alert-text {
+  font-size: var(--fs-xs);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   FAQ ACCORDION COMPONENT
+   ========================================================================== */
+.faq-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.faq-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.faq-item.is-open {
+  border-color: var(--brand);
+  box-shadow: var(--shadow-sm);
+}
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+  gap: var(--sp-3);
+  transition: color 0.15s;
+}
+.faq-question:hover {
+  color: var(--brand);
+}
+.faq-ico {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  transition: transform 0.25s ease;
+  color: var(--text-muted);
+}
+.faq-item.is-open .faq-ico {
+  transform: rotate(180deg);
+  color: var(--brand);
+}
+.faq-answer {
+  display: none;
+  padding: 0 var(--sp-5) var(--sp-4);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.65;
+  border-top: 1px solid var(--surface-sub);
+}
+.faq-item.is-open .faq-answer {
+  display: block;
+  padding-top: var(--sp-3);
+}
+
+
 

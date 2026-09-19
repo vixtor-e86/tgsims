@@ -283,8 +283,8 @@
       <span class="brand-name" style="color:#fff;">{{ BRAND }}</span>
     </a>
     <nav class="lp-footer-nav" aria-label="Footer">
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms</a>
+      <a href="{{ url_for('public.privacy') }}">Privacy Policy</a>
+      <a href="{{ url_for('public.terms') }}">Terms of Service</a>
       <a href="{{ url_for('account.support') if current_user else url_for('auth.login', next=url_for('account.support')) }}">Support</a>
       <a href="mailto:tgsimsverify@gmail.com">Contact</a>
     </nav>

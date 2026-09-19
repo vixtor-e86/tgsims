@@ -146,10 +146,88 @@
     </table>
   </div>
 </section>
+
+{# ---- Dashboard FAQ & Platform Guide ---- #}
+<section class="card card-pad" style="margin-top:var(--sp-6);">
+  <div class="card-head" style="margin-bottom:var(--sp-4);">
+    <div>
+      <h2 class="card-title">{{ icon('help-circle') }} Platform Guide &amp; FAQ</h2>
+      <div class="text-muted" style="font-size:var(--fs-xs);">Essential guidelines on wallet funding, auto-refunds, and verification</div>
+    </div>
+    <div style="display:flex; gap:var(--sp-2);">
+      <a href="{{ url_for('account.support') }}" class="btn btn-ghost btn-sm">Full Help Center</a>
+      <a href="{{ url_for('public.terms') }}" target="_blank" class="link-more" style="font-size:var(--fs-xs);">
+        Terms of Service {{ icon('arrow-right', 'i-inline') }}
+      </a>
+    </div>
+  </div>
+
+  <div class="faq-accordion">
+    <div class="faq-item is-open">
+      <button type="button" class="faq-question" onclick="toggleDashFaq(this)">
+        <span style="display:flex; align-items:center; gap:var(--sp-2);">
+          <span class="badge" style="background:rgba(245, 158, 11, 0.12); color:#d97706; font-size:0.68rem; font-weight:700;">Wallet Policy</span>
+          <span>Can I withdraw deposited funds back to my bank account?</span>
+        </span>
+        <span class="faq-ico">{{ icon('chevron-down') }}</span>
+      </button>
+      <div class="faq-answer">
+        <strong>No.</strong> In accordance with our platform terms, all money deposited into your {{ BRAND }} wallet represents digital service credits dedicated exclusively to purchasing virtual numbers and verifications. <strong>Deposited funds cannot be withdrawn or cashed out.</strong> However, your balance never expires, and if any verification code fails to arrive, the full amount is immediately refunded back to your wallet balance so you can try another number.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-question" onclick="toggleDashFaq(this)">
+        <span style="display:flex; align-items:center; gap:var(--sp-2);">
+          <span class="badge badge-success" style="font-size:0.68rem; font-weight:700;">Auto-Refund</span>
+          <span>What happens if an SMS verification code does not arrive?</span>
+        </span>
+        <span class="faq-ico">{{ icon('chevron-down') }}</span>
+      </button>
+      <div class="faq-answer">
+        {{ BRAND }} operates a 100% Zero-Charge guarantee for missed codes. If a line does not receive an SMS code within the activation countdown (or if you cancel after 3 minutes without receiving an SMS), your order is automatically cancelled and <strong>100% of your funds are returned to your wallet balance immediately</strong>.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-question" onclick="toggleDashFaq(this)">
+        <span style="display:flex; align-items:center; gap:var(--sp-2);">
+          <span class="badge badge-brand" style="font-size:0.68rem; font-weight:700;">Referrals</span>
+          <span>How does the 5% Referral Program and Referral Wallet work?</span>
+        </span>
+        <span class="faq-ico">{{ icon('chevron-down') }}</span>
+      </button>
+      <div class="faq-answer">
+        You earn a <strong>5% commission on all spendings</strong> made by friends who register using your 5-character referral code or invite link. Commissions accumulate in your Referral Wallet. Once you reach <strong>$1.00 USD</strong>, you can withdraw your referral earnings directly into your main wallet to purchase numbers. Visit the <a href="{{ url_for('account.referral') }}" style="color:var(--brand); font-weight:600;">Referral Program</a> page to grab your code.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-question" onclick="toggleDashFaq(this)">
+        <span style="display:flex; align-items:center; gap:var(--sp-2);">
+          <span class="badge badge-subtle" style="font-size:0.68rem; font-weight:700;">Carriers</span>
+          <span>Which numbers should I choose for WhatsApp, Telegram, or Google?</span>
+        </span>
+        <span class="faq-ico">{{ icon('chevron-down') }}</span>
+      </button>
+      <div class="faq-answer">
+        We recommend our <a href="{{ url_for('sims.us_canada') }}" style="color:var(--brand); font-weight:600;">Buy US Number</a> dedicated cellular lines (AT&amp;T, T-Mobile, Verizon). These are Tier-1 Non-VoIP lines specially verified to be unbanned and 100% compatible with strict platforms. For other countries, explore our <a href="{{ url_for('sims.store') }}" style="color:var(--brand); font-weight:600;">Other Countries</a> global catalog.
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
   {{ super() if super else '' }}
   <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  <script>
+    function toggleDashFaq(btn) {
+      var item = btn.closest('.faq-item');
+      if (!item) return;
+      item.classList.toggle('is-open');
+    }
+  </script>
 {% endblock %}
+
 

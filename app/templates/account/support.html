@@ -1,41 +1,77 @@
 {% extends "layouts/app.html" %}
 {% from "partials/icons.html" import icon %}
 
-{% block title %}Support Center | {{ BRAND }}{% endblock %}
+{% block title %}Support &amp; FAQ | {{ BRAND }}{% endblock %}
 
 {% block page %}
-{# ---- Search hero ---- #}
-<section class="support-hero">
-  <h1 class="support-hero-title">How can we help you?</h1>
-  <form class="support-search" role="search" onsubmit="return false;">
-    <span class="support-search-ico">{{ icon('search') }}</span>
-    <input class="input" type="search" placeholder="Search for articles, eSIM guides, or error codes…" aria-label="Search help articles">
-  </form>
-  <div class="support-chips">
-    {% for chip in ['Activation Error 404', 'Refund Policy', 'eSIM Setup'] %}
-    <button type="button" class="pill">{{ chip }}</button>
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Support &amp; FAQ</h1>
+    <p class="page-subtitle">Find immediate answers to common verification questions or get in touch with our 24/7 support desk.</p>
+  </div>
+  <div class="page-head-actions">
+    <button type="button" class="btn btn-primary" onclick="window.startNewSupportTicket && window.startNewSupportTicket()">
+      {{ icon('plus') }} Create New Ticket
+    </button>
+  </div>
+</div>
+
+{# ---- CONTACT CHANNELS ---- #}
+<div class="channel-grid" style="margin-bottom:var(--sp-8);">
+  {% for c in channels %}
+  <div class="card card-pad channel-card">
+    <span class="channel-ico">{{ icon(c.icon) }}</span>
+    <div class="channel-title">{{ c.title }}</div>
+    <p class="channel-text">{{ c.text }}</p>
+    {% if c.action == 'chat' %}
+    <button type="button" class="btn btn-primary btn-block" onclick="window.openSupportWidget && window.openSupportWidget()">{{ c.cta }}</button>
+    {% elif c.href %}
+    <a href="{{ c.href }}" {% if c.href.startswith('http') or c.href.startswith('mailto') %}target="_blank" rel="noopener noreferrer"{% endif %} class="btn btn-secondary btn-block">{{ c.cta }}</a>
+    {% else %}
+    <a href="#" class="btn btn-secondary btn-block">{{ c.cta }}</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{# ---- FREQUENTLY ASKED QUESTIONS (ACCORDION) ---- #}
+<section class="card card-pad" style="margin-bottom:var(--sp-8);">
+  <div class="card-head" style="margin-bottom:var(--sp-4);">
+    <div>
+      <h2 class="card-title">{{ icon('help-circle') }} Frequently Asked Questions</h2>
+      <div class="text-muted" style="font-size:var(--fs-xs);">Instant answers to billing, carrier routing, and platform policies</div>
+    </div>
+    <a href="{{ url_for('public.terms') }}" target="_blank" class="link-more" style="font-size:var(--fs-xs);">
+      Terms of Service {{ icon('arrow-right', 'i-inline') }}
+    </a>
+  </div>
+
+  <div class="faq-accordion">
+    {% for f in faqs %}
+    <div class="faq-item {% if loop.first %}is-open{% endif %}">
+      <button type="button" class="faq-question" onclick="toggleFaq(this)">
+        <span style="display:flex; align-items:center; gap:var(--sp-3);">
+          {% if f.category %}
+          <span class="badge badge-subtle" style="font-size:0.68rem; font-weight:600;">{{ f.category }}</span>
+          {% endif %}
+          <span>{{ f.q }}</span>
+        </span>
+        <span class="faq-ico">{{ icon('chevron-down') }}</span>
+      </button>
+      <div class="faq-answer">
+        {{ f.a }}
+      </div>
+    </div>
     {% endfor %}
   </div>
 </section>
 
-{# ---- Knowledge base ---- #}
-<h2 class="page-title" style="font-size:var(--fs-xl);margin-bottom:var(--sp-5);">Knowledge Base</h2>
-<div class="kb-grid" style="margin-bottom:var(--sp-8);">
-  {% for t in topics %}
-  <a href="#" class="card card-pad card-hover kb-card">
-    <span class="icon-tile">{{ icon(t.icon) }}</span>
-    <div class="kb-title">{{ t.title }}</div>
-    <p class="kb-text">{{ t.text }}</p>
-  </a>
-  {% endfor %}
-</div>
-
-{# ---- Recent support tickets ---- #}
+{# ---- RECENT SUPPORT TICKETS ---- #}
 <section class="card card-pad" style="margin-bottom:var(--sp-8);">
   <div class="card-head">
     <div>
       <h2 class="card-title">Recent Support Tickets</h2>
-      <div class="text-muted" style="font-size: var(--fs-xs);">Track your conversations and live agent responses</div>
+      <div class="text-muted" style="font-size:var(--fs-xs);">Track your conversations and live agent responses</div>
     </div>
     <button type="button" class="btn btn-primary btn-sm" onclick="window.startNewSupportTicket && window.startNewSupportTicket()">
       {{ icon('plus') }} Create New Ticket
@@ -60,23 +96,19 @@
               #{{ tk.ticket_number or tk.id }}
             </a>
           </td>
+          <td class="td-strong">{{ tk.subject }}</td>
           <td>
-            <a href="javascript:void(0)" onclick="window.openSupportWidget && window.openSupportWidget('{{ tk.id }}')" style="color: var(--text); text-decoration: none; font-weight: 600;">
-              {{ tk.subject }}
-            </a>
-          </td>
-          <td>
-            {% if tk.status == 'resolved' %}
-              <span class="badge badge-success badge-dot">Resolved</span>
-            {% elif tk.status == 'open' %}
-              <span class="badge badge-danger badge-dot">Open</span>
-            {% elif tk.status == 'pending' %}
-              <span class="badge badge-warning badge-dot">Pending</span>
+            {% if tk.status == 'open' %}
+            <span class="badge badge-success badge-dot">Open</span>
+            {% elif tk.status == 'in_progress' %}
+            <span class="badge badge-warning badge-dot">In Progress</span>
+            {% elif tk.status == 'resolved' %}
+            <span class="badge badge-subtle">Resolved</span>
             {% else %}
-              <span class="badge badge-secondary badge-dot">{{ tk.status|capitalize }}</span>
+            <span class="badge badge-subtle">{{ tk.status }}</span>
             {% endif %}
           </td>
-          <td class="td-dim">{{ (tk.updated_at or tk.updated or '')[:10] }}</td>
+          <td class="td-dim" style="font-size: var(--fs-xs);">{{ tk.updated_at.split(' ')[0] if ' ' in tk.updated_at else tk.updated_at }}</td>
           <td style="text-align: right;">
             <button type="button" class="btn btn-xs btn-outline-brand" onclick="window.openSupportWidget && window.openSupportWidget('{{ tk.id }}')">
               {{ icon('chat') }} Chat
@@ -91,21 +123,11 @@
   </div>
 </section>
 
-{# ---- Contact channels ---- #}
-<div class="channel-grid">
-  {% for c in channels %}
-  <div class="card card-pad channel-card">
-    <span class="channel-ico">{{ icon(c.icon) }}</span>
-    <div class="channel-title">{{ c.title }}</div>
-    <p class="channel-text">{{ c.text }}</p>
-    {% if c.action == 'chat' %}
-    <button type="button" class="btn btn-primary btn-block" onclick="window.openSupportWidget && window.openSupportWidget()">{{ c.cta }}</button>
-    {% elif c.href %}
-    <a href="{{ c.href }}" {% if c.href.startswith('http') or c.href.startswith('mailto') %}target="_blank" rel="noopener noreferrer"{% endif %} class="btn btn-secondary btn-block">{{ c.cta }}</a>
-    {% else %}
-    <a href="#" class="btn btn-secondary btn-block">{{ c.cta }}</a>
-    {% endif %}
-  </div>
-  {% endfor %}
-</div>
+<script>
+  function toggleFaq(btn) {
+    var item = btn.closest('.faq-item');
+    if (!item) return;
+    item.classList.toggle('is-open');
+  }
+</script>
 {% endblock %}

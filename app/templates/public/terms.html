@@ -1,0 +1,152 @@
+{% extends "layouts/base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Terms of Service | {{ BRAND }}{% endblock %}
+{% block meta_desc %}Terms of Service and User Agreement for {{ BRAND }} SMS Verification Platform.{% endblock %}
+
+{% block body %}
+<header class="auth-top">
+  <a class="brand" href="{{ url_for('public.landing') }}">
+    <span class="brand-logo"><img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ BRAND }} logo" style="width:38px;height:38px;"></span>
+    <span class="brand-name">{{ BRAND }}</span>
+  </a>
+  <div class="lp-nav-actions">
+    <button class="icon-btn theme-toggle" data-theme-toggle type="button" aria-label="Toggle theme">
+      {{ icon("sun", "i-sun") }}{{ icon("moon", "i-moon") }}
+    </button>
+    {% if session.get('user') %}
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary btn-sm">Dashboard</a>
+    {% else %}
+    <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Login</a>
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Register</a>
+    {% endif %}
+  </div>
+</header>
+
+<main class="legal-page">
+  <div class="legal-container">
+    <div class="legal-header">
+      <div class="legal-meta">
+        <span class="badge badge-brand">{{ BRAND }} Legal</span>
+        <span>Last Updated: September 2026</span>
+        <span>Version 2.4</span>
+      </div>
+      <h1 class="legal-title">Terms of Service &amp; User Agreement</h1>
+      <p class="text-muted" style="font-size:var(--fs-sm);">
+        Please read these terms carefully before creating an account or depositing funds onto the {{ BRAND }} platform.
+      </p>
+    </div>
+
+    <div class="legal-card">
+      {# ---- PROMINENT WALLET DEPOSIT CALLOUT ---- #}
+      <div class="legal-alert">
+        <div class="legal-alert-title">
+          {{ icon('alert-triangle') }} IMPORTANT: WALLET DEPOSITS &amp; NON-WITHDRAWAL POLICY
+        </div>
+        <div class="legal-alert-text">
+          <strong>All funds deposited into your {{ BRAND }} wallet (via Card, Bank Transfer, or Cryptocurrency) are strictly digital service credits dedicated exclusively for purchasing virtual numbers and SMS verifications. Money deposited into your account CANNOT be withdrawn, refunded to a bank account, or cashed out. Funds can only be spent on platform services.</strong> In the event that an SMS verification code is not received within the activation window, the full price is automatically refunded back to your {{ BRAND }} wallet balance so you can try another number or service.
+        </div>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('check-circle') }} 1. Acceptance of Terms</h2>
+        <p class="legal-p">
+          By registering an account, accessing, or using {{ BRAND }} ("we", "us", or "the Platform"), you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must not use our services.
+        </p>
+        <p class="legal-p">
+          You must be at least 18 years of age or possess legal parental/guardian consent in your jurisdiction to open an account and use our telecom verification services.
+        </p>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('shield') }} 2. Service Description &amp; Infrastructure</h2>
+        <p class="legal-p">
+          {{ BRAND }} provides high-reliability, private cellular lines and temporary Non-VoIP telecommunication numbers across the United States, Canada, the United Kingdom, and over 50 global territories. These numbers are engineered to receive SMS verification codes (One-Time Passwords / OTPs) for online platforms, mobile applications, privacy protection, and business testing.
+        </p>
+        <ul class="legal-list">
+          <li><strong>Activation Windows:</strong> Single-use verification numbers remain active for a predetermined session window (typically 15 to 20 minutes). Once an SMS code arrives or the session expires, the number closes.</li>
+          <li><strong>Dedicated Lines:</strong> Premium US numbers are screened non-VoIP cellular routes with high delivery rates for WhatsApp, Google, and banking platforms.</li>
+          <li><strong>Temporary Use:</strong> Unless explicitly rented under a long-term plan, numbers are disposable and should not be relied upon as permanent secondary phone lines.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('wallet') }} 3. Wallet Funding, Balance &amp; Strict Non-Withdrawal Policy</h2>
+        <p class="legal-p">
+          To purchase numbers, users fund their internal {{ BRAND }} wallet using approved deposit methods, including Instant Bank Transfers, Debit/Credit Cards, and Cryptocurrency (USDT, BTC, etc.).
+        </p>
+        <ul class="legal-list">
+          <li><strong>Non-Withdrawable Principle:</strong> All deposits made to the platform constitute prepayments for virtual verification services. Once a deposit is credited, it cannot be refunded, reversed, or withdrawn back to any bank account, debit card, or crypto wallet.</li>
+          <li><strong>Service-Only Spending:</strong> Wallet balances are strictly usable for purchasing virtual phone numbers and SMS verifications on {{ BRAND }}.</li>
+          <li><strong>No Expiration:</strong> Funds deposited into your {{ BRAND }} wallet do not expire and will remain securely stored until you choose to utilize them.</li>
+          <li><strong>Exchange Rates:</strong> Platform pricing is USD-denominated. For Naira deposits, conversions use transparent, live exchange rates locked at the moment of payment creation.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('refresh') }} 4. Automated SMS Refund Guarantee</h2>
+        <p class="legal-p">
+          We maintain a strict <strong>Zero-Charge for Missed SMS</strong> policy to guarantee fair service:
+        </p>
+        <ul class="legal-list">
+          <li><strong>Automatic Wallet Credit:</strong> If a carrier line does not receive an incoming SMS code within the active verification window (or if you cancel an order after 3 minutes of waiting without receiving a code), the entire purchase price is immediately refunded in full.</li>
+          <li><strong>Internal Destination:</strong> All service refunds return directly to your internal {{ BRAND }} wallet balance, allowing you to instantly select a replacement carrier line or alternative country.</li>
+          <li><strong>Completed Verifications:</strong> Once a verification code has been successfully received and delivered to your dashboard, that verification session is marked as completed and is non-refundable.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('gift') }} 5. Referral Program &amp; Wallet Redemptions</h2>
+        <p class="legal-p">
+          {{ BRAND }} offers an affiliate referral program allowing registered users to earn commissions:
+        </p>
+        <ul class="legal-list">
+          <li><strong>5% Commission:</strong> When another user registers using your unique 5-character referral code or link, you earn a 5% commission on all their spendings on the platform.</li>
+          <li><strong>Referral Wallet:</strong> Referral commissions accumulate in a dedicated Referral Wallet separate from your main wallet balance.</li>
+          <li><strong>$1.00 Minimum Withdrawal:</strong> Once your accumulated referral earnings reach a minimum of $1.00 USD, you may redeem those earnings directly into your main {{ BRAND }} wallet balance to spend on services.</li>
+          <li><strong>Anti-Fraud:</strong> Self-referral, fake multi-accounting, and referral exploitation are strictly prohibited and will result in forfeiture of referral balances.</li>
+        </ul>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('lock') }} 6. Acceptable Use Policy</h2>
+        <p class="legal-p">
+          {{ BRAND }} is committed to user privacy, data security, and ethical communication. You agree that you will not use our numbers or platform to:
+        </p>
+        <ul class="legal-list">
+          <li>Engage in fraud, financial scams, identity theft, or impersonation.</li>
+          <li>Send or facilitate unsolicited mass spam, phishing, or abusive communications.</li>
+          <li>Bypass legitimate law enforcement or legal subpoenas.</li>
+          <li>Violate any local, national, or international telecommunication laws.</li>
+        </ul>
+        <p class="legal-p">
+          Any account found engaging in unlawful conduct will be suspended immediately without entitlement to any remaining wallet balance.
+        </p>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('file-text') }} 7. Disclaimers &amp; Platform Autonomy</h2>
+        <p class="legal-p">
+          {{ BRAND }} is an independent telecommunications service provider. We are not endorsed, sponsored, affiliated with, or officially associated with WhatsApp Inc., Telegram FZ-LLC, Google LLC, Meta Platforms Inc., OpenAI, or any of the third-party platforms for which our verification numbers may be utilized.
+        </p>
+        <p class="legal-p">
+          While we strive for 99.9% uptime, carrier routing latency and third-party app algorithm changes may occasionally cause delivery delays. Our automated refund guarantee ensures you are never charged for unsuccessful activations.
+        </p>
+      </div>
+
+      <div class="legal-section">
+        <h2 class="legal-h2">{{ icon('headset') }} 8. Support &amp; Official Inquiries</h2>
+        <p class="legal-p">
+          If you have questions regarding these Terms of Service, billing, or technical assistance, reach our support team through our official channels:
+        </p>
+        <ul class="legal-list">
+          <li><strong>Email Support:</strong> <a href="mailto:tgsimsverify@gmail.com">tgsimsverify@gmail.com</a></li>
+          <li><strong>WhatsApp Official Line:</strong> <a href="https://wa.me/2348058098494" target="_blank" rel="noopener noreferrer">+234 805 809 8494</a></li>
+          <li><strong>Telegram Support:</strong> <a href="https://t.me/tgsimss" target="_blank" rel="noopener noreferrer">t.me/tgsimss</a></li>
+          <li><strong>Support Desk:</strong> 24/7 Live ticket messenger accessible via your dashboard.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

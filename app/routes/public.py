@@ -45,6 +45,19 @@ def referral_redirect(ref_code):
     return redirect(url_for('auth.register', ref=code))
 
 
+@public_bp.route('/terms')
+def terms():
+    """Terms of Service and User Agreement."""
+    return render_template('public/terms.html')
+
+
+@public_bp.route('/privacy')
+def privacy():
+    """Privacy Policy and Refund Policy."""
+    return render_template('public/privacy.html')
+
+
+
 
 @public_bp.route('/')
 def landing():
