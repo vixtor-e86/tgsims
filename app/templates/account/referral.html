@@ -1,36 +1,95 @@
 {% extends "layouts/app.html" %}
 {% from "partials/icons.html" import icon %}
 
-{% block title %}Referral Program | {{ BRAND }}{% endblock %}
+{% block title %}Referral Program & Wallet | {{ BRAND }}{% endblock %}
 
 {% block page %}
 <div class="page-head">
   <div>
     <h1 class="page-title">Referral Program</h1>
-    <p class="page-subtitle">Invite friends and earn wallet credit on every top-up they make.</p>
+    <p class="page-subtitle">Earn 5% on every verification order placed by users you invite. Redeem directly to your main wallet once you reach $1.00.</p>
   </div>
 </div>
 
-{# ---- Hero: code + copy ---- #}
+{# ---- HERO: 5-CHARACTER REFERRAL CODE ---- #}
 <section class="ref-hero">
   <span class="ref-hero-ico">{{ icon('gift') }}</span>
-  <h2 class="ref-hero-title">Give $5, Get $5</h2>
-  <p class="ref-hero-sub">Share your code with friends. When they fund their wallet, you both earn credit.</p>
+  <h2 class="ref-hero-title">Earn 5% on Every Verification</h2>
+  <p class="ref-hero-sub">Share your exclusive 5-character invite code. Whenever your referred friends purchase numbers or receive SMS codes, 5% of their spending lands straight into your Referral Wallet.</p>
 
   <div class="ref-code-box">
-    <span class="ref-code">{{ referral.code }}</span>
+    <span class="ref-code" id="refCodeText">{{ referral.code }}</span>
     <button type="button" class="btn btn-primary btn-sm" data-copy="{{ referral.code }}">
       {{ icon('copy') }} Copy Code
     </button>
   </div>
 </section>
 
-{# ---- Stats ---- #}
-<div class="grid-3 stat-grid">
+{# ---- REFERRAL WALLET CARD ---- #}
+<div class="ref-wallet-card">
+  <div class="ref-wallet-header">
+    <div class="ref-wallet-bal-wrap">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:4px;">
+        <span class="badge" style="background:rgba(16, 185, 129, 0.12); color:#10b981; font-weight:700; font-size:0.75rem;">
+          {{ icon('wallet') }} Referral Wallet
+        </span>
+        <span style="font-size:var(--fs-xs); color:var(--text-muted);">Minimum withdrawal: $1.00</span>
+      </div>
+      <div class="ref-wallet-amount" data-usd="{{ '%.2f'|format(referral.referral_balance) }}">
+        ${{ '%.2f'|format(referral.referral_balance) }}
+      </div>
+      <div class="ref-wallet-sub">
+        ≈ ₦{{ '{:,.2f}'.format(referral.referral_balance * NGN_PER_USD) }} ready to transfer
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.75rem;">
+      {% if referral.can_redeem %}
+      <button type="button" class="btn btn-primary" onclick="openRedeemModal()">
+        {{ icon('arrow-right') }} Withdraw to Main Wallet
+      </button>
+      {% else %}
+      <button type="button" class="btn btn-secondary" disabled style="opacity: 0.6; cursor: not-allowed;" title="Accumulate at least $1.00 to withdraw">
+        {{ icon('lock') }} Redeem to Main Wallet ($1.00 Min)
+      </button>
+      {% endif %}
+
+      <div style="font-size:var(--fs-xs); color:var(--text-muted); text-align:right;">
+        Main Wallet Balance: <strong>${{ '%.2f'|format(wallet.balance if wallet else 0.00) }}</strong>
+      </div>
+    </div>
+  </div>
+
+  {# Progress to $1.00 minimum #}
+  {% set progress = (referral.referral_balance / 1.00 * 100)|round|int %}
+  {% if progress > 100 %}{% set progress = 100 %}{% endif %}
+  <div class="ref-progress-track" title="{{ progress }}% of $1.00 minimum withdrawal">
+    <div class="ref-progress-fill" style="width: {{ progress }}%;"></div>
+  </div>
+  <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-muted);">
+    <span>$0.00</span>
+    {% if referral.referral_balance >= 1.00 %}
+    <span style="color:#10b981; font-weight:600;">✓ Minimum $1.00 reached! Ready to withdraw.</span>
+    {% else %}
+    <span>${{ '%.2f'|format(1.00 - referral.referral_balance) }} more needed to withdraw</span>
+    {% endif %}
+    <span>$1.00 min</span>
+  </div>
+</div>
+
+{# ---- STATS GRID ---- #}
+<div class="grid-4 stat-grid" style="margin-bottom:var(--sp-6);">
+  <div class="card card-pad stat-card ref-stat">
+    <span class="icon-tile">{{ icon('wallet') }}</span>
+    <div class="ref-stat-value">${{ '%.2f'|format(referral.referral_balance) }}</div>
+    <div class="ref-stat-label">Referral Wallet</div>
+  </div>
   <div class="card card-pad stat-card ref-stat">
     <span class="icon-tile">{{ icon('coins') }}</span>
-    <div class="ref-stat-value" data-usd="{{ '%.2f'|format(referral.earned_usd) }}">₦{{ '{:,.2f}'.format(referral.earned_usd * NGN_PER_USD) }}</div>
-    <div class="ref-stat-label">Total Earned</div>
+    <div class="ref-stat-value" data-usd="{{ '%.2f'|format(referral.earned_usd) }}">
+      ${{ '%.2f'|format(referral.earned_usd) }}
+    </div>
+    <div class="ref-stat-label">Total Lifetime Earned</div>
   </div>
   <div class="card card-pad stat-card ref-stat">
     <span class="icon-tile">{{ icon('users') }}</span>
@@ -40,43 +99,248 @@
   <div class="card card-pad stat-card ref-stat">
     <span class="icon-tile">{{ icon('check-circle') }}</span>
     <div class="ref-stat-value">{{ referral.converted }}</div>
-    <div class="ref-stat-label">Successful Referrals</div>
+    <div class="ref-stat-label">Active Referrals</div>
   </div>
 </div>
 
-{# ---- Share link ---- #}
+{# ---- SHARE LINK ---- #}
 <section class="card card-pad" style="margin-bottom:var(--sp-6);">
   <div class="card-head">
-    <h2 class="card-title">{{ icon('send') }} Your Referral Link</h2>
+    <h2 class="card-title">{{ icon('send') }} Your Unique Referral Link</h2>
   </div>
+  <p style="font-size:var(--fs-sm); color:var(--text-muted); margin-bottom:var(--sp-3);">
+    Anyone who clicks your link will have your 5-character referral code automatically applied during signup.
+  </p>
   <div class="ref-share">
-    <input class="input" type="text" value="{{ referral.link }}" readonly aria-label="Referral link"
-           onfocus="this.select()">
-    <button type="button" class="btn btn-primary" data-copy="{{ referral.link }}">{{ icon('copy') }} Copy Link</button>
+    <input class="input" type="text" value="{{ referral.link }}" readonly aria-label="Referral link" onfocus="this.select()" id="refLinkInput">
+    <button type="button" class="btn btn-primary" data-copy="{{ referral.link }}">
+      {{ icon('copy') }} Copy Link
+    </button>
+  </div>
+
+  <div class="ref-social-btns">
+    {% set share_msg = "Get real Non-VoIP numbers for WhatsApp, Telegram & 100+ services on Tgsims. Use my invite code " ~ referral.code ~ " to get started: " ~ referral.link %}
+    <a href="https://wa.me/?text={{ share_msg|urlencode }}" target="_blank" rel="noopener noreferrer" class="ref-social-btn wa">
+      {{ icon('chat') }} Share via WhatsApp
+    </a>
+    <a href="https://t.me/share/url?url={{ referral.link|urlencode }}&text={{ ('Join Tgsims for instant virtual verification numbers! Use code: ' ~ referral.code)|urlencode }}" target="_blank" rel="noopener noreferrer" class="ref-social-btn tg">
+      {{ icon('send') }} Share via Telegram
+    </a>
   </div>
 </section>
 
-{# ---- How it works ---- #}
-<section class="card card-pad">
+{# ---- HOW IT WORKS ---- #}
+<section class="card card-pad" style="margin-bottom:var(--sp-6);">
   <div class="card-head">
-    <h2 class="card-title">{{ icon('trending-up') }} How It Works</h2>
+    <h2 class="card-title">{{ icon('trending-up') }} How The 5% Referral Program Works</h2>
   </div>
-  <div class="ref-steps">
+  <div class="ref-steps" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
     <div class="ref-step">
       <div class="ref-step-num">1</div>
-      <div class="ref-step-title">Share your link</div>
-      <p class="ref-step-text">Send your unique referral code or link to friends who need virtual numbers.</p>
+      <div class="ref-step-title">Share Your Code</div>
+      <p class="ref-step-text">Share your 5-character code <strong>{{ referral.code }}</strong> or your custom link with colleagues, friends, or online communities.</p>
     </div>
     <div class="ref-step">
       <div class="ref-step-num">2</div>
-      <div class="ref-step-title">They sign up &amp; fund</div>
-      <p class="ref-step-text">Your friend creates an account and makes their first wallet top-up.</p>
+      <div class="ref-step-title">Friends Sign Up</div>
+      <p class="ref-step-text">When they register, your referral code is automatically linked to their account.</p>
     </div>
     <div class="ref-step">
       <div class="ref-step-num">3</div>
-      <div class="ref-step-title">You both earn</div>
-      <p class="ref-step-text">$5 credit lands in both wallets instantly, ready to spend on any service.</p>
+      <div class="ref-step-title">Earn 5% on Spendings</div>
+      <p class="ref-step-text">Every time they buy a number or activate SMS verification, 5% of their spending is credited to your Referral Wallet.</p>
+    </div>
+    <div class="ref-step">
+      <div class="ref-step-num">4</div>
+      <div class="ref-step-title">Redeem from $1.00</div>
+      <p class="ref-step-text">Once your referral wallet accumulates $1.00 or more, transfer it straight into your main wallet with a single click!</p>
     </div>
   </div>
 </section>
+
+{# ---- REFERRAL ACTIVITY TABLES ---- #}
+<section class="card card-pad">
+  <div class="card-head" style="margin-bottom:var(--sp-4);">
+    <h2 class="card-title">{{ icon('clock') }} Referral Activity</h2>
+  </div>
+
+  <div style="display:flex; gap:var(--sp-3); border-bottom:1px solid var(--border); margin-bottom:var(--sp-4);">
+    <button type="button" id="tabCommissionsBtn" class="btn btn-ghost btn-sm" style="border-bottom:2px solid var(--brand); border-radius:0; font-weight:700; color:var(--brand);" onclick="switchTab('commissions')">
+      Commissions Earned ({{ referral.recent_commissions|length }})
+    </button>
+    <button type="button" id="tabRedemptionsBtn" class="btn btn-ghost btn-sm" style="border-bottom:2px solid transparent; border-radius:0; color:var(--text-muted);" onclick="switchTab('redemptions')">
+      Wallet Redemptions ({{ referral.recent_redemptions|length }})
+    </button>
+  </div>
+
+  {# Tab 1: Commissions #}
+  <div id="tabCommissions">
+    {% if referral.recent_commissions %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Order Ref</th>
+            <th>Amount Spent</th>
+            <th>Commission Rate</th>
+            <th>You Earned</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for comm in referral.recent_commissions %}
+          <tr>
+            <td style="font-size:var(--fs-xs); color:var(--text-muted);">{{ comm.created_at[:16] if comm.created_at else 'Recent' }}</td>
+            <td style="font-family:var(--font-mono); font-size:var(--fs-xs);">{{ comm.order_reference or ('#' ~ comm.id[:8]) }}</td>
+            <td>${{ '%.2f'|format(comm.amount_spent|float) }}</td>
+            <td><span class="badge badge-subtle">5%</span></td>
+            <td style="font-weight:700; color:#10b981;">+${{ '%.2f'|format(comm.commission_earned|float) }}</td>
+            <td>
+              {% if comm.status == 'credited' %}
+              <span class="badge" style="background:rgba(16, 185, 129, 0.12); color:#10b981;">Credited</span>
+              {% elif comm.status == 'reversed' %}
+              <span class="badge" style="background:rgba(239, 68, 68, 0.12); color:#ef4444;">Reversed</span>
+              {% else %}
+              <span class="badge badge-subtle">{{ comm.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:var(--sp-8) var(--sp-4); color:var(--text-muted);">
+      <p style="font-size:var(--fs-base); font-weight:600; margin-bottom:4px;">No commissions recorded yet</p>
+      <p style="font-size:var(--fs-xs);">Share your 5-character referral code <strong>{{ referral.code }}</strong> to start earning 5% when friends order numbers!</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {# Tab 2: Redemptions #}
+  <div id="tabRedemptions" style="display:none;">
+    {% if referral.recent_redemptions %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Amount Redeemed</th>
+            <th>Destination</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for red in referral.recent_redemptions %}
+          <tr>
+            <td style="font-size:var(--fs-xs); color:var(--text-muted);">{{ red.created_at[:16] if red.created_at else 'Recent' }}</td>
+            <td style="font-weight:700; color:#10b981;">${{ '%.2f'|format(red.amount|float) }}</td>
+            <td>Main Wallet Balance</td>
+            <td><span class="badge" style="background:rgba(16, 185, 129, 0.12); color:#10b981;">Completed</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:var(--sp-8) var(--sp-4); color:var(--text-muted);">
+      <p style="font-size:var(--fs-base); font-weight:600; margin-bottom:4px;">No redemptions yet</p>
+      <p style="font-size:var(--fs-xs);">Once your referral wallet reaches $1.00, you can withdraw your balance directly to your main wallet.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{# ---- REDEEM MODAL ---- #}
+<div id="redeemModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.6); place-items:center; padding:var(--sp-4);">
+  <div class="card card-pad" style="max-width:440px; width:100%; border-radius:var(--r-xl); box-shadow:var(--shadow-xl); background:var(--surface);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-4);">
+      <h3 style="font-size:var(--fs-lg); font-weight:700; margin:0;">Withdraw to Main Wallet</h3>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeRedeemModal()" aria-label="Close">✕</button>
+    </div>
+
+    <p style="font-size:var(--fs-sm); color:var(--text-muted); margin-bottom:var(--sp-4);">
+      Transfer accumulated referral earnings directly into your main balance to buy numbers or verifications.
+    </p>
+
+    <div style="background:var(--surface-sub); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-4); display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:var(--fs-xs); color:var(--text-muted);">Available Referral Balance</span>
+      <span style="font-weight:700; font-size:var(--fs-base); color:#10b981;">${{ '%.2f'|format(referral.referral_balance) }}</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('account.redeem_referral') }}">
+      <div class="field" style="margin-bottom:var(--sp-4);">
+        <label class="label" for="redeemAmount">Amount to Withdraw (USD)</label>
+        <div class="input-group">
+          <span class="input-icon">$</span>
+          <input class="input" id="redeemAmount" name="amount" type="number" step="0.01" min="1.00" max="{{ referral.referral_balance }}" value="{{ '%.2f'|format(referral.referral_balance) }}" required>
+          <button type="button" class="btn btn-ghost btn-sm" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:var(--fs-xs); font-weight:700;" onclick="document.getElementById('redeemAmount').value='{{ '%.2f'|format(referral.referral_balance) }}'">
+            MAX
+          </button>
+        </div>
+        <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:4px;">
+          Minimum withdrawal amount is $1.00.
+        </p>
+      </div>
+
+      <div style="display:flex; gap:var(--sp-3); justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeRedeemModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          {{ icon('check') }} Confirm Withdrawal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openRedeemModal() {
+    var m = document.getElementById('redeemModal');
+    if (m) {
+      m.style.display = 'grid';
+    }
+  }
+
+  function closeRedeemModal() {
+    var m = document.getElementById('redeemModal');
+    if (m) {
+      m.style.display = 'none';
+    }
+  }
+
+  // Close modal on escape key or clicking backdrop
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeRedeemModal();
+  });
+  var mEl = document.getElementById('redeemModal');
+  if (mEl) {
+    mEl.addEventListener('click', function(e) {
+      if (e.target === mEl) closeRedeemModal();
+    });
+  }
+
+  function switchTab(tab) {
+    var commTab = document.getElementById('tabCommissions');
+    var redTab = document.getElementById('tabRedemptions');
+    var commBtn = document.getElementById('tabCommissionsBtn');
+    var redBtn = document.getElementById('tabRedemptionsBtn');
+
+    if (tab === 'commissions') {
+      commTab.style.display = 'block';
+      redTab.style.display = 'none';
+      commBtn.style.borderBottomColor = 'var(--brand)';
+      commBtn.style.color = 'var(--brand)';
+      redBtn.style.borderBottomColor = 'transparent';
+      redBtn.style.color = 'var(--text-muted)';
+    } else {
+      commTab.style.display = 'none';
+      redTab.style.display = 'block';
+      redBtn.style.borderBottomColor = 'var(--brand)';
+      redBtn.style.color = 'var(--brand)';
+      commBtn.style.borderBottomColor = 'transparent';
+      commBtn.style.color = 'var(--text-muted)';
+    }
+  }
+</script>
 {% endblock %}

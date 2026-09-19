@@ -2000,6 +2000,86 @@
   .ref-steps { grid-template-columns: 1fr; }
 }
 
+/* Referral Wallet Box */
+.ref-wallet-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: var(--sp-6);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--sp-6);
+}
+.ref-wallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+.ref-wallet-bal-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.ref-wallet-amount {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.ref-wallet-sub {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.ref-progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-sub);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+.ref-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.ref-social-btns {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  flex-wrap: wrap;
+}
+.ref-social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border-radius: var(--r-full);
+  text-decoration: none;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.ref-social-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+.ref-social-btn.wa {
+  background: #25D366;
+  color: #fff;
+}
+.ref-social-btn.tg {
+  background: #229ED9;
+  color: #fff;
+}
+
+
 /* ==========================================================================
    DEVELOPMENT ACCESS GATE
    ========================================================================== */

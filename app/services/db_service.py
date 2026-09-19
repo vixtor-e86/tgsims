@@ -5,7 +5,9 @@ No third-party provider names are ever leaked to the caller or frontend.
 
 import datetime
 import uuid
+import secrets
 from app.services.supabase_client import get_supabase_admin, mock_db
+
 
 
 class DBService:
@@ -183,7 +185,12 @@ class DBService:
                 'metadata': metadata,
                 'created_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             })
+            try:
+                DBService.record_referral_commission(user_id=user_id, amount_spent=amount, order_id=order_id, order_reference=reference)
+            except Exception as ref_err:
+                print(f"[DBService] mock referral commission error: {ref_err}")
             return {'success': True, 'new_balance': wallet['balance'], 'message': 'Balance deducted successfully.'}
+
 
         admin = get_supabase_admin()
         if not admin:
@@ -223,6 +230,17 @@ class DBService:
             
             tx_res = admin.table('wallet_transactions').insert(tx_data).execute()
             tx_id = tx_res.data[0]['id'] if tx_res.data else None
+
+            # Record 5% referral earning for the referrer if this user was invited
+            try:
+                DBService.record_referral_commission(
+                    user_id=user_id,
+                    amount_spent=amount,
+                    order_id=order_id,
+                    order_reference=reference
+                )
+            except Exception as ref_err:
+                print(f"[DBService] referral commission error: {ref_err}")
 
             return {
                 'success': True,
@@ -493,6 +511,12 @@ class DBService:
                 print(f"[DBService] refund order status update error: {e}")
         else:
             order['status'] = 'refunded'
+
+        # Reverse 5% referral commission if one was credited for this order
+        try:
+            DBService.reverse_referral_commission(order_id=order.get('id') or order_id)
+        except Exception as rev_err:
+            print(f"[DBService] reverse_referral_commission error: {rev_err}")
 
         return {
             'success': True,
@@ -1779,5 +1803,462 @@ class DBService:
         """Retrieve cached platform pricing and configuration settings."""
         from app.services.settings_service import SettingsService
         return SettingsService.get_settings()
+
+    # =========================================================================
+    # 5-CHARACTER REFERRAL SYSTEM & REFERRAL WALLET
+    # =========================================================================
+
+    @staticmethod
+    def generate_referral_code() -> str:
+        """Generate a random 5-character uppercase alphanumeric referral code."""
+        charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        return ''.join(secrets.choice(charset) for _ in range(5))
+
+    @staticmethod
+    def get_or_create_referral_code(user_id: str) -> str:
+        """Retrieve user's 5-character referral code or generate a unique one if missing."""
+        if not user_id or user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
+            mock_w = mock_db.referral_wallets.setdefault(user_id or 'demo-user-id', {'referral_code': 'TUNDE', 'referral_balance': 2.50, 'referred_by': None})
+            return mock_w.get('referral_code', 'TUNDE')
+
+        admin = get_supabase_admin()
+        if not admin:
+            return 'TGSIM'
+
+        try:
+            res = admin.table('profiles').select('id, referral_code').eq('id', user_id).limit(1).execute()
+            if res.data and len(res.data) > 0:
+                code = res.data[0].get('referral_code')
+                if code and len(str(code).strip()) > 0:
+                    return str(code).strip().upper()
+
+            # Generate unique 5-character referral code
+            for _ in range(10):
+                new_code = DBService.generate_referral_code()
+                chk = admin.table('profiles').select('id').eq('referral_code', new_code).limit(1).execute()
+                if not chk.data:
+                    admin.table('profiles').update({'referral_code': new_code}).eq('id', user_id).execute()
+                    return new_code
+            return 'TGSIM'
+        except Exception as e:
+            print(f"[DBService] get_or_create_referral_code notice: {e}")
+            return 'TGSIM'
+
+    @staticmethod
+    def link_referral(user_id: str, referral_code: str) -> bool:
+        """Links a new user to their referrer using a 5-character referral code."""
+        code = (referral_code or '').strip().upper()
+        if not code or not user_id:
+            return False
+
+        if user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
+            mock_w = mock_db.referral_wallets.setdefault(user_id, {'referral_code': 'DEMO1', 'referral_balance': 0.00, 'referred_by': None})
+            mock_w['referred_by'] = 'demo-user-id'
+            return True
+
+        admin = get_supabase_admin()
+        if not admin:
+            return False
+
+        try:
+            # Find referrer by referral_code
+            ref_user = admin.table('profiles').select('id, username').eq('referral_code', code).limit(1).execute()
+            if not ref_user.data:
+                return False
+
+            referrer_id = ref_user.data[0]['id']
+            if referrer_id == user_id:
+                return False  # Self-referral not permitted
+
+            admin.table('profiles').update({
+                'referred_by': referrer_id
+            }).eq('id', user_id).execute()
+            return True
+        except Exception as e:
+            print(f"[DBService] link_referral error: {e}")
+            return False
+
+    @staticmethod
+    def get_referral_details(user_id: str, host_url: str = 'https://tgsims.com/') -> dict:
+        """Fetch all referral program stats, balance, invited users, and history for user."""
+        host_url = host_url.rstrip('/') + '/'
+        
+        # Fallback for demo / local
+        if not user_id or user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
+            mock_w = mock_db.referral_wallets.setdefault(user_id or 'demo-user-id', {'referral_code': 'TUNDE', 'referral_balance': 2.50, 'referred_by': None})
+            code = mock_w.get('referral_code', 'TUNDE')
+            balance = float(mock_w.get('referral_balance', 2.50))
+            commissions = [c for c in getattr(mock_db, 'referral_commissions', []) if c.get('referrer_id') == user_id]
+            redemptions = [r for r in getattr(mock_db, 'referral_redemptions', []) if r.get('user_id') == user_id]
+            total_earned = sum(float(c.get('commission_earned', 0)) for c in commissions if c.get('status') == 'credited')
+            return {
+                'code': code,
+                'link': f"{host_url}r/{code}",
+                'register_link': f"{host_url}auth/register?ref={code}",
+                'referral_balance': balance,
+                'earned_usd': round(total_earned or 2.50, 2),
+                'invited': 8,
+                'converted': 5,
+                'min_withdrawal': 1.00,
+                'can_redeem': balance >= 1.00,
+                'recent_commissions': commissions[:20],
+                'recent_redemptions': redemptions[:20]
+            }
+
+        admin = get_supabase_admin()
+        if not admin:
+            return {
+                'code': 'TGSIM',
+                'link': f"{host_url}r/TGSIM",
+                'register_link': f"{host_url}auth/register?ref=TGSIM",
+                'referral_balance': 0.00,
+                'earned_usd': 0.00,
+                'invited': 0,
+                'converted': 0,
+                'min_withdrawal': 1.00,
+                'can_redeem': False,
+                'recent_commissions': [],
+                'recent_redemptions': []
+            }
+
+        try:
+            code = DBService.get_or_create_referral_code(user_id)
+            
+            # Fetch referral balance
+            ref_balance = 0.00
+            try:
+                prof_res = admin.table('profiles').select('referral_balance').eq('id', user_id).limit(1).execute()
+                if prof_res.data:
+                    ref_balance = float(prof_res.data[0].get('referral_balance') or 0.00)
+            except Exception:
+                pass
+
+            # Fetch invited count (profiles where referred_by == user_id)
+            invited_count = 0
+            try:
+                inv_res = admin.table('profiles').select('id').eq('referred_by', user_id).execute()
+                invited_count = len(inv_res.data) if inv_res.data else 0
+            except Exception:
+                pass
+
+            # Fetch commissions history
+            commissions = []
+            total_earned = 0.00
+            converted_user_ids = set()
+            try:
+                comm_res = admin.table('referral_commissions').select('*').eq('referrer_id', user_id).order('created_at', desc=True).limit(50).execute()
+                if comm_res.data:
+                    commissions = comm_res.data
+                    for c in commissions:
+                        if c.get('status') == 'credited':
+                            total_earned += float(c.get('commission_earned', 0.00))
+                            if c.get('referred_user_id'):
+                                converted_user_ids.add(c.get('referred_user_id'))
+            except Exception:
+                pass
+
+            # Redemptions history
+            redemptions = []
+            try:
+                red_res = admin.table('referral_redemptions').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(50).execute()
+                if red_res.data:
+                    redemptions = red_res.data
+            except Exception:
+                pass
+
+            return {
+                'code': code,
+                'link': f"{host_url}r/{code}",
+                'register_link': f"{host_url}auth/register?ref={code}",
+                'referral_balance': round(ref_balance, 2),
+                'earned_usd': round(total_earned, 2),
+                'invited': invited_count,
+                'converted': len(converted_user_ids),
+                'min_withdrawal': 1.00,
+                'can_redeem': ref_balance >= 1.00,
+                'recent_commissions': commissions,
+                'recent_redemptions': redemptions
+            }
+        except Exception as e:
+            print(f"[DBService] get_referral_details error: {e}")
+            return {
+                'code': 'TGSIM',
+                'link': f"{host_url}r/TGSIM",
+                'register_link': f"{host_url}auth/register?ref=TGSIM",
+                'referral_balance': 0.00,
+                'earned_usd': 0.00,
+                'invited': 0,
+                'converted': 0,
+                'min_withdrawal': 1.00,
+                'can_redeem': False,
+                'recent_commissions': [],
+                'recent_redemptions': []
+            }
+
+    @staticmethod
+    def record_referral_commission(user_id: str, amount_spent: float, order_id: str = None, order_reference: str = None) -> bool:
+        """When a user spends money, awards 5% commission to their referrer into the referral wallet."""
+        if not user_id or amount_spent <= 0:
+            return False
+
+        commission_rate = 5.00  # 5%
+        commission_earned = round(float(amount_spent) * (commission_rate / 100.0), 4)
+        if commission_earned <= 0:
+            return False
+
+        # Mock fallback
+        if user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
+            referrer_id = 'demo-user-id'
+            mock_w = mock_db.referral_wallets.setdefault(referrer_id, {'referral_code': 'TUNDE', 'referral_balance': 2.50, 'referred_by': None})
+            mock_w['referral_balance'] = round(mock_w.get('referral_balance', 0.00) + commission_earned, 4)
+            mock_db.referral_commissions.insert(0, {
+                'id': f"ref-comm-{len(mock_db.referral_commissions)+1}",
+                'referrer_id': referrer_id,
+                'referred_user_id': user_id,
+                'order_id': order_id,
+                'order_reference': order_reference,
+                'amount_spent': amount_spent,
+                'commission_rate': commission_rate,
+                'commission_earned': commission_earned,
+                'status': 'credited',
+                'description': f"5% referral earning from order #{order_reference or order_id}",
+                'created_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            })
+            return True
+
+        admin = get_supabase_admin()
+        if not admin:
+            return False
+
+        try:
+            # Check who referred this user
+            p_res = admin.table('profiles').select('id, referred_by, username').eq('id', user_id).limit(1).execute()
+            if not p_res.data:
+                return False
+            
+            referrer_id = p_res.data[0].get('referred_by')
+            if not referrer_id or referrer_id == user_id:
+                return False
+
+            buyer_name = p_res.data[0].get('username') or 'Friend'
+
+            # 1. Update referrer's referral_balance in profiles
+            ref_res = admin.table('profiles').select('id, referral_balance').eq('id', referrer_id).limit(1).execute()
+            if not ref_res.data:
+                return False
+            
+            cur_ref_bal = float(ref_res.data[0].get('referral_balance') or 0.00)
+            new_ref_bal = round(cur_ref_bal + commission_earned, 4)
+
+            admin.table('profiles').update({
+                'referral_balance': new_ref_bal,
+                'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
+            }).eq('id', referrer_id).execute()
+
+            # 2. Insert into referral_commissions
+            comm_data = {
+                'referrer_id': referrer_id,
+                'referred_user_id': user_id,
+                'amount_spent': amount_spent,
+                'commission_rate': commission_rate,
+                'commission_earned': commission_earned,
+                'status': 'credited',
+                'description': f"5% referral earning from order #{order_reference or order_id}"
+            }
+            if order_id and DBService._is_uuid(order_id):
+                comm_data['order_id'] = order_id
+            if order_reference:
+                comm_data['order_reference'] = str(order_reference)
+
+            try:
+                admin.table('referral_commissions').insert(comm_data).execute()
+            except Exception as ins_e:
+                print(f"[DBService] referral_commissions insert notice: {ins_e}")
+
+            # 3. Trigger notification to referrer
+            try:
+                DBService.create_user_notification(
+                    user_id=referrer_id,
+                    title="Referral Commission Earned! 🎉",
+                    message=f"You earned ${commission_earned:.2f} (5%) from {buyer_name}'s order #{order_reference or 'verification'}.",
+                    type="promo",
+                    link="/account/referral",
+                    metadata={'commission': commission_earned, 'order_reference': order_reference}
+                )
+            except Exception:
+                pass
+
+            return True
+        except Exception as e:
+            print(f"[DBService] record_referral_commission error: {e}")
+            return False
+
+    @staticmethod
+    def reverse_referral_commission(order_id: str) -> bool:
+        """Reverses referral commission if an order is cancelled or refunded."""
+        if not order_id:
+            return False
+
+        admin = get_supabase_admin()
+        if not admin:
+            # Check mock
+            for c in getattr(mock_db, 'referral_commissions', []):
+                if (c.get('order_id') == order_id or c.get('order_reference') == order_id) and c.get('status') == 'credited':
+                    c['status'] = 'reversed'
+                    ref_id = c.get('referrer_id')
+                    mock_w = mock_db.referral_wallets.get(ref_id)
+                    if mock_w:
+                        mock_w['referral_balance'] = max(0.00, mock_w.get('referral_balance', 0.00) - float(c.get('commission_earned', 0)))
+                    return True
+            return False
+
+        try:
+            q = admin.table('referral_commissions').select('*').eq('status', 'credited')
+            if DBService._is_uuid(order_id):
+                q = q.or_(f"order_id.eq.{order_id},order_reference.eq.{order_id}")
+            else:
+                q = q.eq('order_reference', str(order_id))
+            
+            res = q.limit(1).execute()
+            if not res.data:
+                return False
+
+            comm = res.data[0]
+            comm_id = comm['id']
+            referrer_id = comm['referrer_id']
+            comm_amt = float(comm.get('commission_earned', 0.00))
+
+            # Deduct from referrer's referral_balance
+            ref_p = admin.table('profiles').select('referral_balance').eq('id', referrer_id).limit(1).execute()
+            if ref_p.data:
+                cur_bal = float(ref_p.data[0].get('referral_balance') or 0.00)
+                new_bal = max(0.00, round(cur_bal - comm_amt, 4))
+                admin.table('profiles').update({'referral_balance': new_bal}).eq('id', referrer_id).execute()
+
+            admin.table('referral_commissions').update({
+                'status': 'reversed',
+                'description': f"{comm.get('description', '')} (Reversed due to order refund)"
+            }).eq('id', comm_id).execute()
+            return True
+        except Exception as e:
+            print(f"[DBService] reverse_referral_commission error: {e}")
+            return False
+
+    @staticmethod
+    def redeem_referral_balance(user_id: str, amount: float = None) -> dict:
+        """Redeem referral balance into main wallet balance. Minimum withdrawal is $1.00."""
+        MIN_WITHDRAWAL = 1.00
+
+        # Mock handling
+        if not user_id or user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
+            mock_w = mock_db.referral_wallets.setdefault(user_id or 'demo-user-id', {'referral_code': 'TUNDE', 'referral_balance': 2.50, 'referred_by': None})
+            cur_bal = float(mock_w.get('referral_balance', 0.00))
+            withdraw_amt = round(float(amount) if amount is not None else cur_bal, 2)
+
+            if withdraw_amt < MIN_WITHDRAWAL:
+                return {'success': False, 'message': f'Minimum withdrawal amount is ${MIN_WITHDRAWAL:.2f}.'}
+            if withdraw_amt > cur_bal:
+                return {'success': False, 'message': f'Cannot withdraw ${withdraw_amt:.2f}. Available referral balance is ${cur_bal:.2f}.'}
+
+            mock_w['referral_balance'] = round(cur_bal - withdraw_amt, 2)
+            credit_res = DBService.credit_wallet_balance(
+                user_id=user_id,
+                amount=withdraw_amt,
+                trans_type='referral_payout',
+                reference=f"REF-PAY-{secrets.token_hex(4).upper()}",
+                description=f"Redeemed ${withdraw_amt:.2f} referral earnings to main wallet"
+            )
+            mock_db.referral_redemptions.insert(0, {
+                'id': f"red-{len(mock_db.referral_redemptions)+1}",
+                'user_id': user_id,
+                'amount': withdraw_amt,
+                'status': 'completed',
+                'created_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            })
+            return {
+                'success': True,
+                'amount': withdraw_amt,
+                'new_referral_balance': mock_w['referral_balance'],
+                'new_main_balance': credit_res.get('new_balance'),
+                'message': f'Successfully transferred ${withdraw_amt:.2f} to your main wallet!'
+            }
+
+        admin = get_supabase_admin()
+        if not admin:
+            return {'success': False, 'message': 'Database connection unavailable.'}
+
+        try:
+            # 1. Check current referral balance
+            p_res = admin.table('profiles').select('id, referral_balance').eq('id', user_id).limit(1).execute()
+            if not p_res.data:
+                return {'success': False, 'message': 'User profile not found.'}
+
+            cur_bal = float(p_res.data[0].get('referral_balance') or 0.00)
+            withdraw_amt = round(float(amount) if amount is not None else cur_bal, 2)
+
+            if withdraw_amt < MIN_WITHDRAWAL:
+                return {
+                    'success': False,
+                    'message': f'Minimum withdrawal amount is ${MIN_WITHDRAWAL:.2f}. You currently have ${cur_bal:.2f}.'
+                }
+            if withdraw_amt > cur_bal:
+                return {
+                    'success': False,
+                    'message': f'Cannot withdraw ${withdraw_amt:.2f}. Available referral balance is ${cur_bal:.2f}.'
+                }
+
+            new_ref_bal = round(cur_bal - withdraw_amt, 4)
+
+            # 2. Deduct from profiles.referral_balance
+            admin.table('profiles').update({
+                'referral_balance': new_ref_bal,
+                'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
+            }).eq('id', user_id).execute()
+
+            # 3. Credit main wallet balance
+            ref_tx_code = f"REF-PAY-{secrets.token_hex(4).upper()}"
+            credit_res = DBService.credit_wallet_balance(
+                user_id=user_id,
+                amount=withdraw_amt,
+                trans_type='referral_payout',
+                reference=ref_tx_code,
+                description=f"Redeemed ${withdraw_amt:.2f} referral balance to main wallet",
+                metadata={'referral_redemption': True}
+            )
+
+            # 4. Insert into referral_redemptions
+            try:
+                admin.table('referral_redemptions').insert({
+                    'user_id': user_id,
+                    'amount': withdraw_amt,
+                    'status': 'completed',
+                    'description': f"Transfer of ${withdraw_amt:.2f} referral balance to main wallet"
+                }).execute()
+            except Exception as r_err:
+                print(f"[DBService] referral_redemptions insert notice: {r_err}")
+
+            # 5. User notification
+            try:
+                DBService.create_user_notification(
+                    user_id=user_id,
+                    title="Referral Balance Redeemed! 💵",
+                    message=f"${withdraw_amt:.2f} has been transferred from your Referral Wallet to your Main Balance.",
+                    type="deposit",
+                    link="/wallet"
+                )
+            except Exception:
+                pass
+
+            return {
+                'success': True,
+                'amount': withdraw_amt,
+                'new_referral_balance': new_ref_bal,
+                'new_main_balance': credit_res.get('new_balance'),
+                'message': f'Successfully redeemed ${withdraw_amt:.2f} to your main wallet!'
+            }
+        except Exception as e:
+            print(f"[DBService] redeem_referral_balance error: {e}")
+            return {'success': False, 'message': 'Failed to process referral withdrawal. Please try again.'}
+
 
 

@@ -36,6 +36,16 @@ def site_unlock():
     return render_template('public/site_unlock.html', error=error, next_url=next_url)
 
 
+@public_bp.route('/r/<ref_code>')
+def referral_redirect(ref_code):
+    """Handles direct referral links like /r/ABC12, preserves in session, and redirects to register."""
+    code = (ref_code or '').strip().upper()
+    if code:
+        session['referral_code'] = code
+    return redirect(url_for('auth.register', ref=code))
+
+
+
 @public_bp.route('/')
 def landing():
     """Marketing landing page  -  the first thing visitors see."""

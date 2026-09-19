@@ -241,6 +241,26 @@ class MockDatabase:
                 'created_at': '2026-09-18 12:00:00'
             }
         ]
+        self.referral_wallets = {
+            'demo-user-id': {'referral_code': 'TUNDE', 'referral_balance': 2.50, 'referred_by': None}
+        }
+        self.referral_commissions = [
+            {
+                'id': 'ref-comm-1',
+                'referrer_id': 'demo-user-id',
+                'referred_user_id': 'demo-user-2',
+                'referred_user_name': 'Sarah K.',
+                'order_id': 'ord-ref-1',
+                'order_reference': 'TGS-SIM-88219',
+                'amount_spent': 3.50,
+                'commission_rate': 5.00,
+                'commission_earned': 0.175,
+                'status': 'credited',
+                'description': '5% commission from order #TGS-SIM-88219',
+                'created_at': '2026-09-18 16:40:00'
+            }
+        ]
+        self.referral_redemptions = []
 
 mock_db = MockDatabase()
 

@@ -16,12 +16,17 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     avatar_url TEXT,
     phone_number TEXT,
     role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'support')),
+    referral_code VARCHAR(10) UNIQUE,
+    referred_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    referral_balance NUMERIC(12, 4) NOT NULL DEFAULT 0.0000 CHECK (referral_balance >= 0),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
+CREATE INDEX IF NOT EXISTS idx_profiles_referral_code ON public.profiles(referral_code);
+CREATE INDEX IF NOT EXISTS idx_profiles_referred_by ON public.profiles(referred_by);
 
 -- 3. WALLETS TABLE (Stores user balances)
 CREATE TABLE IF NOT EXISTS public.wallets (
@@ -616,7 +621,40 @@ CREATE TABLE IF NOT EXISTS public.user_notifications (
 
 CREATE INDEX IF NOT EXISTS idx_user_notifications_user_id ON public.user_notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_notifications_created_at ON public.user_notifications(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_user_notifications_unread ON public.user_notifications(user_id, is_read);
 CREATE INDEX IF NOT EXISTS idx_user_notifications_type ON public.user_notifications(type);
+
+-- ==============================================================================
+-- 10. REFERRAL PROGRAM & COMMISSIONS
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.referral_commissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    referrer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    referred_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    order_id UUID REFERENCES public.sim_orders(id) ON DELETE SET NULL,
+    order_reference VARCHAR(50),
+    amount_spent NUMERIC(10, 4) NOT NULL,
+    commission_rate NUMERIC(5, 2) NOT NULL DEFAULT 5.00,
+    commission_earned NUMERIC(10, 4) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'credited' CHECK (status IN ('credited', 'reversed', 'cancelled')),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_referral_commissions_referrer ON public.referral_commissions(referrer_id);
+CREATE INDEX IF NOT EXISTS idx_referral_commissions_referred ON public.referral_commissions(referred_user_id);
+CREATE INDEX IF NOT EXISTS idx_referral_commissions_order ON public.referral_commissions(order_id);
+
+CREATE TABLE IF NOT EXISTS public.referral_redemptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    amount NUMERIC(10, 4) NOT NULL CHECK (amount >= 1.00),
+    status VARCHAR(20) NOT NULL DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed')),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_referral_redemptions_user ON public.referral_redemptions(user_id);
+
 
 

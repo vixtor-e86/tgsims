@@ -22,3 +22,5 @@ class Config:
     NOWPAYMENTS_API_KEY = (os.getenv('NOWPAYMENTS_API_KEY') or '').strip()
     NOWPAYMENTS_IPN_SECRET = (os.getenv('NOWPAYMENTS_IPN_SECRET') or '').strip()
     NOWPAYMENTS_BASE_URL = (os.getenv('NOWPAYMENTS_BASE_URL') or 'https://api.nowpayments.io/v1').strip().rstrip('/')
+    SITE_LOCK_ENABLED = os.getenv('SITE_LOCK_ENABLED', 'false').lower() in ('true', '1', 'yes')
+

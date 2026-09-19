@@ -33,8 +33,18 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp)
 
     @app.before_request
+    def capture_referral_code():
+        """Capture incoming referral code from query param and preserve in session."""
+        ref = request.args.get('ref')
+        if ref and len(ref.strip()) <= 15:
+            session['referral_code'] = ref.strip().upper()
+
+    @app.before_request
     def dev_gate_protect():
-        """Ensure visitor has entered access password before viewing any page."""
+        """Optional development gate  -  disabled by default so visitors land directly on landing page."""
+        if not app.config.get('SITE_LOCK_ENABLED', False):
+            return None
+
         # Whitelist static assets, favicon, the unlock page, and payment webhooks
         if request.path.startswith('/static') or request.path == '/favicon.ico' or request.endpoint == 'static':
             return None

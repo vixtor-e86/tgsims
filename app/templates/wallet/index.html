@@ -18,7 +18,10 @@
     <span class="balance-label">Total Balance</span>
     <div class="balance-value" data-usd="{{ '%.2f'|format(wallet.balance) }}">₦{{ '{:,.2f}'.format(wallet.balance * NGN_PER_USD) }}</div>
     <p class="balance-sub">Funds available for instant use across 200+ platforms.</p>
-    <a href="{{ url_for('wallet.fund') }}" class="btn btn-primary">{{ icon('plus') }} Add Funds</a>
+    <div style="display:flex; gap:var(--sp-2); flex-wrap:wrap;">
+      <a href="{{ url_for('wallet.fund') }}" class="btn btn-primary">{{ icon('plus') }} Add Funds</a>
+      <a href="{{ url_for('account.referral') }}" class="btn btn-secondary" style="background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.25); color:#fff;">{{ icon('gift') }} Referral Wallet</a>
+    </div>
   </section>
 
   {# ---- Payment method selector ---- #}

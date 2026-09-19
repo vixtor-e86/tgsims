@@ -89,6 +89,25 @@
             <div id="password-match-msg" style="display:none; font-size:var(--fs-xs); margin-top:var(--sp-1); font-weight: 500;"></div>
           </div>
 
+          <div class="field">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-1);">
+              <label class="label" for="reg-referral" style="margin-bottom: 0;">Referral Code <span style="font-weight: normal; color: var(--muted); font-size: var(--fs-xs);">(Optional)</span></label>
+              {% if referral_code %}
+              <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.72rem; font-weight: 600; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 999px;">
+                {{ icon("check-circle") }} Code Applied
+              </span>
+              {% endif %}
+            </div>
+            <div class="input-group">
+              <span class="input-icon">{{ icon("gift") }}</span>
+              <input class="input" id="reg-referral" name="referral_code" type="text" placeholder="5-character code (e.g. ABC12)" maxlength="10" autocomplete="off" style="text-transform: uppercase; font-family: var(--font-mono); letter-spacing: 0.05em;" value="{{ referral_code or '' }}">
+            </div>
+            <p class="field-hint" style="font-size: var(--fs-xs); color: var(--text-muted); margin-top: var(--sp-1);">
+              Have a referral code from a friend? Enter it to link your accounts and earn rewards.
+            </p>
+          </div>
+
+
           <label class="check" style="margin-bottom:var(--sp-6);">
             <input type="checkbox" name="agree" required>
             <span class="box">{{ icon("check") }}</span>
@@ -241,6 +260,16 @@
           return false;
         }
       });
+
+      // Auto-fill referral input if present in URL
+      try {
+        var urlParams = new URLSearchParams(window.location.search);
+        var refParam = urlParams.get('ref');
+        var refInput = document.getElementById('reg-referral');
+        if (refParam && refInput && !refInput.value) {
+          refInput.value = refParam.trim().toUpperCase();
+        }
+      } catch (err) {}
     }
   })();
 </script>

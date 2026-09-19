@@ -73,6 +73,14 @@ def login():
 
             first_name = full_name.split(' ')[0] if full_name else username
 
+            from app.services.db_service import DBService
+            ref_code = p.get('referral_code') if 'p' in locals() and p else None
+            if not ref_code and user.id:
+                try:
+                    ref_code = DBService.get_or_create_referral_code(user.id)
+                except Exception:
+                    ref_code = 'TGSIM'
+
             session['user'] = {
                 'id': user.id,
                 'email': user.email,
@@ -81,6 +89,7 @@ def login():
                 'first_name': first_name,
                 'role': role,
                 'avatar': avatar,
+                'referral_code': ref_code or 'TGSIM',
             }
             if auth_session:
                 session['access_token'] = auth_session.access_token
@@ -108,40 +117,51 @@ def register():
     if session.get('user'):
         return redirect(url_for('dashboard.index'))
 
+    # Read incoming referral code from query param or session
+    incoming_ref = (request.args.get('ref') or session.get('referral_code') or '').strip().upper()
+    if incoming_ref:
+        session['referral_code'] = incoming_ref
+
     if request.method == 'POST':
+        from app.services.db_service import DBService
+
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
+        referral_code = (request.form.get('referral_code') or session.get('referral_code') or '').strip().upper()
         agree = request.form.get('agree')
 
         # Validation
         if not username or not email or not password:
             flash('Please complete all required fields.', 'error')
-            return render_template('auth/register.html', username=username, email=email)
+            return render_template('auth/register.html', username=username, email=email, referral_code=referral_code)
 
         if not agree:
             flash('You must accept the Terms of Service to create an account.', 'error')
-            return render_template('auth/register.html', username=username, email=email)
+            return render_template('auth/register.html', username=username, email=email, referral_code=referral_code)
 
         if password != confirm_password:
             flash('Passwords do not match. Please re-enter.', 'error')
-            return render_template('auth/register.html', username=username, email=email)
+            return render_template('auth/register.html', username=username, email=email, referral_code=referral_code)
 
         if len(password) < 6:
             flash('Password must be at least 6 characters long.', 'error')
-            return render_template('auth/register.html', username=username, email=email)
+            return render_template('auth/register.html', username=username, email=email, referral_code=referral_code)
 
         if not is_supabase_configured():
             flash('Supabase is not configured yet. Please add your SUPABASE_URL and SUPABASE_ANON_KEY to .env.', 'error')
-            return render_template('auth/register.html', username=username, email=email)
+            return render_template('auth/register.html', username=username, email=email, referral_code=referral_code)
 
         supabase = create_supabase_client()
         if not supabase:
             flash('Unable to initialize Supabase connection. Please verify your .env settings and restart your Flask server.', 'error')
-            return render_template('auth/register.html', username=username, email=email)
+            return render_template('auth/register.html', username=username, email=email, referral_code=referral_code)
 
         try:
+            # Generate unique 5-character referral code for the new user
+            my_ref_code = DBService.generate_referral_code()
+
             # Build canonical HTTPS redirect URL for email confirmation
             scheme = 'https' if (request.is_secure or request.headers.get('X-Forwarded-Proto') == 'https' or 'tgsims.com' in request.host) else request.scheme
             host = request.headers.get('X-Forwarded-Host') or request.host
@@ -154,11 +174,28 @@ def register():
                     'data': {
                         'username': username,
                         'full_name': username,
+                        'referral_code': my_ref_code,
+                        'referred_by_code': referral_code,
                     }
                 }
             })
             user = res.user
             auth_session = res.session
+
+            # Link referral & assign referral code in database
+            if user:
+                admin = get_supabase_admin()
+                if admin:
+                    try:
+                        admin.table('profiles').update({'referral_code': my_ref_code}).eq('id', user.id).execute()
+                    except Exception:
+                        pass
+                if referral_code:
+                    try:
+                        DBService.link_referral(user.id, referral_code)
+                    except Exception as le:
+                        print(f"[Register] Link referral notice: {le}")
+                session.pop('referral_code', None)
 
             # If email confirmation is disabled in Supabase, user gets instant session
             if user and auth_session:
@@ -171,6 +208,7 @@ def register():
                     'first_name': first_name,
                     'role': 'user',
                     'avatar': None,
+                    'referral_code': my_ref_code,
                 }
                 session['access_token'] = auth_session.access_token
                 session['refresh_token'] = auth_session.refresh_token
@@ -191,9 +229,10 @@ def register():
             else:
                 msg = f"Registration error: {err}"
             flash(msg, 'error')
-            return render_template('auth/register.html', username=username, email=email)
+            return render_template('auth/register.html', username=username, email=email, referral_code=referral_code)
 
-    return render_template('auth/register.html')
+    return render_template('auth/register.html', referral_code=incoming_ref)
+
 
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
