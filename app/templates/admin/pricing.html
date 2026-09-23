@@ -11,9 +11,17 @@
       Adjust exchange rates, provider markups, reactivation fees, and payment channels. Changes take effect across the platform immediately.
     </p>
   </div>
-  <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
-    {{ icon('arrow-left') }} Back to Overview
-  </a>
+  <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+    <form action="{{ url_for('admin.pricing') }}" method="POST" style="margin: 0;" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Syncing...';">
+      <input type="hidden" name="action" value="sync_5sim_prices">
+      <button type="submit" class="btn btn-secondary btn-sm" title="Re-sync wholesale prices directly from 5SIM live API">
+        {{ icon('refresh') }} Sync Live 5SIM Prices
+      </button>
+    </form>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
+      {{ icon('arrow-left') }} Back to Overview
+    </a>
+  </div>
 </div>
 
 {# Live Margin Simulator & Preview #}
@@ -384,51 +392,7 @@
       </div>
     </div>
 
-    {# 3. Carrier & Routing Selection #}
-    <div class="settings-section">
-      <div class="settings-section-head">
-        <h3 class="settings-section-title">
-          {{ icon('globe') }} Carrier & Routing Optimization
-        </h3>
-        <span class="settings-section-desc">Select delivery routes to prevent carrier bans and blocked virtual numbers</span>
-      </div>
-
-      <div class="provider-box">
-        <label class="form-label" style="font-weight: 700; color: var(--text); font-size: 0.9rem;">
-          United Kingdom (UK) Route / Carrier Strategy
-        </label>
-        <div>
-          <select name="uk_operator_route" class="input" style="font-weight: 700; font-size: 0.95rem; width: 100%; height: 42px;">
-            <option value="clean_route" {% if settings.uk_operator_route == 'clean_route' or not settings.uk_operator_route %}selected{% endif %}>
-              Auto Clean Route (Physical Networks: EE / O2 / Vodafone / Three + Premium Pools) [Recommended]
-            </option>
-            <option value="ee" {% if settings.uk_operator_route == 'ee' %}selected{% endif %}>
-              EE (UK Tier-1 Cellular Network)
-            </option>
-            <option value="o2" {% if settings.uk_operator_route == 'o2' %}selected{% endif %}>
-              O2 (UK Tier-1 Cellular Network)
-            </option>
-            <option value="vodafone" {% if settings.uk_operator_route == 'vodafone' %}selected{% endif %}>
-              Vodafone (UK Tier-1 Cellular Network)
-            </option>
-            <option value="three" {% if settings.uk_operator_route == 'three' %}selected{% endif %}>
-              Three (UK Tier-1 Cellular Network)
-            </option>
-            <option value="virtual34" {% if settings.uk_operator_route == 'virtual34' %}selected{% endif %}>
-              Route 34 (High Inventory Verified Route)
-            </option>
-            <option value="virtual66" {% if settings.uk_operator_route == 'virtual66' %}selected{% endif %}>
-              Route 66 (High Delivery Verified Route)
-            </option>
-          </select>
-        </div>
-        <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
-          Eliminates low-cost flagged virtual aggregators (virtual2, virtual59). Automatically dispatches UK orders via clean physical carriers or verified routes.
-        </div>
-      </div>
-    </div>
-
-    {# 4. Payment Channels & Banking #}
+    {# 3. Payment Channels & Banking #}
     <div class="settings-section">
       <div class="settings-section-head">
         <h3 class="settings-section-title">

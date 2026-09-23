@@ -76,40 +76,6 @@ class FiveSimClient:
         if not self.is_configured:
             return {'success': False, 'message': 'Provider client not configured'}
 
-        # Smart UK Provider routing to avoid flagged low-cost virtual pools
-        if country_slug == 'england' and (operator in ('any', 'clean_route', '', None)):
-            try:
-                from app.services.settings_service import SettingsService
-                preferred_route = SettingsService.get_uk_operator_route()
-            except Exception:
-                preferred_route = 'clean_route'
-
-            if preferred_route and preferred_route != 'clean_route':
-                routes_to_try = [preferred_route, 'ee', 'o2', 'vodafone', 'three', 'virtual34', 'virtual66']
-            else:
-                # Priority: Tier-1 Physical carriers first, then high-inventory verified routes. Never flagged virtual2/59.
-                routes_to_try = ['ee', 'o2', 'vodafone', 'three', 'virtual34', 'virtual66', 'virtual60', 'virtual58']
-
-            for route_op in routes_to_try:
-                try:
-                    url = f"{self.base_url}/user/buy/activation/england/{route_op}/{service_code}"
-                    r = requests.get(url, headers=self._headers(), timeout=12)
-                    if r.status_code == 200:
-                        data = r.json()
-                        return {
-                            'success': True,
-                            'provider_order_id': str(data.get('id', '')),
-                            'phone_number': data.get('phone', ''),
-                            'operator': data.get('operator', route_op),
-                            'provider_cost': float(data.get('price', 0.0)),
-                            'expires_at': data.get('expires'),
-                            'raw': data
-                        }
-                except Exception:
-                    continue
-
-            return {'success': False, 'message': 'UK verification lines for this service are temporarily undergoing carrier rotation. Please try again shortly or select another service.'}
-
         try:
             url = f"{self.base_url}/user/buy/activation/{country_slug}/{operator}/{service_code}"
             r = requests.get(url, headers=self._headers(), timeout=15)

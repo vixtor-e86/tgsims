@@ -145,7 +145,6 @@ def pricing():
                 squad_on = 'squad_enabled' in request.form
                 crypto_on = 'crypto_enabled' in request.form
                 bank_details = request.form.get('manual_bank_details', '').strip()
-                uk_route = request.form.get('uk_operator_route', 'clean_route').strip().lower()
 
                 SettingsService.update_settings({
                     'ngn_per_usd_rate': ngn_rate,
@@ -157,10 +156,9 @@ def pricing():
                     'crypto_deposit_address': crypto_addr,
                     'squad_enabled': squad_on,
                     'crypto_enabled': crypto_on,
-                    'manual_bank_details': bank_details,
-                    'uk_operator_route': uk_route
+                    'manual_bank_details': bank_details
                 })
-                flash('Platform settings, UK routing, and profit margins updated successfully! Changes take effect immediately.', 'success')
+                flash('Platform settings and profit margins updated successfully! Changes take effect immediately.', 'success')
             except Exception as e:
                 flash(f'Failed to update settings: {e}', 'error')
 
@@ -184,6 +182,17 @@ def pricing():
             if override_id:
                 SettingsService.delete_price_override(override_id)
                 flash('Price override removed.', 'info')
+
+        elif action == 'sync_5sim_prices':
+            try:
+                from scripts.sync_5sim_prices import sync_catalog
+                ok = sync_catalog()
+                if ok:
+                    flash('Successfully updated live 5SIM wholesale prices across all countries and services! Prices are now 100% current.', 'success')
+                else:
+                    flash('Failed to reach 5SIM pricing server. Please try again in a few moments.', 'error')
+            except Exception as e:
+                flash(f'Error syncing 5SIM wholesale prices: {e}', 'error')
 
         return redirect(url_for('admin.pricing'))
 

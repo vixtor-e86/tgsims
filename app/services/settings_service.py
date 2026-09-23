@@ -13,8 +13,7 @@ DEFAULT_SETTINGS = {
     'crypto_deposit_address': '',
     'squad_enabled': True,
     'crypto_enabled': True,
-    'manual_bank_details': 'Bank: GTBank\nAccount Name: Tgsims Tech\nAccount Number: 0123456789',
-    'uk_operator_route': 'clean_route'
+    'manual_bank_details': 'Bank: GTBank\nAccount Name: Tgsims Tech\nAccount Number: 0123456789'
 }
 
 
@@ -112,12 +111,6 @@ class SettingsService:
         return float(settings.get('reactivation_fee_usd', 1.00))
 
     @classmethod
-    def get_uk_operator_route(cls) -> str:
-        """Returns the configured operator route for UK numbers."""
-        settings = cls.get_settings()
-        return str(settings.get('uk_operator_route', 'clean_route')).strip().lower()
-
-    @classmethod
     def update_settings(cls, updates: Dict[str, Any]) -> bool:
         """Persists updated settings directly to Supabase immediately in real-time."""
         now_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
@@ -143,8 +136,6 @@ class SettingsService:
             clean_data['crypto_enabled'] = bool(updates['crypto_enabled'])
         if 'manual_bank_details' in updates:
             clean_data['manual_bank_details'] = str(updates['manual_bank_details']).strip()
-        if 'uk_operator_route' in updates:
-            clean_data['uk_operator_route'] = str(updates['uk_operator_route']).strip().lower()
 
         clean_data['updated_at'] = now_iso
 
