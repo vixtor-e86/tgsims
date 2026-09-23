@@ -71,165 +71,439 @@
   </div>
 </div>
 
+<style>
+  .settings-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    margin-bottom: 2.5rem;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .settings-panel-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .settings-panel-header h2 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .settings-panel-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .settings-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .settings-section-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  .settings-section-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+  .affix-input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    margin-top: 0.35rem;
+    position: relative;
+  }
+  .affix-addon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.9rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.95rem;
+    user-select: none;
+    min-width: 44px;
+    height: 42px;
+    box-sizing: border-box;
+  }
+  .affix-addon.prefix {
+    border-right: none;
+    border-top-left-radius: var(--r-sm);
+    border-bottom-left-radius: var(--r-sm);
+  }
+  .affix-addon.suffix {
+    border-left: none;
+    border-top-right-radius: var(--r-sm);
+    border-bottom-right-radius: var(--r-sm);
+  }
+  .affix-field {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0 0.85rem !important;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color var(--t-fast), background var(--t-fast);
+  }
+  .affix-field:focus {
+    border-color: var(--brand);
+    background: var(--surface);
+  }
+  .affix-field.has-prefix {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: var(--r-sm);
+    border-bottom-right-radius: var(--r-sm);
+  }
+  .affix-field.has-suffix {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: var(--r-sm);
+    border-bottom-left-radius: var(--r-sm);
+  }
+  .provider-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .provider-box-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .provider-box-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .payment-toggle-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: 1.1rem;
+    cursor: pointer;
+    transition: border-color var(--t-fast), background var(--t-fast);
+    user-select: none;
+  }
+  .payment-toggle-card:hover {
+    border-color: var(--border-strong);
+  }
+  .payment-toggle-card input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 0.15rem;
+    cursor: pointer;
+    accent-color: var(--brand);
+    flex-shrink: 0;
+  }
+</style>
+
 {# Settings Form #}
-<form action="{{ url_for('admin.pricing') }}" method="POST" class="card card-pad" style="margin-bottom: 2.5rem; background: var(--surface); border: 1px solid var(--border);">
+<form action="{{ url_for('admin.pricing') }}" method="POST" class="settings-panel">
   <input type="hidden" name="action" value="update_settings">
 
-  <h2 style="font-size: 1.15rem; font-weight: 700; margin-top: 0; margin-bottom: 1.25rem; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
-    {{ icon('settings') }} Currency, Provider Markups & Payment Settings
-  </h2>
+  <div class="settings-panel-header">
+    <h2>
+      {{ icon('settings') }} Currency, Provider Markups & Payment Settings
+    </h2>
+    <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.4rem; font-weight: 700; font-size: 0.9rem;">
+      {{ icon('save') }} Save Changes
+    </button>
+  </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+  <div class="settings-panel-body">
     
-    {# 1. Currency Exchange Rate #}
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        USD to NGN Exchange Rate (₦ / $1)
-      </label>
-      <div class="input-group" style="margin-top: 0.35rem;">
-        <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); color: var(--text-muted);">₦</span>
-        <input type="number" step="1" min="100" name="ngn_per_usd_rate" value="{{ '%.2f'|format(settings.ngn_per_usd_rate) }}" class="input" required style="border-radius: 0 var(--r-sm) var(--r-sm) 0; font-weight: 700; font-size: 1rem;">
+    {# 1. Currency & Base Platform Fees #}
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h3 class="settings-section-title">
+          {{ icon('dollar-sign') }} Currency Exchange & Platform Rates
+        </h3>
+        <span class="settings-section-desc">Affects live wallet conversions, top-ups, and reactivation deductions</span>
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Controls the conversion rate displayed on the user dashboard, store, and wallet top-ups.
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        {# USD to NGN Rate #}
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 700; color: var(--text);">
+            USD to NGN Exchange Rate (₦ / $1)
+          </label>
+          <div class="affix-input-group">
+            <span class="affix-addon prefix">₦</span>
+            <input type="number" step="1" min="100" name="ngn_per_usd_rate" value="{{ '%.2f'|format(settings.ngn_per_usd_rate) }}" class="affix-field has-prefix" required>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+            Controls conversion rate displayed on user dashboard, store prices, and checkout.
+          </div>
+        </div>
+
+        {# Reactivation Fee #}
+        <div class="form-group">
+          <label class="form-label" style="font-weight: 700; color: var(--text);">
+            Reactivation Fee ($ USD)
+          </label>
+          <div class="affix-input-group">
+            <span class="affix-addon prefix">$</span>
+            <input type="number" step="0.10" min="0" max="20" name="reactivation_fee_usd" value="{{ '%.2f'|format(settings.reactivation_fee_usd) }}" class="affix-field has-prefix" required>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+            Deducted atomically from wallet when a user requests an additional OTP on their active line.
+          </div>
+        </div>
       </div>
     </div>
 
-    {# 2. 5sim Markup % #}
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        5sim Profit Margin (%)
-      </label>
-      <div class="input-group" style="margin-top: 0.35rem;">
-        <input type="number" step="0.5" min="0" max="500" name="fivesim_markup_percent" value="{{ settings.fivesim_markup_percent }}" class="input" required style="border-radius: var(--r-sm) 0 0 var(--r-sm); font-weight: 700; font-size: 1rem;">
-        <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-left: none; border-radius: 0 var(--r-sm) var(--r-sm) 0; color: var(--text-muted);">%</span>
+    {# 2. Provider Wholesale Markups & Guaranteed Floors #}
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h3 class="settings-section-title">
+          {{ icon('trending-up') }} Provider Markups & Profit Floors
+        </h3>
+        <span class="settings-section-desc">Dynamic margin added to wholesale API costs + guaranteed floor on cheap numbers</span>
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Added automatically to live 5sim wholesale numbers.
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+        
+        {# 5sim Card #}
+        <div class="provider-box">
+          <div class="provider-box-header">
+            <div class="provider-box-title">
+              {{ icon('server') }} 5sim Markup (US Basic & Global SMS)
+            </div>
+            <span class="badge badge-success">+{{ settings.fivesim_markup_percent }}%</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600; font-size: 0.82rem; color: var(--text);">
+                Profit Margin (%)
+              </label>
+              <div class="affix-input-group">
+                <input type="number" step="0.5" min="0" max="500" name="fivesim_markup_percent" value="{{ settings.fivesim_markup_percent }}" class="affix-field has-suffix" required>
+                <span class="affix-addon suffix">%</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600; font-size: 0.82rem; color: var(--text);">
+                Min Profit Floor ($)
+              </label>
+              <div class="affix-input-group">
+                <span class="affix-addon prefix">$</span>
+                <input type="number" step="0.05" min="0" max="20" name="fivesim_min_profit_usd" value="{{ '%.2f'|format(settings.fivesim_min_profit_usd) }}" class="affix-field has-prefix" required>
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+            Guarantees you never earn less than this dollar amount on inexpensive numbers ($0.10 – $0.40 wholesale).
+          </div>
+        </div>
+
+        {# TextVerified Card #}
+        <div class="provider-box">
+          <div class="provider-box-header">
+            <div class="provider-box-title">
+              {{ icon('shield') }} TextVerified (US Physical Non-VoIP)
+            </div>
+            <span class="badge badge-brand">+{{ settings.textverified_markup_percent }}%</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600; font-size: 0.82rem; color: var(--text);">
+                Profit Margin (%)
+              </label>
+              <div class="affix-input-group">
+                <input type="number" step="0.5" min="0" max="500" name="textverified_markup_percent" value="{{ settings.textverified_markup_percent }}" class="affix-field has-suffix" required>
+                <span class="affix-addon suffix">%</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-weight: 600; font-size: 0.82rem; color: var(--text);">
+                Min Profit Floor ($)
+              </label>
+              <div class="affix-input-group">
+                <span class="affix-addon prefix">$</span>
+                <input type="number" step="0.05" min="0" max="20" name="textverified_min_profit_usd" value="{{ '%.2f'|format(settings.textverified_min_profit_usd if settings.textverified_min_profit_usd is defined else 0.50) }}" class="affix-field has-prefix" required>
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+            Guaranteed minimum dollar profit per TextVerified non-VoIP number allocated to customers.
+          </div>
+        </div>
+
       </div>
     </div>
 
-    {# 3. 5sim Minimum Floor #}
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        5sim Min Profit Floor ($)
-      </label>
-      <div class="input-group" style="margin-top: 0.35rem;">
-        <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); color: var(--text-muted);">$</span>
-        <input type="number" step="0.05" min="0" max="20" name="fivesim_min_profit_usd" value="{{ '%.2f'|format(settings.fivesim_min_profit_usd) }}" class="input" required style="border-radius: 0 var(--r-sm) var(--r-sm) 0; font-weight: 700; font-size: 1rem;">
+    {# 3. Carrier & Routing Selection #}
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h3 class="settings-section-title">
+          {{ icon('globe') }} Carrier & Routing Optimization
+        </h3>
+        <span class="settings-section-desc">Select delivery routes to prevent carrier bans and blocked virtual numbers</span>
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Ensures you never make less than this amount on low-cost numbers ($0.10 - $0.40).
+
+      <div class="provider-box">
+        <label class="form-label" style="font-weight: 700; color: var(--text); font-size: 0.9rem;">
+          United Kingdom (UK) Route / Carrier Strategy
+        </label>
+        <div>
+          <select name="uk_operator_route" class="input" style="font-weight: 700; font-size: 0.95rem; width: 100%; height: 42px;">
+            <option value="clean_route" {% if settings.uk_operator_route == 'clean_route' or not settings.uk_operator_route %}selected{% endif %}>
+              Auto Clean Route (Physical Networks: EE / O2 / Vodafone / Three + Premium Pools) [Recommended]
+            </option>
+            <option value="ee" {% if settings.uk_operator_route == 'ee' %}selected{% endif %}>
+              EE (UK Tier-1 Cellular Network)
+            </option>
+            <option value="o2" {% if settings.uk_operator_route == 'o2' %}selected{% endif %}>
+              O2 (UK Tier-1 Cellular Network)
+            </option>
+            <option value="vodafone" {% if settings.uk_operator_route == 'vodafone' %}selected{% endif %}>
+              Vodafone (UK Tier-1 Cellular Network)
+            </option>
+            <option value="three" {% if settings.uk_operator_route == 'three' %}selected{% endif %}>
+              Three (UK Tier-1 Cellular Network)
+            </option>
+            <option value="virtual34" {% if settings.uk_operator_route == 'virtual34' %}selected{% endif %}>
+              Route 34 (High Inventory Verified Route)
+            </option>
+            <option value="virtual66" {% if settings.uk_operator_route == 'virtual66' %}selected{% endif %}>
+              Route 66 (High Delivery Verified Route)
+            </option>
+          </select>
+        </div>
+        <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+          Eliminates low-cost flagged virtual aggregators (virtual2, virtual59). Automatically dispatches UK orders via clean physical carriers or verified routes.
+        </div>
       </div>
     </div>
 
-    {# 4. TextVerified Markup % #}
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        TextVerified Profit Margin (%)
-      </label>
-      <div class="input-group" style="margin-top: 0.35rem;">
-        <input type="number" step="0.5" min="0" max="500" name="textverified_markup_percent" value="{{ settings.textverified_markup_percent }}" class="input" required style="border-radius: var(--r-sm) 0 0 var(--r-sm); font-weight: 700; font-size: 1rem;">
-        <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-left: none; border-radius: 0 var(--r-sm) var(--r-sm) 0; color: var(--text-muted);">%</span>
+    {# 4. Payment Channels & Banking #}
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <h3 class="settings-section-title">
+          {{ icon('credit-card') }} Payment Channels & Deposit Setup
+        </h3>
+        <span class="settings-section-desc">Enable or disable deposit methods and configure bank transfer details</span>
       </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Percentage profit added to TextVerified wholesale costs.
-      </div>
-    </div>
 
-    {# 5. TextVerified Min Profit Floor #}
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        TextVerified Min Profit Floor ($)
-      </label>
-      <div class="input-group" style="margin-top: 0.35rem;">
-        <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); color: var(--text-muted);">$</span>
-        <input type="number" step="0.05" min="0" max="20" name="textverified_min_profit_usd" value="{{ '%.2f'|format(settings.textverified_min_profit_usd if settings.textverified_min_profit_usd is defined else 0.50) }}" class="input" required style="border-radius: 0 var(--r-sm) var(--r-sm) 0; font-weight: 700; font-size: 1rem;">
-      </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Guaranteed minimum dollar profit per TextVerified non-VoIP number.
-      </div>
-    </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+        
+        {# Left: Toggles & Crypto Address #}
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          {# Squad #}
+          <label class="payment-toggle-card">
+            <input type="checkbox" name="squad_enabled" value="1" {% if settings.squad_enabled %}checked{% endif %}>
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                <span style="font-weight: 700; color: var(--text); font-size: 0.92rem;">Squad Gateway</span>
+                {% if settings.squad_enabled %}
+                  <span class="badge badge-success" style="font-size: 0.7rem;">Active</span>
+                {% else %}
+                  <span class="badge badge-muted" style="font-size: 0.7rem;">Disabled</span>
+                {% endif %}
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.35;">
+                Enables Nigerian virtual accounts and debit cards for instant Naira wallet top-ups.
+              </div>
+            </div>
+          </label>
 
-    {# 6. Reactivation Fee #}
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        Reactivation Fee ($)
-      </label>
-      <div class="input-group" style="margin-top: 0.35rem;">
-        <span class="input-addon" style="background: var(--surface-2); padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); color: var(--text-muted);">$</span>
-        <input type="number" step="0.10" min="0" max="20" name="reactivation_fee_usd" value="{{ '%.2f'|format(settings.reactivation_fee_usd) }}" class="input" required style="border-radius: 0 var(--r-sm) var(--r-sm) 0; font-weight: 700; font-size: 1rem;">
-      </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Amount deducted from wallet when a user requests an additional OTP on their line.
-      </div>
-    {# 7. UK Number Provider / Route #}
-    <div class="form-group">
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        United Kingdom (UK) Route / Carrier
-      </label>
-      <div style="margin-top: 0.35rem;">
-        <select name="uk_operator_route" class="input" style="font-weight: 700; font-size: 0.95rem; width: 100%;">
-          <option value="clean_route" {% if settings.uk_operator_route == 'clean_route' or not settings.uk_operator_route %}selected{% endif %}>
-            Auto Clean Route (Physical Networks + Premium Pool) [Recommended]
-          </option>
-          <option value="ee" {% if settings.uk_operator_route == 'ee' %}selected{% endif %}>
-            EE (UK Tier-1 Cellular Network)
-          </option>
-          <option value="o2" {% if settings.uk_operator_route == 'o2' %}selected{% endif %}>
-            O2 (UK Tier-1 Cellular Network)
-          </option>
-          <option value="vodafone" {% if settings.uk_operator_route == 'vodafone' %}selected{% endif %}>
-            Vodafone (UK Tier-1 Cellular Network)
-          </option>
-          <option value="three" {% if settings.uk_operator_route == 'three' %}selected{% endif %}>
-            Three (UK Tier-1 Cellular Network)
-          </option>
-          <option value="virtual34" {% if settings.uk_operator_route == 'virtual34' %}selected{% endif %}>
-            Route 34 (High Inventory Verified Route)
-          </option>
-          <option value="virtual66" {% if settings.uk_operator_route == 'virtual66' %}selected{% endif %}>
-            Route 66 (High Delivery Verified Route)
-          </option>
-        </select>
-      </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
-        Eliminates low-cost flagged virtual aggregators. Ensures UK numbers are dispatched via clean physical carriers or verified routes.
+          {# Crypto #}
+          <label class="payment-toggle-card">
+            <input type="checkbox" name="crypto_enabled" value="1" {% if settings.crypto_enabled %}checked{% endif %}>
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                <span style="font-weight: 700; color: var(--text); font-size: 0.92rem;">Cryptocurrency Deposits</span>
+                {% if settings.crypto_enabled %}
+                  <span class="badge badge-success" style="font-size: 0.7rem;">Active</span>
+                {% else %}
+                  <span class="badge badge-muted" style="font-size: 0.7rem;">Disabled</span>
+                {% endif %}
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.35;">
+                Enables automated crypto deposits via NOWPayments or dedicated fallback address.
+              </div>
+            </div>
+          </label>
+
+          {# Crypto Fallback Address #}
+          <div class="form-group" style="margin-top: 0.25rem;">
+            <label class="form-label" style="font-weight: 700; font-size: 0.82rem; color: var(--text);">
+              Fallback Direct Crypto Address (Optional USDT-TRC20 / BTC)
+            </label>
+            <input type="text" name="crypto_deposit_address" value="{{ settings.crypto_deposit_address or '' }}" placeholder="e.g. TR7NHkorpwHQx35pdVQxnyfL... (TRC20)" class="input" style="height: 40px; font-size: 0.85rem; font-family: monospace;">
+          </div>
+        </div>
+
+        {# Right: Manual Direct Bank Transfer #}
+        <div class="form-group" style="display: flex; flex-direction: column;">
+          <label class="form-label" style="font-weight: 700; color: var(--text);">
+            Manual Direct Bank Transfer Instructions
+          </label>
+          <textarea name="manual_bank_details" rows="5" class="input" style="margin-top: 0.35rem; width: 100%; flex: 1; resize: vertical; line-height: 1.5; font-size: 0.88rem; padding: 0.75rem;" placeholder="Bank: Example Bank&#10;Account Name: Example Ltd&#10;Account Number: 0123456789&#10;Note: Include your email as reference">{{ settings.manual_bank_details }}</textarea>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+            Displayed to users on the manual bank transfer payment tab.
+          </div>
+        </div>
+
       </div>
     </div>
 
   </div>
 
-  {# Channel Toggles & Manual Bank Info #}
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); margin-bottom: 1.5rem;">
-    <div>
-      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: var(--text);">
-        <input type="checkbox" name="squad_enabled" value="1" {% if settings.squad_enabled %}checked{% endif %}>
-        <span>Enable Squad (Naira Bank Transfers & Cards)</span>
-      </label>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; margin-left: 1.5rem;">
-        Allows users to fund wallets via Nigerian virtual accounts & cards.
-      </div>
-
-      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; color: var(--text); margin-top: 1rem;">
-        <input type="checkbox" name="crypto_enabled" value="1" {% if settings.crypto_enabled %}checked{% endif %}>
-        <span>Enable Cryptocurrency Deposits (NOWPayments API / Dedicated Account)</span>
-      </label>
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; margin-left: 1.5rem;">
-        Allows users to generate dedicated visual payment addresses and deposit crypto.
-      </div>
-    </div>
-
-    <div>
-      <label class="form-label" style="font-weight: 700; color: var(--text);">
-        Manual Direct Bank Transfer Instructions
-      </label>
-      <textarea name="manual_bank_details" rows="3" class="input" style="margin-top: 0.35rem; width: 100%;">{{ settings.manual_bank_details }}</textarea>
-    </div>
-  </div>
-
-  <div style="text-align: right;">
-    <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-weight: 700;">
+  <div style="padding: 1.25rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+    <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.8rem; font-weight: 700; font-size: 0.95rem;">
       {{ icon('save') }} Save Pricing & Settings
     </button>
   </div>
