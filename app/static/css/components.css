@@ -614,14 +614,17 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--sp-4);
-  background: rgba(6, 12, 24, 0.6);
+  background: rgba(6, 12, 24, 0.65);
   backdrop-filter: blur(4px);
   opacity: 0;
   visibility: hidden;
   transition: opacity var(--dur) var(--ease), visibility var(--dur);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .modal.is-open { opacity: 1; visibility: visible; }
 .modal-box {
@@ -633,17 +636,25 @@
   box-shadow: var(--shadow-lg);
   transform: translateY(16px) scale(0.98);
   transition: transform var(--dur-slow) var(--ease-out);
-  max-height: 90vh;
-  overflow-y: auto;
+  max-height: 92vh;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .modal.is-open .modal-box { transform: translateY(0) scale(1); }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--sp-5) var(--sp-6);
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .modal-title { font-size: var(--fs-md); font-weight: var(--fw-bold); }
-.modal-body { padding: var(--sp-6); }
+.modal-body {
+  padding: var(--sp-6);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .modal-close {
   color: var(--text-dim);
   display: grid; place-items: center;
@@ -651,8 +662,25 @@
   border-radius: var(--r-sm);
   font-size: 1.4rem;
   line-height: 1;
+  flex-shrink: 0;
 }
 .modal-close:hover { background: var(--surface-2); color: var(--text); }
+
+@media (max-width: 640px) {
+  .modal {
+    padding: var(--sp-2);
+  }
+  .modal-box {
+    max-height: 94vh;
+    border-radius: var(--r-lg);
+  }
+  .modal-header {
+    padding: 0.85rem 1rem;
+  }
+  .modal-body {
+    padding: 1rem;
+  }
+}
 
 /* --------------------------------------------------------------------------
    Toasts

@@ -69,7 +69,7 @@
                 <span style="font-weight: 800; color: var(--hue-success); font-size: 1.05rem;" data-usd="{{ '%.2f'|format(u.wallet_balance or 0) }}">
                   ${{ '%.2f'|format(u.wallet_balance or 0) }}
                 </span>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                <div style="font-size: 0.75rem; color: var(--text-muted);" class="user-sub-balance" data-raw-usd="{{ u.wallet_balance or 0 }}">
                   ≈ ₦{{ '{:,.2f}'.format((u.wallet_balance or 0) * NGN_PER_USD) }}
                 </div>
               </td>
@@ -117,53 +117,299 @@
   {% endif %}
 </div>
 
+<style>
+/* Responsive Admin Modal Styling */
+.modal-box-admin {
+  max-width: 440px;
+  width: 100%;
+}
+.modal-header-responsive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.15rem 1.4rem;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.modal-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: 1;
+}
+.modal-header-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.modal-header-title-wrap .modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.modal-body-responsive {
+  padding: 1.25rem 1.4rem;
+}
+.modal-account-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.15rem;
+}
+.modal-account-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.modal-account-email {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  word-break: break-all;
+}
+.modal-account-bal-row {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.modal-action-types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+.modal-action-option {
+  position: relative;
+  cursor: pointer;
+  display: block;
+  user-select: none;
+  margin: 0;
+}
+.modal-action-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.modal-action-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  transition: all var(--dur) var(--ease);
+}
+.modal-action-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--dur) var(--ease);
+}
+.modal-action-indicator::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background var(--dur) var(--ease);
+}
+.modal-action-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.2;
+}
+.modal-action-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+/* Checked states */
+.modal-action-option input[type="radio"]:checked + .modal-action-card {
+  border-color: var(--brand-500);
+  background: rgba(14, 165, 233, 0.08);
+}
+.modal-action-option.opt-credit input[type="radio"]:checked + .modal-action-card {
+  border-color: var(--hue-success);
+  background: rgba(16, 185, 129, 0.1);
+}
+.modal-action-option.opt-credit input[type="radio"]:checked + .modal-action-card .modal-action-indicator {
+  border-color: var(--hue-success);
+}
+.modal-action-option.opt-credit input[type="radio"]:checked + .modal-action-card .modal-action-indicator::after {
+  background: var(--hue-success);
+}
+.modal-action-option.opt-debit input[type="radio"]:checked + .modal-action-card {
+  border-color: var(--hue-danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+.modal-action-option.opt-debit input[type="radio"]:checked + .modal-action-card .modal-action-indicator {
+  border-color: var(--hue-danger);
+}
+.modal-action-option.opt-debit input[type="radio"]:checked + .modal-action-card .modal-action-indicator::after {
+  background: var(--hue-danger);
+}
+
+.modal-footer-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.4rem;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--r-xl) var(--r-xl);
+}
+.modal-footer-btns .btn {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  #balanceModal .modal-box,
+  #roleModal .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: var(--r-lg) !important;
+    margin: auto 0 !important;
+  }
+  .modal-header-responsive {
+    padding: 0.85rem 1rem !important;
+    gap: 0.5rem !important;
+  }
+  .modal-header-title-wrap .modal-title {
+    font-size: 1rem !important;
+  }
+  .modal-body-responsive {
+    padding: 1rem !important;
+  }
+  .modal-footer-btns {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: 0.55rem !important;
+    padding: 0.85rem 1rem !important;
+    border-radius: 0 0 var(--r-lg) var(--r-lg) !important;
+  }
+  .modal-footer-btns .btn {
+    width: 100% !important;
+    min-height: 44px !important;
+    font-size: 0.95rem !important;
+  }
+  .modal-action-card {
+    padding: 0.6rem 0.65rem !important;
+  }
+  .modal-action-name {
+    font-size: 0.86rem !important;
+  }
+}
+</style>
+
 {# Balance Adjustment Modal #}
 <div id="balanceModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
-  <div class="modal-box" style="max-width: 440px;">
-    <div class="modal-header">
-      <div style="display: flex; align-items: center; gap: 0.6rem;">
-        <span style="color: var(--brand);">{{ icon('wallet') }}</span>
-        <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">Adjust User Balance</h3>
+  <div class="modal-box modal-box-admin">
+    <div class="modal-header modal-header-responsive">
+      <div class="modal-header-title-wrap">
+        <span class="modal-header-icon" style="color: var(--brand);">{{ icon('wallet') }}</span>
+        <h3 class="modal-title">Adjust Balance</h3>
       </div>
-      <button type="button" class="modal-close" onclick="closeBalanceModal()" aria-label="Close modal">&times;</button>
+      <div class="modal-header-actions">
+        <div class="cur-switch" role="group" aria-label="Modal Currency">
+          <button type="button" id="modalCurNgnBtn" onclick="setModalCurrency('NGN', true)" title="Switch to Nigerian Naira (₦)">₦</button>
+          <button type="button" id="modalCurUsdBtn" onclick="setModalCurrency('USD', true)" title="Switch to US Dollars ($)">$</button>
+        </div>
+        <button type="button" class="modal-close" onclick="closeBalanceModal()" aria-label="Close modal">&times;</button>
+      </div>
     </div>
 
     <form id="balanceForm" method="POST">
-      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
-        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
-          <div style="font-size: 0.8rem; color: var(--text-muted);">Customer Account:</div>
-          <div id="modalUserEmail" style="font-weight: 700; color: var(--text); font-size: 0.95rem; margin-top: 0.15rem;"></div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">
-            Current Balance: <strong id="modalCurrentBal" style="color: var(--hue-success);"></strong>
+      <input type="hidden" name="currency" id="modalCurrencyInput" value="NGN">
+      <div class="modal-body modal-body-responsive">
+        <div class="modal-account-card">
+          <div class="modal-account-label">Customer Account</div>
+          <div id="modalUserEmail" class="modal-account-email"></div>
+          <div class="modal-account-bal-row">
+            <span>Current Balance:</span>
+            <strong id="modalCurrentBal" style="color: var(--hue-success); font-size: 1.05rem;"></strong>
+            <span id="modalCurrentBalSub" style="font-size: 0.78rem; color: var(--text-muted);"></span>
           </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.4rem;">Action Type</label>
-          <div style="display: flex; gap: 1.25rem; color: var(--text);">
-            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
-              <input type="radio" name="adjustment_type" value="credit" checked> <strong>Credit</strong> (Add Funds)
+          <div class="modal-action-types">
+            <label class="modal-action-option opt-credit" id="modalOptCredit">
+              <input type="radio" name="adjustment_type" value="credit" checked onchange="updateModalPreview()">
+              <div class="modal-action-card">
+                <span class="modal-action-indicator"></span>
+                <div>
+                  <div class="modal-action-name">Credit</div>
+                  <div class="modal-action-desc">Add funds</div>
+                </div>
+              </div>
             </label>
-            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.9rem;">
-              <input type="radio" name="adjustment_type" value="debit"> <strong>Debit</strong> (Deduct Funds)
+            <label class="modal-action-option opt-debit" id="modalOptDebit">
+              <input type="radio" name="adjustment_type" value="debit" onchange="updateModalPreview()">
+              <div class="modal-action-card">
+                <span class="modal-action-indicator"></span>
+                <div>
+                  <div class="modal-action-name">Debit</div>
+                  <div class="modal-action-desc">Deduct funds</div>
+                </div>
+              </div>
             </label>
           </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.35rem;">Amount ($ USD)</label>
-          <input type="number" step="0.01" min="0.01" max="5000" name="amount" placeholder="10.00" required class="input" style="font-weight: 700; font-size: 1rem;">
+          <label class="form-label" id="modalAmountLabel" style="font-weight: 700; font-size: 0.85rem; color: var(--text); margin-bottom: 0.35rem;">
+            Amount (<span id="modalCurrencyCodeText">₦ NGN</span>)
+          </label>
+          <div style="display: flex; align-items: stretch; width: 100%;">
+            <span id="modalCurrencyPrefix" style="display: flex; align-items: center; justify-content: center; background: var(--surface-2); border: 1px solid var(--border); border-right: none; border-radius: var(--r-sm) 0 0 var(--r-sm); padding: 0 0.85rem; font-weight: 700; font-size: 1.05rem; color: var(--text-muted); min-width: 44px; user-select: none;">₦</span>
+            <input type="number" step="any" min="0.01" inputmode="decimal" name="amount" id="modalAmountInput" placeholder="5000" required class="input" style="border-radius: 0 var(--r-sm) var(--r-sm) 0; font-weight: 700; font-size: 1.05rem; padding: 0.65rem 0.75rem; flex: 1;" oninput="updateModalPreview()">
+          </div>
+          <div id="modalEquivalentPreview" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem; min-height: 1.15rem; line-height: 1.35;"></div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 0.5rem;">
+        <div class="form-group" style="margin-bottom: 0.25rem;">
           <label class="form-label" style="font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.35rem;">Audit Reason / Note</label>
-          <input type="text" name="reason" placeholder="e.g. Bank deposit verified or compensation" required class="input">
+          <input type="text" name="reason" placeholder="e.g. Bank deposit verified or compensation" required class="input" style="padding: 0.65rem 0.75rem; font-size: 0.9rem;">
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
-        <button type="button" onclick="closeBalanceModal()" class="btn btn-secondary btn-sm">Cancel</button>
-        <button type="submit" class="btn btn-primary btn-sm">Confirm Adjustment</button>
+      <div class="modal-footer-btns">
+        <button type="button" onclick="closeBalanceModal()" class="btn btn-secondary">Cancel</button>
+        <button type="submit" id="modalSubmitBtn" class="btn btn-primary">Confirm Adjustment</button>
       </div>
     </form>
   </div>
@@ -171,20 +417,20 @@
 
 {# Role Change Confirmation Modal (replaces browser confirm) #}
 <div id="roleModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
-  <div class="modal-box" style="max-width: 440px;">
-    <div class="modal-header">
-      <div style="display: flex; align-items: center; gap: 0.6rem;">
-        <span style="color: var(--brand);">{{ icon('users') }}</span>
-        <h3 class="modal-title" style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">Change User Role</h3>
+  <div class="modal-box modal-box-admin">
+    <div class="modal-header modal-header-responsive">
+      <div class="modal-header-title-wrap">
+        <span class="modal-header-icon" style="color: var(--brand);">{{ icon('users') }}</span>
+        <h3 class="modal-title">Change User Role</h3>
       </div>
       <button type="button" class="modal-close" onclick="closeRoleModal()" aria-label="Close modal">&times;</button>
     </div>
 
     <form id="roleForm" method="POST">
       <input type="hidden" name="role" id="roleTargetInput">
-      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+      <div class="modal-body modal-body-responsive">
         <p style="font-size: 0.9rem; color: var(--text); margin: 0 0 1rem 0; line-height: 1.5;">
-          Are you sure you want to change the privileges for <strong id="roleUserEmail"></strong>?
+          Are you sure you want to change the privileges for <strong id="roleUserEmail" style="word-break: break-all;"></strong>?
         </p>
         <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
@@ -196,26 +442,148 @@
         </p>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
-        <button type="button" onclick="closeRoleModal()" class="btn btn-secondary btn-sm">Cancel</button>
-        <button type="submit" id="roleSubmitBtn" class="btn btn-primary btn-sm">Confirm Role Change</button>
+      <div class="modal-footer-btns">
+        <button type="button" onclick="closeRoleModal()" class="btn btn-secondary">Cancel</button>
+        <button type="submit" id="roleSubmitBtn" class="btn btn-primary">Confirm Role Change</button>
       </div>
     </form>
   </div>
 </div>
 
 <script>
+var activeModalCur = (window.TgCurrency && window.TgCurrency.active) || localStorage.getItem('tgsims-currency') || 'NGN';
+var currentSelectedBalUsd = 0;
+
+function setModalCurrency(code, updateGlobal) {
+  activeModalCur = code === 'USD' ? 'USD' : 'NGN';
+  if (updateGlobal && window.TgCurrency && typeof window.TgCurrency.set === 'function') {
+    window.TgCurrency.set(activeModalCur);
+  }
+
+  var ngnBtn = document.getElementById('modalCurNgnBtn');
+  var usdBtn = document.getElementById('modalCurUsdBtn');
+  if (ngnBtn) ngnBtn.classList.toggle('is-active', activeModalCur === 'NGN');
+  if (usdBtn) usdBtn.classList.toggle('is-active', activeModalCur === 'USD');
+
+  var curInput = document.getElementById('modalCurrencyInput');
+  if (curInput) curInput.value = activeModalCur;
+
+  var codeText = document.getElementById('modalCurrencyCodeText');
+  var prefixEl = document.getElementById('modalCurrencyPrefix');
+  var amountInput = document.getElementById('modalAmountInput');
+  var rate = Number(window.TG_NGN_PER_USD) || (window.TgCurrency && window.TgCurrency.rate) || 1600;
+
+  if (activeModalCur === 'NGN') {
+    if (codeText) codeText.textContent = '₦ NGN';
+    if (prefixEl) prefixEl.textContent = '₦';
+    if (amountInput) {
+      amountInput.placeholder = '5000';
+      amountInput.step = '1';
+    }
+  } else {
+    if (codeText) codeText.textContent = '$ USD';
+    if (prefixEl) prefixEl.textContent = '$';
+    if (amountInput) {
+      amountInput.placeholder = '10.00';
+      amountInput.step = '0.01';
+    }
+  }
+
+  // Update current balance in modal
+  var balEl = document.getElementById('modalCurrentBal');
+  var balSubEl = document.getElementById('modalCurrentBalSub');
+  if (balEl) {
+    if (activeModalCur === 'NGN') {
+      var ngnVal = (currentSelectedBalUsd * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      balEl.textContent = '₦' + ngnVal;
+      if (balSubEl) balSubEl.textContent = '(≈ $' + Number(currentSelectedBalUsd).toFixed(2) + ' USD)';
+    } else {
+      balEl.textContent = '$' + Number(currentSelectedBalUsd).toFixed(2);
+      var ngnVal = (currentSelectedBalUsd * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (balSubEl) balSubEl.textContent = '(≈ ₦' + ngnVal + ')';
+    }
+  }
+
+  updateModalPreview();
+}
+
+function updateModalPreview() {
+  var amountInput = document.getElementById('modalAmountInput');
+  var previewEl = document.getElementById('modalEquivalentPreview');
+  var submitBtn = document.getElementById('modalSubmitBtn');
+  var form = document.getElementById('balanceForm');
+  if (!amountInput || !previewEl) return;
+
+  var val = parseFloat(amountInput.value);
+  var rate = Number(window.TG_NGN_PER_USD) || (window.TgCurrency && window.TgCurrency.rate) || 1600;
+  var actionType = 'credit';
+  if (form) {
+    var radio = form.querySelector('input[name="adjustment_type"]:checked');
+    if (radio) actionType = radio.value;
+  }
+
+  var verb = actionType === 'credit' ? 'credited to' : 'deducted from';
+  var btnVerb = actionType === 'credit' ? 'Credit' : 'Debit';
+
+  if (!val || val <= 0) {
+    if (activeModalCur === 'NGN') {
+      previewEl.textContent = 'Exchange rate: ₦' + rate.toLocaleString() + ' / $1 USD';
+    } else {
+      previewEl.textContent = 'Exchange rate: $1 USD = ₦' + rate.toLocaleString();
+    }
+    if (submitBtn) submitBtn.textContent = 'Confirm Adjustment';
+    return;
+  }
+
+  if (activeModalCur === 'NGN') {
+    var inUsd = (val / rate).toFixed(2);
+    previewEl.innerHTML = '<strong>≈ $' + inUsd + ' USD</strong> will be ' + verb + " the customer's wallet (Rate: ₦" + rate.toLocaleString() + ' / $1)';
+    if (submitBtn) submitBtn.textContent = 'Confirm ' + btnVerb + ' (₦' + val.toLocaleString() + ')';
+  } else {
+    var inNgn = (val * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    previewEl.innerHTML = '<strong>≈ ₦' + inNgn + ' NGN</strong> will be ' + verb + " the customer's wallet (Rate: ₦" + rate.toLocaleString() + ' / $1)';
+    if (submitBtn) submitBtn.textContent = 'Confirm ' + btnVerb + ' ($' + val.toFixed(2) + ')';
+  }
+}
+
+function updateTableSubBalances() {
+  var cur = (window.TgCurrency && window.TgCurrency.active) || localStorage.getItem('tgsims-currency') || 'NGN';
+  var rate = Number(window.TG_NGN_PER_USD) || (window.TgCurrency && window.TgCurrency.rate) || 1600;
+  document.querySelectorAll('.user-sub-balance').forEach(function(el) {
+    var usd = Number(el.getAttribute('data-raw-usd') || 0);
+    if (cur === 'NGN') {
+      el.textContent = '≈ $' + usd.toFixed(2) + ' USD';
+    } else {
+      var ngn = (usd * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      el.textContent = '≈ ₦' + ngn;
+    }
+  });
+}
+
 function openBalanceModal(userId, email, currentBal) {
   var modal = document.getElementById('balanceModal');
   var form = document.getElementById('balanceForm');
   var emailEl = document.getElementById('modalUserEmail');
-  var balEl = document.getElementById('modalCurrentBal');
+  var amountInput = document.getElementById('modalAmountInput');
   
   form.action = '/admin/users/' + encodeURIComponent(userId) + '/adjust-balance';
   emailEl.textContent = email;
-  balEl.textContent = '$' + Number(currentBal || 0).toFixed(2);
+  currentSelectedBalUsd = Number(currentBal || 0);
+
+  if (amountInput) amountInput.value = '';
+  if (form) {
+    var creditRadio = form.querySelector('input[name="adjustment_type"][value="credit"]');
+    if (creditRadio) creditRadio.checked = true;
+    var reasonInput = form.querySelector('input[name="reason"]');
+    if (reasonInput) reasonInput.value = '';
+  }
+
+  var cur = (window.TgCurrency && window.TgCurrency.active) || localStorage.getItem('tgsims-currency') || 'NGN';
+  setModalCurrency(cur, false);
+
   modal.classList.add('is-open');
   document.body.style.overflow = 'hidden';
+  if (amountInput) setTimeout(function() { amountInput.focus(); }, 120);
 }
 
 function closeBalanceModal() {
@@ -225,6 +593,18 @@ function closeBalanceModal() {
     document.body.style.overflow = '';
   }
 }
+
+document.addEventListener('currencychange', function(e) {
+  var code = e.detail && e.detail.currency;
+  if (code) {
+    setModalCurrency(code, false);
+  }
+  updateTableSubBalances();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateTableSubBalances();
+});
 
 function openRoleModal(userId, email, newRole) {
   var modal = document.getElementById('roleModal');

@@ -413,41 +413,72 @@ def adjust_user_balance(user_id):
     admin_id = admin_user.get('id', 'admin')
 
     try:
-        amount = float(request.form.get('amount', 0.00))
+        raw_amount = float(request.form.get('amount', 0.00))
+        currency = request.form.get('currency', 'USD').strip().upper()
         reason = request.form.get('reason', 'Administrative adjustment').strip()
         adjustment_type = request.form.get('adjustment_type', 'credit')
 
-        if amount <= 0:
+        if raw_amount <= 0:
             flash('Amount must be greater than zero.', 'error')
             return redirect(url_for('admin.users'))
 
-        signed_amount = amount if adjustment_type == 'credit' else -amount
+        rate = float(SettingsService.get_settings().get('ngn_per_usd_rate', 1600.00))
+        if rate <= 0:
+            rate = 1600.00
+
+        # Convert to canonical USD if input was in NGN
+        if currency == 'NGN':
+            amount_usd = round(raw_amount / rate, 4)
+            ngn_display = raw_amount
+            usd_display = amount_usd
+        else:
+            amount_usd = raw_amount
+            ngn_display = round(raw_amount * rate, 2)
+            usd_display = raw_amount
+
+        signed_amount_usd = amount_usd if adjustment_type == 'credit' else -amount_usd
         res = DBService.adjust_user_balance_admin(
             user_id=user_id,
-            amount=signed_amount,
+            amount=signed_amount_usd,
             reason=reason,
             admin_user_id=admin_id
         )
 
         if res.get('success'):
-            rate = float(SettingsService.get_settings().get('ngn_per_usd_rate', 1600.00))
+            new_bal_usd = float(res.get('new_balance', 0.0))
+            new_bal_ngn = new_bal_usd * rate
+
             if adjustment_type == 'credit':
+                if currency == 'NGN':
+                    cust_msg = f"An administrator credited ₦{ngn_display:,.2f} (≈ ${usd_display:.2f}) to your wallet. Reason: {reason}"
+                    flash_msg = f"Wallet successfully credited by ₦{ngn_display:,.2f} (${usd_display:.2f} USD). New balance: ₦{new_bal_ngn:,.2f} (${new_bal_usd:.2f} USD)."
+                else:
+                    cust_msg = f"An administrator credited ${usd_display:.2f} (≈ ₦{ngn_display:,.2f}) to your wallet. Reason: {reason}"
+                    flash_msg = f"Wallet successfully credited by ${usd_display:.2f} (≈ ₦{ngn_display:,.2f}). New balance: ${new_bal_usd:.2f} (≈ ₦{new_bal_ngn:,.2f})."
+
                 DBService.create_user_notification(
                     user_id=user_id,
                     title="Funds Added to Wallet",
-                    message=f"An administrator credited ${amount:.2f} (≈ ₦{amount * rate:,.2f}) to your wallet. Reason: {reason}",
+                    message=cust_msg,
                     type="admin_credit",
                     link="/wallet"
                 )
             else:
+                if currency == 'NGN':
+                    cust_msg = f"An administrator deducted ₦{ngn_display:,.2f} (≈ ${usd_display:.2f}) from your wallet. Reason: {reason}"
+                    flash_msg = f"Wallet successfully debited by ₦{ngn_display:,.2f} (${usd_display:.2f} USD). New balance: ₦{new_bal_ngn:,.2f} (${new_bal_usd:.2f} USD)."
+                else:
+                    cust_msg = f"An administrator deducted ${usd_display:.2f} (≈ ₦{ngn_display:,.2f}) from your wallet. Reason: {reason}"
+                    flash_msg = f"Wallet successfully debited by ${usd_display:.2f} (≈ ₦{ngn_display:,.2f}). New balance: ${new_bal_usd:.2f} (≈ ₦{new_bal_ngn:,.2f})."
+
                 DBService.create_user_notification(
                     user_id=user_id,
                     title="Funds Deducted from Wallet",
-                    message=f"An administrator deducted ${amount:.2f} (≈ ₦{amount * rate:,.2f}) from your wallet. Reason: {reason}",
+                    message=cust_msg,
                     type="admin_debit",
                     link="/wallet"
                 )
-            flash(f"Wallet successfully adjusted by ${signed_amount:+.2f}. New balance: ${res.get('new_balance', 0):.2f}", 'success')
+            flash(flash_msg, 'success')
         else:
             flash(res.get('message', 'Failed to adjust balance.'), 'error')
     except Exception as e:
