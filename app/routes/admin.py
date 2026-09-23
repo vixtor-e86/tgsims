@@ -145,6 +145,7 @@ def pricing():
                 squad_on = 'squad_enabled' in request.form
                 crypto_on = 'crypto_enabled' in request.form
                 bank_details = request.form.get('manual_bank_details', '').strip()
+                uk_route = request.form.get('uk_operator_route', 'clean_route').strip().lower()
 
                 SettingsService.update_settings({
                     'ngn_per_usd_rate': ngn_rate,
@@ -156,9 +157,10 @@ def pricing():
                     'crypto_deposit_address': crypto_addr,
                     'squad_enabled': squad_on,
                     'crypto_enabled': crypto_on,
-                    'manual_bank_details': bank_details
+                    'manual_bank_details': bank_details,
+                    'uk_operator_route': uk_route
                 })
-                flash('Pricing settings and profit margins updated successfully! Changes take effect immediately.', 'success')
+                flash('Platform settings, UK routing, and profit margins updated successfully! Changes take effect immediately.', 'success')
             except Exception as e:
                 flash(f'Failed to update settings: {e}', 'error')
 
@@ -292,7 +294,7 @@ def verify_deposit(tx_id):
         if u_id:
             DBService.create_user_notification(
                 user_id=u_id,
-                title="Deposit Verified & Credited! 💳",
+                title="Deposit Verified & Credited",
                 message=f"Your deposit of ${amt:.2f} (≈ ₦{amt * rate:,.2f}) has been verified and added to your wallet balance.",
                 type="deposit",
                 link="/wallet"
@@ -423,7 +425,7 @@ def adjust_user_balance(user_id):
             if adjustment_type == 'credit':
                 DBService.create_user_notification(
                     user_id=user_id,
-                    title="Funds Added to Wallet 💰",
+                    title="Funds Added to Wallet",
                     message=f"An administrator credited ${amount:.2f} (≈ ₦{amount * rate:,.2f}) to your wallet. Reason: {reason}",
                     type="admin_credit",
                     link="/wallet"
@@ -431,7 +433,7 @@ def adjust_user_balance(user_id):
             else:
                 DBService.create_user_notification(
                     user_id=user_id,
-                    title="Funds Deducted from Wallet ⚠️",
+                    title="Funds Deducted from Wallet",
                     message=f"An administrator deducted ${amount:.2f} (≈ ₦{amount * rate:,.2f}) from your wallet. Reason: {reason}",
                     type="admin_debit",
                     link="/wallet"

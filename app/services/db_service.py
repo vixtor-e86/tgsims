@@ -2079,7 +2079,7 @@ class DBService:
             try:
                 DBService.create_user_notification(
                     user_id=referrer_id,
-                    title="Referral Commission Earned! 🎉",
+                    title="Referral Commission Earned",
                     message=f"You earned ${commission_earned:.2f} (5%) from {buyer_name}'s order #{order_reference or 'verification'}.",
                     type="promo",
                     link="/account/referral",
@@ -2241,7 +2241,7 @@ class DBService:
             try:
                 DBService.create_user_notification(
                     user_id=user_id,
-                    title="Referral Balance Redeemed! 💵",
+                    title="Referral Balance Redeemed",
                     message=f"${withdraw_amt:.2f} has been transferred from your Referral Wallet to your Main Balance.",
                     type="deposit",
                     link="/wallet"

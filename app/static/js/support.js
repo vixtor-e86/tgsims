@@ -446,7 +446,42 @@
     } catch (e) {}
   }
 
+  var cachedSupportNotifs = [];
+
+  function adaptCurrencyInText(text) {
+    if (!text || typeof text !== "string") return text || "";
+    if (!window.TgCurrency) return text;
+    var active = window.TgCurrency.active || "NGN";
+    var rate = Number(window.TG_NGN_PER_USD) || (window.TgCurrency && window.TgCurrency.rate) || 1600;
+
+    text = text.replace(/\$([0-9]+(?:\.[0-9]+)?)\s*\((?:≈\s*)?₦[0-9,]+(?:\.[0-9]+)?\)/gi, function (_, usdVal) {
+      var num = parseFloat(usdVal);
+      return isNaN(num) ? _ : window.TgCurrency.format(num);
+    });
+
+    text = text.replace(/₦[0-9,]+(?:\.[0-9]+)?\s*\((?:≈\s*)?\$([0-9]+(?:\.[0-9]+)?)\)/gi, function (_, usdVal) {
+      var num = parseFloat(usdVal);
+      return isNaN(num) ? _ : window.TgCurrency.format(num);
+    });
+
+    if (active === "NGN") {
+      text = text.replace(/\$([0-9]+(?:\.[0-9]+)?)/g, function (match, usdVal) {
+        var num = parseFloat(usdVal);
+        return isNaN(num) ? match : window.TgCurrency.format(num);
+      });
+    } else {
+      text = text.replace(/₦([0-9,]+(?:\.[0-9]+)?)/g, function (match, ngnVal) {
+        var cleanNgn = ngnVal.replace(/,/g, "");
+        var num = parseFloat(cleanNgn);
+        if (isNaN(num)) return match;
+        return window.TgCurrency.format(num / rate);
+      });
+    }
+    return text;
+  }
+
   function renderTopbarNotifications(notifs) {
+    cachedSupportNotifs = notifs || [];
     var topbarNotifsList = getEl("topbar-support-notifs");
     if (!topbarNotifsList) return;
     if (!notifs || notifs.length === 0) {
@@ -459,19 +494,27 @@
       var timeStr = (n.created_at || "").substring(0, 16).replace("T", " ");
       var unreadCls = n.is_read ? "" : "is-unread";
       var unreadDot = n.is_read ? "" : '<span style="width:6px;height:6px;border-radius:50%;background:var(--hue-danger);display:inline-block;"></span>';
+      var adaptedTitle = adaptCurrencyInText(n.title || '');
+      var adaptedMsg = adaptCurrencyInText(n.message || '');
 
-      html += '<div class="notif-item ' + unreadCls + '" onclick="handleNotifClick(\'' + (n.ticket_id || '') + '\', \'' + n.id + '\')">' +
-        '<div class="notif-item-title">' +
-          '<span>' + escapeHtml(n.title) + '</span>' +
+      html += '<div class="notif-item ' + unreadCls + '" onclick="handleNotifClick(\'' + (n.ticket_id || '') + '\', \'' + n.id + '\')" style="overflow-wrap: anywhere; word-break: break-word;">' +
+        '<div class="notif-item-title" style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<span style="overflow-wrap: anywhere; word-break: break-word;">' + escapeHtml(adaptedTitle) + '</span>' +
           unreadDot +
         '</div>' +
-        '<div class="notif-item-msg">' + escapeHtml(n.message) + '</div>' +
+        '<div class="notif-item-msg" style="overflow-wrap: anywhere; word-break: break-word; white-space: normal;">' + escapeHtml(adaptedMsg) + '</div>' +
         '<div class="notif-item-time">' + timeStr + '</div>' +
       '</div>';
     });
 
     topbarNotifsList.innerHTML = html;
   }
+
+  document.addEventListener("currencychange", function () {
+    if (cachedSupportNotifs && cachedSupportNotifs.length > 0) {
+      renderTopbarNotifications(cachedSupportNotifs);
+    }
+  });
 
   window.handleNotifClick = async function(ticketId, notifId) {
     // Instant 0ms clear

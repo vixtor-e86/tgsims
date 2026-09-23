@@ -311,6 +311,7 @@
     var headerBadge = document.getElementById("bell-header-badge");
     var notifContainer = document.getElementById("topbar-user-notifs");
     var markAllBtn = document.getElementById("mark-user-notifs-read-btn");
+    var cachedUserNotifs = [];
 
     if (!bellTrigger || !notifContainer) return;
 
@@ -333,25 +334,75 @@
       }
     }
 
+    function adaptCurrencyText(text) {
+      if (!text || typeof text !== "string") return text || "";
+      if (!window.TgCurrency) return text;
+
+      var active = window.TgCurrency.active || "NGN";
+      var rate = Number(window.TG_NGN_PER_USD) || (window.TgCurrency && window.TgCurrency.rate) || 1600;
+
+      // 1. Dual notation: "$10.00 (≈ ₦16,000.00)" or "$10.00 (₦16,000.00)"
+      text = text.replace(/\$([0-9]+(?:\.[0-9]+)?)\s*\((?:≈\s*)?₦[0-9,]+(?:\.[0-9]+)?\)/gi, function (_, usdVal) {
+        var num = parseFloat(usdVal);
+        return isNaN(num) ? _ : window.TgCurrency.format(num);
+      });
+
+      // 2. Dual notation reversed: "₦16,000.00 ($10.00)" or "₦16,000.00 (≈$10.00)"
+      text = text.replace(/₦[0-9,]+(?:\.[0-9]+)?\s*\((?:≈\s*)?\$([0-9]+(?:\.[0-9]+)?)\)/gi, function (_, usdVal) {
+        var num = parseFloat(usdVal);
+        return isNaN(num) ? _ : window.TgCurrency.format(num);
+      });
+
+      // 3. Standalone currency conversions
+      if (active === "NGN") {
+        // Convert $X.XX or $X to Naira
+        text = text.replace(/\$([0-9]+(?:\.[0-9]+)?)/g, function (match, usdVal) {
+          var num = parseFloat(usdVal);
+          if (isNaN(num)) return match;
+          return window.TgCurrency.format(num);
+        });
+      } else {
+        // Convert ₦Y,YYY.YY or ₦Y to USD
+        text = text.replace(/₦([0-9,]+(?:\.[0-9]+)?)/g, function (match, ngnVal) {
+          var cleanNgn = ngnVal.replace(/,/g, "");
+          var num = parseFloat(cleanNgn);
+          if (isNaN(num)) return match;
+          var usdEquiv = num / rate;
+          return window.TgCurrency.format(usdEquiv);
+        });
+      }
+
+      return text;
+    }
+
     function getTypeMeta(type) {
       var t = (type || "system").toLowerCase();
+      var walletIco = '<svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path></svg>';
+      var depositIco = '<svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+      var orderIco = '<svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      var refundIco = '<svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+      var promoIco = '<svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+      var updateIco = '<svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+      var systemIco = '<svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+
       if (t === "deposit") {
-        return { label: "Deposit", bg: "rgba(16, 185, 129, 0.12)", color: "#10b981", icon: "↓" };
-      } else if (t === "wallet" || t === "debit") {
-        return { label: "Wallet", bg: "rgba(37, 99, 235, 0.12)", color: "var(--brand)", icon: "₦" };
+        return { label: "Deposit", bg: "rgba(16, 185, 129, 0.12)", color: "#10b981", icon: depositIco };
+      } else if (t === "wallet" || t === "debit" || t === "admin_credit" || t === "admin_debit") {
+        return { label: "Wallet", bg: "rgba(37, 99, 235, 0.12)", color: "var(--brand)", icon: walletIco };
       } else if (t === "order" || t === "purchase") {
-        return { label: "Order", bg: "rgba(16, 185, 129, 0.12)", color: "#10b981", icon: "✓" };
+        return { label: "Order", bg: "rgba(16, 185, 129, 0.12)", color: "#10b981", icon: orderIco };
       } else if (t === "refund") {
-        return { label: "Refund", bg: "rgba(245, 158, 11, 0.12)", color: "#f59e0b", icon: "↺" };
+        return { label: "Refund", bg: "rgba(245, 158, 11, 0.12)", color: "#f59e0b", icon: refundIco };
       } else if (t === "promo") {
-        return { label: "Promo", bg: "rgba(236, 72, 153, 0.12)", color: "#ec4899", icon: "★" };
+        return { label: "Promo", bg: "rgba(236, 72, 153, 0.12)", color: "#ec4899", icon: promoIco };
       } else if (t === "update") {
-        return { label: "Update", bg: "rgba(6, 182, 212, 0.12)", color: "#06b6d4", icon: "ℹ" };
+        return { label: "Update", bg: "rgba(6, 182, 212, 0.12)", color: "#06b6d4", icon: updateIco };
       }
-      return { label: "System", bg: "rgba(100, 116, 139, 0.12)", color: "var(--text-muted)", icon: "•" };
+      return { label: "System", bg: "rgba(100, 116, 139, 0.12)", color: "var(--text-muted)", icon: systemIco };
     }
 
     function renderNotifications(items) {
+      cachedUserNotifs = items || [];
       if (!items || items.length === 0) {
         notifContainer.innerHTML = '<div style="padding: 2.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.82rem;">No notifications yet</div>';
         return;
@@ -362,19 +413,22 @@
         var isUnread = !n.is_read;
         var meta = getTypeMeta(n.type);
         var timeStr = formatTimeAgo(n.created_at);
-        html += '<div class="user-notif-item' + (isUnread ? ' is-unread' : '') + '" data-notif-id="' + escapeHtml(n.id) + '" style="display: flex; gap: 0.75rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); cursor: default; user-select: text; transition: background 0.15s ease; position: relative;' + (isUnread ? ' background: rgba(37, 99, 235, 0.05);' : '') + '">';
+        var adaptedTitle = adaptCurrencyText(n.title || 'Notification');
+        var adaptedMsg = adaptCurrencyText(n.message || '');
+
+        html += '<div class="user-notif-item' + (isUnread ? ' is-unread' : '') + '" data-notif-id="' + escapeHtml(n.id) + '" style="display: flex; gap: 0.75rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); cursor: default; user-select: text; transition: background 0.15s ease; position: relative; max-width: 100%; box-sizing: border-box;' + (isUnread ? ' background: rgba(37, 99, 235, 0.05);' : '') + '">';
         
         // Icon / avatar
         html += '<div style="width: 32px; height: 32px; border-radius: var(--r-full); background: ' + meta.bg + '; color: ' + meta.color + '; display: grid; place-items: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0; margin-top: 2px;">' + meta.icon + '</div>';
         
         // Content
-        html += '<div style="flex: 1; min-width: 0;">';
-        html += '<div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 0.15rem;">';
-        html += '<span style="font-size: 0.8rem; font-weight: ' + (isUnread ? '800' : '600') + '; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + escapeHtml(n.title || 'Notification') + '</span>';
-        html += '<span style="font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; flex-shrink: 0;">' + timeStr + '</span>';
+        html += '<div style="flex: 1; min-width: 0; max-width: 100%; overflow: hidden;">';
+        html += '<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.4rem; margin-bottom: 0.15rem;">';
+        html += '<span style="font-size: 0.82rem; font-weight: ' + (isUnread ? '800' : '600') + '; color: var(--text); overflow-wrap: anywhere; word-break: break-word; line-height: 1.25;">' + escapeHtml(adaptedTitle) + '</span>';
+        html += '<span style="font-size: 0.68rem; color: var(--text-dim); white-space: nowrap; flex-shrink: 0; margin-top: 1px;">' + timeStr + '</span>';
         html += '</div>';
 
-        html += '<div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.45; word-break: break-word;">' + escapeHtml(n.message || '') + '</div>';
+        html += '<div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.45; word-break: break-word; overflow-wrap: anywhere; white-space: normal; margin-top: 0.2rem;">' + escapeHtml(adaptedMsg) + '</div>';
 
         html += '<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.35rem;">';
         html += '<span style="display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 4px; background: ' + meta.bg + '; color: ' + meta.color + ';">' + meta.label + '</span>';
@@ -482,6 +536,13 @@
         }).catch(function () {});
       });
     }
+
+    // Re-render notifications on currency toggle switch
+    document.addEventListener("currencychange", function () {
+      if (cachedUserNotifs && cachedUserNotifs.length > 0) {
+        renderNotifications(cachedUserNotifs);
+      }
+    });
 
     // Initial sync & periodic 5-second polling
     syncNotifications(false);

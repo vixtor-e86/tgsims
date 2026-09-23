@@ -163,6 +163,39 @@
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
         Amount deducted from wallet when a user requests an additional OTP on their line.
       </div>
+    {# 7. UK Number Provider / Route #}
+    <div class="form-group">
+      <label class="form-label" style="font-weight: 700; color: var(--text);">
+        United Kingdom (UK) Route / Carrier
+      </label>
+      <div style="margin-top: 0.35rem;">
+        <select name="uk_operator_route" class="input" style="font-weight: 700; font-size: 0.95rem; width: 100%;">
+          <option value="clean_route" {% if settings.uk_operator_route == 'clean_route' or not settings.uk_operator_route %}selected{% endif %}>
+            Auto Clean Route (Physical Networks + Premium Pool) [Recommended]
+          </option>
+          <option value="ee" {% if settings.uk_operator_route == 'ee' %}selected{% endif %}>
+            EE (UK Tier-1 Cellular Network)
+          </option>
+          <option value="o2" {% if settings.uk_operator_route == 'o2' %}selected{% endif %}>
+            O2 (UK Tier-1 Cellular Network)
+          </option>
+          <option value="vodafone" {% if settings.uk_operator_route == 'vodafone' %}selected{% endif %}>
+            Vodafone (UK Tier-1 Cellular Network)
+          </option>
+          <option value="three" {% if settings.uk_operator_route == 'three' %}selected{% endif %}>
+            Three (UK Tier-1 Cellular Network)
+          </option>
+          <option value="virtual34" {% if settings.uk_operator_route == 'virtual34' %}selected{% endif %}>
+            Route 34 (High Inventory Verified Route)
+          </option>
+          <option value="virtual66" {% if settings.uk_operator_route == 'virtual66' %}selected{% endif %}>
+            Route 66 (High Delivery Verified Route)
+          </option>
+        </select>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+        Eliminates low-cost flagged virtual aggregators. Ensures UK numbers are dispatched via clean physical carriers or verified routes.
+      </div>
     </div>
 
   </div>

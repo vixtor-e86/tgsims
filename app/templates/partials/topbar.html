@@ -22,7 +22,7 @@
   </div>
 
   <div class="topbar-actions">
-    <a class="wallet-chip" href="{{ url_for('wallet.index') }}" aria-label="Wallet balance">
+    <a class="wallet-chip" href="{{ url_for('wallet.index') }}" aria-label="Wallet balance" title="Wallet balance: ₦{{ '{:,.2f}'.format((wallet_balance_usd or 0) * NGN_PER_USD) }}">
       {{ icon('wallet') }}
       <span data-usd="{{ '%.2f'|format(wallet_balance_usd or 0) }}" data-decimals="2">{{ '₦%.2f'|format((wallet_balance_usd or 0) * NGN_PER_USD) }}</span>
     </a>
@@ -38,7 +38,7 @@
         <span class="dot" id="bell-unread-dot" style="display: none; background: var(--brand); position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--surface);"></span>
         <span class="badge" id="bell-unread-badge" style="display: none; position: absolute; top: -3px; right: -3px; font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 700; line-height: 1;">0</span>
       </button>
-      <div class="dropdown-menu" role="menu" style="width: min(350px, calc(100vw - 24px)); max-height: 440px; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+      <div class="dropdown-menu dropdown-menu-responsive" role="menu" style="max-height: 440px; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
         <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface-2);">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
             <span style="font-weight: 700; font-size: 0.85rem; color: var(--text);">Notifications</span>
@@ -59,7 +59,7 @@
         <span class="dot" id="mail-unread-dot" style="display: none; background: var(--hue-danger); position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--surface);"></span>
         <span class="badge" id="mail-unread-badge" style="display: none; position: absolute; top: -3px; right: -3px; font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 999px; background: var(--hue-danger); color: #fff; font-weight: 700; line-height: 1;">0</span>
       </button>
-      <div class="dropdown-menu" role="menu" style="width: min(340px, calc(100vw - 24px)); max-height: 420px; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+      <div class="dropdown-menu dropdown-menu-responsive" role="menu" style="max-height: 420px; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
         <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface-2);">
           <span style="font-weight: 700; font-size: 0.85rem; color: var(--text);">Support Messages</span>
           <button type="button" id="mark-notifs-read-btn" style="background: none; border: none; font-size: 0.75rem; color: var(--brand); cursor: pointer; font-weight: 600;">Mark all read</button>

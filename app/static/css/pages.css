@@ -472,11 +472,14 @@
   color: var(--text-muted);
 }
 .stat-value {
-  font-size: var(--fs-2xl);
+  font-size: clamp(1.2rem, 3.5vw, 1.85rem);
   font-weight: var(--fw-extra);
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 .stat-delta {
   display: inline-flex;
@@ -1398,6 +1401,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .balance-card::after {
   content: "";
@@ -1430,12 +1436,15 @@
   color: rgba(234,240,251,0.6);
 }
 .balance-value {
-  font-size: clamp(2.25rem, 4.2vw, 3.25rem);
+  font-size: clamp(1.65rem, 5vw, 2.85rem);
   font-weight: var(--fw-extra);
   letter-spacing: -0.02em;
   color: #fff;
   margin: var(--sp-2) 0 0;
-  line-height: 1.05;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 .balance-sub {
   font-size: var(--fs-sm);
@@ -1963,7 +1972,15 @@
 }
 
 /* Stat row */
-.ref-stat-value { font-size: var(--fs-2xl); font-weight: var(--fw-extra); color: var(--text); letter-spacing: -0.02em; }
+.ref-stat-value {
+  font-size: clamp(1.2rem, 3.5vw, 1.85rem);
+  font-weight: var(--fw-extra);
+  color: var(--text);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
 .ref-stat-label { font-size: var(--fs-sm); color: var(--text-muted); margin-top: var(--sp-1); }
 .ref-stat .icon-tile { margin-bottom: var(--sp-3); }
 
@@ -2022,13 +2039,18 @@
 .ref-wallet-bal-wrap {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
 }
 .ref-wallet-amount {
-  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
   font-weight: 800;
   color: var(--text);
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 .ref-wallet-sub {
   font-size: var(--fs-sm);

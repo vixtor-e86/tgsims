@@ -221,7 +221,7 @@ class MockDatabase:
             {
                 'id': 'unotif-sample-1',
                 'user_id': 'demo-user-id',
-                'title': 'Welcome to Tgsims! 🎉',
+                'title': 'Welcome to Tgsims',
                 'message': 'Welcome to Tgsims SMS platform. Your account is active and ready to verify numbers.',
                 'type': 'system',
                 'link': '/dashboard',

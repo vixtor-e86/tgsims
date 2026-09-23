@@ -47,7 +47,13 @@
       var decimals = el.hasAttribute("data-decimals")
         ? Number(el.getAttribute("data-decimals")) : 2;
       var sign = el.getAttribute("data-sign") || null;
-      el.textContent = format(usd, { decimals: decimals, sign: sign });
+      var formatted = format(usd, { decimals: decimals, sign: sign });
+      el.textContent = formatted;
+
+      var chip = el.closest(".wallet-chip");
+      if (chip) {
+        chip.setAttribute("title", "Wallet balance: " + formatted);
+      }
     });
     // Reflect active currency on switch controls.
     document.querySelectorAll("[data-currency-set]").forEach(function (btn) {

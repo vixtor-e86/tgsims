@@ -211,15 +211,30 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 0.5rem 0.9rem;
+  padding: 0.45rem 0.85rem;
   border-radius: var(--r-full);
   background: var(--surface-inv);
   color: #eaf6ff;
   font-weight: var(--fw-bold);
   font-size: var(--fs-sm);
   border: 1px solid var(--border);
+  min-width: 0;
+  max-width: 220px;
+  white-space: nowrap;
+  flex-shrink: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease), background var(--dur) var(--ease);
 }
-.wallet-chip svg { width: 18px; height: 18px; color: var(--accent-teal); }
+.wallet-chip:hover { transform: translateY(-1px); }
+.wallet-chip svg { width: 18px; height: 18px; color: var(--accent-teal); flex-shrink: 0; }
+.wallet-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  display: inline-block;
+}
 [data-theme="light"] .wallet-chip { background: #0c1526; }
 
 /* ---- Page content ---- */
@@ -656,13 +671,24 @@
     gap: var(--sp-2);
   }
   .wallet-chip {
-    padding: 0.38rem 0.65rem;
-    font-size: var(--fs-xs);
-    gap: 0.35rem;
+    padding: 0.3rem 0.52rem;
+    font-size: clamp(0.68rem, 2.5vw, 0.78rem);
+    gap: 0.25rem;
+    max-width: min(130px, 33vw);
+    min-width: 0;
+    flex-shrink: 1;
   }
   .wallet-chip svg {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .wallet-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    max-width: 100%;
   }
   .icon-btn {
     width: 38px;

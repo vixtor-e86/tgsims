@@ -108,7 +108,7 @@ def purchase_sim():
     try:
         DBService.create_user_notification(
             user_id=user_id,
-            title=f"{service_name} Number Allocated 📱",
+            title=f"{service_name} Number Allocated",
             message=f"Your {country_name} number ({sim_result.get('phone_number', '')}) is active. Waiting for incoming SMS.",
             type="purchase",
             link="/sims/my-sims"
@@ -219,7 +219,7 @@ def purchase_us_canada():
     try:
         DBService.create_user_notification(
             user_id=user_id,
-            title=f"{service_name} US Number Allocated 📱",
+            title=f"{service_name} US Number Allocated",
             message=f"Your dedicated cellular line ({alloc_res.get('phone_number', '')}) is ready. Waiting for SMS code.",
             type="purchase",
             link="/sims/my-sims"
@@ -293,7 +293,7 @@ def check_sms(order_id):
                     cost = float(order.get('price', order.get('user_cost', 0.00)))
                     DBService.create_user_notification(
                         user_id=user_id,
-                        title="Order Timed Out & Refunded ⏱️",
+                        title="Order Timed Out & Refunded",
                         message=f"${cost:.2f} was returned to your wallet for order #{order.get('order_reference', order_id)} after reaching 5-minute timeout.",
                         type="refund",
                         link="/wallet"
@@ -326,7 +326,7 @@ def check_sms(order_id):
         try:
             DBService.create_user_notification(
                 user_id=user_id,
-                title="Verification Code Received! 🔑",
+                title="Verification Code Received",
                 message=f"Your {order.get('service_name', 'Verification')} code is: {code} ({order.get('phone_number', '')}).",
                 type="purchase",
                 link="/sims/my-sims",
@@ -419,7 +419,7 @@ def cancel_sim(order_id):
         cost = float(order.get('price', order.get('user_cost', 0.00)))
         DBService.create_user_notification(
             user_id=user_id,
-            title="Order Cancelled & Refunded 🔄",
+            title="Order Cancelled & Refunded",
             message=f"${cost:.2f} has been refunded to your wallet for order #{order.get('order_reference', order_id)}.",
             type="refund",
             link="/wallet"
