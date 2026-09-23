@@ -54,6 +54,8 @@ class SettingsService:
                                 base[k] = bool(val)
                             else:
                                 base[k] = val
+                        elif cls._cache and k in cls._cache and cls._cache[k] is not None:
+                            base[k] = cls._cache[k]
 
                     # Handle legacy column names if present
                     if 'default_markup_percent' in row and row['default_markup_percent'] is not None and 'fivesim_markup_percent' not in row:
