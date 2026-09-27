@@ -103,11 +103,15 @@ def my_sims():
         # If active order exceeded 5 minutes (300s), trigger automatic refund immediately
         if is_active and remaining <= 0:
             try:
+                is_react = (o.get('order_type') == 'reactivation') or ('reactivat' in str(o.get('full_sms_text', '')).lower())
                 prov_id = o.get('provider_order_id')
-                if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+                if not is_react and prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
                     SIMProviderService.cancel_order(str(prov_id))
                 DBService.refund_order(o.get('id') or o.get('order_reference'), user['id'], reason="Auto-refunded: SMS timeout (5 mins)")
-                o['status'] = 'refunded'
+                if is_react:
+                    o['status'] = 'received'
+                else:
+                    o['status'] = 'refunded'
                 o['is_active_sim'] = False
             except Exception as e:
                 print(f"[my_sims] Auto-refund on page load error: {e}")

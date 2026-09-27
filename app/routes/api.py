@@ -274,14 +274,15 @@ def check_sms(order_id):
                 
             now = datetime.datetime.now(datetime.timezone.utc)
             if (now - created_at).total_seconds() > 300: # 5 minutes total
+                is_react = (order.get('order_type') == 'reactivation') or ('reactivat' in str(order.get('full_sms_text', '')).lower())
                 prov_id = order.get('provider_order_id')
-                if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+                if not is_react and prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
                     try:
                         SIMProviderService.cancel_order(str(prov_id))
                     except Exception as e:
                         print(f"[check_sms] provider cancel on timeout error: {e}")
                 
-                # Atomically refund user wallet and mark order as refunded
+                # Atomically refund user wallet and restore previous state if reactivation
                 DBService.refund_order(
                     order_id=order_id,
                     user_id=user_id,
@@ -290,11 +291,19 @@ def check_sms(order_id):
                 
                 # Trigger user notification
                 try:
-                    cost = float(order.get('price', order.get('user_cost', 0.00)))
+                    if is_react:
+                        from app.services.settings_service import SettingsService
+                        cost = SettingsService.get_reactivation_fee()
+                        notif_title = "Reactivation Timed Out & Refunded"
+                        notif_msg = f"${cost:.2f} was returned to your wallet for order #{order.get('order_reference', order_id)} after reaching 5-minute timeout. You can reactivate again at any time."
+                    else:
+                        cost = float(order.get('price', order.get('user_cost', 0.00)))
+                        notif_title = "Order Timed Out & Refunded"
+                        notif_msg = f"${cost:.2f} was returned to your wallet for order #{order.get('order_reference', order_id)} after reaching 5-minute timeout."
                     DBService.create_user_notification(
                         user_id=user_id,
-                        title="Order Timed Out & Refunded",
-                        message=f"${cost:.2f} was returned to your wallet for order #{order.get('order_reference', order_id)} after reaching 5-minute timeout.",
+                        title=notif_title,
+                        message=notif_msg,
                         type="refund",
                         link="/wallet"
                     )
@@ -303,7 +312,7 @@ def check_sms(order_id):
 
                 return jsonify({
                     'success': False,
-                    'message': 'Verification timed out (5 mins). Full refund has been credited to your wallet.',
+                    'message': 'Verification timed out (5 mins). Refund has been credited to your wallet.',
                     'auto_refunded': True
                 })
         except Exception as e:
@@ -372,8 +381,10 @@ def cancel_sim(order_id):
     if order.get('sms_code'):
         return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
 
-    # Cancellation is only allowed after 3 minutes (180s)
-    if order.get('created_at'):
+    is_react = (order.get('order_type') == 'reactivation') or ('reactivat' in str(order.get('full_sms_text', '')).lower())
+
+    # Cancellation is only allowed after 3 minutes (180s) for initial orders; reactivations can cancel anytime
+    if not is_react and order.get('created_at'):
         import datetime
         try:
             cat_str = str(order.get('created_at')).replace('Z', '+00:00')
@@ -394,20 +405,20 @@ def cancel_sim(order_id):
         except Exception as e:
             print(f"[cancel_sim] elapsed check error: {e}")
 
-    # 2. Cancel order on verification provider (5sim or TextVerified)
-    prov_id = order.get('provider_order_id')
-    if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
-        cancel_res = SIMProviderService.cancel_order(str(prov_id))
-        if not cancel_res.get('success'):
-            raw_err = str(cancel_res.get('message', '')).lower()
-            if 'already' in raw_err or 'received' in raw_err or 'finished' in raw_err:
-                return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
-            elif 'not found' in raw_err or 'timed' in raw_err or 'expired' in raw_err:
-                # Order may have timed out or expired on carrier side already
-                pass
-            else:
-                # Log provider error but allow refund if no SMS was received
-                print(f"[cancel_sim] provider cancel note: {cancel_res.get('message')}")
+    # 2. Cancel order on verification provider (5sim or TextVerified) - ONLY for initial activations!
+    # For reactivations, keep carrier line intact so user can reactivate again later.
+    if not is_react:
+        prov_id = order.get('provider_order_id')
+        if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+            cancel_res = SIMProviderService.cancel_order(str(prov_id))
+            if not cancel_res.get('success'):
+                raw_err = str(cancel_res.get('message', '')).lower()
+                if 'already' in raw_err or 'received' in raw_err or 'finished' in raw_err:
+                    return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
+                elif 'not found' in raw_err or 'timed' in raw_err or 'expired' in raw_err:
+                    pass
+                else:
+                    print(f"[cancel_sim] provider cancel note: {cancel_res.get('message')}")
 
     # 3. Atomically refund wallet in database
     refund_result = DBService.refund_order(order_id, user_id, reason="Cancelled by user before receiving code")
@@ -416,11 +427,19 @@ def cancel_sim(order_id):
 
     # Trigger user notification
     try:
-        cost = float(order.get('price', order.get('user_cost', 0.00)))
+        if is_react:
+            from app.services.settings_service import SettingsService
+            fee = SettingsService.get_reactivation_fee()
+            notif_title = "Reactivation Cancelled & Refunded"
+            notif_msg = f"${fee:.2f} has been refunded to your wallet for order #{order.get('order_reference', order_id)}."
+        else:
+            cost = float(order.get('price', order.get('user_cost', 0.00)))
+            notif_title = "Order Cancelled & Refunded"
+            notif_msg = f"${cost:.2f} has been refunded to your wallet for order #{order.get('order_reference', order_id)}."
         DBService.create_user_notification(
             user_id=user_id,
-            title="Order Cancelled & Refunded",
-            message=f"${cost:.2f} has been refunded to your wallet for order #{order.get('order_reference', order_id)}.",
+            title=notif_title,
+            message=notif_msg,
             type="refund",
             link="/wallet"
         )

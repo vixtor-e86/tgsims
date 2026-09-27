@@ -169,7 +169,7 @@
         footer.style.padding = "8px 12px";
         footer.style.fontSize = "0.7rem";
         footer.style.borderTop = "1px solid var(--border)";
-        footer.textContent = "Showing " + MAX_RENDER + " of " + items.length + " matching routes — type to narrow down";
+        footer.textContent = "Showing " + MAX_RENDER + " of " + items.length + " matching services — type to narrow down";
         dropdownMenu.appendChild(footer);
       }
     }

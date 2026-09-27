@@ -24,60 +24,7 @@
   </div>
 </div>
 
-{# Live Margin Simulator & Preview #}
-<div class="card card-pad" style="margin-bottom: 2rem; background: var(--surface); border: 1px solid var(--border);">
-  <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-    {{ icon('trending-up') }}
-    <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text);">
-      Live Margin Simulator (Active Rates)
-    </h2>
-  </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
-    {# 5sim simulation #}
-    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1rem;">
-      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; color: var(--text);">
-        <span>5sim Simulation</span>
-        <span class="badge badge-success">+{{ settings.fivesim_markup_percent }}%</span>
-      </div>
-      <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
-        <div>Base Provider Cost: <strong style="color: var(--text);">${{ '%.2f'|format(examples.fivesim.cost) }}</strong></div>
-        <div style="margin-top: 0.25rem;">Retail Selling Price: <strong style="color: var(--hue-success); font-size: 1.1rem;">${{ '%.2f'|format(examples.fivesim.price) }}</strong> (₦{{ '{:,.0f}'.format(examples.fivesim.ngn) }})</div>
-        <div style="margin-top: 0.25rem;">Your Profit: <strong style="color: var(--hue-success);">+${{ '%.2f'|format(examples.fivesim.profit) }}</strong> per number</div>
-      </div>
-    </div>
-
-    {# TextVerified simulation #}
-    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1rem;">
-      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; color: var(--text);">
-        <span>TextVerified Simulation</span>
-        <span class="badge badge-brand">+{{ settings.textverified_markup_percent }}%</span>
-      </div>
-      <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
-        <div>Base Provider Cost: <strong style="color: var(--text);">${{ '%.2f'|format(examples.textverified.cost) }}</strong></div>
-        <div style="margin-top: 0.25rem;">Retail Selling Price: <strong style="color: var(--brand); font-size: 1.1rem;">${{ '%.2f'|format(examples.textverified.price) }}</strong> (₦{{ '{:,.0f}'.format(examples.textverified.ngn) }})</div>
-        <div style="margin-top: 0.25rem;">Your Profit: <strong style="color: var(--hue-success);">+${{ '%.2f'|format(examples.textverified.profit) }}</strong> per number</div>
-      </div>
-    </div>
-
-    {# Reactivation Fee #}
-    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1rem;">
-      <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; color: var(--text);">
-        <span>Reactivation Fee</span>
-        <span class="badge badge-muted">Per OTP Repeat</span>
-      </div>
-      <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
-        <div>Charge per reactivation:</div>
-        <div style="margin-top: 0.25rem; font-size: 1.25rem; font-weight: 800; color: var(--text);">
-          ${{ '%.2f'|format(settings.reactivation_fee_usd) }}
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
-          ≈ ₦{{ '{:,.0f}'.format(settings.reactivation_fee_usd * settings.ngn_per_usd_rate) }} deducted atomically
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <style>
   .settings-panel {

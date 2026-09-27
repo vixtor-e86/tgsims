@@ -411,9 +411,13 @@ def adjust_user_balance(user_id):
     """Admin credits or debits a user wallet balance with audit note."""
     admin_user = session.get('user', {})
     admin_id = admin_user.get('id', 'admin')
-
     try:
-        raw_amount = float(request.form.get('amount', 0.00))
+        raw_val = str(request.form.get('amount', '0')).replace(',', '').replace('₦', '').replace('$', '').strip()
+        try:
+            raw_amount = float(raw_val)
+        except (ValueError, TypeError):
+            raw_amount = 0.0
+
         currency = request.form.get('currency', 'USD').strip().upper()
         reason = request.form.get('reason', 'Administrative adjustment').strip()
         adjustment_type = request.form.get('adjustment_type', 'credit')
@@ -428,13 +432,13 @@ def adjust_user_balance(user_id):
 
         # Convert to canonical USD if input was in NGN
         if currency == 'NGN':
-            amount_usd = round(raw_amount / rate, 4)
+            amount_usd = max(0.01, round(raw_amount / rate, 2))
             ngn_display = raw_amount
             usd_display = amount_usd
         else:
-            amount_usd = raw_amount
+            amount_usd = round(raw_amount, 2)
             ngn_display = round(raw_amount * rate, 2)
-            usd_display = raw_amount
+            usd_display = amount_usd
 
         signed_amount_usd = amount_usd if adjustment_type == 'credit' else -amount_usd
         res = DBService.adjust_user_balance_admin(

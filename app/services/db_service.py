@@ -462,7 +462,10 @@ class DBService:
 
     @staticmethod
     def refund_order(order_id: str, user_id: str, reason: str = 'Order cancelled or timed out') -> dict:
-        """Issues an atomic refund for an order to the user's wallet."""
+        """Issues an atomic refund for an order to the user's wallet.
+        If the order is in a reactivation attempt, only refunds the reactivation fee ($1.00)
+        and restores the number line to received state with its previous OTP intact.
+        """
         order = DBService.get_order_by_id(user_id, order_id)
         if not order:
             return {'success': False, 'message': 'Order not found.'}
@@ -473,9 +476,21 @@ class DBService:
         if order.get('status') == 'completed':
             return {'success': False, 'message': 'Completed orders cannot be refunded.'}
 
-        refund_amount = float(order.get('price', order.get('user_cost', 0.00)))
-        ref_tx = f"REF-{uuid.uuid4().hex[:10].upper()}"
+        is_reactivation = (order.get('order_type') == 'reactivation') or ('reactivat' in str(order.get('full_sms_text', '')).lower())
         svc_name = order.get('service_name', 'Virtual SIM')
+
+        if is_reactivation:
+            try:
+                from app.services.settings_service import SettingsService
+                refund_amount = SettingsService.get_reactivation_fee()
+            except Exception:
+                refund_amount = 1.00
+            ref_tx = f"REF-REACT-{uuid.uuid4().hex[:8].upper()}"
+            desc = f"Refund: Cancelled reactivation for {svc_name} - {reason}"
+        else:
+            refund_amount = float(order.get('price', order.get('user_cost', 0.00)))
+            ref_tx = f"REF-{uuid.uuid4().hex[:10].upper()}"
+            desc = f"Refund for {svc_name} - {reason}"
 
         # Credit wallet
         credit_res = DBService.credit_wallet_balance(
@@ -483,16 +498,58 @@ class DBService:
             amount=refund_amount,
             trans_type='refund',
             reference=ref_tx,
-            description=f"Refund for {svc_name} - {reason}",
-            metadata={'order_reference': order.get('order_reference'), 'reason': reason},
+            description=desc,
+            metadata={'order_reference': order.get('order_reference'), 'reason': reason, 'is_reactivation': is_reactivation},
             order_id=order.get('id')
         )
 
         if not credit_res.get('success'):
             return {'success': False, 'message': 'Failed to credit refund to wallet.'}
 
-        # Update order status
         admin = get_supabase_admin()
+
+        if is_reactivation:
+            # Look up previous SMS code
+            prev_code = None
+            prev_full = "Verification completed"
+            if admin and user_id != 'demo-user-id':
+                try:
+                    q_sms = admin.table('sim_sms_messages').select('*').eq('order_id', str(order.get('id'))).order('created_at', desc=True).limit(1).execute()
+                    if q_sms.data and len(q_sms.data) > 0:
+                        prev_code = q_sms.data[0].get('sms_code')
+                        prev_full = q_sms.data[0].get('full_text')
+                except Exception as ex:
+                    print(f"[DBService] lookup prev sms during reactivate refund note: {ex}")
+
+            restore_payload = {
+                'status': 'received',
+                'order_type': 'activation',
+                'sms_code': prev_code,
+                'full_sms_text': prev_full or 'Verification completed',
+                'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
+            }
+
+            if admin and user_id != 'demo-user-id':
+                try:
+                    real_id = order.get('id')
+                    q = admin.table('sim_orders').update(restore_payload)
+                    if DBService._is_uuid(real_id):
+                        q = q.eq('id', str(real_id))
+                    else:
+                        q = q.eq('order_reference', str(order.get('order_reference') or order_id))
+                    q.execute()
+                except Exception as e:
+                    print(f"[DBService] reactivate refund status update error: {e}")
+            else:
+                order.update(restore_payload)
+
+            return {
+                'success': True,
+                'message': f'Reactivation cancelled. ${refund_amount:.2f} refunded to your wallet.',
+                'new_balance': credit_res.get('new_balance')
+            }
+
+        # Standard initial order refund:
         if admin and user_id != 'demo-user-id':
             try:
                 real_id = order.get('id')
@@ -1699,9 +1756,32 @@ class DBService:
         """Create an activity notification for a user or broadcast to all users (user_id=None)."""
         now_str = datetime.datetime.now(datetime.timezone.utc).isoformat()
         notif_id = str(uuid.uuid4())
+
+        personal_types = ('refund', 'purchase', 'deposit', 'admin_credit', 'admin_debit')
+        is_personal = type in personal_types
+        has_valid_uuid = bool(user_id and DBService._is_uuid(user_id))
+
+        # Personal transactional notifications must NEVER be broadcast to everyone if user_id is missing or mock
+        if is_personal and not has_valid_uuid:
+            record = {
+                'id': notif_id,
+                'user_id': user_id or 'mock-user',
+                'title': title,
+                'message': message,
+                'type': type,
+                'link': link,
+                'metadata': metadata or {},
+                'is_read': False,
+                'created_at': now_str
+            }
+            if not hasattr(mock_db, 'user_notifications'):
+                mock_db.user_notifications = []
+            mock_db.user_notifications.insert(0, record)
+            return record
+
         record = {
             'id': notif_id,
-            'user_id': user_id if (user_id and DBService._is_uuid(user_id)) else None,
+            'user_id': user_id if has_valid_uuid else None,
             'title': title,
             'message': message,
             'type': type,
@@ -1728,13 +1808,30 @@ class DBService:
 
     @staticmethod
     def get_user_notifications(user_id: str, limit: int = 30) -> list:
-        """Retrieve notifications for a user, including global broadcasts (user_id IS NULL)."""
+        """Retrieve notifications for a user, including global broadcasts created on or after user registration."""
         admin = get_supabase_admin()
         if admin and DBService._is_uuid(user_id):
             try:
-                res = admin.table('user_notifications').select('*').or_(f"user_id.eq.{user_id},user_id.is.null").order('created_at', desc=True).limit(limit).execute()
-                if res.data is not None:
-                    return res.data
+                # 1. Fetch user's registration timestamp from profiles
+                user_created_at = None
+                p_res = admin.table('profiles').select('created_at').eq('id', user_id).limit(1).execute()
+                if p_res.data and len(p_res.data) > 0:
+                    user_created_at = p_res.data[0].get('created_at')
+
+                # 2. Fetch direct notifications addressed to this user
+                d_res = admin.table('user_notifications').select('*').eq('user_id', user_id).order('created_at', desc=True).limit(limit).execute()
+                direct_items = d_res.data or []
+
+                # 3. Fetch global broadcasts created on or after the user's registration
+                b_query = admin.table('user_notifications').select('*').is_('user_id', 'null').order('created_at', desc=True)
+                if user_created_at:
+                    b_query = b_query.gte('created_at', user_created_at)
+                b_res = b_query.limit(limit).execute()
+                broadcast_items = b_res.data or []
+
+                all_items = direct_items + broadcast_items
+                all_items.sort(key=lambda x: str(x.get('created_at', '')), reverse=True)
+                return all_items[:limit]
             except Exception as e:
                 print(f"[DBService] get_user_notifications Supabase error: {e}")
 
@@ -1756,16 +1853,17 @@ class DBService:
         if admin and DBService._is_uuid(user_id):
             try:
                 if notification_id and notification_id != 'all' and DBService._is_uuid(notification_id):
-                    admin.table('user_notifications').update({'is_read': True}).eq('id', notification_id).execute()
+                    # Only mark user's own notification as read in DB so broadcasts are not affected for others
+                    admin.table('user_notifications').update({'is_read': True}).eq('id', notification_id).eq('user_id', user_id).execute()
                 else:
-                    admin.table('user_notifications').update({'is_read': True}).or_(f"user_id.eq.{user_id},user_id.is.null").execute()
+                    admin.table('user_notifications').update({'is_read': True}).eq('user_id', user_id).execute()
                 return True
             except Exception as e:
                 print(f"[DBService] mark_user_notifications_read Supabase error: {e}")
 
         items = getattr(mock_db, 'user_notifications', [])
         for n in items:
-            if n.get('user_id') == user_id or n.get('user_id') is None:
+            if n.get('user_id') == user_id:
                 if not notification_id or notification_id == 'all' or n.get('id') == notification_id:
                     n['is_read'] = True
         return True

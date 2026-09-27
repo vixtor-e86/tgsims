@@ -478,14 +478,16 @@ function setModalCurrency(code, updateGlobal) {
     if (prefixEl) prefixEl.textContent = '₦';
     if (amountInput) {
       amountInput.placeholder = '5000';
-      amountInput.step = '1';
+      amountInput.step = 'any';
+      amountInput.min = '0.01';
     }
   } else {
     if (codeText) codeText.textContent = '$ USD';
     if (prefixEl) prefixEl.textContent = '$';
     if (amountInput) {
       amountInput.placeholder = '10.00';
-      amountInput.step = '0.01';
+      amountInput.step = 'any';
+      amountInput.min = '0.01';
     }
   }
 
@@ -604,6 +606,15 @@ document.addEventListener('currencychange', function(e) {
 
 document.addEventListener('DOMContentLoaded', function() {
   updateTableSubBalances();
+  var bForm = document.getElementById('balanceForm');
+  if (bForm) {
+    bForm.addEventListener('submit', function() {
+      var amtInput = document.getElementById('modalAmountInput');
+      if (amtInput && amtInput.value) {
+        amtInput.value = amtInput.value.replace(/,/g, '').replace(/[₦$]/g, '').trim();
+      }
+    });
+  }
 });
 
 function openRoleModal(userId, email, newRole) {

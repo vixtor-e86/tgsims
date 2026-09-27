@@ -626,7 +626,7 @@ class SIMProviderService:
             'badge_class': 'badge-neutral',
             'description': 'Standard pool virtual numbers with automatic carrier rotation. Ideal for general platform verifications and everyday accounts.',
             'features': [
-                'Multiple server carrier routes with varying price options',
+                'Cheapest high-availability virtual routes',
                 'Multi-carrier rotation for maximum availability',
                 'Instant auto-refund to wallet if no SMS received'
             ],
@@ -652,78 +652,22 @@ class SIMProviderService:
     ]
 
     FIVESIM_US_SERVICES_WITH_ROUTES = [
-        # WhatsApp variants (different server routes / price tags)
-        {'id': 'whatsapp_v8', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
-        {'id': 'whatsapp_v63', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual63', 'name': 'WhatsApp (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
-        {'id': 'whatsapp_v28', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp (Ultra Clean Route)', 'quality': 'Ultra Route', 'price_usd': 1.85},
-        {'id': 'whatsapp_any', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'any', 'name': 'WhatsApp (Auto-Dynamic Route)', 'quality': 'Dynamic Route', 'price_usd': 1.20},
-
-        # WhatsApp Business variants
-        {'id': 'wabiz_v8', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp Business (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.70},
-        {'id': 'wabiz_v63', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual63', 'name': 'WhatsApp Business (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.15},
-        {'id': 'wabiz_v28', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp Business (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.95},
-
-        # Telegram variants
-        {'id': 'tg_v8', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual8', 'name': 'Telegram (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
-        {'id': 'tg_v63', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual63', 'name': 'Telegram (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.10},
-        {'id': 'tg_v28', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual28', 'name': 'Telegram (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.75},
-
-        # Google / Gmail variants
-        {'id': 'google_v8', 'service_name': 'Google / Gmail', 'service_code': 'google', 'operator': 'virtual8', 'name': 'Google / Gmail (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
-        {'id': 'google_v63', 'service_name': 'Google / Gmail', 'service_code': 'google', 'operator': 'virtual63', 'name': 'Google / Gmail (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.15},
-        {'id': 'google_v28', 'service_name': 'Google / Gmail', 'service_code': 'google', 'operator': 'virtual28', 'name': 'Google / Gmail (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.65},
-
-        # OpenAI / ChatGPT variants
-        {'id': 'openai_v8', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual8', 'name': 'OpenAI / ChatGPT (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.75},
-        {'id': 'openai_v63', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual63', 'name': 'OpenAI / ChatGPT (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.40},
-        {'id': 'openai_v28', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual28', 'name': 'OpenAI / ChatGPT (Ultra Route)', 'quality': 'Ultra Route', 'price_usd': 1.85},
-
-        # Claude AI
-        {'id': 'claude_any', 'service_name': 'Claude AI', 'service_code': 'claude', 'operator': 'any', 'name': 'Claude AI (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.50},
-
-        # Instagram variants
-        {'id': 'ig_v8', 'service_name': 'Instagram', 'service_code': 'instagram', 'operator': 'virtual8', 'name': 'Instagram (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
-        {'id': 'ig_v63', 'service_name': 'Instagram', 'service_code': 'instagram', 'operator': 'virtual63', 'name': 'Instagram (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
-
-        # Twitter / X variants
-        {'id': 'twitter_v8', 'service_name': 'Twitter / X', 'service_code': 'twitter', 'operator': 'virtual8', 'name': 'Twitter / X (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
-        {'id': 'twitter_v63', 'service_name': 'Twitter / X', 'service_code': 'twitter', 'operator': 'virtual63', 'name': 'Twitter / X (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
-
-        # TikTok variants
-        {'id': 'tiktok_v8', 'service_name': 'TikTok', 'service_code': 'tiktok', 'operator': 'virtual8', 'name': 'TikTok (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
-        {'id': 'tiktok_v63', 'service_name': 'TikTok', 'service_code': 'tiktok', 'operator': 'virtual63', 'name': 'TikTok (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.00},
-
-        # Facebook variants
-        {'id': 'fb_v8', 'service_name': 'Facebook', 'service_code': 'facebook', 'operator': 'virtual8', 'name': 'Facebook (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.55},
-        {'id': 'fb_v63', 'service_name': 'Facebook', 'service_code': 'facebook', 'operator': 'virtual63', 'name': 'Facebook (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 0.95},
-
-        # Tinder variants
-        {'id': 'tinder_v8', 'service_name': 'Tinder', 'service_code': 'tinder', 'operator': 'virtual8', 'name': 'Tinder (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.80},
-        {'id': 'tinder_v63', 'service_name': 'Tinder', 'service_code': 'tinder', 'operator': 'virtual63', 'name': 'Tinder (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.45},
-
-        # Apple ID / iCloud
-        {'id': 'apple_v8', 'service_name': 'Apple ID / iCloud', 'service_code': 'apple', 'operator': 'virtual8', 'name': 'Apple ID / iCloud (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.90},
-        {'id': 'apple_v63', 'service_name': 'Apple ID / iCloud', 'service_code': 'apple', 'operator': 'virtual63', 'name': 'Apple ID / iCloud (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.60},
-
-        # PayPal
-        {'id': 'paypal_v8', 'service_name': 'PayPal', 'service_code': 'paypal', 'operator': 'virtual8', 'name': 'PayPal (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 1.10},
-        {'id': 'paypal_v63', 'service_name': 'PayPal', 'service_code': 'paypal', 'operator': 'virtual63', 'name': 'PayPal (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.85},
-
-        # Amazon
-        {'id': 'amazon_v8', 'service_name': 'Amazon', 'service_code': 'amazon', 'operator': 'virtual8', 'name': 'Amazon (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.65},
-        {'id': 'amazon_v63', 'service_name': 'Amazon', 'service_code': 'amazon', 'operator': 'virtual63', 'name': 'Amazon (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.15},
-
-        # Uber / Lyft
-        {'id': 'uber_v8', 'service_name': 'Uber / Lyft', 'service_code': 'uber', 'operator': 'virtual8', 'name': 'Uber / Lyft (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.70},
-        {'id': 'uber_v63', 'service_name': 'Uber / Lyft', 'service_code': 'uber', 'operator': 'virtual63', 'name': 'Uber / Lyft (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.25},
-
-        # Discord
-        {'id': 'discord_v8', 'service_name': 'Discord', 'service_code': 'discord', 'operator': 'virtual8', 'name': 'Discord (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.60},
-        {'id': 'discord_v63', 'service_name': 'Discord', 'service_code': 'discord', 'operator': 'virtual63', 'name': 'Discord (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.05},
-
-        # Other Platforms
-        {'id': 'other_v8', 'service_name': 'Other Platforms', 'service_code': 'other', 'operator': 'virtual8', 'name': 'Other Platforms (Standard Route)', 'quality': 'Economy Pool', 'price_usd': 0.65},
-        {'id': 'other_v63', 'service_name': 'Other Platforms', 'service_code': 'other', 'operator': 'virtual63', 'name': 'Other Platforms (Enhanced Route)', 'quality': 'Enhanced Route', 'price_usd': 1.20},
+        {'id': 'whatsapp_virtual8', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp', 'quality': 'Economy Pool', 'price_usd': 0.85},
+        {'id': 'wabiz_virtual8', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp Business', 'quality': 'Economy Pool', 'price_usd': 0.85},
+        {'id': 'telegram_virtual63', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual63', 'name': 'Telegram', 'quality': 'Economy Pool', 'price_usd': 0.55},
+        {'id': 'google_virtual28', 'service_name': 'Google / Gmail / YouTube', 'service_code': 'google', 'operator': 'virtual28', 'name': 'Google / Gmail / YouTube', 'quality': 'Economy Pool', 'price_usd': 0.38},
+        {'id': 'openai_virtual63', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual63', 'name': 'OpenAI / ChatGPT', 'quality': 'Economy Pool', 'price_usd': 0.15},
+        {'id': 'instagram_virtual8', 'service_name': 'Instagram', 'service_code': 'instagram', 'operator': 'virtual8', 'name': 'Instagram', 'quality': 'Economy Pool', 'price_usd': 0.15},
+        {'id': 'twitter_virtual8', 'service_name': 'Twitter / X', 'service_code': 'twitter', 'operator': 'virtual8', 'name': 'Twitter / X', 'quality': 'Economy Pool', 'price_usd': 0.20},
+        {'id': 'tiktok_virtual8', 'service_name': 'TikTok', 'service_code': 'tiktok', 'operator': 'virtual8', 'name': 'TikTok', 'quality': 'Economy Pool', 'price_usd': 0.15},
+        {'id': 'fb_virtual8', 'service_name': 'Facebook', 'service_code': 'facebook', 'operator': 'virtual8', 'name': 'Facebook', 'quality': 'Economy Pool', 'price_usd': 0.15},
+        {'id': 'tinder_virtual8', 'service_name': 'Tinder', 'service_code': 'tinder', 'operator': 'virtual8', 'name': 'Tinder', 'quality': 'Economy Pool', 'price_usd': 0.55},
+        {'id': 'apple_virtual8', 'service_name': 'Apple ID / iCloud', 'service_code': 'apple', 'operator': 'virtual8', 'name': 'Apple ID / iCloud', 'quality': 'Economy Pool', 'price_usd': 0.40},
+        {'id': 'paypal_virtual8', 'service_name': 'PayPal', 'service_code': 'paypal', 'operator': 'virtual8', 'name': 'PayPal', 'quality': 'Economy Pool', 'price_usd': 0.85},
+        {'id': 'amazon_virtual8', 'service_name': 'Amazon', 'service_code': 'amazon', 'operator': 'virtual8', 'name': 'Amazon', 'quality': 'Economy Pool', 'price_usd': 0.35},
+        {'id': 'uber_virtual8', 'service_name': 'Uber / Lyft', 'service_code': 'uber', 'operator': 'virtual8', 'name': 'Uber / Lyft', 'quality': 'Economy Pool', 'price_usd': 0.30},
+        {'id': 'discord_virtual8', 'service_name': 'Discord', 'service_code': 'discord', 'operator': 'virtual8', 'name': 'Discord', 'quality': 'Economy Pool', 'price_usd': 0.25},
+        {'id': 'other_virtual8', 'service_name': 'Other Platforms', 'service_code': 'other', 'operator': 'virtual8', 'name': 'Other Platforms', 'quality': 'Economy Pool', 'price_usd': 0.40},
     ]
 
     TEXTVERIFIED_US_SERVICES = [
@@ -757,15 +701,42 @@ class SIMProviderService:
         import json
         import os
         data_path = os.path.join(os.path.dirname(__file__), '..', 'data', '5sim_us_services.json')
+        raw = []
         if os.path.exists(data_path):
             try:
                 with open(data_path, 'r', encoding='utf-8') as f:
-                    cls._cached_5sim_us_services_raw = json.load(f)
-                    return cls._cached_5sim_us_services_raw
+                    raw = json.load(f)
             except Exception as e:
                 print(f"[SIMProviderService] Error loading 5sim_us_services.json: {e}")
 
-        return cls.FIVESIM_US_SERVICES_WITH_ROUTES
+        if not raw:
+            raw = cls.FIVESIM_US_SERVICES_WITH_ROUTES
+
+        # Deduplicate to single cheapest option per service code
+        grouped = {}
+        for item in raw:
+            sc = item.get('service_code')
+            if not sc:
+                continue
+            if sc not in grouped:
+                grouped[sc] = []
+            grouped[sc].append(item)
+
+        cheapest_list = []
+        for sc, items in grouped.items():
+            items_sorted = sorted(items, key=lambda x: (0 if (x.get('count') or 0) > 0 else 1, float(x.get('price_usd') or 9999)))
+            best = dict(items_sorted[0])
+            svc_name = best.get('service_name') or best.get('name') or sc.title()
+            if '(' in svc_name:
+                svc_name = svc_name.split('(')[0].strip()
+            best['name'] = svc_name
+            best['service_name'] = svc_name
+            best['quality'] = 'Economy Pool'
+            cheapest_list.append(best)
+
+        cheapest_list.sort(key=lambda x: x.get('service_name', '').lower())
+        cls._cached_5sim_us_services_raw = cheapest_list
+        return cls._cached_5sim_us_services_raw
 
     @classmethod
     def get_5sim_us_services(cls, apply_markup: bool = True) -> list:
@@ -1148,19 +1119,11 @@ class SIMProviderService:
 
     @classmethod
     def _reset_order_for_new_otp(cls, db_order_id: str, admin=None):
-        """Resets order status to pending and clears previous SMS code for a fresh OTP."""
+        """Resets order status to pending for a fresh OTP while archiving previous code and tracking reactivation."""
         import datetime
         import uuid
         now_utc = datetime.datetime.now(datetime.timezone.utc)
         now_iso = now_utc.isoformat()
-
-        update_payload = {
-            'status': 'pending',
-            'sms_code': None,
-            'full_sms_text': 'Line reactivated - waiting for new verification code...',
-            'created_at': now_iso,
-            'updated_at': now_iso
-        }
 
         if not admin:
             admin = get_supabase_admin()
@@ -1174,6 +1137,36 @@ class SIMProviderService:
                 except (ValueError, TypeError):
                     is_valid_uuid = False
 
+                q = admin.table('sim_orders').select('*')
+                if is_valid_uuid:
+                    q = q.eq('id', db_order_id)
+                else:
+                    q = q.eq('order_reference', db_order_id)
+                cur_res = q.limit(1).execute()
+                if cur_res.data:
+                    cur_ord = cur_res.data[0]
+                    # Ensure previous SMS is safely recorded in sim_sms_messages
+                    if cur_ord.get('sms_code'):
+                        admin.table('sim_sms_messages').insert({
+                            'order_id': cur_ord['id'],
+                            'sender': cur_ord.get('service_name', 'Verification'),
+                            'sms_code': cur_ord['sms_code'],
+                            'full_text': cur_ord.get('full_sms_text', f"Code: {cur_ord['sms_code']}")
+                        }).execute()
+            except Exception as ex:
+                print(f"[SIMProviderService] archiving prev sms note: {ex}")
+
+        update_payload = {
+            'status': 'pending',
+            'order_type': 'reactivation',
+            'sms_code': None,
+            'full_sms_text': 'Line reactivated - waiting for new verification code...',
+            'created_at': now_iso,
+            'updated_at': now_iso
+        }
+
+        if admin:
+            try:
                 if is_valid_uuid:
                     admin.table('sim_orders').update(update_payload).eq('id', db_order_id).execute()
                 else:
@@ -1184,6 +1177,7 @@ class SIMProviderService:
         for o in mock_db.sim_orders:
             if o.get('id') == db_order_id or o.get('order_reference') == db_order_id:
                 o['status'] = 'pending'
+                o['order_type'] = 'reactivation'
                 o['sms_code'] = None
                 o['full_sms_text'] = 'Line reactivated - waiting for new verification code...'
                 o['created_at'] = now_iso

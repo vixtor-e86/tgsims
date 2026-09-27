@@ -157,18 +157,33 @@ def sync_catalog(raw_5sim_data=None):
         updated_us = 0
         for item in us_data:
             sc = item.get('service_code')
-            op = item.get('operator')
-            if sc in usa_svcs and op in usa_svcs[sc]:
-                cost = float(usa_svcs[sc][op].get('cost') or 0.0)
-                count = int(usa_svcs[sc][op].get('count') or 0)
-                if cost > 0:
-                    item['price_usd'] = round(cost, 2)
-                    item['count'] = count
+            if sc in usa_svcs and isinstance(usa_svcs[sc], dict):
+                best_cost = None
+                best_op = None
+                best_count = 0
+                for op_name, op_info in usa_svcs[sc].items():
+                    c = float(op_info.get('cost') or 0.0)
+                    cnt = int(op_info.get('count') or 0)
+                    if c > 0:
+                        if cnt > 0:
+                            if best_cost is None or c < best_cost or (best_count == 0):
+                                best_cost = c
+                                best_op = op_name
+                                best_count = cnt
+                        elif best_cost is None or (best_count == 0 and c < best_cost):
+                            best_cost = c
+                            best_op = op_name
+                            best_count = cnt
+                if best_cost is not None:
+                    item['price_usd'] = round(best_cost, 2)
+                    if best_op:
+                        item['operator'] = best_op
+                    item['count'] = best_count
                     updated_us += 1
 
         with open(us_services_path, 'w', encoding='utf-8') as f:
             json.dump(us_data, f, indent=2)
-        print(f"[+] Updated {updated_us} US route items in {us_services_path} with real 5SIM wholesale prices.")
+        print(f"[+] Updated {updated_us} US services in {us_services_path} with cheapest real 5SIM wholesale prices.")
 
     # Invalidate SIMProviderService memory cache
     SIMProviderService._cached_raw_catalog = None
