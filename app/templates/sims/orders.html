@@ -5,6 +5,9 @@
 {% block title %}My Orders | {{ BRAND }}{% endblock %}
 
 {% block page %}
+{% set ngn_rate = (NGN_PER_USD|float) if (NGN_PER_USD is defined and NGN_PER_USD) else 1600.0 %}
+{% set react_fee = (reactivation_fee_usd|float) if (reactivation_fee_usd is defined and reactivation_fee_usd) else (REACTIVATION_FEE_USD|float if (REACTIVATION_FEE_USD is defined and REACTIVATION_FEE_USD) else 1.00) %}
+{% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee * ngn_rate, react_fee) %}
 <div class="page-head">
   <div>
     <h1 class="page-title">My Orders</h1>
@@ -50,6 +53,8 @@
         {% for o in orders %}
         {% set ord_price = (o.price if (o.price is defined and o.price is not none) else (o.user_cost if (o.user_cost is defined and o.user_cost is not none) else 0.0))|float %}
         {% set ngn_rate = (NGN_PER_USD|float) if (NGN_PER_USD is defined and NGN_PER_USD) else 1600.0 %}
+        {% set react_fee = (reactivation_fee_usd|float) if (reactivation_fee_usd is defined and reactivation_fee_usd) else (REACTIVATION_FEE_USD|float if (REACTIVATION_FEE_USD is defined and REACTIVATION_FEE_USD) else 1.00) %}
+        {% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee * ngn_rate, react_fee) %}
         {% set raw_dt = (o.created_at|string) if (o.created_at is defined and o.created_at is not none) else '' %}
         {% set dt_clean = raw_dt.replace('T', ' ') %}
         {% set day = dt_clean.split(' ')[0] if dt_clean else '-' %}
@@ -59,12 +64,13 @@
         {% set is_reactivation = (o.order_type == 'reactivation') or ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) %}
         {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
         {% set can_cancel = (is_reactivation or (o.can_cancel if o.can_cancel is defined else (elapsed >= 180))) and is_active %}
+        {% set has_received_otp = o.has_received_otp if (o.has_received_otp is defined and o.has_received_otp is not none) else ((o.sms_code is defined and o.sms_code) or o.status in ['received', 'completed']) %}
         {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
         {% set is_reliable = (o.provider_order_id and (o.provider_order_id|string).startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) or ('reliable' in (o.package_id|lower if o.package_id else '')) or ('reliable' in (o.package_name|lower if o.package_name else '')) or (o.order_type == 'reactivation') or ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) %}
-        {% set cancel_price_usd = '1.00' if is_reactivation else '%.2f'|format(ord_price) %}
-        {% set cancel_price_formatted = ('₦{:,.2f}'.format(1.00 * ngn_rate)) if is_reactivation else price_formatted %}
+        {% set cancel_price_usd = ('%.2f'|format(react_fee)) if is_reactivation else '%.2f'|format(ord_price) %}
+        {% set cancel_price_formatted = ('₦{:,.2f}'.format(react_fee * ngn_rate)) if is_reactivation else price_formatted %}
         {% set reorder_url = url_for('sims.us_canada') if is_us else url_for('sims.store') %}
         <tr data-order-row data-order-id="{{ o.id or o.order_reference }}" data-is-active="{{ 'true' if is_active else 'false' }}">
           <td>
@@ -73,7 +79,9 @@
               {% if is_reliable %}
               <div style="display:inline-flex; gap:4px; flex-wrap:wrap; margin-left:26px;">
                 <span class="badge badge-brand badge-sm" style="font-size:0.65rem; padding:1px 6px;">{{ icon('shield') }} Reliable Line</span>
+                {% if has_received_otp %}
                 <span class="badge badge-info badge-sm" style="font-size:0.65rem; padding:1px 6px;">{{ icon('refresh') }} Reactivatable</span>
+                {% endif %}
               </div>
               {% endif %}
             </div>
@@ -140,7 +148,7 @@
                         data-price="{{ cancel_price_formatted }}"
                         data-is-reactivation="{{ 'true' if is_reactivation else 'false' }}"
                         style="color:var(--text-danger); {% if not can_cancel %}display:none;{% endif %}"
-                        title="{{ 'Cancel reactivation and refund $1.00 fee' if is_reactivation else 'Cancel order and refund wallet' }}">
+                        title="{{ ('Cancel reactivation and refund $' ~ ('%.2f'|format(react_fee)) ~ ' fee') if is_reactivation else 'Cancel order and refund wallet' }}">
                   {{ 'Cancel Reactivation' if is_reactivation else 'Cancel & Refund' }}
                 </button>
                 {% if not is_reactivation %}
@@ -149,7 +157,7 @@
                 </span>
                 {% endif %}
               </div>
-            {% elif is_reliable %}
+            {% elif is_reliable and has_received_otp %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                 {% if is_done or o.sms_code %}
                   <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
@@ -258,16 +266,16 @@
         </div>
         <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
           <span>Reactivation Fee</span>
-          <span class="td-strong text-brand" id="modalReactivateFee">₦1,600.00 ($1.00)</span>
+          <span class="td-strong text-brand" id="modalReactivateFee" data-usd="{{ '%.2f'|format(react_fee) }}">{{ react_fee_formatted }}</span>
         </div>
       </div>
       <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
-        This re-opens the carrier line to receive a fresh verification code ($1.00 will be deducted from your wallet). Once activated, trigger your SMS and check for the incoming code.
+        This re-opens the carrier line to receive a fresh verification code (<span id="modalReactivateNoticeFee" data-usd="{{ '%.2f'|format(react_fee) }}">${{ '%.2f'|format(react_fee) }}</span> will be deducted from your wallet). Once activated, trigger your SMS and check for the incoming code.
       </p>
     </div>
     <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
       <button type="button" class="btn btn-secondary btn-sm" data-modal-reactivate-close>Cancel</button>
-      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmReactivate">Yes, Reactivate ($1.00)</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmReactivate">Yes, Reactivate (<span id="btnReactivateFeeText" data-usd="{{ '%.2f'|format(react_fee) }}">${{ '%.2f'|format(react_fee) }}</span>)</button>
     </div>
   </div>
 </div>
@@ -473,9 +481,11 @@
     if (modalOrderRef) modalOrderRef.textContent = '#' + (orderRef || orderId);
 
     if (isReact) {
+      var reactFeeUsd = Number(window.TG_REACTIVATION_FEE_USD) || 1.00;
+      var reactFeeFormatted = (window.TgCurrency && window.TgCurrency.format) ? window.TgCurrency.format(reactFeeUsd) : ('$' + reactFeeUsd.toFixed(2));
       if (modalTitleEl) modalTitleEl.textContent = 'Cancel Number Reactivation';
-      if (modalSubEl) modalSubEl.textContent = 'Refund reactivation fee ($1.00)';
-      if (modalDescEl) modalDescEl.textContent = 'This will cancel the pending reactivation attempt and refund the $1.00 fee to your wallet. Your number line will remain saved and you can reactivate it again whenever you wish.';
+      if (modalSubEl) modalSubEl.textContent = 'Refund reactivation fee (' + reactFeeFormatted + ')';
+      if (modalDescEl) modalDescEl.textContent = 'This will cancel the pending reactivation attempt and refund the ' + reactFeeFormatted + ' fee to your wallet. Your number line will remain saved and you can reactivate it again whenever you wish.';
       if (btnConfirmCancel) {
         btnConfirmCancel.disabled = false;
         btnConfirmCancel.textContent = 'Yes, Cancel Reactivation';
@@ -510,12 +520,22 @@
     if (modalReactivateSvc) modalReactivateSvc.textContent = svcName || 'Virtual Number';
     if (modalReactivatePhone) modalReactivatePhone.textContent = phoneNum || '';
     if (modalReactivateRef) modalReactivateRef.textContent = '#' + (orderRef || orderId);
+    var reactFeeUsd = Number(window.TG_REACTIVATION_FEE_USD) || 1.00;
+    var feeFormatted = (window.TgCurrency && window.TgCurrency.format) ? window.TgCurrency.format(reactFeeUsd) : ('$' + reactFeeUsd.toFixed(2));
     if (modalReactivateFee) {
-      modalReactivateFee.textContent = formatCurrencyAmount(1.00, '₦1,600.00 ($1.00)');
+      modalReactivateFee.textContent = formatCurrencyAmount(reactFeeUsd, feeFormatted);
+    }
+    var modalNoticeFee = document.getElementById('modalReactivateNoticeFee');
+    if (modalNoticeFee) {
+      modalNoticeFee.textContent = feeFormatted;
+    }
+    var btnReactivateFeeText = document.getElementById('btnReactivateFeeText');
+    if (btnReactivateFeeText) {
+      btnReactivateFeeText.textContent = feeFormatted;
     }
     if (btnConfirmReactivate) {
       btnConfirmReactivate.disabled = false;
-      btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
+      btnConfirmReactivate.innerHTML = 'Yes, Reactivate (<span id="btnReactivateFeeText">' + feeFormatted + '</span>)';
     }
     reactivateModal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
@@ -828,10 +848,18 @@
         modalRefundAmount.textContent = window.TgCurrency.format(modalRefundAmount.getAttribute('data-usd'));
       }
     }
+    var reactFeeUsd = Number(window.TG_REACTIVATION_FEE_USD) || 1.00;
+    var reactFeeFormatted = (window.TgCurrency && window.TgCurrency.format) ? window.TgCurrency.format(reactFeeUsd) : ('$' + reactFeeUsd.toFixed(2));
     if (modalReactivateFee) {
-      if (window.TgCurrency && window.TgCurrency.format) {
-        modalReactivateFee.textContent = window.TgCurrency.format(1.00);
-      }
+      modalReactivateFee.textContent = reactFeeFormatted;
+    }
+    var modalNoticeFee = document.getElementById('modalReactivateNoticeFee');
+    if (modalNoticeFee) {
+      modalNoticeFee.textContent = reactFeeFormatted;
+    }
+    var btnReactivateFeeText = document.getElementById('btnReactivateFeeText');
+    if (btnReactivateFeeText) {
+      btnReactivateFeeText.textContent = reactFeeFormatted;
     }
   }
 

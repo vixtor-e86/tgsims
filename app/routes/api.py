@@ -25,6 +25,7 @@ def purchase_sim():
     country_code = data.get('country_code', 'US').upper()
     country_name = data.get('country_name', 'United States')
     service_name = data.get('service_name', 'WhatsApp')
+    operator = data.get('operator') or 'any'
     try:
         price = float(data.get('price', 2.50))
     except (ValueError, TypeError):
@@ -40,7 +41,7 @@ def purchase_sim():
         }), 400
 
     # 2. Allocate Virtual Number
-    sim_result = SIMProviderService.purchase_number(country_code, service_name)
+    sim_result = SIMProviderService.purchase_number(country_code, service_name, operator=operator)
     if not sim_result or not sim_result.get('success'):
         return jsonify({
             'success': False,

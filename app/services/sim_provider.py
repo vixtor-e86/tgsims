@@ -293,6 +293,35 @@ class SIMProviderService:
         return retail_price, profit_margin
 
     _cached_raw_catalog = None
+    _cached_whatsapp_operators = None
+
+    @classmethod
+    def get_whatsapp_operator_info(cls, country_slug: str) -> dict:
+        """Retrieves the 2nd cheapest clean operator route for WhatsApp in a given country to bypass recycled numbers."""
+        if cls._cached_whatsapp_operators is None:
+            import json
+            data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'whatsapp_operators.json')
+            if os.path.exists(data_path):
+                try:
+                    with open(data_path, 'r', encoding='utf-8') as f:
+                        cls._cached_whatsapp_operators = json.load(f)
+                except Exception as e:
+                    print(f"[SIMProviderService] Error loading whatsapp_operators.json: {e}")
+                    cls._cached_whatsapp_operators = {}
+            else:
+                cls._cached_whatsapp_operators = {}
+
+        c_clean = (country_slug or '').lower().replace(' ', '').replace('_', '')
+        alias_map = {
+            'uk': 'england',
+            'unitedkingdom': 'england',
+            'greatbritain': 'england',
+            'gb': 'england',
+            'us': 'usa',
+            'unitedstates': 'usa'
+        }
+        lookup_key = alias_map.get(c_clean, c_clean)
+        return cls._cached_whatsapp_operators.get(lookup_key) or {}
 
     @classmethod
     def _load_raw_catalog(cls) -> list:
@@ -389,6 +418,22 @@ class SIMProviderService:
         else:
             service_code = svc_lookup.replace(' ', '').replace('-', '').lower()
 
+        # For WhatsApp, automatically route to the 2nd cheapest operator to avoid recycled/blocked lines
+        is_whatsapp = (service_code == 'whatsapp') or ('whatsapp' in svc_clean.lower())
+        if is_whatsapp and (not operator or operator == 'any'):
+            wa_info = cls.get_whatsapp_operator_info(country_slug)
+            if wa_info and wa_info.get('operator'):
+                operator = wa_info['operator']
+
+        # If operator is still 'any', check if catalog specifies a preferred operator
+        if not operator or operator == 'any':
+            cat = cls.get_catalog()
+            matched_c = next((c for c in cat if c.get('country_code', '').upper() == cc_clean or c.get('country_slug', '').lower() == country_slug.lower()), None)
+            if matched_c:
+                matched_s = next((s for s in matched_c.get('services', []) if (s.get('code') or '').lower() == service_code.lower() or (s.get('name') or '').lower() == svc_clean.lower()), None)
+                if matched_s and matched_s.get('operator') and matched_s.get('operator') != 'any':
+                    operator = matched_s['operator']
+
         order_ref = f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"
 
         # If 5sim is configured, make real API purchase
@@ -422,7 +467,7 @@ class SIMProviderService:
             }
 
         # Fallback simulation for sandbox / preview before live funding
-        prefix = c_meta.get('dial', '+1')
+        prefix = c_meta.get('dial', '+1') if c_meta else '+1'
         import random
         random_digits = f"{random.randint(100, 999)} {random.randint(1000, 9999)}"
         phone_number = f"{prefix} 555-{random_digits}"
@@ -434,7 +479,7 @@ class SIMProviderService:
             'phone_number': phone_number,
             'provider_order_id': prov_id,
             'country_code': cc_clean,
-            'country_name': c_meta['name'],
+            'country_name': c_meta['name'] if c_meta else country_name,
             'country_slug': country_slug,
             'service_name': svc_clean,
             'service_code': service_code,
@@ -652,8 +697,8 @@ class SIMProviderService:
     ]
 
     FIVESIM_US_SERVICES_WITH_ROUTES = [
-        {'id': 'whatsapp_virtual8', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp', 'quality': 'Economy Pool', 'price_usd': 0.85},
-        {'id': 'wabiz_virtual8', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual8', 'name': 'WhatsApp Business', 'quality': 'Economy Pool', 'price_usd': 0.85},
+        {'id': 'whatsapp_virtual28', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp', 'quality': 'Economy Pool', 'price_usd': 1.92},
+        {'id': 'wabiz_virtual28', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp Business', 'quality': 'Economy Pool', 'price_usd': 1.92},
         {'id': 'telegram_virtual63', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual63', 'name': 'Telegram', 'quality': 'Economy Pool', 'price_usd': 0.55},
         {'id': 'google_virtual28', 'service_name': 'Google / Gmail / YouTube', 'service_code': 'google', 'operator': 'virtual28', 'name': 'Google / Gmail / YouTube', 'quality': 'Economy Pool', 'price_usd': 0.38},
         {'id': 'openai_virtual63', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual63', 'name': 'OpenAI / ChatGPT', 'quality': 'Economy Pool', 'price_usd': 0.15},
@@ -712,7 +757,7 @@ class SIMProviderService:
         if not raw:
             raw = cls.FIVESIM_US_SERVICES_WITH_ROUTES
 
-        # Deduplicate to single cheapest option per service code
+        # Deduplicate to single selected option per service code
         grouped = {}
         for item in raw:
             sc = item.get('service_code')
@@ -724,8 +769,18 @@ class SIMProviderService:
 
         cheapest_list = []
         for sc, items in grouped.items():
-            items_sorted = sorted(items, key=lambda x: (0 if (x.get('count') or 0) > 0 else 1, float(x.get('price_usd') or 9999)))
-            best = dict(items_sorted[0])
+            if sc == 'whatsapp':
+                # Select second cheapest operator for WhatsApp to avoid recycled/blocked lines
+                stock_items = [it for it in items if (it.get('count') or 0) >= 5]
+                if not stock_items:
+                    stock_items = [it for it in items if (it.get('count') or 0) > 0]
+                if not stock_items:
+                    stock_items = items
+                stock_items.sort(key=lambda x: (float(x.get('price_usd') or 9999), -(x.get('count') or 0)))
+                best = dict(stock_items[1] if len(stock_items) >= 2 else stock_items[0])
+            else:
+                items_sorted = sorted(items, key=lambda x: (0 if (x.get('count') or 0) > 0 else 1, float(x.get('price_usd') or 9999)))
+                best = dict(items_sorted[0])
             svc_name = best.get('service_name') or best.get('name') or sc.title()
             if '(' in svc_name:
                 svc_name = svc_name.split('(')[0].strip()
@@ -1003,6 +1058,22 @@ class SIMProviderService:
 
         if not order:
             return {'success': False, 'message': 'Order not found.'}
+
+        # Reactivation is only permitted if this number line previously received an OTP
+        has_had_otp = bool(order.get('sms_code')) or order.get('status') in ('received', 'completed')
+        if not has_had_otp and admin and order.get('id'):
+            try:
+                sms_chk = admin.table('sim_sms_messages').select('id').eq('order_id', str(order.get('id'))).limit(1).execute()
+                if sms_chk.data and len(sms_chk.data) > 0:
+                    has_had_otp = True
+            except Exception:
+                pass
+
+        if not has_had_otp:
+            return {
+                'success': False,
+                'message': 'Reactivation is only available after a number has received an initial verification OTP code.'
+            }
 
         prov_order_id = str(order.get('provider_order_id') or '')
 

@@ -91,8 +91,10 @@ def create_app(config_class=Config):
                 wallet = DBService.get_wallet(user['id'])
                 wallet_balance_usd = float(wallet.get('balance', 0.00))
             ngn_rate = SettingsService.get_usd_ngn_rate()
+            react_fee = SettingsService.get_reactivation_fee()
             return {
                 'NGN_PER_USD': ngn_rate,
+                'REACTIVATION_FEE_USD': react_fee,
                 'BRAND': 'Tgsims',
                 'current_user': user if isinstance(user, dict) else None,
                 'wallet_balance_usd': wallet_balance_usd,
@@ -100,6 +102,7 @@ def create_app(config_class=Config):
         except Exception:
             return {
                 'NGN_PER_USD': 1600.00,
+                'REACTIVATION_FEE_USD': 1.00,
                 'BRAND': 'Tgsims',
                 'current_user': None,
                 'wallet_balance_usd': 0.00,

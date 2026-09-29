@@ -208,6 +208,7 @@
           country_code: state.country.country_code,
           country_name: state.country.country_name,
           service_name: state.service.name,
+          operator: state.service.operator || "any",
           price: state.service.price
         })
       })

@@ -62,6 +62,8 @@ def store():
 def my_sims():
     """My Orders  -  track and manage virtual number orders."""
     import datetime
+    from app.services.settings_service import SettingsService
+    from app.services.supabase_client import get_supabase_admin
     user = _require_user()
     if not user:
         return redirect(url_for('auth.login'))
@@ -69,11 +71,29 @@ def my_sims():
     orders = DBService.get_orders(user['id'])
     now_utc = datetime.datetime.now(datetime.timezone.utc)
 
+    # Check which orders have previously received an SMS message in history
+    orders_with_sms = set()
+    admin = get_supabase_admin()
+    if admin and orders and user['id'] != 'demo-user-id':
+        order_ids = [str(o['id']) for o in orders if o.get('id')]
+        if order_ids:
+            try:
+                sms_res = admin.table('sim_sms_messages').select('order_id').in_('order_id', order_ids).execute()
+                if sms_res.data:
+                    orders_with_sms = {str(row['order_id']) for row in sms_res.data}
+            except Exception as e:
+                print(f"[my_sims] error querying sim_sms_messages: {e}")
+
     for o in orders:
         status = str(o.get('status', '')).lower()
         has_code = bool(o.get('sms_code'))
         is_active = status in ('active', 'pending') and not has_code
         o['is_active_sim'] = is_active
+
+        # An order has received an OTP if it currently has sms_code, received status, or an archived SMS entry
+        has_received_otp = has_code or (str(o.get('id')) in orders_with_sms) or status in ('received', 'completed')
+        o['has_received_otp'] = has_received_otp
+
         try:
             o['price'] = float(o.get('price') or o.get('user_cost') or 0.00)
         except (ValueError, TypeError):
@@ -116,7 +136,8 @@ def my_sims():
             except Exception as e:
                 print(f"[my_sims] Auto-refund on page load error: {e}")
 
-    return render_template('sims/orders.html', orders=orders, user=user)
+    react_fee = SettingsService.get_reactivation_fee()
+    return render_template('sims/orders.html', orders=orders, user=user, reactivation_fee_usd=react_fee)
 
 
 @sims_bp.route('/otp-history')

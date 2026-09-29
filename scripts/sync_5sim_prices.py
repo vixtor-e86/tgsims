@@ -50,7 +50,9 @@ def fetch_5sim_live_prices():
 
 
 def extract_best_service_prices(raw_5sim_data, country_slug: str):
-    """Extract lowest cost with active inventory for each service in a country."""
+    """Extract wholesale costs with active inventory for each service in a country.
+    For WhatsApp, selects the SECOND cheapest provider/operator to avoid recycled/blocked lines.
+    For other services, selects the lowest cost operator with stock."""
     if not raw_5sim_data or country_slug not in raw_5sim_data:
         return {}
 
@@ -60,39 +62,51 @@ def extract_best_service_prices(raw_5sim_data, country_slug: str):
         if not ops or not isinstance(ops, dict):
             continue
 
-        best_cost = None
-        best_op = None
-        total_count = 0
-        min_catalog_cost = None
-
+        is_whatsapp = (svc_code == 'whatsapp')
+        all_ops = []
         for op_name, info in ops.items():
             cost = float(info.get('cost') or 0.0)
             count = int(info.get('count') or 0)
-            total_count += count
+            if cost > 0:
+                all_ops.append({'operator': op_name, 'cost': cost, 'count': count})
 
-            if min_catalog_cost is None or (cost > 0 and cost < min_catalog_cost):
-                min_catalog_cost = cost
+        stock_ops = [op for op in all_ops if op['count'] >= 5]
+        if not stock_ops:
+            stock_ops = [op for op in all_ops if op['count'] > 0]
+        stock_ops.sort(key=lambda x: (x['cost'], -x['count']))
+        all_ops.sort(key=lambda x: (x['cost'], -x['count']))
 
-            # Prioritize operators that actually have available phone lines
-            if count > 0 and cost > 0:
-                if best_cost is None or cost < best_cost:
-                    best_cost = cost
-                    best_op = op_name
+        if is_whatsapp:
+            if len(stock_ops) >= 2:
+                chosen = stock_ops[1]
+            elif len(stock_ops) == 1:
+                chosen = stock_ops[0]
+            elif len(all_ops) >= 2:
+                chosen = all_ops[1]
+            elif len(all_ops) == 1:
+                chosen = all_ops[0]
+            else:
+                chosen = {'operator': 'any', 'cost': 0.50, 'count': 0}
+        else:
+            if stock_ops:
+                chosen = stock_ops[0]
+            elif all_ops:
+                chosen = all_ops[0]
+            else:
+                chosen = {'operator': 'any', 'cost': 0.50, 'count': 0}
 
-        # If no operator has stock right now, use minimum catalog cost
-        final_cost = best_cost if best_cost is not None else (min_catalog_cost or 0.50)
-
+        total_count = sum(o['count'] for o in all_ops)
         result[svc_code] = {
             'service_code': svc_code,
-            'wholesale_cost': round(final_cost, 4),
-            'best_operator': best_op or 'any',
-            'available_count': total_count
+            'wholesale_cost': round(chosen['cost'], 4),
+            'best_operator': chosen['operator'],
+            'available_count': chosen['count'] if chosen['count'] > 0 else total_count
         }
     return result
 
 
 def sync_catalog(raw_5sim_data=None):
-    """Updates app/data/catalog.json and app/data/5sim_us_services.json with real wholesale costs."""
+    """Updates app/data/catalog.json, app/data/whatsapp_operators.json, and app/data/5sim_us_services.json with real wholesale costs."""
     if raw_5sim_data is None:
         raw_5sim_data = fetch_5sim_live_prices()
         if not raw_5sim_data:
@@ -101,7 +115,22 @@ def sync_catalog(raw_5sim_data=None):
 
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'data'))
     catalog_path = os.path.join(data_dir, 'catalog.json')
+    whatsapp_ops_path = os.path.join(data_dir, 'whatsapp_operators.json')
     us_services_path = os.path.join(data_dir, '5sim_us_services.json')
+
+    # Build master map of 2nd cheapest WhatsApp operators for all countries
+    whatsapp_ops = {}
+    for c_slug in raw_5sim_data:
+        c_svcs = extract_best_service_prices(raw_5sim_data, c_slug)
+        if 'whatsapp' in c_svcs:
+            whatsapp_ops[c_slug] = {
+                'operator': c_svcs['whatsapp']['best_operator'],
+                'wholesale_cost': c_svcs['whatsapp']['wholesale_cost'],
+                'available_count': c_svcs['whatsapp']['available_count']
+            }
+    with open(whatsapp_ops_path, 'w', encoding='utf-8') as f:
+        json.dump(whatsapp_ops, f, indent=2)
+    print(f"[+] Saved 2nd cheapest WhatsApp operators for {len(whatsapp_ops)} countries to {whatsapp_ops_path}.")
 
     # 1. Update app/data/catalog.json
     if os.path.exists(catalog_path):
@@ -140,6 +169,7 @@ def sync_catalog(raw_5sim_data=None):
                         real_cost = match['wholesale_cost']
                         svc['base_cost'] = real_cost
                         svc['price'] = real_cost  # Base cost before markup
+                        svc['operator'] = match['best_operator']
                         if match['available_count'] > 0:
                             svc['available'] = match['available_count']
                         updated_services_count += 1
@@ -158,36 +188,39 @@ def sync_catalog(raw_5sim_data=None):
         for item in us_data:
             sc = item.get('service_code')
             if sc in usa_svcs and isinstance(usa_svcs[sc], dict):
-                best_cost = None
-                best_op = None
-                best_count = 0
+                is_whatsapp = (sc == 'whatsapp')
+                all_ops = []
                 for op_name, op_info in usa_svcs[sc].items():
                     c = float(op_info.get('cost') or 0.0)
                     cnt = int(op_info.get('count') or 0)
                     if c > 0:
-                        if cnt > 0:
-                            if best_cost is None or c < best_cost or (best_count == 0):
-                                best_cost = c
-                                best_op = op_name
-                                best_count = cnt
-                        elif best_cost is None or (best_count == 0 and c < best_cost):
-                            best_cost = c
-                            best_op = op_name
-                            best_count = cnt
-                if best_cost is not None:
-                    item['price_usd'] = round(best_cost, 2)
-                    if best_op:
-                        item['operator'] = best_op
-                    item['count'] = best_count
+                        all_ops.append({'operator': op_name, 'cost': c, 'count': cnt})
+
+                stock_ops = [op for op in all_ops if op['count'] >= 5]
+                if not stock_ops:
+                    stock_ops = [op for op in all_ops if op['count'] > 0]
+                stock_ops.sort(key=lambda x: (x['cost'], -x['count']))
+                all_ops.sort(key=lambda x: (x['cost'], -x['count']))
+
+                if is_whatsapp:
+                    chosen = stock_ops[1] if len(stock_ops) >= 2 else (stock_ops[0] if stock_ops else (all_ops[1] if len(all_ops) >= 2 else all_ops[0]))
+                else:
+                    chosen = stock_ops[0] if stock_ops else (all_ops[0] if all_ops else None)
+
+                if chosen:
+                    item['price_usd'] = round(chosen['cost'], 2)
+                    item['operator'] = chosen['operator']
+                    item['count'] = chosen['count']
                     updated_us += 1
 
         with open(us_services_path, 'w', encoding='utf-8') as f:
             json.dump(us_data, f, indent=2)
-        print(f"[+] Updated {updated_us} US services in {us_services_path} with cheapest real 5SIM wholesale prices.")
+        print(f"[+] Updated {updated_us} US services in {us_services_path} with real 5SIM wholesale prices.")
 
     # Invalidate SIMProviderService memory cache
     SIMProviderService._cached_raw_catalog = None
     SIMProviderService._cached_5sim_us_services_raw = None
+    SIMProviderService._cached_whatsapp_operators = None
     print("[+] Cleared in-memory catalog cache for immediate application.")
     return True
 
