@@ -61,11 +61,11 @@
         {% set hm = dt_clean.split(' ')[1][:5] if (' ' in dt_clean and dt_clean.split(' ')|length > 1) else '' %}
         {% set countdown = (o.countdown_seconds|int) if (o.countdown_seconds is defined and o.countdown_seconds is not none) else 300 %}
         {% set elapsed = (o.elapsed_seconds|int) if (o.elapsed_seconds is defined and o.elapsed_seconds is not none) else (300 - countdown) %}
-        {% set is_reactivation = (o.order_type == 'reactivation') or ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) %}
+        {% set is_reactivation = ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) or (o.order_type == 'reactivation') %}
         {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
         {% set can_cancel = (is_reactivation or (o.can_cancel if o.can_cancel is defined else (elapsed >= 180))) and is_active %}
         {% set has_received_otp = o.has_received_otp if (o.has_received_otp is defined and o.has_received_otp is not none) else ((o.sms_code is defined and o.sms_code) or o.status in ['received', 'completed']) %}
-        {% set is_done = (o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code) %}
+        {% set is_done = not is_active and ((o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code)) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
         {% set is_reliable = (o.provider_order_id and (o.provider_order_id|string).startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) or ('reliable' in (o.package_id|lower if o.package_id else '')) or ('reliable' in (o.package_name|lower if o.package_name else '')) or (o.order_type == 'reactivation') or ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) %}

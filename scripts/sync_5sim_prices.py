@@ -62,7 +62,7 @@ def extract_best_service_prices(raw_5sim_data, country_slug: str):
         if not ops or not isinstance(ops, dict):
             continue
 
-        is_whatsapp = (svc_code == 'whatsapp')
+        is_second_cheapest = (svc_code in ('whatsapp', 'telegram'))
         all_ops = []
         for op_name, info in ops.items():
             cost = float(info.get('cost') or 0.0)
@@ -76,7 +76,7 @@ def extract_best_service_prices(raw_5sim_data, country_slug: str):
         stock_ops.sort(key=lambda x: (x['cost'], -x['count']))
         all_ops.sort(key=lambda x: (x['cost'], -x['count']))
 
-        if is_whatsapp:
+        if is_second_cheapest:
             if len(stock_ops) >= 2:
                 chosen = stock_ops[1]
             elif len(stock_ops) == 1:
@@ -106,7 +106,7 @@ def extract_best_service_prices(raw_5sim_data, country_slug: str):
 
 
 def sync_catalog(raw_5sim_data=None):
-    """Updates app/data/catalog.json, app/data/whatsapp_operators.json, and app/data/5sim_us_services.json with real wholesale costs."""
+    """Updates app/data/catalog.json, app/data/whatsapp_operators.json, app/data/telegram_operators.json, and app/data/5sim_us_services.json with real wholesale costs."""
     if raw_5sim_data is None:
         raw_5sim_data = fetch_5sim_live_prices()
         if not raw_5sim_data:
@@ -116,10 +116,12 @@ def sync_catalog(raw_5sim_data=None):
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'data'))
     catalog_path = os.path.join(data_dir, 'catalog.json')
     whatsapp_ops_path = os.path.join(data_dir, 'whatsapp_operators.json')
+    telegram_ops_path = os.path.join(data_dir, 'telegram_operators.json')
     us_services_path = os.path.join(data_dir, '5sim_us_services.json')
 
-    # Build master map of 2nd cheapest WhatsApp operators for all countries
+    # Build master maps of 2nd cheapest WhatsApp and Telegram operators for all countries
     whatsapp_ops = {}
+    telegram_ops = {}
     for c_slug in raw_5sim_data:
         c_svcs = extract_best_service_prices(raw_5sim_data, c_slug)
         if 'whatsapp' in c_svcs:
@@ -128,9 +130,19 @@ def sync_catalog(raw_5sim_data=None):
                 'wholesale_cost': c_svcs['whatsapp']['wholesale_cost'],
                 'available_count': c_svcs['whatsapp']['available_count']
             }
+        if 'telegram' in c_svcs:
+            telegram_ops[c_slug] = {
+                'operator': c_svcs['telegram']['best_operator'],
+                'wholesale_cost': c_svcs['telegram']['wholesale_cost'],
+                'available_count': c_svcs['telegram']['available_count']
+            }
     with open(whatsapp_ops_path, 'w', encoding='utf-8') as f:
         json.dump(whatsapp_ops, f, indent=2)
     print(f"[+] Saved 2nd cheapest WhatsApp operators for {len(whatsapp_ops)} countries to {whatsapp_ops_path}.")
+
+    with open(telegram_ops_path, 'w', encoding='utf-8') as f:
+        json.dump(telegram_ops, f, indent=2)
+    print(f"[+] Saved 2nd cheapest Telegram operators for {len(telegram_ops)} countries to {telegram_ops_path}.")
 
     # 1. Update app/data/catalog.json
     if os.path.exists(catalog_path):
@@ -188,7 +200,7 @@ def sync_catalog(raw_5sim_data=None):
         for item in us_data:
             sc = item.get('service_code')
             if sc in usa_svcs and isinstance(usa_svcs[sc], dict):
-                is_whatsapp = (sc == 'whatsapp')
+                is_second_cheapest = (sc in ('whatsapp', 'telegram'))
                 all_ops = []
                 for op_name, op_info in usa_svcs[sc].items():
                     c = float(op_info.get('cost') or 0.0)
@@ -202,7 +214,7 @@ def sync_catalog(raw_5sim_data=None):
                 stock_ops.sort(key=lambda x: (x['cost'], -x['count']))
                 all_ops.sort(key=lambda x: (x['cost'], -x['count']))
 
-                if is_whatsapp:
+                if is_second_cheapest:
                     chosen = stock_ops[1] if len(stock_ops) >= 2 else (stock_ops[0] if stock_ops else (all_ops[1] if len(all_ops) >= 2 else all_ops[0]))
                 else:
                     chosen = stock_ops[0] if stock_ops else (all_ops[0] if all_ops else None)
@@ -221,6 +233,7 @@ def sync_catalog(raw_5sim_data=None):
     SIMProviderService._cached_raw_catalog = None
     SIMProviderService._cached_5sim_us_services_raw = None
     SIMProviderService._cached_whatsapp_operators = None
+    SIMProviderService._cached_telegram_operators = None
     print("[+] Cleared in-memory catalog cache for immediate application.")
     return True
 

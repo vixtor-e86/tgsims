@@ -514,7 +514,7 @@ class DBService:
             prev_full = "Verification completed"
             if admin and user_id != 'demo-user-id':
                 try:
-                    q_sms = admin.table('sim_sms_messages').select('*').eq('order_id', str(order.get('id'))).order('created_at', desc=True).limit(1).execute()
+                    q_sms = admin.table('sim_sms_messages').select('*').eq('order_id', str(order.get('id'))).order('received_at', desc=True).limit(1).execute()
                     if q_sms.data and len(q_sms.data) > 0:
                         prev_code = q_sms.data[0].get('sms_code')
                         prev_full = q_sms.data[0].get('full_text')

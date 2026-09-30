@@ -2,67 +2,67 @@
   "afghanistan": {
     "operator": "virtual34",
     "wholesale_cost": 0.7692,
-    "available_count": 193442
+    "available_count": 527442
   },
   "albania": {
     "operator": "virtual34",
     "wholesale_cost": 0.2461,
-    "available_count": 295300
+    "available_count": 811998
   },
   "angola": {
     "operator": "virtual34",
     "wholesale_cost": 0.3231,
-    "available_count": 183021
+    "available_count": 1841911
   },
   "antiguaandbarbuda": {
     "operator": "virtual34",
     "wholesale_cost": 0.2564,
-    "available_count": 10223
+    "available_count": 83972
   },
   "argentina": {
     "operator": "virtual62",
     "wholesale_cost": 0.3,
-    "available_count": 736
+    "available_count": 732
   },
   "armenia": {
     "operator": "virtual34",
     "wholesale_cost": 0.5346,
-    "available_count": 494784
+    "available_count": 414954
   },
   "aruba": {
     "operator": "virtual34",
     "wholesale_cost": 1.7,
-    "available_count": 3971
+    "available_count": 6591
   },
   "australia": {
     "operator": "virtual59",
     "wholesale_cost": 4.7,
-    "available_count": 3122
+    "available_count": 3058
   },
   "austria": {
     "operator": "virtual58",
     "wholesale_cost": 3.7197,
-    "available_count": 497
+    "available_count": 554
   },
   "azerbaijan": {
     "operator": "virtual34",
     "wholesale_cost": 0.3846,
-    "available_count": 10388
+    "available_count": 231019
   },
   "bahrain": {
     "operator": "virtual34",
     "wholesale_cost": 2.2,
-    "available_count": 720
+    "available_count": 3547
   },
   "bangladesh": {
     "operator": "virtual34",
     "wholesale_cost": 0.2794,
-    "available_count": 1248865
+    "available_count": 1029368
   },
   "barbados": {
     "operator": "virtual34",
     "wholesale_cost": 0.2634,
-    "available_count": 71847
+    "available_count": 9053
   },
   "belarus": {
     "operator": "virtual4",
@@ -77,77 +77,77 @@
   "benin": {
     "operator": "virtual34",
     "wholesale_cost": 0.373,
-    "available_count": 738115
+    "available_count": 762643
   },
   "bhutane": {
     "operator": "virtual34",
     "wholesale_cost": 0.1718,
-    "available_count": 355324
+    "available_count": 565693
   },
   "bih": {
     "operator": "virtual34",
     "wholesale_cost": 0.3064,
-    "available_count": 1015911
+    "available_count": 981463
   },
   "botswana": {
     "operator": "virtual34",
     "wholesale_cost": 0.3295,
-    "available_count": 9034173
+    "available_count": 23740
   },
   "brazil": {
     "operator": "virtual61",
     "wholesale_cost": 1.5,
-    "available_count": 354915
+    "available_count": 354374
   },
   "bulgaria": {
     "operator": "virtual34",
     "wholesale_cost": 0.9675,
-    "available_count": 559086
+    "available_count": 562616
   },
   "burkinafaso": {
     "operator": "virtual34",
     "wholesale_cost": 0.2955,
-    "available_count": 174717
+    "available_count": 167733
   },
   "burundi": {
     "operator": "virtual34",
     "wholesale_cost": 0.2918,
-    "available_count": 673881
+    "available_count": 321099
   },
   "cambodia": {
-    "operator": "virtual34",
+    "operator": "virtual49",
     "wholesale_cost": 0.3423,
-    "available_count": 881778
+    "available_count": 629
   },
   "cameroon": {
     "operator": "virtual34",
     "wholesale_cost": 0.3495,
-    "available_count": 213682
+    "available_count": 360908
   },
   "canada": {
     "operator": "virtual34",
     "wholesale_cost": 1.43,
-    "available_count": 608158
+    "available_count": 6931896
   },
   "capeverde": {
     "operator": "virtual34",
     "wholesale_cost": 0.3423,
-    "available_count": 6973
+    "available_count": 2592
   },
   "colombia": {
     "operator": "virtual66",
     "wholesale_cost": 0.75,
-    "available_count": 439713
+    "available_count": 714888
   },
   "congo": {
     "operator": "virtual34",
     "wholesale_cost": 0.2237,
-    "available_count": 46741
+    "available_count": 934411
   },
   "costarica": {
     "operator": "virtual34",
     "wholesale_cost": 0.2032,
-    "available_count": 27102
+    "available_count": 15143
   },
   "croatia": {
     "operator": "virtual51",
@@ -157,377 +157,377 @@
   "cyprus": {
     "operator": "virtual34",
     "wholesale_cost": 1.6032,
-    "available_count": 184653
+    "available_count": 178857
   },
   "czech": {
     "operator": "virtual34",
     "wholesale_cost": 1.9231,
-    "available_count": 6854796
+    "available_count": 6764212
   },
   "djibouti": {
     "operator": "virtual34",
     "wholesale_cost": 0.2564,
-    "available_count": 489737
+    "available_count": 477637
   },
   "dominicana": {
     "operator": "virtual34",
     "wholesale_cost": 0.2051,
-    "available_count": 93259
+    "available_count": 89919
   },
   "easttimor": {
     "operator": "virtual34",
     "wholesale_cost": 0.1128,
-    "available_count": 10062
+    "available_count": 9750
   },
   "ecuador": {
     "operator": "virtual34",
     "wholesale_cost": 0.3564,
-    "available_count": 363056
+    "available_count": 1455037
   },
   "egypt": {
     "operator": "virtual34",
     "wholesale_cost": 1.0,
-    "available_count": 4426005
+    "available_count": 4990772
   },
   "england": {
     "operator": "virtual60",
     "wholesale_cost": 0.9,
-    "available_count": 38827
+    "available_count": 35938
   },
   "equatorialguinea": {
     "operator": "virtual34",
     "wholesale_cost": 0.9782,
-    "available_count": 4873
+    "available_count": 3402
   },
   "estonia": {
     "operator": "virtual66",
     "wholesale_cost": 1.2,
-    "available_count": 383051
+    "available_count": 488476
   },
   "ethiopia": {
     "operator": "virtual34",
     "wholesale_cost": 0.2385,
-    "available_count": 1100110
+    "available_count": 288234
   },
   "finland": {
     "operator": "virtual34",
     "wholesale_cost": 1.2269,
-    "available_count": 189566
+    "available_count": 1284908
   },
   "france": {
     "operator": "virtual66",
     "wholesale_cost": 4.6,
-    "available_count": 425374
+    "available_count": 416832
   },
   "frenchguiana": {
     "operator": "virtual34",
     "wholesale_cost": 0.4282,
-    "available_count": 2941
+    "available_count": 7912
   },
   "gabon": {
     "operator": "virtual34",
     "wholesale_cost": 0.4115,
-    "available_count": 332106
+    "available_count": 574419
   },
   "gambia": {
     "operator": "virtual34",
     "wholesale_cost": 0.3863,
-    "available_count": 89531
+    "available_count": 181823
   },
   "georgia": {
     "operator": "virtual58",
     "wholesale_cost": 1.1077,
-    "available_count": 88
+    "available_count": 128
   },
   "germany": {
     "operator": "virtual66",
     "wholesale_cost": 5.0,
-    "available_count": 609228
+    "available_count": 621872
   },
   "ghana": {
     "operator": "virtual34",
     "wholesale_cost": 0.3461,
-    "available_count": 265891
+    "available_count": 422667
   },
   "greece": {
     "operator": "virtual66",
     "wholesale_cost": 1.25,
-    "available_count": 741595
+    "available_count": 572788
   },
   "guatemala": {
     "operator": "virtual34",
     "wholesale_cost": 0.2513,
-    "available_count": 7365
+    "available_count": 9802
   },
   "guinea": {
     "operator": "virtual34",
     "wholesale_cost": 0.5961,
-    "available_count": 27424
+    "available_count": 159978
   },
   "guineabissau": {
     "operator": "virtual34",
     "wholesale_cost": 0.2705,
-    "available_count": 36141
+    "available_count": 33072
   },
   "guyana": {
     "operator": "virtual34",
     "wholesale_cost": 0.3275,
-    "available_count": 507578
+    "available_count": 46411
   },
   "haiti": {
     "operator": "virtual34",
     "wholesale_cost": 0.2632,
-    "available_count": 1735182
+    "available_count": 1100006
   },
   "honduras": {
     "operator": "virtual34",
     "wholesale_cost": 0.3073,
-    "available_count": 6581341
+    "available_count": 332910
   },
   "hongkong": {
     "operator": "virtual34",
     "wholesale_cost": 2.14,
-    "available_count": 290628
+    "available_count": 8559505
   },
   "hungary": {
     "operator": "virtual34",
     "wholesale_cost": 0.2564,
-    "available_count": 1087908
+    "available_count": 804960
   },
   "india": {
     "operator": "virtual34",
     "wholesale_cost": 1.5,
-    "available_count": 8535576
+    "available_count": 8529076
   },
   "indonesia": {
     "operator": "virtual34",
     "wholesale_cost": 0.5855,
-    "available_count": 1474728
+    "available_count": 949500
   },
   "ireland": {
     "operator": "virtual34",
     "wholesale_cost": 4.5,
-    "available_count": 326034
+    "available_count": 1417011
   },
   "israel": {
     "operator": "virtual34",
     "wholesale_cost": 0.6795,
-    "available_count": 8366598
+    "available_count": 897730
   },
   "italy": {
     "operator": "virtual34",
     "wholesale_cost": 5.2193,
-    "available_count": 3374257
+    "available_count": 107165
   },
   "ivorycoast": {
     "operator": "virtual34",
     "wholesale_cost": 0.3962,
-    "available_count": 197809
+    "available_count": 197919
   },
   "jamaica": {
     "operator": "virtual34",
     "wholesale_cost": 0.3134,
-    "available_count": 43012
+    "available_count": 6595
   },
   "jordan": {
     "operator": "virtual34",
     "wholesale_cost": 0.3064,
-    "available_count": 1776596
+    "available_count": 551629
   },
   "kenya": {
     "operator": "virtual34",
     "wholesale_cost": 0.2856,
-    "available_count": 208392
+    "available_count": 238289
   },
   "kuwait": {
     "operator": "virtual34",
     "wholesale_cost": 0.6795,
-    "available_count": 672687
+    "available_count": 1007105
   },
   "laos": {
     "operator": "virtual34",
     "wholesale_cost": 0.1916,
-    "available_count": 686172
+    "available_count": 247088
   },
   "latvia": {
     "operator": "virtual66",
     "wholesale_cost": 1.6,
-    "available_count": 1187841
+    "available_count": 1057661
   },
   "lesotho": {
     "operator": "virtual34",
     "wholesale_cost": 0.2564,
-    "available_count": 91416
+    "available_count": 104256
   },
   "liberia": {
     "operator": "virtual34",
     "wholesale_cost": 0.1673,
-    "available_count": 1008117
+    "available_count": 927843
   },
   "lithuania": {
-    "operator": "virtual58",
-    "wholesale_cost": 1.3682,
-    "available_count": 128
+    "operator": "virtual34",
+    "wholesale_cost": 0.8974,
+    "available_count": 653139
   },
   "macau": {
     "operator": "virtual34",
     "wholesale_cost": 0.2705,
-    "available_count": 837531
+    "available_count": 759594
   },
   "malawi": {
     "operator": "virtual34",
     "wholesale_cost": 0.2705,
-    "available_count": 1090373
+    "available_count": 1091554
   },
   "malaysia": {
     "operator": "virtual66",
     "wholesale_cost": 1.6,
-    "available_count": 370162
+    "available_count": 377317
   },
   "maldives": {
     "operator": "virtual34",
     "wholesale_cost": 0.7,
-    "available_count": 10933
+    "available_count": 8046
   },
   "mauritania": {
     "operator": "virtual34",
     "wholesale_cost": 0.3423,
-    "available_count": 193478
+    "available_count": 193113
   },
   "mauritius": {
     "operator": "virtual34",
     "wholesale_cost": 0.4282,
-    "available_count": 4699
+    "available_count": 5706
   },
   "mexico": {
-    "operator": "virtual34",
+    "operator": "virtual66",
     "wholesale_cost": 1.9912,
-    "available_count": 755850
+    "available_count": 404341
   },
   "moldova": {
     "operator": "virtual34",
     "wholesale_cost": 0.8,
-    "available_count": 109167
+    "available_count": 96195
   },
   "mongolia": {
     "operator": "virtual34",
     "wholesale_cost": 0.7692,
-    "available_count": 192726
+    "available_count": 225199
   },
   "montenegro": {
     "operator": "virtual34",
     "wholesale_cost": 0.4,
-    "available_count": 5892
+    "available_count": 6454
   },
   "morocco": {
     "operator": "virtual66",
     "wholesale_cost": 0.8,
-    "available_count": 424678
+    "available_count": 435319
   },
   "mozambique": {
     "operator": "virtual34",
     "wholesale_cost": 0.3277,
-    "available_count": 95011
+    "available_count": 172707
   },
   "namibia": {
     "operator": "virtual34",
     "wholesale_cost": 0.3596,
-    "available_count": 8492
+    "available_count": 6256
   },
   "nepal": {
     "operator": "virtual34",
     "wholesale_cost": 0.2564,
-    "available_count": 735451
+    "available_count": 468666
   },
   "netherlands": {
-    "operator": "virtual66",
-    "wholesale_cost": 2.15,
-    "available_count": 551509
+    "operator": "virtual51",
+    "wholesale_cost": 2.2,
+    "available_count": 22798
   },
   "newcaledonia": {
     "operator": "virtual34",
     "wholesale_cost": 0.4282,
-    "available_count": 1235
+    "available_count": 1839
   },
   "nicaragua": {
     "operator": "virtual34",
     "wholesale_cost": 0.2179,
-    "available_count": 943165
+    "available_count": 1093346
   },
   "nigeria": {
     "operator": "virtual34",
     "wholesale_cost": 0.2769,
-    "available_count": 427370
+    "available_count": 420084
   },
   "norway": {
     "operator": "virtual34",
     "wholesale_cost": 0.55,
-    "available_count": 234732
+    "available_count": 707488
   },
   "pakistan": {
     "operator": "virtual34",
     "wholesale_cost": 1.5,
-    "available_count": 1357267
+    "available_count": 1746387
   },
   "panama": {
     "operator": "virtual34",
     "wholesale_cost": 0.3961,
-    "available_count": 411030
+    "available_count": 254828
   },
   "paraguay": {
     "operator": "virtual34",
     "wholesale_cost": 0.2154,
-    "available_count": 269802
+    "available_count": 537520
   },
   "peru": {
     "operator": "virtual34",
     "wholesale_cost": 0.7701,
-    "available_count": 359942
+    "available_count": 1829574
   },
   "philippines": {
     "operator": "virtual34",
     "wholesale_cost": 0.8,
-    "available_count": 6248212
+    "available_count": 4544629
   },
   "poland": {
     "operator": "virtual58",
     "wholesale_cost": 1.641,
-    "available_count": 304
+    "available_count": 495
   },
   "portugal": {
     "operator": "virtual34",
     "wholesale_cost": 1.6597,
-    "available_count": 192661
+    "available_count": 195647
   },
   "puertorico": {
     "operator": "virtual34",
     "wholesale_cost": 0.3256,
-    "available_count": 53936
+    "available_count": 88175
   },
   "reunion": {
     "operator": "virtual34",
     "wholesale_cost": 0.4282,
-    "available_count": 7140
+    "available_count": 5850
   },
   "romania": {
-    "operator": "virtual2",
-    "wholesale_cost": 0.4808,
-    "available_count": 0
+    "operator": "virtual26",
+    "wholesale_cost": 1.2,
+    "available_count": 1
   },
   "rwanda": {
     "operator": "virtual34",
     "wholesale_cost": 0.3077,
-    "available_count": 905780
+    "available_count": 1274593
   },
   "saintkittsandnevis": {
     "operator": "virtual34",
     "wholesale_cost": 1.7,
-    "available_count": 1602
+    "available_count": 1589
   },
   "saintlucia": {
     "operator": "virtual34",
     "wholesale_cost": 0.7064,
-    "available_count": 4894
+    "available_count": 6206
   },
   "saintvincentandgrenadines": {
     "operator": "virtual4",
@@ -537,67 +537,67 @@
   "salvador": {
     "operator": "virtual34",
     "wholesale_cost": 0.1282,
-    "available_count": 436170
+    "available_count": 523238
   },
   "senegal": {
     "operator": "virtual34",
     "wholesale_cost": 0.4128,
-    "available_count": 490763
+    "available_count": 563630
   },
   "serbia": {
     "operator": "virtual34",
     "wholesale_cost": 0.5581,
-    "available_count": 2096023
+    "available_count": 181630
   },
   "sierraleone": {
     "operator": "virtual34",
     "wholesale_cost": 0.3487,
-    "available_count": 172926
+    "available_count": 177763
   },
   "slovakia": {
     "operator": "virtual34",
     "wholesale_cost": 0.4282,
-    "available_count": 921174
+    "available_count": 1387686
   },
   "slovenia": {
     "operator": "virtual34",
     "wholesale_cost": 0.4115,
-    "available_count": 1826274
+    "available_count": 1776988
   },
   "southafrica": {
     "operator": "virtual66",
     "wholesale_cost": 0.6,
-    "available_count": 292641
+    "available_count": 305784
   },
   "spain": {
     "operator": "virtual58",
     "wholesale_cost": 3.4185,
-    "available_count": 236
+    "available_count": 353
   },
   "srilanka": {
     "operator": "virtual34",
     "wholesale_cost": 0.75,
-    "available_count": 864105
+    "available_count": 860441
   },
   "suriname": {
     "operator": "virtual34",
     "wholesale_cost": 0.2397,
-    "available_count": 484519
+    "available_count": 490945
   },
   "swaziland": {
     "operator": "virtual34",
     "wholesale_cost": 0.2737,
-    "available_count": 45572
+    "available_count": 171587
   },
   "sweden": {
     "operator": "virtual34",
     "wholesale_cost": 2.0,
-    "available_count": 176116
+    "available_count": 179834
   },
   "taiwan": {
     "operator": "virtual34",
     "wholesale_cost": 2.0,
-    "available_count": 711245
+    "available_count": 470160
   },
   "tajikistan": {
     "operator": "virtual53",
@@ -607,12 +607,12 @@
   "thailand": {
     "operator": "virtual34",
     "wholesale_cost": 0.7925,
-    "available_count": 2381928
+    "available_count": 414639
   },
   "togo": {
     "operator": "virtual34",
     "wholesale_cost": 0.4321,
-    "available_count": 208982
+    "available_count": 197840
   },
   "turkmenistan": {
     "operator": "virtual4",
@@ -622,7 +622,7 @@
   "uganda": {
     "operator": "virtual34",
     "wholesale_cost": 0.298,
-    "available_count": 324592
+    "available_count": 412791
   },
   "ukraine": {
     "operator": "virtual53",
@@ -632,12 +632,12 @@
   "uruguay": {
     "operator": "virtual34",
     "wholesale_cost": 0.3263,
-    "available_count": 564977
+    "available_count": 751957
   },
   "usa": {
-    "operator": "virtual28",
-    "wholesale_cost": 1.9231,
-    "available_count": 20504
+    "operator": "virtual63",
+    "wholesale_cost": 1.92,
+    "available_count": 25
   },
   "uzbekistan": {
     "operator": "virtual51",
@@ -647,11 +647,11 @@
   "vietnam": {
     "operator": "virtual34",
     "wholesale_cost": 0.4372,
-    "available_count": 1339445
+    "available_count": 2777508
   },
   "zambia": {
     "operator": "virtual34",
     "wholesale_cost": 0.3769,
-    "available_count": 1115809
+    "available_count": 1612384
   }
 }

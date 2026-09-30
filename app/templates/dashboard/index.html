@@ -127,14 +127,14 @@
       <tbody>
         {% for o in recent %}
         <tr>
-          <td class="td-mono td-strong">#{{ o.order_reference }}</td>
+          <td class="td-mono td-strong"><a href="{{ url_for('sims.my_sims') }}" style="color:inherit; text-decoration:none;">#{{ o.order_reference }}</a></td>
           <td class="td-strong">{{ o.service_name }}</td>
           <td class="td-mono td-dim">{{ o.phone_number }}</td>
           <td class="td-strong" data-usd="{{ '%.2f'|format(o.price) }}">₦{{ '{:,.2f}'.format(o.price * NGN_PER_USD) }}</td>
           <td>
-            {% if o.status == 'active' %}
-              <span class="badge badge-warning badge-dot">Waiting SMS</span>
-            {% elif o.status == 'completed' %}
+            {% if o.status in ['active', 'pending'] and not o.sms_code %}
+              <a href="{{ url_for('sims.my_sims') }}" class="badge badge-warning badge-dot" style="text-decoration:none;">Waiting SMS</a>
+            {% elif o.status in ['completed', 'received'] or o.sms_code %}
               <span class="badge badge-success badge-dot">Completed</span>
             {% else %}
               <span class="badge badge-danger badge-dot">Cancelled</span>

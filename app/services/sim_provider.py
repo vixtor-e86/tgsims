@@ -294,6 +294,7 @@ class SIMProviderService:
 
     _cached_raw_catalog = None
     _cached_whatsapp_operators = None
+    _cached_telegram_operators = None
 
     @classmethod
     def get_whatsapp_operator_info(cls, country_slug: str) -> dict:
@@ -322,6 +323,34 @@ class SIMProviderService:
         }
         lookup_key = alias_map.get(c_clean, c_clean)
         return cls._cached_whatsapp_operators.get(lookup_key) or {}
+
+    @classmethod
+    def get_telegram_operator_info(cls, country_slug: str) -> dict:
+        """Retrieves the 2nd cheapest clean operator route for Telegram in a given country to bypass recycled numbers."""
+        if cls._cached_telegram_operators is None:
+            import json
+            data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'telegram_operators.json')
+            if os.path.exists(data_path):
+                try:
+                    with open(data_path, 'r', encoding='utf-8') as f:
+                        cls._cached_telegram_operators = json.load(f)
+                except Exception as e:
+                    print(f"[SIMProviderService] Error loading telegram_operators.json: {e}")
+                    cls._cached_telegram_operators = {}
+            else:
+                cls._cached_telegram_operators = {}
+
+        c_clean = (country_slug or '').lower().replace(' ', '').replace('_', '')
+        alias_map = {
+            'uk': 'england',
+            'unitedkingdom': 'england',
+            'greatbritain': 'england',
+            'gb': 'england',
+            'us': 'usa',
+            'unitedstates': 'usa'
+        }
+        lookup_key = alias_map.get(c_clean, c_clean)
+        return cls._cached_telegram_operators.get(lookup_key) or {}
 
     @classmethod
     def _load_raw_catalog(cls) -> list:
@@ -418,12 +447,17 @@ class SIMProviderService:
         else:
             service_code = svc_lookup.replace(' ', '').replace('-', '').lower()
 
-        # For WhatsApp, automatically route to the 2nd cheapest operator to avoid recycled/blocked lines
+        # For WhatsApp and Telegram, automatically route to the 2nd cheapest operator to avoid recycled/blocked lines
         is_whatsapp = (service_code == 'whatsapp') or ('whatsapp' in svc_clean.lower())
+        is_telegram = (service_code == 'telegram') or ('telegram' in svc_clean.lower())
         if is_whatsapp and (not operator or operator == 'any'):
             wa_info = cls.get_whatsapp_operator_info(country_slug)
             if wa_info and wa_info.get('operator'):
                 operator = wa_info['operator']
+        elif is_telegram and (not operator or operator == 'any'):
+            tg_info = cls.get_telegram_operator_info(country_slug)
+            if tg_info and tg_info.get('operator'):
+                operator = tg_info['operator']
 
         # If operator is still 'any', check if catalog specifies a preferred operator
         if not operator or operator == 'any':
@@ -699,7 +733,7 @@ class SIMProviderService:
     FIVESIM_US_SERVICES_WITH_ROUTES = [
         {'id': 'whatsapp_virtual28', 'service_name': 'WhatsApp', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp', 'quality': 'Economy Pool', 'price_usd': 1.92},
         {'id': 'wabiz_virtual28', 'service_name': 'WhatsApp Business', 'service_code': 'whatsapp', 'operator': 'virtual28', 'name': 'WhatsApp Business', 'quality': 'Economy Pool', 'price_usd': 1.92},
-        {'id': 'telegram_virtual63', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual63', 'name': 'Telegram', 'quality': 'Economy Pool', 'price_usd': 0.55},
+        {'id': 'telegram_virtual28', 'service_name': 'Telegram', 'service_code': 'telegram', 'operator': 'virtual28', 'name': 'Telegram', 'quality': 'Economy Pool', 'price_usd': 0.89},
         {'id': 'google_virtual28', 'service_name': 'Google / Gmail / YouTube', 'service_code': 'google', 'operator': 'virtual28', 'name': 'Google / Gmail / YouTube', 'quality': 'Economy Pool', 'price_usd': 0.38},
         {'id': 'openai_virtual63', 'service_name': 'OpenAI / ChatGPT', 'service_code': 'openai', 'operator': 'virtual63', 'name': 'OpenAI / ChatGPT', 'quality': 'Economy Pool', 'price_usd': 0.15},
         {'id': 'instagram_virtual8', 'service_name': 'Instagram', 'service_code': 'instagram', 'operator': 'virtual8', 'name': 'Instagram', 'quality': 'Economy Pool', 'price_usd': 0.15},
@@ -769,8 +803,8 @@ class SIMProviderService:
 
         cheapest_list = []
         for sc, items in grouped.items():
-            if sc == 'whatsapp':
-                # Select second cheapest operator for WhatsApp to avoid recycled/blocked lines
+            if sc in ('whatsapp', 'telegram'):
+                # Select second cheapest operator for WhatsApp and Telegram to avoid recycled/blocked lines
                 stock_items = [it for it in items if (it.get('count') or 0) >= 5]
                 if not stock_items:
                     stock_items = [it for it in items if (it.get('count') or 0) > 0]
@@ -1222,14 +1256,21 @@ class SIMProviderService:
                             'order_id': cur_ord['id'],
                             'sender': cur_ord.get('service_name', 'Verification'),
                             'sms_code': cur_ord['sms_code'],
-                            'full_text': cur_ord.get('full_sms_text', f"Code: {cur_ord['sms_code']}")
+                            'full_text': cur_ord.get('full_sms_text', f"Code: {cur_ord['sms_code']}"),
+                            'received_at': cur_ord.get('updated_at') or now_iso
                         }).execute()
             except Exception as ex:
                 print(f"[SIMProviderService] archiving prev sms note: {ex}")
 
+        # Note: sim_orders_order_type_check constraint permits 'activation'/'hosting'.
+        # Reactivation is tracked via full_sms_text and status='pending'.
+        cur_order_type = 'activation'
+        if cur_res and cur_res.data:
+            cur_order_type = cur_res.data[0].get('order_type') or 'activation'
+
         update_payload = {
             'status': 'pending',
-            'order_type': 'reactivation',
+            'order_type': cur_order_type,
             'sms_code': None,
             'full_sms_text': 'Line reactivated - waiting for new verification code...',
             'created_at': now_iso,
@@ -1248,7 +1289,6 @@ class SIMProviderService:
         for o in mock_db.sim_orders:
             if o.get('id') == db_order_id or o.get('order_reference') == db_order_id:
                 o['status'] = 'pending'
-                o['order_type'] = 'reactivation'
                 o['sms_code'] = None
                 o['full_sms_text'] = 'Line reactivated - waiting for new verification code...'
                 o['created_at'] = now_iso
