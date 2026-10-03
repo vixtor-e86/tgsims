@@ -971,6 +971,9 @@ class SIMProviderService:
 
                     req = NewVerificationRequest(service_name=tv_svc, capability=ReservationCapability.SMS)
                     ver = tv_client.verifications.create(req)
+                    exp_iso = None
+                    if hasattr(ver, 'ends_at') and ver.ends_at:
+                        exp_iso = ver.ends_at.isoformat() if hasattr(ver.ends_at, 'isoformat') else str(ver.ends_at)
                     return {
                         'success': True,
                         'order_reference': order_ref,
@@ -983,6 +986,7 @@ class SIMProviderService:
                         'package_name': 'Reliable Package',
                         'provider_line': 'Dedicated Cellular',
                         'price': charge_price,
+                        'expires_at': exp_iso,
                         'status': 'pending',
                     }
                 except Exception as e:
@@ -1124,7 +1128,78 @@ class SIMProviderService:
                 ngn_rate = 1600.00
             fee_deducted = False
 
-            # Deduct reactivation fee from user wallet
+            # Demo order reactivation
+            if tv_id.startswith('DEMO-'):
+                if user_id:
+                    deduct_res = DBService.deduct_wallet_balance(
+                        user_id=user_id,
+                        amount=REACTIVATION_FEE,
+                        reference=f"REACT-{uuid.uuid4().hex[:8].upper()}",
+                        description=f"Number Reactivation ({order.get('service_name', 'SIM')})",
+                        metadata={'order_reference': order.get('order_reference'), 'type': 'reactivation'},
+                        order_id=order.get('id')
+                    )
+                    if not deduct_res.get('success'):
+                        fee_ngn = REACTIVATION_FEE * ngn_rate
+                        return {
+                            'success': False,
+                            'message': deduct_res.get('message') or f"Insufficient wallet balance. Reactivation costs ${REACTIVATION_FEE:.2f} (₦{fee_ngn:,.2f}). Please deposit funds to continue."
+                        }
+                import datetime
+                demo_expires = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=20)).isoformat()
+                cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=demo_expires)
+                return {
+                    'success': True,
+                    'message': f'Number reactivated successfully (${REACTIVATION_FEE:.2f})! Line is now open for your new OTP code.',
+                    'order_reference': order.get('order_reference')
+                }
+
+            tv_client = cls.get_textverified_client()
+            if not tv_client:
+                return {'success': False, 'message': 'Verification service temporarily unavailable.'}
+
+            # --- STEP 1: PRE-CHECK CARRIER LINE AVAILABILITY (BEFORE DEDUCTING FUNDS) ---
+            expires_at_iso = None
+            try:
+                v_chk = tv_client.verifications.details(tv_id)
+                can_react = getattr(getattr(v_chk, 'reactivate', None), 'can_reactivate', None)
+                if can_react is False:
+                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': False,
+                        'message': 'This number is no longer available for reactivation in carrier banks. The carrier slot has expired or rotated away.',
+                        'reactivation_expired': True
+                    }
+                # Check if line is already open/pending in carrier network
+                chk_st = getattr(v_chk.state, 'value', str(v_chk.state)).lower() if hasattr(v_chk, 'state') else ''
+                if 'pending' in chk_st or 'active' in chk_st or 'open' in chk_st:
+                    if hasattr(v_chk, 'ends_at') and v_chk.ends_at:
+                        expires_at_iso = v_chk.ends_at.isoformat() if hasattr(v_chk.ends_at, 'isoformat') else str(v_chk.ends_at)
+                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
+                    return {
+                        'success': True,
+                        'message': 'Number line is already active! Line is open for your OTP code.',
+                        'order_reference': order.get('order_reference')
+                    }
+            except Exception as ex_chk:
+                err_chk = str(ex_chk).lower()
+                print(f"[SIMProviderService] TextVerified pre-check error: {ex_chk}")
+                if '404' in err_chk or 'not found' in err_chk:
+                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': False,
+                        'message': 'This number line has expired beyond the carrier reactivation window. Please rent a number or order a new one.',
+                        'reactivation_expired': True
+                    }
+                if 'cannot be reactivated' in err_chk:
+                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': False,
+                        'message': 'This number is no longer available for reactivation in carrier banks. Line retention has ended.',
+                        'reactivation_expired': True
+                    }
+
+            # --- STEP 2: DEDUCT REACTIVATION FEE FROM USER WALLET ---
             if user_id:
                 deduct_res = DBService.deduct_wallet_balance(
                     user_id=user_id,
@@ -1142,33 +1217,19 @@ class SIMProviderService:
                     }
                 fee_deducted = True
 
-            # Demo order reactivation
-            if tv_id.startswith('DEMO-'):
-                cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
-                return {
-                    'success': True,
-                    'message': f'Number reactivated successfully (${REACTIVATION_FEE:.2f})! Line is now open for your new OTP code.',
-                    'order_reference': order.get('order_reference')
-                }
-
-            tv_client = cls.get_textverified_client()
-            if not tv_client:
-                # Refund fee if client missing
-                if fee_deducted and user_id:
-                    DBService.credit_wallet_balance(
-                        user_id=user_id,
-                        amount=REACTIVATION_FEE,
-                        trans_type='refund',
-                        reference=f"REF-REACT-{uuid.uuid4().hex[:8].upper()}",
-                        description="Refund: Reactivation unavailable",
-                        order_id=order.get('id')
-                    )
-                return {'success': False, 'message': 'Verification service temporarily unavailable.'}
-
+            # --- STEP 3: EXECUTE REACTIVATION ON TEXTVERIFIED ---
             try:
                 success = tv_client.verifications.reactivate(tv_id)
                 if success:
-                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
+                    # Capture exact ends_at duration returned by TextVerified (e.g. 20m, 60m, 120m)
+                    try:
+                        v_details = tv_client.verifications.details(tv_id)
+                        if hasattr(v_details, 'ends_at') and v_details.ends_at:
+                            expires_at_iso = v_details.ends_at.isoformat() if hasattr(v_details.ends_at, 'isoformat') else str(v_details.ends_at)
+                    except Exception as ed:
+                        print(f"[SIMProviderService] Error querying reactivated ends_at: {ed}")
+
+                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
                     return {
                         'success': True,
                         'message': f'Number reactivated successfully (${REACTIVATION_FEE:.2f})! Line is now open for your new OTP code.',
@@ -1184,14 +1245,25 @@ class SIMProviderService:
                             description="Refund: Carrier line closed",
                             order_id=order.get('id')
                         )
-                    return {'success': False, 'message': 'Could not reactivate this line with carrier. The reactivation window may have closed.'}
+                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': False,
+                        'message': 'Could not reactivate this line with carrier. The reactivation window has closed.',
+                        'reactivation_expired': True
+                    }
             except Exception as e:
                 print(f"[SIMProviderService] TextVerified reactivate error: {e}")
                 err_str = str(e).lower()
 
                 # If carrier line is already active or reactivated, reset order to pending and allow user to receive OTP
                 if 'already' in err_str and any(w in err_str for w in ['active', 'pending', 'open', 'reactivated']):
-                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin)
+                    try:
+                        v_details = tv_client.verifications.details(tv_id)
+                        if hasattr(v_details, 'ends_at') and v_details.ends_at:
+                            expires_at_iso = v_details.ends_at.isoformat() if hasattr(v_details.ends_at, 'isoformat') else str(v_details.ends_at)
+                    except Exception:
+                        pass
+                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
                     return {
                         'success': True,
                         'message': 'Number line is already active! Line is open for your OTP code.',
@@ -1215,15 +1287,53 @@ class SIMProviderService:
                 if 'insufficient balance' in err_str or 'insufficientbalance' in err_str:
                     return {'success': False, 'message': 'Carrier service balance is currently low. Please contact support.'}
                 if 'cannot be reactivated' in err_str:
-                    return {'success': False, 'message': 'This number cannot be reactivated at this moment (it may still be in use, or the carrier reactivation window has ended).'}
+                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': False,
+                        'message': 'This number cannot be reactivated (carrier slot has rotated away or retention ended).',
+                        'reactivation_expired': True
+                    }
                 if '404' in err_str or 'not found' in err_str:
-                    return {'success': False, 'message': 'This number line has expired beyond the carrier reactivation window. Please order a new number.'}
+                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                    return {
+                        'success': False,
+                        'message': 'This number line has expired beyond the carrier reactivation window. Please order a new number or rent one.',
+                        'reactivation_expired': True
+                    }
                 return {'success': False, 'message': 'Carrier reactivation is unavailable for this number at the moment.'}
 
         return {'success': False, 'message': 'Reactivation is only supported on Reliable Package numbers.'}
 
     @classmethod
-    def _reset_order_for_new_otp(cls, db_order_id: str, admin=None):
+    def _mark_reactivation_expired(cls, order_id: str, admin=None):
+        """Flags an order so the reactivation button disappears permanently."""
+        if not admin:
+            from app.services.supabase_client import get_supabase_admin
+            admin = get_supabase_admin()
+        if admin:
+            try:
+                import uuid
+                is_uuid = False
+                try:
+                    uuid.UUID(str(order_id))
+                    is_uuid = True
+                except (ValueError, TypeError):
+                    is_uuid = False
+                q = admin.table('sim_orders').update({'reactivation_expired': True})
+                if is_uuid:
+                    q = q.eq('id', order_id)
+                else:
+                    q = q.eq('order_reference', order_id)
+                q.execute()
+            except Exception as e:
+                print(f"[SIMProviderService] _mark_reactivation_expired DB note: {e}")
+        for o in mock_db.sim_orders:
+            if o.get('id') == order_id or o.get('order_reference') == order_id:
+                o['reactivation_expired'] = True
+                break
+
+    @classmethod
+    def _reset_order_for_new_otp(cls, db_order_id: str, admin=None, expires_at: str = None):
         """Resets order status to pending for a fresh OTP while archiving previous code and tracking reactivation."""
         import datetime
         import uuid
@@ -1276,6 +1386,8 @@ class SIMProviderService:
             'created_at': now_iso,
             'updated_at': now_iso
         }
+        if expires_at:
+            update_payload['expires_at'] = expires_at
 
         if admin:
             try:
@@ -1293,4 +1405,317 @@ class SIMProviderService:
                 o['full_sms_text'] = 'Line reactivated - waiting for new verification code...'
                 o['created_at'] = now_iso
                 o['updated_at'] = now_iso
+                if expires_at:
+                    o['expires_at'] = expires_at
                 break
+
+    # =========================================================================
+    # NUMBER RENTALS (DEDICATED LONG-TERM CARRIER RESERVATIONS)
+    # =========================================================================
+    RENTAL_SERVICES = [
+        {
+            'code': 'allservices',
+            'name': 'Universal Number (All Services)',
+            'icon': 'shield',
+            'badge': 'Best Value',
+            'badge_class': 'badge-brand',
+            'description': 'One dedicated US number that receives OTPs from WhatsApp, Telegram, Google, Banks, PayPal, Apple, and all 2,000+ platforms simultaneously.',
+            'base_pricing': {3: 6.00, 7: 7.00, 14: 8.00, 30: 10.00}
+        },
+        {
+            'code': 'whatsapp',
+            'name': 'WhatsApp / Business',
+            'icon': 'whatsapp',
+            'badge': 'Popular',
+            'badge_class': 'badge-success',
+            'description': 'Dedicated non-VoIP carrier SIM exclusively reserved for your WhatsApp or WhatsApp Business account for the entire duration.',
+            'base_pricing': {3: 2.40, 7: 3.00, 14: 4.00, 30: 4.80}
+        },
+        {
+            'code': 'telegram',
+            'name': 'Telegram Messenger',
+            'icon': 'telegram',
+            'badge': 'High Demand',
+            'badge_class': 'badge-info',
+            'description': 'Reserved cellular line dedicated to Telegram account login, re-verifications, and multi-device auth.',
+            'base_pricing': {3: 3.00, 7: 3.50, 14: 5.00, 30: 6.40}
+        },
+        {
+            'code': 'google',
+            'name': 'Google / Gmail / YouTube',
+            'icon': 'google',
+            'badge': 'Recommended',
+            'badge_class': 'badge-warning',
+            'description': 'Guaranteed cellular line for Google Account 2FA, workspace recovery, and long-term verification.',
+            'base_pricing': {3: 2.20, 7: 2.40, 14: 3.00, 30: 3.60}
+        },
+        {
+            'code': 'openai',
+            'name': 'OpenAI / ChatGPT',
+            'icon': 'bolt',
+            'badge': 'AI Route',
+            'badge_class': 'badge-neutral',
+            'description': 'Real cellular number reserved for OpenAI, ChatGPT Plus, and API developer account validations.',
+            'base_pricing': {3: 1.90, 7: 2.00, 14: 2.80, 30: 3.60}
+        },
+        {
+            'code': 'paypal',
+            'name': 'PayPal / Venmo',
+            'icon': 'credit-card',
+            'badge': 'Financial',
+            'badge_class': 'badge-neutral',
+            'description': 'Dedicated Non-VoIP carrier number matching strict security screening on financial platforms.',
+            'base_pricing': {3: 2.40, 7: 2.90, 14: 3.80, 30: 4.60}
+        },
+        {
+            'code': 'facebook',
+            'name': 'Facebook / Instagram / Threads',
+            'icon': 'globe',
+            'badge': 'Social',
+            'badge_class': 'badge-neutral',
+            'description': 'Dedicated line for Meta platforms, Instagram business logins, and account verification.',
+            'base_pricing': {3: 2.20, 7: 2.60, 14: 3.50, 30: 4.20}
+        },
+        {
+            'code': 'apple',
+            'name': 'Apple ID / iCloud',
+            'icon': 'shield',
+            'badge': 'Apple',
+            'badge_class': 'badge-neutral',
+            'description': 'Real AT&T/Verizon cellular route for Apple ID two-factor authentication and device setup.',
+            'base_pricing': {3: 2.50, 7: 3.00, 14: 4.00, 30: 5.00}
+        },
+        {
+            'code': 'twitter',
+            'name': 'Twitter / X',
+            'icon': 'twitter',
+            'badge': 'Social',
+            'badge_class': 'badge-neutral',
+            'description': 'Dedicated verification line for Twitter / X account creation and premium subscriptions.',
+            'base_pricing': {3: 2.00, 7: 2.50, 14: 3.20, 30: 4.00}
+        },
+        {
+            'code': 'microsoft',
+            'name': 'Microsoft / Outlook / Office',
+            'icon': 'grid',
+            'badge': 'Productivity',
+            'badge_class': 'badge-neutral',
+            'description': 'Reserved phone number for Microsoft Account security verification and Office 365 sign-ins.',
+            'base_pricing': {3: 2.00, 7: 2.40, 14: 3.20, 30: 3.80}
+        }
+    ]
+
+    @classmethod
+    def get_rental_catalog(cls) -> list:
+        """Returns the rental catalog with wholesale and retail prices calculated for 3, 7, 14, and 30 days."""
+        from app.services.settings_service import SettingsService
+        try:
+            pct, floor = SettingsService.get_textverified_markup()
+            ngn_rate = SettingsService.get_usd_ngn_rate()
+        except Exception:
+            pct, floor = 25.0, 0.50
+            ngn_rate = 1600.00
+
+        mult = 1.0 + (pct / 100.0)
+        catalog = []
+        for svc in cls.RENTAL_SERVICES:
+            item = dict(svc)
+            pricing = {}
+            for days, base_cost in svc['base_pricing'].items():
+                retail_usd = round(max(base_cost * mult, base_cost + floor), 2)
+                retail_ngn = round(retail_usd * ngn_rate, 2)
+                pricing[str(days)] = {
+                    'days': days,
+                    'base_cost_usd': base_cost,
+                    'retail_usd': retail_usd,
+                    'retail_ngn': retail_ngn,
+                    'formatted_usd': f"${retail_usd:.2f}",
+                    'formatted_ngn': f"₦{retail_ngn:,.2f}"
+                }
+            item['pricing'] = pricing
+            catalog.append(item)
+        return catalog
+
+    @classmethod
+    def purchase_rental(
+        cls,
+        user_id: str,
+        service_code: str,
+        duration_days: int = 3
+    ) -> dict:
+        """Purchases a dedicated long-term virtual number rental:
+        - Locks carrier line for 3, 7, 14, or 30 days
+        - Deducts wallet balance atomically
+        - Stores in sim_rentals
+        """
+        import uuid
+        import datetime
+        from app.services.db_service import DBService
+        from app.services.settings_service import SettingsService
+
+        duration_map = {
+            3: ('THREE_DAY', 3),
+            7: ('SEVEN_DAY', 7),
+            14: ('FOURTEEN_DAY', 14),
+            30: ('THIRTY_DAY', 30)
+        }
+        tier_info = duration_map.get(int(duration_days))
+        if not tier_info:
+            return {'success': False, 'message': 'Invalid duration. Choose 3, 7, 14, or 30 days.'}
+
+        tier_name, days = tier_info
+        catalog = cls.get_rental_catalog()
+        svc_clean = service_code.strip().lower()
+        matched = next((s for s in catalog if s['code'].lower() == svc_clean), None)
+        if not matched:
+            matched = catalog[0]  # Fallback to universal allservices
+
+        price_info = matched['pricing'].get(str(days))
+        retail_usd = price_info['retail_usd']
+        retail_ngn = price_info['retail_ngn']
+        base_cost = price_info['base_cost_usd']
+        rental_ref = f"TGS-RNT-{uuid.uuid4().hex[:6].upper()}"
+
+        # 1. Check wallet balance
+        wallet = DBService.get_wallet(user_id)
+        cur_bal = float(wallet.get('balance', 0.00))
+        if cur_bal < retail_usd:
+            return {
+                'success': False,
+                'message': f"Insufficient wallet balance (${cur_bal:.2f}). This {days}-day rental costs ${retail_usd:.2f} (₦{retail_ngn:,.2f}). Please top up your wallet."
+            }
+
+        # 2. Allocate with TextVerified Reservations API
+        tv_client = cls.get_textverified_client()
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        phone = None
+        prov_res_id = None
+        ends_at_iso = (now_utc + datetime.timedelta(days=days)).isoformat()
+
+        if tv_client:
+            try:
+                from textverified import NewRentalRequest, RentalDuration, ReservationCapability, NumberType
+                req = NewRentalRequest(
+                    allow_back_order_reservations=False,
+                    duration=RentalDuration[tier_name],
+                    is_renewable=False,
+                    number_type=NumberType.MOBILE,
+                    service_name=matched['code'],
+                    capability=ReservationCapability.SMS
+                )
+                sale = tv_client.reservations.create(req)
+                if sale and sale.reservations:
+                    res_obj = sale.reservations[0]
+                    prov_res_id = res_obj.id
+                    try:
+                        details = tv_client.reservations.nonrenewable_details(res_obj.id)
+                        phone = details.number
+                        if hasattr(details, 'ends_at') and details.ends_at:
+                            ends_at_iso = details.ends_at.isoformat() if hasattr(details.ends_at, 'isoformat') else str(details.ends_at)
+                    except Exception as ed:
+                        print(f"[SIMProviderService] rental details fetch note: {ed}")
+            except Exception as e:
+                print(f"[SIMProviderService] TextVerified rental create error: {e}")
+                err_str = str(e).lower()
+                if 'insufficient balance' in err_str:
+                    return {'success': False, 'message': 'Carrier inventory is updating. Please try again shortly or contact support.'}
+                return {'success': False, 'message': 'No dedicated carrier lines are currently available for this service tier. Please select another duration.'}
+
+        # Sandbox / Demo fallback if credentials are pending
+        if not phone:
+            import random
+            phone = f"+1 (202) {random.randint(200, 899)}-{random.randint(1000, 9999)}"
+            prov_res_id = f"DEMO-RNT-{uuid.uuid4().hex[:8].upper()}"
+
+        # 3. Deduct wallet balance
+        deduct_res = DBService.deduct_wallet_balance(
+            user_id=user_id,
+            amount=retail_usd,
+            reference=f"RNT-{uuid.uuid4().hex[:8].upper()}",
+            description=f"Number Rental ({matched['name']} - {days} Days)",
+            metadata={'rental_reference': rental_ref, 'service_code': matched['code'], 'days': days}
+        )
+        if not deduct_res.get('success'):
+            return {'success': False, 'message': deduct_res.get('message', 'Failed to deduct wallet balance.')}
+
+        # 4. Save to database
+        rental_data = {
+            'rental_reference': rental_ref,
+            'provider': 'textverified',
+            'provider_reservation_id': prov_res_id,
+            'service_code': matched['code'],
+            'service_name': matched['name'],
+            'phone_number': phone,
+            'country_code': 'US',
+            'country_name': 'United States',
+            'duration_days': days,
+            'duration_tier': tier_name,
+            'provider_cost': base_cost,
+            'user_cost': retail_usd,
+            'user_cost_ngn': retail_ngn,
+            'profit_margin': round(retail_usd - base_cost, 2),
+            'status': 'active',
+            'starts_at': now_utc.isoformat(),
+            'expires_at': ends_at_iso,
+            'auto_renew': False
+        }
+        saved = DBService.create_rental(user_id, rental_data)
+
+        # 5. Trigger user notification
+        try:
+            DBService.create_user_notification(
+                user_id=user_id,
+                title=f"{matched['name']} Dedicated Number Rented",
+                message=f"Your dedicated line {phone} is active for {days} days. You can receive unlimited verification codes during this period.",
+                type="purchase",
+                link="/sims/rentals"
+            )
+        except Exception:
+            pass
+
+        return {
+            'success': True,
+            'rental_reference': rental_ref,
+            'phone_number': phone,
+            'service_name': matched['name'],
+            'duration_days': days,
+            'expires_at': ends_at_iso,
+            'user_cost': retail_usd,
+            'message': f"Dedicated number {phone} rented successfully for {days} days!"
+        }
+
+    @classmethod
+    def check_rental_sms(cls, rental_id: str) -> dict:
+        """Polls TextVerified for all SMS messages received on a rental line."""
+        from app.services.db_service import DBService
+        rental = DBService.get_rental_by_id(user_id=None, rental_id=rental_id)
+        if not rental:
+            return {'success': False, 'message': 'Rental not found.', 'messages': []}
+
+        phone_number = rental.get('phone_number')
+        prov_res_id = str(rental.get('provider_reservation_id') or '')
+        tv_client = cls.get_textverified_client()
+        new_count = 0
+
+        if tv_client and prov_res_id and not prov_res_id.startswith('DEMO-') and phone_number:
+            try:
+                sms_list = list(tv_client.sms.list(to_number=phone_number))
+                for s in sms_list:
+                    code = getattr(s, 'parsed_code', None)
+                    text = getattr(s, 'sms_content', None) or (f"Your verification code is: {code}" if code else "New SMS received")
+                    sender = getattr(s, 'service_name', None) or rental.get('service_name', 'Verification')
+                    DBService.record_rental_sms(rental.get('id') or rental_id, code, text, sender=sender)
+                    new_count += 1
+            except Exception as e:
+                print(f"[SIMProviderService] check_rental_sms error: {e}")
+
+        # Fetch all messages from DB
+        messages = DBService.get_rental_messages(rental.get('id') or rental_id)
+        return {
+            'success': True,
+            'messages': messages,
+            'new_count': new_count,
+            'phone_number': phone_number,
+            'service_name': rental.get('service_name')
+        }
+

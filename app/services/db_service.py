@@ -460,6 +460,236 @@ class DBService:
             print(f"[DBService] update_order_status error: {e}")
             return False
 
+    # =========================================================================
+    # RENTALS (RESERVATIONS) MANAGEMENT
+    # =========================================================================
+    @staticmethod
+    def create_rental(user_id: str, rental_data: dict) -> dict:
+        """Saves a new virtual number rental order in the database."""
+        if not user_id or user_id == 'demo-user-id':
+            mock_rental = {
+                'id': f"rent-{len(getattr(mock_db, 'sim_rentals', [])) + 101}",
+                'user_id': user_id,
+                'rental_reference': rental_data.get('rental_reference'),
+                'provider': rental_data.get('provider', 'textverified'),
+                'provider_reservation_id': rental_data.get('provider_reservation_id'),
+                'service_code': rental_data.get('service_code'),
+                'service_name': rental_data.get('service_name'),
+                'phone_number': rental_data.get('phone_number'),
+                'country_code': rental_data.get('country_code', 'US'),
+                'country_name': rental_data.get('country_name', 'United States'),
+                'duration_days': int(rental_data.get('duration_days', 3)),
+                'duration_tier': rental_data.get('duration_tier', 'THREE_DAY'),
+                'user_cost': float(rental_data.get('user_cost', 0.00)),
+                'price': float(rental_data.get('user_cost', 0.00)),
+                'user_cost_ngn': float(rental_data.get('user_cost_ngn', 0.00)),
+                'status': rental_data.get('status', 'active'),
+                'sms_count': 0,
+                'last_sms_code': None,
+                'last_sms_text': None,
+                'starts_at': rental_data.get('starts_at') or datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'expires_at': rental_data.get('expires_at'),
+                'created_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
+            }
+            if not hasattr(mock_db, 'sim_rentals'):
+                mock_db.sim_rentals = []
+            mock_db.sim_rentals.insert(0, mock_rental)
+            return mock_rental
+
+        admin = get_supabase_admin()
+        if not admin:
+            return rental_data
+
+        try:
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            db_row = {
+                'user_id': user_id,
+                'rental_reference': rental_data.get('rental_reference'),
+                'provider': rental_data.get('provider', 'textverified'),
+                'provider_reservation_id': str(rental_data.get('provider_reservation_id', '')),
+                'service_code': rental_data.get('service_code', 'allservices'),
+                'service_name': rental_data.get('service_name', 'All Services (Universal)'),
+                'phone_number': rental_data.get('phone_number', ''),
+                'country_code': rental_data.get('country_code', 'US'),
+                'country_name': rental_data.get('country_name', 'United States'),
+                'duration_days': int(rental_data.get('duration_days', 3)),
+                'duration_tier': str(rental_data.get('duration_tier', 'THREE_DAY')),
+                'provider_cost': float(rental_data.get('provider_cost', 0.00)),
+                'user_cost': float(rental_data.get('user_cost', 0.00)),
+                'user_cost_ngn': float(rental_data.get('user_cost_ngn', 0.00)),
+                'profit_margin': float(rental_data.get('profit_margin', 0.00)),
+                'currency': 'USD',
+                'status': rental_data.get('status', 'active'),
+                'sms_count': 0,
+                'last_sms_code': None,
+                'last_sms_text': None,
+                'starts_at': rental_data.get('starts_at') or now_iso,
+                'expires_at': rental_data.get('expires_at') or now_iso,
+                'auto_renew': bool(rental_data.get('auto_renew', False)),
+                'notes': rental_data.get('notes'),
+                'metadata': rental_data.get('metadata') or {}
+            }
+            res = admin.table('sim_rentals').insert(db_row).execute()
+            if res.data and len(res.data) > 0:
+                saved = res.data[0]
+                saved['price'] = float(saved.get('user_cost', 0.00))
+                return saved
+            return rental_data
+        except Exception as e:
+            print(f"[DBService] create_rental error: {e}")
+            return rental_data
+
+    @staticmethod
+    def get_rentals(user_id: str, limit: int = 50) -> list:
+        """Fetch rental orders for a user."""
+        if not user_id or user_id == 'demo-user-id':
+            return getattr(mock_db, 'sim_rentals', [])
+
+        admin = get_supabase_admin()
+        if not admin:
+            return getattr(mock_db, 'sim_rentals', [])
+
+        try:
+            res = admin.table('sim_rentals')\
+                .select('*')\
+                .eq('user_id', user_id)\
+                .order('created_at', desc=True)\
+                .limit(limit)\
+                .execute()
+            rentals = res.data or []
+            for r in rentals:
+                try:
+                    r['price'] = float(r.get('user_cost') or 0.00)
+                except (ValueError, TypeError):
+                    r['price'] = 0.00
+            return rentals
+        except Exception as e:
+            print(f"[DBService] get_rentals error: {e}")
+            return getattr(mock_db, 'sim_rentals', [])
+
+    @staticmethod
+    def get_rental_by_id(user_id: str, rental_id: str) -> dict:
+        """Fetch a specific rental order by ID or reference."""
+        if not user_id or user_id == 'demo-user-id':
+            for r in getattr(mock_db, 'sim_rentals', []):
+                if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
+                    return r
+            return None
+
+        admin = get_supabase_admin()
+        if not admin:
+            for r in getattr(mock_db, 'sim_rentals', []):
+                if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
+                    return r
+            return None
+
+        try:
+            q = admin.table('sim_rentals').select('*')
+            if DBService._is_uuid(rental_id):
+                q = q.or_(f"id.eq.{rental_id},rental_reference.eq.{rental_id}")
+            else:
+                q = q.eq('rental_reference', rental_id)
+            if user_id and DBService._is_uuid(user_id):
+                q = q.eq('user_id', user_id)
+            res = q.limit(1).execute()
+            if res.data and len(res.data) > 0:
+                rent = res.data[0]
+                rent['price'] = float(rent.get('user_cost') or 0.00)
+                return rent
+            return None
+        except Exception as e:
+            print(f"[DBService] get_rental_by_id error: {e}")
+            return None
+
+    @staticmethod
+    def record_rental_sms(rental_id: str, sms_code: str, full_sms: str, sender: str = '') -> bool:
+        """Records an incoming SMS for a rental number."""
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        if not admin:
+            for r in getattr(mock_db, 'sim_rentals', []):
+                if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
+                    r['last_sms_code'] = sms_code
+                    r['last_sms_text'] = full_sms
+                    r['sms_count'] = r.get('sms_count', 0) + 1
+                    r['updated_at'] = now_iso
+                    if not hasattr(mock_db, 'rental_sms_messages'):
+                        mock_db.rental_sms_messages = []
+                    mock_db.rental_sms_messages.insert(0, {
+                        'id': f"sms-{len(mock_db.rental_sms_messages)+1}",
+                        'rental_id': r.get('id'),
+                        'sender': sender or 'Verification',
+                        'sms_code': sms_code,
+                        'full_text': full_sms,
+                        'received_at': now_iso
+                    })
+                    return True
+            return False
+
+        try:
+            # 1. Update sim_rentals record
+            q = admin.table('sim_rentals').select('id, sms_count')
+            if DBService._is_uuid(rental_id):
+                q = q.or_(f"id.eq.{rental_id},rental_reference.eq.{rental_id}")
+            else:
+                q = q.eq('rental_reference', rental_id)
+            r_res = q.limit(1).execute()
+            if not r_res.data:
+                return False
+
+            real_id = r_res.data[0]['id']
+            cur_count = int(r_res.data[0].get('sms_count') or 0) + 1
+
+            admin.table('sim_rentals').update({
+                'last_sms_code': sms_code,
+                'last_sms_text': full_sms,
+                'sms_count': cur_count,
+                'updated_at': now_iso
+            }).eq('id', real_id).execute()
+
+            # 2. Insert into sim_sms_messages
+            admin.table('sim_sms_messages').insert({
+                'rental_id': real_id,
+                'sender': sender or 'Verification',
+                'sms_code': sms_code,
+                'full_text': full_sms,
+                'received_at': now_iso
+            }).execute()
+            return True
+        except Exception as e:
+            print(f"[DBService] record_rental_sms error: {e}")
+            return False
+
+    @staticmethod
+    def get_rental_messages(rental_id: str) -> list:
+        """Returns all SMS messages received for a specific rental number."""
+        if not rental_id or rental_id.startswith('rent-'):
+            return [m for m in getattr(mock_db, 'rental_sms_messages', []) if m.get('rental_id') == rental_id]
+
+        admin = get_supabase_admin()
+        if not admin:
+            return [m for m in getattr(mock_db, 'rental_sms_messages', []) if m.get('rental_id') == rental_id]
+
+        try:
+            real_uuid = rental_id
+            if not DBService._is_uuid(rental_id):
+                chk = admin.table('sim_rentals').select('id').eq('rental_reference', rental_id).limit(1).execute()
+                if chk.data:
+                    real_uuid = chk.data[0]['id']
+                else:
+                    return []
+
+            res = admin.table('sim_sms_messages')\
+                .select('*')\
+                .eq('rental_id', real_uuid)\
+                .order('received_at', desc=True)\
+                .execute()
+            return res.data or []
+        except Exception as e:
+            print(f"[DBService] get_rental_messages error: {e}")
+            return []
+
     @staticmethod
     def refund_order(order_id: str, user_id: str, reason: str = 'Order cancelled or timed out') -> dict:
         """Issues an atomic refund for an order to the user's wallet.

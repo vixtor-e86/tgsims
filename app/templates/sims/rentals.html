@@ -1,0 +1,492 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Rent a Number | {{ BRAND }}{% endblock %}
+
+{% block page %}
+<div class="page-head" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:var(--sp-4);">
+  <div>
+    <h1 class="page-title">{{ icon('clock') }} Rent a Number</h1>
+    <p class="page-subtitle">Dedicated US carrier lines reserved exclusively for your account. Receive unlimited verification codes for days or weeks.</p>
+  </div>
+  <div style="display:flex; align-items:center; gap:var(--sp-3);">
+    <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-full); padding:6px 16px; font-size:var(--fs-sm); display:flex; align-items:center; gap:8px;">
+      <span class="td-dim">Balance:</span>
+      <span class="td-strong text-brand" data-usd="{{ '%.2f'|format(wallet.balance) }}">${{ '%.2f'|format(wallet.balance) }}</span>
+    </div>
+    <a href="{{ url_for('wallet.index') }}" class="btn btn-secondary btn-sm">{{ icon('wallet') }} Top Up</a>
+  </div>
+</div>
+
+{# ---- Retention & Feature Banner ---- #}
+<div class="card card-pad" style="margin-bottom:var(--sp-6); background:linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(16,185,129,0.06) 100%); border:1px solid rgba(37,99,235,0.18);">
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:var(--sp-4); align-items:center;">
+    <div>
+      <span class="badge badge-brand badge-sm" style="margin-bottom:var(--sp-2);">{{ icon('shield') }} Guaranteed Number Retention</span>
+      <h3 style="font-size:var(--fs-base); font-weight:700; margin:0 0 var(--sp-1) 0; color:var(--text);">Need a number for longer than 2 weeks?</h3>
+      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin:0; line-height:1.5;">
+        Standard activations rotate carrier lines after 2–3 weeks. With <strong>Rentals</strong>, your phone number is 100% locked to your account for 3, 7, 14, or 30 days with <strong>unlimited SMS codes</strong>.
+      </p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px; font-size:var(--fs-xs); color:var(--text-dim);">
+      <div style="display:flex; align-items:center; gap:6px;"><span class="text-success">{{ icon('check') }}</span> <strong>Universal Number:</strong> Receive SMS from any app on 1 number.</div>
+      <div style="display:flex; align-items:center; gap:6px;"><span class="text-success">{{ icon('check') }}</span> <strong>Zero Per-SMS Charges:</strong> Request as many codes as you need.</div>
+      <div style="display:flex; align-items:center; gap:6px;"><span class="text-success">{{ icon('check') }}</span> <strong>AT&amp;T &amp; Verizon Routes:</strong> 100% Non-VoIP real cellular lines.</div>
+    </div>
+  </div>
+</div>
+
+{# ---- Active User Rentals (if any) ---- #}
+{% if rentals %}
+<section class="card card-pad" style="margin-bottom:var(--sp-8);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-4);">
+    <h2 class="card-title" style="margin:0; display:flex; align-items:center; gap:8px;">
+      {{ icon('list') }} Your Active Rentals ({{ rentals|length }})
+    </h2>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Phone Number</th>
+          <th>Duration</th>
+          <th>Expires In</th>
+          <th>Codes Received</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rentals %}
+        {% set rem = r.remaining_seconds|default(0) %}
+        {% set is_active_rent = (r.status == 'active' and rem > 0) %}
+        <tr data-rental-row data-id="{{ r.id or r.rental_reference }}">
+          <td>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <span class="td-strong">{{ r.service_name }}</span>
+              <span class="td-dim" style="font-size:0.75rem;">#{{ r.rental_reference }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="num-cell">
+              <span class="flag">US</span>
+              <span class="td-mono td-strong">{{ r.phone_number }}</span>
+              <button class="copy-btn" data-copy="{{ r.phone_number }}" type="button" aria-label="Copy phone number" title="Copy number">{{ icon('copy') }}</button>
+            </span>
+          </td>
+          <td>{{ r.duration_days }} Days</td>
+          <td>
+            {% if is_active_rent %}
+              <div class="countdown-pill" style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-family:var(--font-mono, monospace); font-weight:600; color:var(--brand); background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.25); padding:2px 8px; border-radius:var(--r-full);">
+                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor;"></span>
+                <span>
+                  {% if rem >= 86400 %}
+                    {{ (rem // 86400) }}d {{ ((rem % 86400) // 3600) }}h left
+                  {% elif rem >= 3600 %}
+                    {{ (rem // 3600) }}h {{ ((rem % 3600) // 60) }}m left
+                  {% else %}
+                    {{ (rem // 60) }}m {{ (rem % 60) }}s left
+                  {% endif %}
+                </span>
+              </div>
+            {% else %}
+              <span class="badge badge-neutral badge-sm">Expired</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-info badge-sm">{{ r.sms_count|default(0) }} SMS</span>
+          </td>
+          <td>
+            {% if is_active_rent %}
+              <span class="badge badge-success badge-dot">Active</span>
+            {% else %}
+              <span class="badge badge-neutral badge-dot">Ended</span>
+            {% endif %}
+          </td>
+          <td class="text-right">
+            <button type="button" class="btn btn-primary btn-sm" data-action="view-rental-sms"
+                    data-id="{{ r.id or r.rental_reference }}"
+                    data-phone="{{ r.phone_number }}"
+                    data-service="{{ r.service_name }}">
+              {{ icon('refresh') }} Check SMS
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{# ---- Rental Catalog Section ---- #}
+<section class="card card-pad">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-4); margin-bottom:var(--sp-6);">
+    <div>
+      <h2 class="card-title" style="margin:0 0 4px 0;">Available Rental Numbers</h2>
+      <p class="td-dim" style="font-size:var(--fs-xs); margin:0;">Select your desired duration and service to rent your dedicated line.</p>
+    </div>
+
+    {# Duration Filter Pills #}
+    <div class="rental-duration-tabs" role="tablist" style="display:inline-flex; background:var(--surface-2); padding:4px; border-radius:var(--r-full); border:1px solid var(--border); gap:4px;">
+      <button type="button" class="rental-tab-btn is-active" data-duration="3" role="tab">3 Days</button>
+      <button type="button" class="rental-tab-btn" data-duration="7" role="tab">7 Days (1 Wk)</button>
+      <button type="button" class="rental-tab-btn" data-duration="14" role="tab">14 Days</button>
+      <button type="button" class="rental-tab-btn" data-duration="30" role="tab">30 Days (1 Mo)</button>
+    </div>
+  </div>
+
+  {# Search Box #}
+  <div style="margin-bottom:var(--sp-6); max-width:400px;">
+    <div class="input-group">
+      <span class="input-icon">{{ icon('search') }}</span>
+      <input class="input" type="search" id="rentalSearchInput" placeholder="Filter services (e.g. WhatsApp, Google, All Services)...">
+    </div>
+  </div>
+
+  {# Services Grid #}
+  <div class="rental-cards-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:var(--sp-4);">
+    {% for svc in catalog %}
+    <div class="rental-card" data-service-card data-service-name="{{ svc.name|lower }}" data-service-code="{{ svc.code }}"
+         style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5); display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease;">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:var(--sp-3);">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:38px; height:38px; border-radius:var(--r-md); background:rgba(37,99,235,0.08); color:var(--brand); display:grid; place-items:center;">
+              {{ icon(svc.icon) }}
+            </div>
+            <div>
+              <h3 style="font-size:var(--fs-sm); font-weight:700; margin:0; color:var(--text);">{{ svc.name }}</h3>
+              <span class="td-dim" style="font-size:0.72rem;">USA &bull; Dedicated Cellular</span>
+            </div>
+          </div>
+          {% if svc.badge %}
+          <span class="badge {{ svc.badge_class }} badge-sm" style="font-size:0.65rem;">{{ svc.badge }}</span>
+          {% endif %}
+        </div>
+        <p style="font-size:var(--fs-xs); color:var(--text-muted); line-height:1.5; margin:0 0 var(--sp-4) 0; min-height:36px;">
+          {{ svc.description }}
+        </p>
+      </div>
+
+      <div style="border-top:1px solid var(--border); padding-top:var(--sp-4); display:flex; align-items:center; justify-content:space-between;">
+        <div>
+          <span style="font-size:0.7rem; color:var(--text-dim); display:block;">Rental Price (<span data-current-days>3</span> Days)</span>
+          <div class="td-strong text-brand" style="font-size:var(--fs-lg);"
+               data-price-display
+               data-pricing='{{ svc.pricing|tojson }}'
+               data-usd="{{ '%.2f'|format(svc.pricing['3'].retail_usd) }}">
+            {{ svc.pricing['3'].formatted_ngn }}
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" data-action="rent-number-btn"
+                data-service-code="{{ svc.code }}"
+                data-service-name="{{ svc.name }}">
+          Rent Number {{ icon('arrow-right') }}
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{# ---- Purchase Confirmation Modal ---- #}
+<div class="modal" id="rentalModal" aria-hidden="true" role="dialog" aria-labelledby="rentalModalTitle">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:36px; height:36px; border-radius:var(--r-full); background:rgba(37, 99, 235, 0.12); color:var(--brand); display:grid; place-items:center;">
+          {{ icon('clock') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="rentalModalTitle">Rent Dedicated Number</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;">Guaranteed retention &amp; unlimited OTPs</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-modal-rental-close aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:var(--fs-sm); color:var(--text); line-height:1.6; margin:0;">
+        You are about to rent a dedicated US cellular number for <strong id="modalRentSvc">Service</strong>.
+      </p>
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-top:var(--sp-4);">
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim);">
+          <span>Rental Duration</span>
+          <span class="td-strong" id="modalRentDuration">3 Days</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
+          <span>Carrier Route</span>
+          <span class="badge badge-brand badge-sm">100% Real Cellular SIM</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
+          <span>Total Rental Cost</span>
+          <span class="td-strong text-brand" id="modalRentPrice">₦0.00</span>
+        </div>
+      </div>
+      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
+        {{ icon('info') }} The number is reserved solely for your account. You can request as many OTP codes as needed throughout the rental window.
+      </p>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" data-modal-rental-close>Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmRental">Confirm &amp; Rent Number</button>
+    </div>
+  </div>
+</div>
+
+{# ---- Rental SMS Viewer Modal ---- #}
+<div class="modal" id="rentalSmsModal" aria-hidden="true" role="dialog" aria-labelledby="rentalSmsModalTitle">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:36px; height:36px; border-radius:var(--r-full); background:rgba(16, 185, 129, 0.12); color:var(--text-success); display:grid; place-items:center;">
+          {{ icon('chat') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="rentalSmsModalTitle">Incoming SMS Messages</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;" id="smsModalSubtitle">+1 000 000 0000</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-modal-sms-close aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body" style="max-height:360px; overflow-y:auto;">
+      <div id="rentalSmsFeed" style="display:flex; flex-direction:column; gap:var(--sp-3);">
+        <div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">
+          Checking for incoming messages...
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshRentalSms">{{ icon('refresh') }} Refresh</button>
+      <button type="button" class="btn btn-primary btn-sm" data-modal-sms-close>Done</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.rental-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.rental-tab-btn:hover {
+  color: var(--text);
+}
+.rental-tab-btn.is-active {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+.rental-card:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var selectedDuration = 3;
+  var currentRentService = null;
+  var currentRentName = null;
+  var activeRentalSmsId = null;
+
+  var rentalModal = document.getElementById('rentalModal');
+  var rentalSmsModal = document.getElementById('rentalSmsModal');
+  var modalRentSvc = document.getElementById('modalRentSvc');
+  var modalRentDuration = document.getElementById('modalRentDuration');
+  var modalRentPrice = document.getElementById('modalRentPrice');
+  var btnConfirmRental = document.getElementById('btnConfirmRental');
+  var rentalSmsFeed = document.getElementById('rentalSmsFeed');
+  var smsModalSubtitle = document.getElementById('smsModalSubtitle');
+  var btnRefreshRentalSms = document.getElementById('btnRefreshRentalSms');
+
+  // Handle Duration Tab Switching
+  document.querySelectorAll('.rental-tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.rental-tab-btn').forEach(function(b) { b.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+      selectedDuration = parseInt(btn.dataset.duration, 10);
+      document.querySelectorAll('[data-current-days]').forEach(function(el) { el.textContent = selectedDuration; });
+      updateAllCardPrices();
+    });
+  });
+
+  function updateAllCardPrices() {
+    document.querySelectorAll('[data-price-display]').forEach(function(el) {
+      try {
+        var pricing = JSON.parse(el.dataset.pricing);
+        var tier = pricing[String(selectedDuration)];
+        if (tier) {
+          el.setAttribute('data-usd', tier.retail_usd.toFixed(2));
+          if (window.TgCurrency && window.TgCurrency.format) {
+            el.textContent = window.TgCurrency.format(tier.retail_usd);
+          } else {
+            el.textContent = tier.formatted_ngn;
+          }
+        }
+      } catch (e) {}
+    });
+  }
+
+  // Initial price calculation
+  updateAllCardPrices();
+
+  // Search Filter
+  var searchInput = document.getElementById('rentalSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      var q = searchInput.value.trim().toLowerCase();
+      document.querySelectorAll('[data-service-card]').forEach(function(card) {
+        var name = card.dataset.serviceName || '';
+        var code = card.dataset.serviceCode || '';
+        if (!q || name.indexOf(q) !== -1 || code.indexOf(q) !== -1) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // Rent button click -> open modal
+  document.addEventListener('click', function(e) {
+    var rentBtn = e.target.closest('[data-action="rent-number-btn"]');
+    if (rentBtn) {
+      currentRentService = rentBtn.dataset.serviceCode;
+      currentRentName = rentBtn.dataset.serviceName;
+
+      var card = rentBtn.closest('.rental-card');
+      var priceEl = card.querySelector('[data-price-display]');
+      var priceUsd = priceEl ? priceEl.getAttribute('data-usd') : '0';
+      var formattedPrice = priceEl ? priceEl.textContent.trim() : ('$' + priceUsd);
+
+      if (modalRentSvc) modalRentSvc.textContent = currentRentName;
+      if (modalRentDuration) modalRentDuration.textContent = selectedDuration + ' Days';
+      if (modalRentPrice) {
+        modalRentPrice.setAttribute('data-usd', priceUsd);
+        modalRentPrice.textContent = formattedPrice;
+      }
+
+      rentalModal.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // View Rental SMS
+    var viewSmsBtn = e.target.closest('[data-action="view-rental-sms"]');
+    if (viewSmsBtn) {
+      activeRentalSmsId = viewSmsBtn.dataset.id;
+      var phone = viewSmsBtn.dataset.phone;
+      var svc = viewSmsBtn.dataset.service;
+      if (smsModalSubtitle) smsModalSubtitle.textContent = svc + ' \u2022 ' + phone;
+      openRentalSmsModal(activeRentalSmsId);
+    }
+  });
+
+  // Modal Closers
+  document.querySelectorAll('[data-modal-rental-close]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      rentalModal.classList.remove('is-open');
+      document.body.style.overflow = '';
+    });
+  });
+
+  document.querySelectorAll('[data-modal-sms-close]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      rentalSmsModal.classList.remove('is-open');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // Confirm Purchase
+  if (btnConfirmRental) {
+    btnConfirmRental.addEventListener('click', function() {
+      if (!currentRentService) return;
+      btnConfirmRental.disabled = true;
+      btnConfirmRental.textContent = 'Allocating Dedicated Line...';
+
+      fetch('/api/rent-number', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_code: currentRentService,
+          duration_days: selectedDuration
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          if (window.toast) window.toast(data.message || 'Dedicated number rented successfully!', 'success');
+          rentalModal.classList.remove('is-open');
+          setTimeout(function() { window.location.reload(); }, 900);
+        } else {
+          if (window.toast) window.toast(data.message || 'Failed to rent number.', 'error');
+          btnConfirmRental.disabled = false;
+          btnConfirmRental.textContent = 'Confirm & Rent Number';
+        }
+      })
+      .catch(function() {
+        if (window.toast) window.toast('Connection error. Please try again.', 'error');
+        btnConfirmRental.disabled = false;
+        btnConfirmRental.textContent = 'Confirm & Rent Number';
+      });
+    });
+  }
+
+  // Open & Fetch Rental SMS Feed
+  function openRentalSmsModal(rentalId) {
+    rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">Checking for incoming SMS...</div>';
+    rentalSmsModal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    fetchRentalSms(rentalId);
+  }
+
+  function fetchRentalSms(rentalId) {
+    if (!rentalId) return;
+    fetch('/api/check-rental-sms/' + encodeURIComponent(rentalId))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.messages && data.messages.length > 0) {
+          var html = '';
+          data.messages.forEach(function(m) {
+            html += '<div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); text-align:left;">';
+            html += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">';
+            html += '    <span class="td-strong" style="font-size:var(--fs-xs); color:var(--brand);">' + (m.sender || 'Verification') + '</span>';
+            html += '    <span class="td-dim" style="font-size:0.7rem;">' + (m.received_at ? m.received_at.split('T')[0] : '') + '</span>';
+            html += '  </div>';
+            if (m.sms_code) {
+              html += '  <div style="display:flex; align-items:center; gap:8px; margin:6px 0;">';
+              html += '    <span class="code-chip" style="font-size:1.1rem; font-weight:700;">' + m.sms_code + '</span>';
+              html += '    <button class="copy-btn" data-copy="' + m.sms_code + '" type="button" aria-label="Copy code"><svg class="tg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+              html += '  </div>';
+            }
+            html += '  <p style="font-size:var(--fs-xs); color:var(--text); margin:0; line-height:1.4;">' + (m.full_text || '') + '</p>';
+            html += '</div>';
+          });
+          rentalSmsFeed.innerHTML = html;
+        } else {
+          rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">No SMS codes received yet on this line.<br><span style="font-size:0.75rem; color:var(--text-muted);">Trigger verification code on your app and click Refresh.</span></div>';
+        }
+      })
+      .catch(function() {
+        rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-danger); font-size:var(--fs-sm);">Could not poll SMS feed. Click Refresh to try again.</div>';
+      });
+  }
+
+  if (btnRefreshRentalSms) {
+    btnRefreshRentalSms.addEventListener('click', function() {
+      if (activeRentalSmsId) fetchRentalSms(activeRentalSmsId);
+    });
+  }
+});
+</script>
+{% endblock %}

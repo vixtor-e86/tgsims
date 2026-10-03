@@ -119,6 +119,8 @@ class MockDatabase:
                 'created_at': '2026-08-06 14:15:00'
             }
         ]
+        self.sim_rentals = []
+        self.rental_sms_messages = []
         self.transactions = [
             {
                 'id': 'tx-pending-squad',

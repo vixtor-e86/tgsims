@@ -85,6 +85,15 @@
       <span class="badge badge-info">{{ icon('refresh') }} Reactivatable</span>
     </div>
 
+    <div style="background:rgba(37, 99, 235, 0.06); border:1px solid rgba(37, 99, 235, 0.2); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-4); font-size:var(--fs-xs); line-height:1.5; color:var(--text-dim);">
+      <div style="display:flex; align-items:flex-start; gap:8px;">
+        <span style="color:var(--brand); flex-shrink:0; margin-top:1px;">{{ icon('info') }}</span>
+        <div>
+          <strong style="color:var(--text);">Reactivation Notice:</strong> Number reactivation is typically guaranteed for <strong>2 to 3 weeks</strong> while the carrier line is reserved. Beyond this period, lines rotate and can no longer be reactivated. For guaranteed long-term retention (3 to 30+ days), please use <a href="{{ url_for('sims.rentals') }}" style="color:var(--brand); font-weight:600; text-decoration:underline;">Rent a Number</a>.
+        </div>
+      </div>
+    </div>
+
     <div class="field us-search-wrapper" style="position:relative;">
       <label class="label" for="prem-search">Search Service</label>
       <div class="input-group">

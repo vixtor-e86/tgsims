@@ -99,9 +99,36 @@ def my_sims():
         except (ValueError, TypeError):
             o['price'] = 0.00
 
+        is_react = (o.get('order_type') == 'reactivation') or ('reactivat' in str(o.get('full_sms_text', '')).lower()) or ('reactivat' in str(o.get('notes', '')).lower())
+        o['is_react'] = is_react
+
         remaining = 300
         elapsed = 0
-        if o.get('created_at'):
+        if o.get('expires_at'):
+            try:
+                exp_str = str(o['expires_at']).replace('Z', '+00:00')
+                try:
+                    exp_dt = datetime.datetime.fromisoformat(exp_str)
+                except ValueError:
+                    exp_dt = datetime.datetime.strptime(exp_str, '%Y-%m-%d %H:%M:%S')
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=datetime.timezone.utc)
+                remaining = max(0, int((exp_dt - now_utc).total_seconds()))
+
+                if o.get('created_at'):
+                    cat_str = str(o['created_at']).replace('Z', '+00:00')
+                    try:
+                        c_dt = datetime.datetime.fromisoformat(cat_str)
+                    except ValueError:
+                        c_dt = datetime.datetime.strptime(cat_str, '%Y-%m-%d %H:%M:%S')
+                    if c_dt.tzinfo is None:
+                        c_dt = c_dt.replace(tzinfo=datetime.timezone.utc)
+                    elapsed = max(0, int((now_utc - c_dt).total_seconds()))
+            except Exception as e:
+                print(f"[my_sims] error calculating expires_at countdown: {e}")
+                remaining = 0
+                elapsed = 300
+        elif o.get('created_at'):
             try:
                 cat_str = str(o['created_at']).replace('Z', '+00:00')
                 try:
@@ -118,16 +145,22 @@ def my_sims():
 
         o['countdown_seconds'] = remaining
         o['elapsed_seconds'] = elapsed
-        o['can_cancel'] = (elapsed >= 180)  # Cancel & Refund unlocks after 3 mins (180s)
+        # Reactivation rule: Reactivations CANNOT be cancelled manually. User must wait until time exhausts or OTP arrives.
+        o['can_cancel'] = (not is_react) and (elapsed >= 180)
 
-        # If active order exceeded 5 minutes (300s), trigger automatic refund immediately
+        # Reactivation retention window: Lines are only valid for 2-3 weeks (21 days) or until marked expired
+        react_closed = bool(o.get('reactivation_expired')) or (elapsed >= 21 * 86400)
+        o['reactivation_closed'] = react_closed
+        o['can_reactivate'] = (not react_closed) and has_received_otp
+
+        # If active order exceeded time window, trigger automatic refund immediately
         if is_active and remaining <= 0:
             try:
-                is_react = (o.get('order_type') == 'reactivation') or ('reactivat' in str(o.get('full_sms_text', '')).lower())
                 prov_id = o.get('provider_order_id')
                 if not is_react and prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
                     SIMProviderService.cancel_order(str(prov_id))
-                DBService.refund_order(o.get('id') or o.get('order_reference'), user['id'], reason="Auto-refunded: SMS timeout (5 mins)")
+                timeout_reason = "Auto-refunded: Reactivation timeout" if is_react else "Auto-refunded: SMS timeout"
+                DBService.refund_order(o.get('id') or o.get('order_reference'), user['id'], reason=timeout_reason)
                 if is_react:
                     o['status'] = 'received'
                 else:
@@ -138,6 +171,59 @@ def my_sims():
 
     react_fee = SettingsService.get_reactivation_fee()
     return render_template('sims/orders.html', orders=orders, user=user, reactivation_fee_usd=react_fee)
+
+
+@sims_bp.route('/rentals', endpoint='rentals')
+@sims_bp.route('/rent-number', endpoint='rent_number')
+def rentals():
+    """Rent a Number - dedicated long-term virtual numbers (3, 7, 14, 30 days)."""
+    user = _require_user()
+    if not user:
+        return redirect(url_for('auth.login'))
+
+    catalog = SIMProviderService.get_rental_catalog()
+    rentals_list = DBService.get_rentals(user['id'])
+    wallet = DBService.get_wallet(user['id'])
+
+    import datetime
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    for r in rentals_list:
+        status = str(r.get('status', 'active')).lower()
+        exp = r.get('expires_at')
+        rem = 0
+        if exp:
+            try:
+                exp_str = str(exp).replace('Z', '+00:00')
+                try:
+                    exp_dt = datetime.datetime.fromisoformat(exp_str)
+                except ValueError:
+                    exp_dt = datetime.datetime.strptime(exp_str, '%Y-%m-%d %H:%M:%S')
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=datetime.timezone.utc)
+                rem = max(0, int((exp_dt - now_utc).total_seconds()))
+            except Exception:
+                rem = 0
+        r['remaining_seconds'] = rem
+        r['is_active'] = (status == 'active' and rem > 0)
+        if rem <= 0 and status == 'active':
+            r['status'] = 'expired'
+            r['is_active'] = False
+
+    why = [
+        {'icon': 'shield', 'title': '100% Dedicated Line', 'text': 'Guaranteed ownership of the phone number for the entire rental window.'},
+        {'icon': 'refresh', 'title': 'Unlimited OTP Codes', 'text': 'Receive multiple SMS verification codes anytime without paying per SMS.'},
+        {'icon': 'globe', 'title': 'All-in-One Route', 'text': 'Universal Number option supports all 2,000+ services on the same line.'},
+        {'icon': 'clock', 'title': 'Flexible Periods', 'text': 'Choose 3, 7, 14, or 30 days based on your project requirements.'},
+    ]
+
+    return render_template(
+        'sims/rentals.html',
+        catalog=catalog,
+        rentals=rentals_list,
+        wallet=wallet,
+        why=why,
+        user=user
+    )
 
 
 @sims_bp.route('/otp-history')
@@ -151,4 +237,5 @@ def otp_history():
     history = DBService.get_orders(user['id'])
     services = sorted(list({h.get('service_name') for h in history if h.get('service_name')}))
     return render_template('sims/otp_history.html', history=history, services=services, user=user)
+
 

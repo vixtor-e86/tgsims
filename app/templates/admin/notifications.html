@@ -178,19 +178,19 @@
         <div class="notif-type-grid">
           <label class="notif-type-pill">
             <input type="radio" name="type" value="promo" checked>
-            <span>🎉 Promotion</span>
+            <span style="display:inline-flex; align-items:center; gap:6px;">{{ icon('bolt') }} Promotion</span>
           </label>
           <label class="notif-type-pill">
             <input type="radio" name="type" value="update">
-            <span>🚀 Platform Update</span>
+            <span style="display:inline-flex; align-items:center; gap:6px;">{{ icon('arrow-up-right') }} Platform Update</span>
           </label>
           <label class="notif-type-pill">
             <input type="radio" name="type" value="deposit">
-            <span>💳 Wallet Alert</span>
+            <span style="display:inline-flex; align-items:center; gap:6px;">{{ icon('wallet') }} Wallet Alert</span>
           </label>
           <label class="notif-type-pill">
             <input type="radio" name="type" value="system">
-            <span>⚠️ System Alert</span>
+            <span style="display:inline-flex; align-items:center; gap:6px;">{{ icon('shield-alert') }} System Alert</span>
           </label>
         </div>
       </div>
@@ -236,13 +236,13 @@
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('promo', '🎉 Weekend Special: 20% Off All US WhatsApp Lines!', 'Get instant WhatsApp & WhatsApp Business verification with screened non-VoIP carrier lines. Limited stock available.', '/sims/us-canada')">
+        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('promo', 'Weekend Special: 20% Off All US WhatsApp Lines!', 'Get instant WhatsApp & WhatsApp Business verification with screened non-VoIP carrier lines. Limited stock available.', '/sims/us-canada')">
           {{ icon('tag') }} 20% Off US Numbers Promo
         </button>
-        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('update', '🚀 New Cellular Route Stock Active', 'Fresh Tier-1 AT&T and Verizon cellular lines have been added for Google, Telegram, and Banking verifications.', '/sims/us-canada')">
+        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('update', 'New Cellular Route Stock Active', 'Fresh Tier-1 AT&T and Verizon cellular lines have been added for Google, Telegram, and Banking verifications.', '/sims/us-canada')">
           {{ icon('refresh') }} Fresh Line Stock Restock
         </button>
-        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('deposit', '💳 Instant Bank Transfer Depositing is Active', 'Fund your wallet effortlessly via Squad virtual account or crypto transfer. Instant automated crediting within seconds.', '/wallet/fund')">
+        <button type="button" class="btn btn-secondary btn-sm notif-template-btn" onclick="applyTemplate('deposit', 'Instant Bank Transfer Depositing is Active', 'Fund your wallet effortlessly via Squad virtual account or crypto transfer. Instant automated crediting within seconds.', '/wallet/fund')">
           {{ icon('wallet') }} Instant Deposit Notice
         </button>
       </div>

@@ -61,9 +61,9 @@
         {% set hm = dt_clean.split(' ')[1][:5] if (' ' in dt_clean and dt_clean.split(' ')|length > 1) else '' %}
         {% set countdown = (o.countdown_seconds|int) if (o.countdown_seconds is defined and o.countdown_seconds is not none) else 300 %}
         {% set elapsed = (o.elapsed_seconds|int) if (o.elapsed_seconds is defined and o.elapsed_seconds is not none) else (300 - countdown) %}
-        {% set is_reactivation = ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) or (o.order_type == 'reactivation') %}
+        {% set is_reactivation = ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) or (o.order_type == 'reactivation') or (o.is_react if o.is_react is defined else false) %}
         {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
-        {% set can_cancel = (is_reactivation or (o.can_cancel if o.can_cancel is defined else (elapsed >= 180))) and is_active %}
+        {% set can_cancel = (not is_reactivation) and (o.can_cancel if o.can_cancel is defined else (elapsed >= 180)) and is_active %}
         {% set has_received_otp = o.has_received_otp if (o.has_received_otp is defined and o.has_received_otp is not none) else ((o.sms_code is defined and o.sms_code) or o.status in ['received', 'completed']) %}
         {% set is_done = not is_active and ((o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code)) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
@@ -110,7 +110,13 @@
                      data-elapsed="{{ elapsed }}"
                      style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-family:var(--font-mono, monospace); font-weight:600; color:var(--brand); background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.25); padding:2px 8px; border-radius:var(--r-full); width:fit-content; transition:all 0.2s ease;">
                   <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse-dot 1.5s infinite;"></span>
-                  <span data-countdown-display>05:00</span>
+                  <span data-countdown-display>
+                    {%- if countdown >= 3600 -%}
+                      {{ '%02d:%02d:%02d'|format((countdown//3600)|int, ((countdown%3600)//60)|int, (countdown%60)|int) }}
+                    {%- else -%}
+                      {{ '%02d:%02d'|format(((countdown//60)|int), ((countdown%60)|int)) }}
+                    {%- endif -%}
+                  </span>
                 </div>
               </div>
             {% elif is_timeout %}
@@ -139,22 +145,26 @@
             {% if is_active %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                 <button type="button" class="btn btn-primary btn-sm" data-action="check" data-id="{{ o.id or o.order_reference }}">Check Code</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-action="cancel" 
-                        data-id="{{ o.id or o.order_reference }}"
-                        data-service="{{ o.service_name }}"
-                        data-phone="{{ o.phone_number }}"
-                        data-ref="{{ o.order_reference }}"
-                        data-price-usd="{{ cancel_price_usd }}"
-                        data-price="{{ cancel_price_formatted }}"
-                        data-is-reactivation="{{ 'true' if is_reactivation else 'false' }}"
-                        style="color:var(--text-danger); {% if not can_cancel %}display:none;{% endif %}"
-                        title="{{ ('Cancel reactivation and refund $' ~ ('%.2f'|format(react_fee)) ~ ' fee') if is_reactivation else 'Cancel order and refund wallet' }}">
-                  {{ 'Cancel Reactivation' if is_reactivation else 'Cancel & Refund' }}
-                </button>
-                {% if not is_reactivation %}
-                <span class="cancel-unlock-notice" data-cancel-notice data-order-id="{{ o.id or o.order_reference }}" style="font-size:0.7rem; color:var(--text-muted); padding:3px 8px; border-radius:var(--r-sm); background:var(--surface-2); border:1px solid var(--border); {% if can_cancel %}display:none;{% endif %}">
-                  Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((180 - elapsed)//60)|int, ((180 - elapsed)%60)|int) if (180 - elapsed) > 0 else '00:00' }}</span>
-                </span>
+                {% if is_reactivation %}
+                  <span class="badge badge-info" style="font-size:0.75rem; padding:4px 8px; border-radius:var(--r-sm); font-weight:500;" title="Reactivations cannot be cancelled manually. The order will auto-refund if no OTP arrives before time ends.">
+                    {{ icon('refresh') }} Reactivation Active
+                  </span>
+                {% else %}
+                  <button type="button" class="btn btn-secondary btn-sm" data-action="cancel" 
+                          data-id="{{ o.id or o.order_reference }}"
+                          data-service="{{ o.service_name }}"
+                          data-phone="{{ o.phone_number }}"
+                          data-ref="{{ o.order_reference }}"
+                          data-price-usd="{{ cancel_price_usd }}"
+                          data-price="{{ cancel_price_formatted }}"
+                          data-is-reactivation="false"
+                          style="color:var(--text-danger); {% if not can_cancel %}display:none;{% endif %}"
+                          title="Cancel order and refund wallet">
+                    Cancel &amp; Refund
+                  </button>
+                  <span class="cancel-unlock-notice" data-cancel-notice data-order-id="{{ o.id or o.order_reference }}" style="font-size:0.7rem; color:var(--text-muted); padding:3px 8px; border-radius:var(--r-sm); background:var(--surface-2); border:1px solid var(--border); {% if can_cancel %}display:none;{% endif %}">
+                    Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((180 - elapsed)//60)|int, ((180 - elapsed)%60)|int) if (180 - elapsed) > 0 else '00:00' }}</span>
+                  </span>
                 {% endif %}
               </div>
             {% elif is_reliable and has_received_otp %}
@@ -162,14 +172,20 @@
                 {% if is_done or o.sms_code %}
                   <a href="{{ url_for('sims.otp_history') }}" class="btn btn-secondary btn-sm">View OTP</a>
                 {% endif %}
-                <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
-                        data-id="{{ o.id or o.order_reference }}"
-                        data-service="{{ o.service_name }}"
-                        data-phone="{{ o.phone_number }}"
-                        data-ref="{{ o.order_reference }}"
-                        title="Reactivate this number to receive another OTP code">
-                  {{ icon('refresh') }} Reactivate
-                </button>
+                {% if o.can_reactivate %}
+                  <button type="button" class="btn btn-primary btn-sm" data-action="reactivate"
+                          data-id="{{ o.id or o.order_reference }}"
+                          data-service="{{ o.service_name }}"
+                          data-phone="{{ o.phone_number }}"
+                          data-ref="{{ o.order_reference }}"
+                          title="Reactivate this number to receive another OTP code">
+                    {{ icon('refresh') }} Reactivate
+                  </button>
+                {% else %}
+                  <span class="badge badge-neutral badge-sm" style="font-size:0.7rem; padding:4px 8px; border-radius:var(--r-sm);" title="Reactivation window has expired with the carrier (typically 2-3 weeks). For long-term retention, rent a number.">
+                    {{ icon('clock') }} Reactivation Ended
+                  </span>
+                {% endif %}
                 <a href="{{ reorder_url }}" class="btn btn-secondary btn-sm">Re-order</a>
               </div>
             {% elif is_done %}
@@ -272,6 +288,9 @@
       <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
         This re-opens the carrier line to receive a fresh verification code (<span id="modalReactivateNoticeFee" data-usd="{{ '%.2f'|format(react_fee) }}">${{ '%.2f'|format(react_fee) }}</span> will be deducted from your wallet). Once activated, trigger your SMS and check for the incoming code.
       </p>
+      <div style="background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.25); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-top:var(--sp-3); font-size:var(--fs-xs); line-height:1.5; color:var(--text-dim); text-align:left;">
+        <strong style="color:var(--text);">Retention Advisory:</strong> Carrier line reactivation is typically available for <strong>2 to 3 weeks</strong> from initial purchase while reserved in carrier banks. If the carrier has rotated this slot, reactivation will fail and your wallet will <strong>not</strong> be charged. For guaranteed long-term number retention, please use <a href="{{ url_for('sims.rentals') }}" style="color:var(--brand); font-weight:600; text-decoration:underline;">Rent a Number</a>.
+      </div>
     </div>
     <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
       <button type="button" class="btn btn-secondary btn-sm" data-modal-reactivate-close>Cancel</button>
@@ -672,8 +691,27 @@
             setTimeout(function() { window.location.reload(); }, 700);
           } else {
             if (window.toast) window.toast(data.message || 'Could not reactivate number.', 'error');
-            btnConfirmReactivate.disabled = false;
-            btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
+            if (data.reactivation_expired) {
+              closeReactivateModal();
+              // Permanently remove Reactivate button and replace with Reactivation Ended badge on the row
+              var row = document.querySelector('tr[data-order-row][data-order-id="' + targetReactivateId + '"]');
+              if (row) {
+                var rBtn = row.querySelector('button[data-action="reactivate"]');
+                if (rBtn) {
+                  var badge = document.createElement('span');
+                  badge.className = 'badge badge-neutral badge-sm';
+                  badge.style.fontSize = '0.7rem';
+                  badge.style.padding = '4px 8px';
+                  badge.style.borderRadius = 'var(--r-sm)';
+                  badge.title = 'Reactivation window closed: carrier slot rotated.';
+                  badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Reactivation Ended';
+                  rBtn.parentNode.replaceChild(badge, rBtn);
+                }
+              }
+            } else {
+              btnConfirmReactivate.disabled = false;
+              btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
+            }
           }
         })
         .catch(function() {
@@ -688,8 +726,12 @@
   var timerElements = document.querySelectorAll('[data-countdown-timer]');
   if (timerElements.length > 0) {
     function formatTime(totalSec) {
-      var m = Math.floor(totalSec / 60);
+      var h = Math.floor(totalSec / 3600);
+      var m = Math.floor((totalSec % 3600) / 60);
       var s = totalSec % 60;
+      if (h > 0) {
+        return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+      }
       return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
     }
 
@@ -722,9 +764,12 @@
     function updateTimerUI(item) {
       if (!item.display) return;
 
-      // 1. Dynamic cancel unlock after 3 minutes (180s elapsed / 120s remaining) or immediate for reactivations
+      // 1. Dynamic cancel unlock after 3 minutes for normal activations; Reactivations CANNOT be cancelled manually
       var isReact = item.cancelBtn && item.cancelBtn.dataset.isReactivation === 'true';
-      if (isReact || item.elapsed >= 180 || item.remaining <= 120) {
+      if (isReact || !item.cancelBtn) {
+        if (item.cancelBtn) item.cancelBtn.style.display = 'none';
+        if (item.cancelNotice) item.cancelNotice.style.display = 'none';
+      } else if (item.elapsed >= 180 || item.remaining <= 120) {
         if (item.cancelBtn) item.cancelBtn.style.display = 'inline-block';
         if (item.cancelNotice) item.cancelNotice.style.display = 'none';
       } else {
@@ -770,25 +815,17 @@
 
           if (item.remaining <= 0 && !item.refundTriggered) {
             item.refundTriggered = true;
-            // Trigger automatic refund via check-sms endpoint (which executes auto-refund on 5-min timeout)
+            // Trigger automatic refund via check-sms endpoint (which executes auto-refund on timeout)
             fetch('/api/check-sms/' + encodeURIComponent(item.orderId))
               .then(function(r) { return r.json(); })
               .then(function(res) {
                 if (window.toast) {
-                  window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
+                  window.toast(res.message || 'Verification window ended. Full refund credited to your wallet.', 'info');
                 }
                 setTimeout(function() { window.location.reload(); }, 1200);
               })
               .catch(function() {
-                // Fallback direct cancel request
-                fetch('/api/cancel-sim/' + encodeURIComponent(item.orderId), { method: 'POST' })
-                  .then(function() {
-                    if (window.toast) {
-                      window.toast('Verification timed out (5 mins). Full refund credited to your wallet.', 'info');
-                    }
-                    setTimeout(function() { window.location.reload(); }, 1200);
-                  })
-                  .catch(function() {});
+                setTimeout(function() { window.location.reload(); }, 1200);
               });
           }
         }

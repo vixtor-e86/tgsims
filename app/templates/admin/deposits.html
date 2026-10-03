@@ -112,8 +112,8 @@
                   <span class="badge badge-danger" style="font-size: 0.75rem;">{{ dep.status|capitalize }}</span>
                 {% endif %}
                 {% if dep.metadata and dep.metadata.verified_by_system %}
-                  <div style="font-size: 0.7rem; color: var(--hue-success); margin-top: 0.15rem; font-weight: 600;">
-                    ✓ Automated IPN
+                  <div style="font-size: 0.7rem; color: var(--hue-success); margin-top: 0.15rem; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
+                    {{ icon('check') }} Automated IPN
                   </div>
                 {% elif dep.verified_at %}
                   <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
@@ -163,7 +163,7 @@
     </div>
   {% else %}
     <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-      <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">💳</div>
+      <div style="font-size: 2.2rem; margin-bottom: 0.5rem; display: flex; justify-content: center; color: var(--text-dim);">{{ icon('wallet') }}</div>
       <div style="font-weight: 600; font-size: 1.05rem; color: var(--text);">No Deposits in this view</div>
       <p style="font-size: 0.85rem; margin-top: 0.25rem;">
         {% if status_filter == 'pending' %}

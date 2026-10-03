@@ -330,10 +330,10 @@
           {# Status Actions Dropdown / Quick Buttons #}
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
             <select id="status-select" class="input input-sm" style="width: 130px; font-weight: 600;" onchange="updateTicketStatus(this.value)">
-              <option value="open" {% if selected_ticket.status == 'open' %}selected{% endif %}>🔴 Open</option>
-              <option value="pending" {% if selected_ticket.status == 'pending' %}selected{% endif %}>🟡 Pending</option>
-              <option value="resolved" {% if selected_ticket.status == 'resolved' %}selected{% endif %}>🟢 Resolved</option>
-              <option value="closed" {% if selected_ticket.status == 'closed' %}selected{% endif %}>⚪ Closed</option>
+              <option value="open" {% if selected_ticket.status == 'open' %}selected{% endif %}>Open</option>
+              <option value="pending" {% if selected_ticket.status == 'pending' %}selected{% endif %}>Pending</option>
+              <option value="resolved" {% if selected_ticket.status == 'resolved' %}selected{% endif %}>Resolved</option>
+              <option value="closed" {% if selected_ticket.status == 'closed' %}selected{% endif %}>Closed</option>
             </select>
 
             <button type="button" class="btn btn-sm btn-secondary" onclick="reloadMessages()" title="Refresh messages">

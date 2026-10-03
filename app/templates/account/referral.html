@@ -69,7 +69,7 @@
   <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-muted);">
     <span>$0.00</span>
     {% if referral.referral_balance >= 1.00 %}
-    <span style="color:#10b981; font-weight:600;">✓ Minimum $1.00 reached! Ready to withdraw.</span>
+    <span style="color:#10b981; font-weight:600; display:inline-flex; align-items:center; gap:4px;">{{ icon('check') }} Minimum $1.00 reached! Ready to withdraw.</span>
     {% else %}
     <span>${{ '%.2f'|format(1.00 - referral.referral_balance) }} more needed to withdraw</span>
     {% endif %}
@@ -257,7 +257,7 @@
   <div class="card card-pad" style="max-width:440px; width:100%; border-radius:var(--r-xl); box-shadow:var(--shadow-xl); background:var(--surface);">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-4);">
       <h3 style="font-size:var(--fs-lg); font-weight:700; margin:0;">Withdraw to Main Wallet</h3>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="closeRedeemModal()" aria-label="Close">✕</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeRedeemModal()" aria-label="Close">{{ icon('x') }}</button>
     </div>
 
     <p style="font-size:var(--fs-sm); color:var(--text-muted); margin-bottom:var(--sp-4);">

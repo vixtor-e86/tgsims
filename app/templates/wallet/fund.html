@@ -39,8 +39,8 @@
     </div>
 
     {# Live warning when crypto deposit is less than $20 #}
-    <div id="crypto-min-warning" style="display: none; font-size: 0.8rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--r-sm); padding: 0.5rem 0.75rem; margin-top: 0.65rem; font-weight: 600;">
-      ⚠️ Minimum Cryptocurrency deposit is <strong>$20.00 USD</strong> (≈ ₦{{ '{:,.0f}'.format(20 * NGN_PER_USD) }}). Current: <span id="crypto-curr-entered">$0.00</span>
+    <div id="crypto-min-warning" style="display: none; font-size: 0.8rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--r-sm); padding: 0.5rem 0.75rem; margin-top: 0.65rem; font-weight: 600; align-items: center; gap: 6px;">
+      <span style="display:inline-flex; vertical-align:middle; margin-right:4px;">{{ icon('shield-alert') }}</span>Minimum Cryptocurrency deposit is <strong>$20.00 USD</strong> (≈ ₦{{ '{:,.0f}'.format(20 * NGN_PER_USD) }}). Current: <span id="crypto-curr-entered">$0.00</span>
     </div>
 
     <hr class="divider">
