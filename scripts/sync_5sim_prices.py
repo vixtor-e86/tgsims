@@ -107,11 +107,18 @@ def extract_best_service_prices(raw_5sim_data, country_slug: str):
 
 def sync_catalog(raw_5sim_data=None):
     """Updates app/data/catalog.json, app/data/whatsapp_operators.json, app/data/telegram_operators.json, and app/data/5sim_us_services.json with real wholesale costs."""
+    try:
+        from scripts.sync_virtualsms_prices import sync_virtualsms_us_services
+        sync_virtualsms_us_services()
+    except Exception as e:
+        print(f"[!] Note on sync_virtualsms_us_services: {e}")
+
     if raw_5sim_data is None:
         raw_5sim_data = fetch_5sim_live_prices()
         if not raw_5sim_data:
-            print("[-] Cannot sync: Failed to retrieve 5SIM pricing data.")
-            return False
+            print("[-] Cannot sync 5sim raw catalog: Failed to retrieve 5SIM pricing data.")
+            # VirtualSMS US sync already succeeded above
+            return True
 
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'data'))
     catalog_path = os.path.join(data_dir, 'catalog.json')

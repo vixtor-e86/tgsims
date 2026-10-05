@@ -38,6 +38,7 @@ def us_canada():
 
 
 @sims_bp.route('/store', endpoint='store')
+@sims_bp.route('/buy', endpoint='buy')
 @sims_bp.route('/order-numbers', endpoint='order_numbers')
 def store():
     """Order Numbers  -  worldwide country + service selection."""
@@ -177,6 +178,7 @@ def my_sims():
 
 @sims_bp.route('/rentals', endpoint='rentals')
 @sims_bp.route('/rent-number', endpoint='rent_number')
+@sims_bp.route('/rent', endpoint='rent')
 def rentals():
     """Rent a Number - dedicated long-term virtual numbers (3, 7, 14, 30 days)."""
     user = _require_user()

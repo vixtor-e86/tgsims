@@ -92,9 +92,14 @@ class SettingsService:
     def get_fivesim_markup(cls) -> tuple[float, float]:
         """Returns (fivesim_markup_percent, fivesim_min_profit_usd)."""
         settings = cls.get_settings()
-        pct = float(settings.get('fivesim_markup_percent', 30.00))
-        floor = float(settings.get('fivesim_min_profit_usd', 0.30))
+        pct = float(settings.get('virtualsms_markup_percent') or settings.get('fivesim_markup_percent', 30.00))
+        floor = float(settings.get('virtualsms_min_profit_usd') or settings.get('fivesim_min_profit_usd', 0.30))
         return pct, floor
+
+    @classmethod
+    def get_virtualsms_markup(cls) -> tuple[float, float]:
+        """Returns (virtualsms_markup_percent, virtualsms_min_profit_usd)."""
+        return cls.get_fivesim_markup()
 
     @classmethod
     def get_textverified_markup(cls) -> tuple[float, float]:
@@ -118,10 +123,19 @@ class SettingsService:
         clean_data = {}
         if 'ngn_per_usd_rate' in updates:
             clean_data['ngn_per_usd_rate'] = float(updates['ngn_per_usd_rate'])
-        if 'fivesim_markup_percent' in updates:
+        if 'virtualsms_markup_percent' in updates:
+            clean_data['fivesim_markup_percent'] = float(updates['virtualsms_markup_percent'])
+            clean_data['virtualsms_markup_percent'] = float(updates['virtualsms_markup_percent'])
+        elif 'fivesim_markup_percent' in updates:
             clean_data['fivesim_markup_percent'] = float(updates['fivesim_markup_percent'])
-        if 'fivesim_min_profit_usd' in updates:
+            clean_data['virtualsms_markup_percent'] = float(updates['fivesim_markup_percent'])
+
+        if 'virtualsms_min_profit_usd' in updates:
+            clean_data['fivesim_min_profit_usd'] = float(updates['virtualsms_min_profit_usd'])
+            clean_data['virtualsms_min_profit_usd'] = float(updates['virtualsms_min_profit_usd'])
+        elif 'fivesim_min_profit_usd' in updates:
             clean_data['fivesim_min_profit_usd'] = float(updates['fivesim_min_profit_usd'])
+            clean_data['virtualsms_min_profit_usd'] = float(updates['fivesim_min_profit_usd'])
         if 'textverified_markup_percent' in updates:
             clean_data['textverified_markup_percent'] = float(updates['textverified_markup_percent'])
         if 'textverified_min_profit_usd' in updates:

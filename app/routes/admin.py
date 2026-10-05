@@ -11,7 +11,7 @@ Protected strictly by session['user']['role'] == 'admin'.
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from app.services.db_service import DBService
 from app.services.settings_service import SettingsService
-from app.services.sim_provider import FiveSimClient, SIMProviderService
+from app.services.sim_provider import FiveSimClient, VirtualSMSClient, SIMProviderService
 import datetime
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -58,25 +58,29 @@ def index():
     stats = DBService.get_admin_overview_stats()
     settings = SettingsService.get_settings()
 
-    # Query live 5sim balance
-    fivesim_balance = None
-    fivesim_err = None
+    # Query live VirtualSMS.io balance
+    virtualsms_balance = None
+    virtualsms_err = None
     try:
-        fsc = FiveSimClient()
-        if fsc.is_configured:
-            bal_res = fsc.get_balance()
+        vsc = VirtualSMSClient()
+        if vsc.is_configured:
+            bal_res = vsc.get_balance()
             if bal_res.get('success'):
-                fivesim_balance = {
+                virtualsms_balance = {
                     'balance': bal_res.get('balance'),
-                    'currency': bal_res.get('currency', 'RUB'),
+                    'currency': bal_res.get('currency', 'USD'),
                     'usd_estimate': bal_res.get('usd_estimate', 0.0)
                 }
             else:
-                fivesim_err = bal_res.get('message')
+                virtualsms_err = bal_res.get('message')
         else:
-            fivesim_err = "API Key not configured in .env"
+            virtualsms_err = "API Key not configured in .env"
     except Exception as e:
-        fivesim_err = str(e)
+        virtualsms_err = str(e)
+
+    # Legacy alias for backward compatibility
+    fivesim_balance = virtualsms_balance
+    fivesim_err = virtualsms_err
 
     # Query TextVerified client status & live balance
     tv_balance = None
@@ -115,6 +119,8 @@ def index():
         settings=settings,
         fivesim_balance=fivesim_balance,
         fivesim_err=fivesim_err,
+        virtualsms_balance=virtualsms_balance,
+        virtualsms_err=virtualsms_err,
         tv_status=tv_status,
         tv_balance=tv_balance,
         pending_deposits=pending_deposits,
@@ -136,8 +142,8 @@ def pricing():
         if action == 'update_settings':
             try:
                 ngn_rate = float(request.form.get('ngn_per_usd_rate', 1600.00))
-                fivesim_pct = float(request.form.get('fivesim_markup_percent', 30.00))
-                fivesim_floor = float(request.form.get('fivesim_min_profit_usd', 0.30))
+                fivesim_pct = float(request.form.get('virtualsms_markup_percent') or request.form.get('fivesim_markup_percent', 30.00))
+                fivesim_floor = float(request.form.get('virtualsms_min_profit_usd') or request.form.get('fivesim_min_profit_usd', 0.30))
                 tv_pct = float(request.form.get('textverified_markup_percent', 25.00))
                 tv_floor = float(request.form.get('textverified_min_profit_usd', 0.50))
                 react_fee = float(request.form.get('reactivation_fee_usd', 1.00))
@@ -148,6 +154,8 @@ def pricing():
 
                 SettingsService.update_settings({
                     'ngn_per_usd_rate': ngn_rate,
+                    'virtualsms_markup_percent': fivesim_pct,
+                    'virtualsms_min_profit_usd': fivesim_floor,
                     'fivesim_markup_percent': fivesim_pct,
                     'fivesim_min_profit_usd': fivesim_floor,
                     'textverified_markup_percent': tv_pct,
@@ -165,7 +173,9 @@ def pricing():
         elif action == 'add_override':
             svc_code = request.form.get('service_code', '').strip().lower()
             svc_name = request.form.get('service_name', '').strip()
-            prov_type = request.form.get('provider_type', '5sim').strip().lower()
+            prov_type = request.form.get('provider_type', 'virtualsms').strip().lower()
+            if prov_type == '5sim':
+                prov_type = 'virtualsms'
             try:
                 override_price = float(request.form.get('override_price_usd', 0.00))
                 notes = request.form.get('notes', '').strip()
@@ -322,6 +332,7 @@ def pricing():
     tv_ex_profit = round(tv_ex_price - tv_ex_cost, 2)
 
     examples = {
+        'virtualsms': {'cost': f5_ex_cost, 'price': f5_ex_price, 'profit': f5_ex_profit, 'ngn': round(f5_ex_price * rate, 2)},
         'fivesim': {'cost': f5_ex_cost, 'price': f5_ex_price, 'profit': f5_ex_profit, 'ngn': round(f5_ex_price * rate, 2)},
         'textverified': {'cost': tv_ex_cost, 'price': tv_ex_price, 'profit': tv_ex_profit, 'ngn': round(tv_ex_price * rate, 2)},
         'reactivation': {'price': react_fee, 'ngn': round(react_fee * rate, 2)}
@@ -354,6 +365,7 @@ def pricing():
             })
 
     services_catalog = {
+        'virtualsms': f5_catalog,
         '5sim': f5_catalog,
         'textverified': tv_catalog
     }

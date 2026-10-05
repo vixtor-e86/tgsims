@@ -1,5 +1,5 @@
 """Virtual SIM Provider Adapter for Tgsims.
-Integrates 5sim API with transparent retail markups, slug mapping, error translation,
+Integrates VirtualSMS.io API with transparent retail markups, slug mapping, error translation,
 and complete white-labeling (no third-party provider names disclosed to end users).
 """
 
@@ -11,12 +11,22 @@ from app.config import Config
 from app.services.supabase_client import get_supabase_admin, mock_db
 
 
-class FiveSimClient:
-    """Low-level HTTP client for 5sim REST API."""
+class VirtualSMSClient:
+    """Low-level HTTP client for VirtualSMS.io REST API."""
 
     def __init__(self, api_key: str = None, base_url: str = None):
-        self.api_key = (api_key or getattr(Config, 'FIVESIM_API_KEY', '') or os.getenv('FIVESIM_API_KEY', '')).strip()
-        self.base_url = (base_url or getattr(Config, 'FIVESIM_BASE_URL', 'https://5sim.net/v1') or os.getenv('FIVESIM_BASE_URL', 'https://5sim.net/v1')).strip().rstrip('/')
+        self.api_key = (
+            api_key
+            or getattr(Config, 'VIRTUALSMS_API_KEY', '')
+            or os.getenv('VIRTUALSMS_API_KEY', '')
+            or getattr(Config, 'FIVESIM_API_KEY', '')
+            or os.getenv('FIVESIM_API_KEY', '')
+        ).strip()
+        self.base_url = (
+            base_url
+            or getattr(Config, 'VIRTUALSMS_BASE_URL', 'https://virtualsms.io/api/v1')
+            or os.getenv('VIRTUALSMS_BASE_URL', 'https://virtualsms.io/api/v1')
+        ).strip().rstrip('/')
 
     @property
     def is_configured(self) -> bool:
@@ -24,84 +34,138 @@ class FiveSimClient:
 
     def _headers(self) -> dict:
         return {
-            'Authorization': f'Bearer {self.api_key}',
+            'X-API-Key': self.api_key,
+            'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
 
     def get_profile(self) -> dict:
-        """Fetch account balance, rating, and active orders."""
+        """Fetch account balance, profile details, and active orders."""
         if not self.is_configured:
             return {'success': False, 'balance': 0.0, 'message': 'API key not configured'}
         try:
-            r = requests.get(f"{self.base_url}/user/profile", headers=self._headers(), timeout=10)
+            r = requests.get(f"{self.base_url}/customer/profile", headers=self._headers(), timeout=10)
             if r.status_code == 200:
                 data = r.json()
+                bal = float(data.get('balance_usd') if data.get('balance_usd') is not None else data.get('balance', 0.0))
                 return {
                     'success': True,
-                    'balance': float(data.get('balance', 0.0)),
-                    'rating': data.get('rating', 0),
-                    'active_orders': data.get('total_active_orders', 0)
+                    'balance': bal,
+                    'email': data.get('email', ''),
+                    'total_orders': data.get('total_orders', 0),
+                    'raw': data
                 }
             return {'success': False, 'message': r.text, 'status_code': r.status_code}
         except Exception as e:
             return {'success': False, 'message': str(e)}
 
     def get_balance(self) -> dict:
-        """Fetch account balance (denominated in USD)."""
-        prof = self.get_profile()
-        if prof.get('success'):
-            bal_usd = float(prof.get('balance', 0.0))
-            return {
-                'success': True,
-                'balance': round(bal_usd, 2),
-                'currency': 'USD',
-                'usd_estimate': round(bal_usd, 2),
-                'rating': prof.get('rating', 0),
-                'active_orders': prof.get('active_orders', 0)
-            }
-        return prof
-
-    def get_products(self, country_slug: str, operator: str = 'any') -> dict:
-        """Fetch product list, inventory count, and cost for a country."""
+        """Fetch account balance (denominated natively in USD)."""
+        if not self.is_configured:
+            return {'success': False, 'balance': 0.0, 'message': 'API key not configured'}
         try:
-            r = requests.get(f"{self.base_url}/guest/products/{country_slug}/{operator}", headers=self._headers(), timeout=12)
+            r = requests.get(f"{self.base_url}/customer/balance", headers=self._headers(), timeout=10)
             if r.status_code == 200:
-                return {'success': True, 'products': r.json()}
+                data = r.json()
+                bal = float(data.get('balance', 0.0))
+                return {
+                    'success': True,
+                    'balance': round(bal, 2),
+                    'currency': 'USD',
+                    'usd_estimate': round(bal, 2)
+                }
             return {'success': False, 'message': r.text, 'status_code': r.status_code}
         except Exception as e:
             return {'success': False, 'message': str(e)}
 
-    def buy_activation(self, country_slug: str, service_code: str, operator: str = 'any') -> dict:
+    def get_services(self) -> dict:
+        """Fetch available services list and base wholesale costs."""
+        try:
+            r = requests.get(f"{self.base_url}/customer/services", headers=self._headers(), timeout=15)
+            if r.status_code == 200:
+                return r.json()
+            return {'success': False, 'message': r.text, 'status_code': r.status_code}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+
+    def get_countries(self, service: str = None) -> dict:
+        """Fetch countries and stock for a service or all countries."""
+        try:
+            url = f"{self.base_url}/catalog/countries"
+            params = {}
+            if service:
+                params['service'] = service
+            r = requests.get(url, headers=self._headers(), params=params, timeout=15)
+            if r.status_code == 200:
+                return r.json()
+            return {'success': False, 'message': r.text, 'status_code': r.status_code}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+
+    def buy_activation(self, country_code: str = None, service_code: str = None, operator: str = 'any', country_slug: str = None, **kwargs) -> dict:
         """Buy a virtual number activation. Returns order details or error."""
         if not self.is_configured:
             return {'success': False, 'message': 'Provider client not configured'}
 
+        SLUG_TO_ISO = {
+            'usa': 'US', 'england': 'GB', 'unitedkingdom': 'GB', 'uk': 'GB', 'nigeria': 'NG',
+            'canada': 'CA', 'germany': 'DE', 'france': 'FR', 'netherlands': 'NL', 'spain': 'ES',
+            'india': 'IN', 'brazil': 'BR', 'southafrica': 'ZA', 'ghana': 'GH', 'kenya': 'KE', 'russia': 'RU'
+        }
+        raw_c = (country_code or SLUG_TO_ISO.get((country_slug or '').lower().strip()) or country_slug or 'US').strip().upper()
+        resolved_country = SLUG_TO_ISO.get(raw_c.lower(), raw_c)
+
+        SVC_MAP = {
+            'whatsapp': 'wa', 'telegram': 'tg', 'google': 'go', 'gmail': 'go', 'youtube': 'go',
+            'openai': 'dr', 'chatgpt': 'dr', 'instagram': 'ig', 'tiktok': 'lf', 'facebook': 'fb',
+            'twitter': 'tw', 'x': 'tw', 'tinder': 'oi', 'discord': 'ds', 'snapchat': 'fu',
+            'netflix': 'nf', 'uber': 'ub', 'apple': 'wx', 'microsoft': 'mm', 'amazon': 'am',
+            'paypal': 'ts', 'bank': 'ot', 'other': 'ot'
+        }
+        raw_svc = (service_code or 'wa').strip().lower()
+        resolved_service = SVC_MAP.get(raw_svc, raw_svc)
+
         try:
-            url = f"{self.base_url}/user/buy/activation/{country_slug}/{operator}/{service_code}"
-            r = requests.get(url, headers=self._headers(), timeout=15)
-            
-            if r.status_code == 200:
+            payload = {
+                'service': resolved_service,
+                'country': resolved_country
+            }
+            url = f"{self.base_url}/customer/purchase"
+            r = requests.post(url, headers=self._headers(), json=payload, timeout=20)
+
+            if r.status_code in (200, 201):
                 data = r.json()
+                order_id = str(data.get('order_id') or data.get('id', ''))
+                phone = data.get('phone_number') or data.get('phone', '')
+                cost = float(data.get('price') or data.get('cost') or 0.0)
+                expires = data.get('expires_at') or data.get('expires')
                 return {
                     'success': True,
-                    'provider_order_id': str(data.get('id', '')),
-                    'phone_number': data.get('phone', ''),
-                    'operator': data.get('operator', operator),
-                    'provider_cost': float(data.get('price', 0.0)),
-                    'expires_at': data.get('expires'),
+                    'provider_order_id': order_id,
+                    'phone_number': phone,
+                    'operator': operator or 'standard',
+                    'provider_cost': cost,
+                    'expires_at': expires,
                     'raw': data
                 }
-            
+
             # Error mapping
-            err_text = r.text.lower()
-            if 'no free phones' in err_text:
+            err_data = {}
+            try:
+                err_data = r.json()
+            except Exception:
+                pass
+            raw_msg = err_data.get('error') or err_data.get('message') or r.text
+            err_lower = raw_msg.lower()
+
+            if 'out of stock' in err_lower or 'no free phones' in err_lower or r.status_code == 404:
                 msg = 'No numbers are currently available for this service. Please choose another country or try again shortly.'
-            elif 'not enough' in err_text or 'balance' in err_text:
+            elif 'not enough' in err_lower or 'balance' in err_lower or r.status_code == 402:
                 msg = 'Service temporarily undergoing routine replenishment. Please try again in a moment.'
             else:
                 msg = 'Unable to allocate a number at this moment. Please select another country or service.'
 
-            return {'success': False, 'message': msg, 'raw_error': r.text}
+            return {'success': False, 'message': msg, 'raw_error': raw_msg}
         except Exception as e:
             return {'success': False, 'message': 'Network timeout while contacting verification server. Please try again.'}
 
@@ -110,22 +174,25 @@ class FiveSimClient:
         if not self.is_configured or not provider_order_id:
             return {'success': False, 'has_sms': False}
         try:
-            url = f"{self.base_url}/user/check/{provider_order_id}"
+            url = f"{self.base_url}/customer/order/{provider_order_id}"
             r = requests.get(url, headers=self._headers(), timeout=10)
             if r.status_code == 200:
                 data = r.json()
-                sms_list = data.get('sms', []) or []
+                sms_list = data.get('messages', []) or data.get('sms', []) or []
                 status = str(data.get('status', 'PENDING')).upper()
-                
-                latest_code = None
-                latest_text = None
-                latest_sms_id = None
 
-                if sms_list and len(sms_list) > 0:
+                latest_code = data.get('sms_code') or data.get('code')
+                latest_text = data.get('sms_text') or data.get('text')
+                latest_sms_id = provider_order_id
+
+                if not latest_code and sms_list and len(sms_list) > 0:
                     last_sms = sms_list[-1]
-                    latest_code = last_sms.get('code')
-                    latest_text = last_sms.get('text')
-                    latest_sms_id = str(last_sms.get('id', ''))
+                    if isinstance(last_sms, dict):
+                        latest_code = last_sms.get('code') or last_sms.get('sms_code')
+                        latest_text = last_sms.get('text') or last_sms.get('sms_text') or last_sms.get('message')
+                        latest_sms_id = str(last_sms.get('id') or provider_order_id)
+                    else:
+                        latest_text = str(last_sms)
 
                 return {
                     'success': True,
@@ -135,19 +202,32 @@ class FiveSimClient:
                     'full_sms': latest_text or (f"Your verification code is: {latest_code}" if latest_code else None),
                     'provider_sms_id': latest_sms_id,
                     'sms_list': sms_list,
-                    'phone_number': data.get('phone')
+                    'phone_number': data.get('phone_number') or data.get('phone')
                 }
             return {'success': False, 'has_sms': False, 'message': r.text}
         except Exception as e:
             return {'success': False, 'has_sms': False, 'message': str(e)}
 
     def cancel_order(self, provider_order_id: str) -> dict:
-        """Cancel an order before receiving SMS (refunds balance)."""
+        """Cancel an order before receiving SMS (triggers instant auto-refund)."""
         if not self.is_configured or not provider_order_id:
             return {'success': False, 'message': 'Client not configured'}
         try:
-            url = f"{self.base_url}/user/cancel/{provider_order_id}"
-            r = requests.get(url, headers=self._headers(), timeout=10)
+            url = f"{self.base_url}/customer/cancel/{provider_order_id}"
+            r = requests.post(url, headers=self._headers(), timeout=10)
+            if r.status_code in (200, 204):
+                return {'success': True, 'data': r.json() if r.text else {}}
+            return {'success': False, 'message': r.text}
+        except Exception as e:
+            return {'success': False, 'message': str(e)}
+
+    def swap_number(self, provider_order_id: str) -> dict:
+        """Swap number before receiving SMS."""
+        if not self.is_configured or not provider_order_id:
+            return {'success': False, 'message': 'Client not configured'}
+        try:
+            url = f"{self.base_url}/customer/swap/{provider_order_id}"
+            r = requests.post(url, headers=self._headers(), timeout=10)
             if r.status_code == 200:
                 return {'success': True, 'data': r.json()}
             return {'success': False, 'message': r.text}
@@ -156,35 +236,21 @@ class FiveSimClient:
 
     def finish_order(self, provider_order_id: str) -> dict:
         """Mark an order as completed once SMS is received."""
-        if not self.is_configured or not provider_order_id:
-            return {'success': False, 'message': 'Client not configured'}
-        try:
-            url = f"{self.base_url}/user/finish/{provider_order_id}"
-            r = requests.get(url, headers=self._headers(), timeout=10)
-            if r.status_code == 200:
-                return {'success': True, 'data': r.json()}
-            return {'success': False, 'message': r.text}
-        except Exception as e:
-            return {'success': False, 'message': str(e)}
+        return {'success': True}
 
     def ban_order(self, provider_order_id: str) -> dict:
-        """Report number as already registered or banned (refunds balance)."""
-        if not self.is_configured or not provider_order_id:
-            return {'success': False, 'message': 'Client not configured'}
-        try:
-            url = f"{self.base_url}/user/ban/{provider_order_id}"
-            r = requests.get(url, headers=self._headers(), timeout=10)
-            if r.status_code == 200:
-                return {'success': True, 'data': r.json()}
-            return {'success': False, 'message': r.text}
-        except Exception as e:
-            return {'success': False, 'message': str(e)}
+        """Cancel/report line and trigger refund."""
+        return self.cancel_order(provider_order_id)
+
+
+# Backward compatibility alias
+FiveSimClient = VirtualSMSClient
 
 
 class SIMProviderService:
     """High-level service interface for Tgsims virtual number purchasing and catalog."""
 
-    # ISO Country Code -> 5sim slug mapping
+    # ISO Country Code -> Metadata mapping
     COUNTRY_SLUGS = {
         'US': {'slug': 'usa', 'name': 'United States', 'flag': '🇺🇸', 'dial': '+1'},
         'GB': {'slug': 'england', 'name': 'United Kingdom', 'flag': '🇬🇧', 'dial': '+44'},
@@ -202,26 +268,31 @@ class SIMProviderService:
         'RU': {'slug': 'russia', 'name': 'Russia', 'flag': '🇷🇺', 'dial': '+7'}
     }
 
-    # Common service display name -> 5sim service code mapping
+    # Common service display name -> VirtualSMS service code mapping
     SERVICE_SLUGS = {
-        'whatsapp': {'code': 'whatsapp', 'name': 'WhatsApp'},
-        'telegram': {'code': 'telegram', 'name': 'Telegram'},
-        'google': {'code': 'google', 'name': 'Google / Gmail'},
-        'openai': {'code': 'openai', 'name': 'OpenAI / ChatGPT'},
-        'chatgpt': {'code': 'openai', 'name': 'OpenAI / ChatGPT'},
-        'instagram': {'code': 'instagram', 'name': 'Instagram'},
-        'tiktok': {'code': 'tiktok', 'name': 'TikTok'},
-        'facebook': {'code': 'facebook', 'name': 'Facebook'},
-        'twitter': {'code': 'twitter', 'name': 'Twitter / X'},
-        'tinder': {'code': 'tinder', 'name': 'Tinder'},
-        'discord': {'code': 'discord', 'name': 'Discord'},
-        'snapchat': {'code': 'snapchat', 'name': 'Snapchat'},
-        'netflix': {'code': 'netflix', 'name': 'Netflix'},
-        'uber': {'code': 'uber', 'name': 'Uber'},
-        'apple': {'code': 'apple', 'name': 'Apple'},
-        'microsoft': {'code': 'microsoft', 'name': 'Microsoft'},
-        'amazon': {'code': 'amazon', 'name': 'Amazon'},
-        'bank verification': {'code': 'other', 'name': 'Bank Verification'}
+        'whatsapp': {'code': 'wa', 'name': 'WhatsApp'},
+        'telegram': {'code': 'tg', 'name': 'Telegram'},
+        'google': {'code': 'go', 'name': 'Google / Gmail'},
+        'gmail': {'code': 'go', 'name': 'Google / Gmail'},
+        'youtube': {'code': 'go', 'name': 'Google / Gmail'},
+        'openai': {'code': 'dr', 'name': 'OpenAI / ChatGPT'},
+        'chatgpt': {'code': 'dr', 'name': 'OpenAI / ChatGPT'},
+        'instagram': {'code': 'ig', 'name': 'Instagram'},
+        'tiktok': {'code': 'lf', 'name': 'TikTok'},
+        'facebook': {'code': 'fb', 'name': 'Facebook'},
+        'twitter': {'code': 'tw', 'name': 'Twitter / X'},
+        'x': {'code': 'tw', 'name': 'Twitter / X'},
+        'tinder': {'code': 'oi', 'name': 'Tinder'},
+        'discord': {'code': 'ds', 'name': 'Discord'},
+        'snapchat': {'code': 'fu', 'name': 'Snapchat'},
+        'netflix': {'code': 'nf', 'name': 'Netflix'},
+        'uber': {'code': 'ub', 'name': 'Uber'},
+        'apple': {'code': 'wx', 'name': 'Apple'},
+        'microsoft': {'code': 'mm', 'name': 'Microsoft'},
+        'amazon': {'code': 'am', 'name': 'Amazon'},
+        'paypal': {'code': 'ts', 'name': 'PayPal'},
+        'bank verification': {'code': 'ot', 'name': 'Bank Verification'},
+        'other': {'code': 'ot', 'name': 'Other Platforms'}
     }
 
     _client = None
@@ -249,15 +320,19 @@ class SIMProviderService:
             return None
 
     @classmethod
-    def get_client(cls) -> FiveSimClient:
+    def get_virtualsms_client(cls) -> VirtualSMSClient:
         if cls._client is None:
-            cls._client = FiveSimClient()
+            cls._client = VirtualSMSClient()
         return cls._client
 
     @classmethod
-    def calculate_retail_price(cls, base_cost: float, service_code: str = None, provider_type: str = '5sim', country_code: str = 'US') -> tuple[float, float]:
+    def get_client(cls) -> VirtualSMSClient:
+        return cls.get_virtualsms_client()
+
+    @classmethod
+    def calculate_retail_price(cls, base_cost: float, service_code: str = None, provider_type: str = 'virtualsms', country_code: str = 'US') -> tuple[float, float]:
         """Calculates retail price and profit margin in USD using admin-configured markup and overrides.
-        Fixed service price overrides apply exclusively to US numbers (5sim US Basic & TextVerified US Reliable).
+        Fixed service price overrides apply exclusively to US numbers (Basic & TextVerified US Reliable).
         Global numbers (GB, NG, etc.) strictly follow provider dynamic markup.
         """
         if base_cost <= 0:
@@ -268,7 +343,7 @@ class SIMProviderService:
             if provider_type == 'textverified':
                 pct, floor = SettingsService.get_textverified_markup()
             else:
-                pct, floor = SettingsService.get_fivesim_markup()
+                pct, floor = SettingsService.get_virtualsms_markup()
 
             # Overrides apply strictly to US numbers
             is_us = (provider_type == 'textverified') or (country_code and str(country_code).strip().upper() in ('US', 'USA'))
@@ -278,7 +353,7 @@ class SIMProviderService:
                 overrides = {
                     o['service_code'].strip().lower(): float(o['override_price_usd'])
                     for o in all_overrides
-                    if o.get('provider_type') in (provider_type, 'all') and o.get('is_active', True)
+                    if o.get('provider_type') in (provider_type, '5sim', 'virtualsms', 'all') and o.get('is_active', True)
                 }
                 if sc in overrides:
                     override_p = overrides[sc]

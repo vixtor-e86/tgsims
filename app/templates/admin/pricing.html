@@ -266,11 +266,11 @@
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
         
-        {# 5sim Card #}
+        {# VirtualSMS.io Card #}
         <div class="provider-box">
           <div class="provider-box-header">
             <div class="provider-box-title">
-              {{ icon('server') }} 5sim Markup (US Basic & Global SMS)
+              {{ icon('server') }} VirtualSMS.io Markup (US Basic & Global SMS)
             </div>
             <span class="badge badge-success">+{{ settings.fivesim_markup_percent }}%</span>
           </div>
@@ -443,7 +443,7 @@
       <div>
         <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">US Provider Pool</label>
         <select name="provider_type" id="override-provider-type" class="input input-sm">
-          <option value="5sim">5sim (US Basic Package)</option>
+          <option value="virtualsms">VirtualSMS.io (US Basic Package)</option>
           <option value="textverified">TextVerified (US Reliable Package)</option>
         </select>
       </div>
@@ -514,7 +514,7 @@
                 {% if ov.provider_type == 'textverified' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified (US Reliable)</span>
                 {% else %}
-                  <span class="badge badge-success" style="font-size: 0.75rem;">5sim (US Basic)</span>
+                  <span class="badge badge-success" style="font-size: 0.75rem;">VirtualSMS (US Basic)</span>
                 {% endif %}
               </td>
               <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--hue-success);">
@@ -799,11 +799,14 @@
 })();
 </script>
 
-<script id="admin-services-catalog" type="application/json">
+<script id="admin-services-catalog" type="application/json" style="display: none !important;">
   {{ services_catalog|tojson|safe }}
 </script>
 
 <style>
+script[type="application/json"] {
+  display: none !important;
+}
 .admin-search-wrapper {
   position: relative;
 }
@@ -932,12 +935,12 @@
     'apple', 'discord', 'microsoft', 'steam', 'netflix', 'paypal', 'yahoo', 'snapchat', 'linkedin'
   ];
 
-  var currentProvider = providerSelect ? providerSelect.value : '5sim';
+  var currentProvider = providerSelect ? providerSelect.value : 'virtualsms';
   var highlightedIndex = -1;
   var currentFiltered = [];
 
   function getCurrentServices() {
-    return (catalog && catalog[currentProvider]) || [];
+    return (catalog && (catalog[currentProvider] || catalog['virtualsms'] || catalog['5sim'])) || [];
   }
 
   function populateSelectDropdown() {
