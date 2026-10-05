@@ -604,7 +604,7 @@
                 <tr class="rental-row"
                     data-duration="{{ days_str }}"
                     data-service="{{ svc.name|lower }} {{ svc.code|lower }}"
-                    style="border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+                    style="border-bottom: 1px solid var(--border); font-size: 0.88rem; transition: background-color 0.4s ease;">
                   <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text);">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                       <span>{{ svc.name }}</span>
@@ -617,13 +617,13 @@
                   <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text-muted);">
                     ${{ '%.2f'|format(p.base_cost_usd) }}
                   </td>
-                  <td style="padding: 0.75rem 0.6rem; font-weight: 700; color: var(--hue-success);">
+                  <td class="rental-selling-price-cell" style="padding: 0.75rem 0.6rem; font-weight: 700; color: var(--hue-success);">
                     ${{ '%.2f'|format(p.retail_usd) }}
                     <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">
                       ({{ p.formatted_ngn }})
                     </span>
                   </td>
-                  <td style="padding: 0.75rem 0.6rem;">
+                  <td class="rental-pricing-mode-cell" style="padding: 0.75rem 0.6rem;">
                     {% if p.is_custom %}
                       <span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 700;">Custom Fixed</span>
                     {% else %}
@@ -631,27 +631,24 @@
                     {% endif %}
                   </td>
                   <td style="padding: 0.75rem 0.6rem; text-align: right;">
-                    <form action="{{ url_for('admin.pricing') }}" method="POST" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0;">
+                    <form class="rental-price-form" action="{{ url_for('admin.pricing') }}" method="POST" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0;">
                       <input type="hidden" name="action" value="update_rental_price">
                       <input type="hidden" name="service_code" value="{{ svc.code }}">
                       <input type="hidden" name="service_name" value="{{ svc.name }}">
                       <input type="hidden" name="duration_days" value="{{ days_str }}">
                       <div class="affix-input-group" style="width: 110px; margin: 0;">
                         <span class="affix-addon prefix" style="height: 32px; min-width: 28px; padding: 0 0.5rem; font-size: 0.85rem;">$</span>
-                        <input type="number" step="0.01" min="0.10" name="custom_price_usd" class="affix-field has-prefix"
+                        <input type="number" step="0.01" min="0.10" name="custom_price_usd" class="affix-field has-prefix rental-custom-input"
                                style="height: 32px; font-size: 0.88rem; padding: 0 0.5rem !important;"
                                value="{{ '%.2f'|format(p.custom_price_usd) if p.custom_price_usd else '' }}"
                                placeholder="{{ '%.2f'|format(p.retail_usd) }}">
                       </div>
-                      <button type="submit" class="btn btn-primary btn-xs" style="height: 32px; padding: 0 0.65rem;" title="Save Custom Price">
+                      <button type="submit" class="btn btn-primary btn-xs btn-save-rental" style="height: 32px; padding: 0 0.65rem;" title="Save Custom Price">
                         Save
                       </button>
-                      {% if p.is_custom %}
-                        <button type="button" class="btn btn-ghost btn-xs text-danger" style="height: 32px; padding: 0 0.4rem;" title="Reset to auto markup"
-                                onclick="var f=this.form; f.action.value='reset_rental_price'; f.submit();">
-                          {{ icon('trash') }}
-                        </button>
-                      {% endif %}
+                      <button type="button" class="btn btn-ghost btn-xs text-danger btn-reset-rental" style="height: 32px; padding: 0 0.4rem; {% if not p.is_custom %}display: none;{% endif %}" title="Reset to auto markup">
+                        {{ icon('trash') }}
+                      </button>
                     </form>
                   </td>
                 </tr>
@@ -703,6 +700,102 @@
   if (searchInput) {
     searchInput.addEventListener('input', applyFilter);
   }
+
+  // Instant AJAX Save / Reset for Rental Pricing without page reloads or scrolling
+  document.querySelectorAll('.rental-price-form').forEach(function(form) {
+    var row = form.closest('.rental-row');
+    var priceCell = row.querySelector('.rental-selling-price-cell');
+    var modeCell = row.querySelector('.rental-pricing-mode-cell');
+    var input = form.querySelector('.rental-custom-input');
+    var saveBtn = form.querySelector('.btn-save-rental');
+    var resetBtn = form.querySelector('.btn-reset-rental');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var origText = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.textContent = '...';
+
+      var fd = new FormData(form);
+      fd.set('action', 'update_rental_price');
+
+      fetch(form.action, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Saved';
+        setTimeout(function() { saveBtn.textContent = origText; }, 1200);
+
+        if (data && data.success) {
+          priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
+
+          if (data.is_custom) {
+            modeCell.innerHTML = '<span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 700;">Custom Fixed</span>';
+            resetBtn.style.display = 'inline-flex';
+          } else {
+            modeCell.innerHTML = '<span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>';
+            resetBtn.style.display = 'none';
+          }
+
+          row.style.backgroundColor = 'rgba(16, 185, 129, 0.18)';
+          setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
+
+          if (window.toast) {
+            window.toast(data.message, 'success');
+          }
+        } else {
+          if (window.toast) window.toast((data && data.message) || 'Failed to update price', 'error');
+        }
+      })
+      .catch(function(err) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+        if (window.toast) window.toast('Network error updating price', 'error');
+      });
+    });
+
+    resetBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      resetBtn.disabled = true;
+
+      var fd = new FormData(form);
+      fd.set('action', 'reset_rental_price');
+
+      fetch(form.action, {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        resetBtn.disabled = false;
+        if (data && data.success) {
+          input.value = '';
+          input.placeholder = data.retail_usd.toFixed(2);
+          priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
+          modeCell.innerHTML = '<span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>';
+          resetBtn.style.display = 'none';
+
+          row.style.backgroundColor = 'rgba(59, 130, 246, 0.14)';
+          setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
+
+          if (window.toast) {
+            window.toast(data.message, 'info');
+          }
+        } else {
+          if (window.toast) window.toast((data && data.message) || 'Failed to reset price', 'error');
+        }
+      })
+      .catch(function(err) {
+        resetBtn.disabled = false;
+        if (window.toast) window.toast('Network error resetting price', 'error');
+      });
+    });
+  });
 })();
 </script>
 

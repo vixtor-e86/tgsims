@@ -199,6 +199,7 @@ def pricing():
             service_name = request.form.get('service_name', '').strip()
             duration_days = request.form.get('duration_days', 3)
             price_val = request.form.get('custom_price_usd', '').strip()
+            is_ajax = (request.headers.get('X-Requested-With') == 'XMLHttpRequest') or (request.args.get('format') == 'json')
             try:
                 custom_price = float(price_val) if price_val else None
                 if service_code and duration_days:
@@ -209,25 +210,83 @@ def pricing():
                         service_name=service_name
                     )
                     if ok:
-                        if custom_price and custom_price > 0:
-                            flash(f'Custom selling price saved for {service_name or service_code} ({duration_days} Days) at ${custom_price:.2f}.', 'success')
+                        # Recalculate latest active pricing for instant UI update
+                        ngn_rate = SettingsService.get_usd_ngn_rate()
+                        pct, floor = SettingsService.get_textverified_markup()
+                        mult = 1.0 + (pct / 100.0)
+                        pmap = SettingsService.get_rental_pricing_map()
+                        db_item = pmap.get((service_code, int(duration_days)), {})
+                        base_cost = float(db_item.get('wholesale_price_usd') or 0.0)
+                        if custom_price is not None and custom_price > 0:
+                            retail_usd = round(float(custom_price), 2)
+                            is_custom = True
                         else:
-                            flash(f'Custom price cleared for {service_name or service_code} ({duration_days} Days). Reverted to auto-markup.', 'info')
+                            retail_usd = round(max(base_cost * mult, base_cost + floor), 2)
+                            is_custom = False
+                        retail_ngn = round(retail_usd * ngn_rate, 2)
+
+                        msg = f'Custom selling price saved for {service_name or service_code} ({duration_days} Days) at ${retail_usd:.2f}.' if is_custom else f'Custom price cleared for {service_name or service_code} ({duration_days} Days). Reverted to auto-markup.'
+                        if is_ajax:
+                            return jsonify({
+                                'success': True,
+                                'message': msg,
+                                'service_code': service_code,
+                                'duration_days': int(duration_days),
+                                'retail_usd': retail_usd,
+                                'retail_ngn': retail_ngn,
+                                'retail_usd_str': f"${retail_usd:.2f}",
+                                'retail_ngn_str': f"₦{retail_ngn:,.2f}",
+                                'is_custom': is_custom,
+                                'custom_price_usd': custom_price
+                            })
+                        flash(msg, 'success' if is_custom else 'info')
                     else:
+                        if is_ajax:
+                            return jsonify({'success': False, 'message': 'Failed to save rental price to database.'}), 500
                         flash('Failed to save rental price. Please ensure migration 012 is executed in Supabase.', 'error')
                 else:
+                    if is_ajax:
+                        return jsonify({'success': False, 'message': 'Missing service code or duration.'}), 400
                     flash('Missing service code or duration.', 'error')
             except Exception as e:
+                if is_ajax:
+                    return jsonify({'success': False, 'message': str(e)}), 500
                 flash(f'Error saving rental price: {e}', 'error')
 
         elif action == 'reset_rental_price':
             service_code = request.form.get('service_code', '').strip().lower()
             duration_days = request.form.get('duration_days', 3)
+            is_ajax = (request.headers.get('X-Requested-With') == 'XMLHttpRequest') or (request.args.get('format') == 'json')
             try:
                 if service_code and duration_days:
                     SettingsService.reset_rental_price(service_code, int(duration_days))
-                    flash(f'Custom price removed for {service_code} ({duration_days} Days). Standard dynamic markup restored.', 'info')
+                    # Recalculate auto markup
+                    ngn_rate = SettingsService.get_usd_ngn_rate()
+                    pct, floor = SettingsService.get_textverified_markup()
+                    mult = 1.0 + (pct / 100.0)
+                    pmap = SettingsService.get_rental_pricing_map()
+                    db_item = pmap.get((service_code, int(duration_days)), {})
+                    base_cost = float(db_item.get('wholesale_price_usd') or 0.0)
+                    retail_usd = round(max(base_cost * mult, base_cost + floor), 2)
+                    retail_ngn = round(retail_usd * ngn_rate, 2)
+                    msg = f'Custom price removed for {service_code} ({duration_days} Days). Standard dynamic markup restored.'
+                    if is_ajax:
+                        return jsonify({
+                            'success': True,
+                            'message': msg,
+                            'service_code': service_code,
+                            'duration_days': int(duration_days),
+                            'retail_usd': retail_usd,
+                            'retail_ngn': retail_ngn,
+                            'retail_usd_str': f"${retail_usd:.2f}",
+                            'retail_ngn_str': f"₦{retail_ngn:,.2f}",
+                            'is_custom': False,
+                            'custom_price_usd': None
+                        })
+                    flash(msg, 'info')
             except Exception as e:
+                if is_ajax:
+                    return jsonify({'success': False, 'message': str(e)}), 500
                 flash(f'Error resetting rental price: {e}', 'error')
 
         elif action == 'sync_rental_prices':

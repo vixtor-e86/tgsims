@@ -222,6 +222,10 @@
                   {% endif %}
                 </div>
                 <span class="td-dim" style="font-size:0.72rem;">{{ svc.description }}</span>
+                <div class="rental-meta-mobile" style="display:none; align-items:center; gap:6px; margin-top:4px;">
+                  <span class="badge badge-brand badge-xs" data-mobile-duration>3 Days</span>
+                  <span class="badge badge-neutral badge-xs">Real Cellular</span>
+                </div>
               </div>
             </div>
           </td>
@@ -477,6 +481,100 @@
   color: #fff;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
+
+/* Responsive Mobile View for Rent a Number Page */
+@media (max-width: 680px) {
+  /* Quick Rent Duration Tabs: 2-column grid for thumb tap targets */
+  .rental-duration-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    padding: 6px !important;
+  }
+  .rental-tab-btn {
+    padding: 10px 8px !important;
+    font-size: 0.82rem !important;
+    text-align: center !important;
+    min-height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 700 !important;
+  }
+
+  /* List Table responsive mobile card-row view without horizontal overflow */
+  #rentalTable thead {
+    display: none !important;
+  }
+  #rentalTable, #rentalTable tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+  #rentalTable tr[data-service-row] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px 6px !important;
+    border-bottom: 1px solid var(--border) !important;
+    gap: 10px !important;
+    background: var(--surface) !important;
+  }
+  #rentalTable tr[data-service-row] > td:nth-child(1) {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+  /* Hide desktop Carrier Pool & separate Retention column */
+  #rentalTable tr[data-service-row] > td:nth-child(2),
+  #rentalTable tr[data-service-row] > td:nth-child(3) {
+    display: none !important;
+  }
+  /* Show mobile retention & cellular badge under service name */
+  .rental-meta-mobile {
+    display: flex !important;
+  }
+  /* Price Column */
+  #rentalTable tr[data-service-row] > td:nth-child(4) {
+    flex: 0 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    text-align: right !important;
+  }
+  #rentalTable tr[data-service-row] > td:nth-child(4) [data-row-price] {
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+  }
+  /* Action Button Column */
+  #rentalTable tr[data-service-row] > td:nth-child(5) {
+    flex: 0 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+  #rentalTable tr[data-service-row] > td:nth-child(5) .btn {
+    padding: 7px 12px !important;
+    font-size: 0.8rem !important;
+    min-height: 36px !important;
+    font-weight: 700 !important;
+  }
+
+  /* Compact spacing on phones */
+  .card.card-pad {
+    padding: var(--sp-4) !important;
+  }
+  .page-title {
+    font-size: 1.35rem !important;
+  }
+  .page-subtitle {
+    font-size: 0.82rem !important;
+  }
+  .price-box {
+    padding: 10px 14px !important;
+  }
+  .price-box-value {
+    font-size: 1.25rem !important;
+  }
+}
 </style>
 {% endblock %}
 
@@ -544,7 +642,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Update Table Row Prices & Duration Labels
   function updateTablePrices() {
-    document.querySelectorAll('[data-row-duration]').forEach(function(el) {
+    document.querySelectorAll('[data-row-duration], [data-mobile-duration]').forEach(function(el) {
       el.textContent = selectedDuration + ' Days';
     });
     document.querySelectorAll('[data-row-price]').forEach(function(el) {

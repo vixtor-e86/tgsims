@@ -263,4 +263,25 @@
     {% block admin_content %}{% endblock %}
   </main>
 </div>
+
+<script>
+// Preserve scroll position across page reloads in Admin
+(function() {
+  document.addEventListener('submit', function(e) {
+    if (e.target && e.target.tagName === 'FORM' && !e.defaultPrevented) {
+      sessionStorage.setItem('admin_scroll_pos', window.scrollY.toString());
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', function() {
+    var savedPos = sessionStorage.getItem('admin_scroll_pos');
+    if (savedPos !== null) {
+      sessionStorage.removeItem('admin_scroll_pos');
+      setTimeout(function() {
+        window.scrollTo({ top: parseInt(savedPos, 10), behavior: 'instant' });
+      }, 20);
+    }
+  });
+})();
+</script>
 {% endblock %}
