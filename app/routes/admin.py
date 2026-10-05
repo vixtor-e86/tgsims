@@ -193,16 +193,16 @@ def pricing():
                 SettingsService.delete_price_override(override_id)
                 flash('Price override removed.', 'info')
 
-        elif action == 'sync_5sim_prices':
+        elif action in ('sync_5sim_prices', 'sync_virtualsms_prices'):
             try:
-                from scripts.sync_5sim_prices import sync_catalog
-                ok = sync_catalog()
+                from scripts.sync_virtualsms_prices import sync_all
+                ok = sync_all()
                 if ok:
-                    flash('Successfully updated live 5SIM wholesale prices across all countries and services! Prices are now 100% current.', 'success')
+                    flash('Successfully updated live VirtualSMS wholesale prices across all countries and services! Prices are now 100% current.', 'success')
                 else:
-                    flash('Failed to reach 5SIM pricing server. Please try again in a few moments.', 'error')
+                    flash('Failed to reach VirtualSMS pricing server. Please try again in a few moments.', 'error')
             except Exception as e:
-                flash(f'Error syncing 5SIM wholesale prices: {e}', 'error')
+                flash(f'Error syncing VirtualSMS wholesale prices: {e}', 'error')
 
         elif action == 'update_rental_price':
             service_code = request.form.get('service_code', '').strip().lower()

@@ -117,6 +117,7 @@
         country_code: country.country_code,
         country_name: country.country_name,
         service_name: service.name,
+        service_code: service.code || "",
         operator: service.operator || "any",
         price: service.price,
       };

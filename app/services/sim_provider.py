@@ -103,24 +103,46 @@ class VirtualSMSClient:
             return {'success': False, 'message': str(e)}
 
     def buy_activation(self, country_code: str = None, service_code: str = None, operator: str = 'any', country_slug: str = None, **kwargs) -> dict:
-        """Buy a virtual number activation. Returns order details or error."""
+        """Buy a virtual number activation from VirtualSMS.io. Returns order details or error."""
         if not self.is_configured:
             return {'success': False, 'message': 'Provider client not configured'}
 
-        SLUG_TO_ISO = {
-            'usa': 'US', 'england': 'GB', 'unitedkingdom': 'GB', 'uk': 'GB', 'nigeria': 'NG',
-            'canada': 'CA', 'germany': 'DE', 'france': 'FR', 'netherlands': 'NL', 'spain': 'ES',
-            'india': 'IN', 'brazil': 'BR', 'southafrica': 'ZA', 'ghana': 'GH', 'kenya': 'KE', 'russia': 'RU'
-        }
-        raw_c = (country_code or SLUG_TO_ISO.get((country_slug or '').lower().strip()) or country_slug or 'US').strip().upper()
-        resolved_country = SLUG_TO_ISO.get(raw_c.lower(), raw_c)
+        # 1. Resolve 2-letter ISO country code
+        raw_c = (country_code or '').strip().upper()
+        if len(raw_c) == 2:
+            resolved_country = raw_c
+        else:
+            c_slug_input = (country_slug or country_code or '').lower().strip().replace(' ', '').replace('-', '')
+            SLUG_TO_ISO = {
+                'usa': 'US', 'unitedstates': 'US', 'us': 'US',
+                'england': 'GB', 'unitedkingdom': 'GB', 'uk': 'GB', 'gb': 'GB',
+                'nigeria': 'NG', 'ng': 'NG', 'canada': 'CA', 'ca': 'CA',
+                'germany': 'DE', 'de': 'DE', 'france': 'FR', 'fr': 'FR',
+                'netherlands': 'NL', 'nl': 'NL', 'spain': 'ES', 'es': 'ES',
+                'india': 'IN', 'in': 'IN', 'brazil': 'BR', 'br': 'BR',
+                'southafrica': 'ZA', 'za': 'ZA', 'ghana': 'GH', 'gh': 'GH',
+                'kenya': 'KE', 'ke': 'KE', 'indonesia': 'ID', 'id': 'ID',
+                'philippines': 'PH', 'ph': 'PH', 'poland': 'PL', 'pl': 'PL',
+                'mexico': 'MX', 'mx': 'MX', 'argentina': 'AR', 'ar': 'AR',
+                'colombia': 'CO', 'co': 'CO', 'sweden': 'SE', 'se': 'SE',
+                'thailand': 'TH', 'th': 'TH', 'turkey': 'TR', 'tr': 'TR',
+                'ukraine': 'UA', 'ua': 'UA', 'vietnam': 'VN', 'vn': 'VN',
+                'russia': 'RU', 'ru': 'RU'
+            }
+            resolved_country = SLUG_TO_ISO.get(c_slug_input, raw_c if len(raw_c) == 2 else 'US')
 
+        # 2. Resolve service code
         SVC_MAP = {
-            'whatsapp': 'wa', 'telegram': 'tg', 'google': 'go', 'gmail': 'go', 'youtube': 'go',
-            'openai': 'dr', 'chatgpt': 'dr', 'instagram': 'ig', 'tiktok': 'lf', 'facebook': 'fb',
-            'twitter': 'tw', 'x': 'tw', 'tinder': 'oi', 'discord': 'ds', 'snapchat': 'fu',
-            'netflix': 'nf', 'uber': 'ub', 'apple': 'wx', 'microsoft': 'mm', 'amazon': 'am',
-            'paypal': 'ts', 'bank': 'ot', 'other': 'ot'
+            'whatsapp': 'wa', 'wa': 'wa', 'wa_biz': 'wa_biz', 'telegram': 'tg', 'tg': 'tg',
+            'google': 'go', 'gmail': 'go', 'youtube': 'go', 'go': 'go',
+            'openai': 'dr', 'chatgpt': 'dr', 'dr': 'dr',
+            'instagram': 'ig', 'ig': 'ig', 'tiktok': 'lf', 'lf': 'lf',
+            'facebook': 'fb', 'fb': 'fb', 'twitter': 'tw', 'x': 'tw', 'tw': 'tw',
+            'tinder': 'oi', 'oi': 'oi', 'discord': 'ds', 'ds': 'ds', 'snapchat': 'fu', 'fu': 'fu',
+            'netflix': 'nf', 'nf': 'nf', 'uber': 'ub', 'ub': 'ub', 'apple': 'wx', 'wx': 'wx',
+            'microsoft': 'mm', 'mm': 'mm', 'amazon': 'am', 'am': 'am',
+            'paypal': 'ts', 'ts': 'ts', 'yahoo': 'mb', 'mb': 'mb', 'steam': 'mt', 'mt': 'mt',
+            'linkedin': 'li', 'li': 'li', 'bank': 'ot', 'other': 'ot', 'ot': 'ot'
         }
         raw_svc = (service_code or 'wa').strip().lower()
         resolved_service = SVC_MAP.get(raw_svc, raw_svc)
@@ -131,6 +153,7 @@ class VirtualSMSClient:
                 'country': resolved_country
             }
             url = f"{self.base_url}/customer/purchase"
+            print(f"[VirtualSMSClient] Ordering activation: country={resolved_country}, service={resolved_service}")
             r = requests.post(url, headers=self._headers(), json=payload, timeout=20)
 
             if r.status_code in (200, 201):
@@ -139,11 +162,12 @@ class VirtualSMSClient:
                 phone = data.get('phone_number') or data.get('phone', '')
                 cost = float(data.get('price') or data.get('cost') or 0.0)
                 expires = data.get('expires_at') or data.get('expires')
+                print(f"[VirtualSMSClient] Successfully allocated: order_id={order_id}, phone={phone}, cost=${cost}")
                 return {
                     'success': True,
                     'provider_order_id': order_id,
                     'phone_number': phone,
-                    'operator': operator or 'standard',
+                    'operator': 'standard',
                     'provider_cost': cost,
                     'expires_at': expires,
                     'raw': data
@@ -157,16 +181,18 @@ class VirtualSMSClient:
                 pass
             raw_msg = err_data.get('error') or err_data.get('message') or r.text
             err_lower = raw_msg.lower()
+            print(f"[VirtualSMSClient] Purchase error: HTTP {r.status_code} - {raw_msg}")
 
-            if 'out of stock' in err_lower or 'no free phones' in err_lower or r.status_code == 404:
-                msg = 'No numbers are currently available for this service. Please choose another country or try again shortly.'
+            if 'out of stock' in err_lower or 'no free phones' in err_lower or 'not available' in err_lower or r.status_code == 404:
+                msg = f"No {resolved_service.upper()} numbers currently available in {resolved_country}. Please choose another country or try again shortly."
             elif 'not enough' in err_lower or 'balance' in err_lower or r.status_code == 402:
-                msg = 'Service temporarily undergoing routine replenishment. Please try again in a moment.'
+                msg = 'Provider inventory temporarily replenishing balance. Please try again shortly.'
             else:
-                msg = 'Unable to allocate a number at this moment. Please select another country or service.'
+                msg = f"Unable to allocate number ({raw_msg}). Please select another service or try again."
 
             return {'success': False, 'message': msg, 'raw_error': raw_msg}
         except Exception as e:
+            print(f"[VirtualSMSClient] Connection error during purchase: {e}")
             return {'success': False, 'message': 'Network timeout while contacting verification server. Please try again.'}
 
     def check_order(self, provider_order_id: str) -> dict:
@@ -250,49 +276,129 @@ FiveSimClient = VirtualSMSClient
 class SIMProviderService:
     """High-level service interface for Tgsims virtual number purchasing and catalog."""
 
-    # ISO Country Code -> Metadata mapping
+    # ISO Country Code -> Metadata mapping for all VirtualSMS.io supported countries
     COUNTRY_SLUGS = {
         'US': {'slug': 'usa', 'name': 'United States', 'flag': '🇺🇸', 'dial': '+1'},
-        'GB': {'slug': 'england', 'name': 'United Kingdom', 'flag': '🇬🇧', 'dial': '+44'},
-        'NG': {'slug': 'nigeria', 'name': 'Nigeria', 'flag': '🇳🇬', 'dial': '+234'},
-        'CA': {'slug': 'canada', 'name': 'Canada', 'flag': '🇨🇦', 'dial': '+1'},
-        'DE': {'slug': 'germany', 'name': 'Germany', 'flag': '🇩🇪', 'dial': '+49'},
-        'FR': {'slug': 'france', 'name': 'France', 'flag': '🇫🇷', 'dial': '+33'},
-        'NL': {'slug': 'netherlands', 'name': 'Netherlands', 'flag': '🇳🇱', 'dial': '+31'},
-        'ES': {'slug': 'spain', 'name': 'Spain', 'flag': '🇪🇸', 'dial': '+34'},
-        'IN': {'slug': 'india', 'name': 'India', 'flag': '🇮🇳', 'dial': '+91'},
+        'AO': {'slug': 'angola', 'name': 'Angola', 'flag': '🇦🇴', 'dial': '+244'},
+        'AR': {'slug': 'argentina', 'name': 'Argentina', 'flag': '🇦🇷', 'dial': '+54'},
+        'AT': {'slug': 'austria', 'name': 'Austria', 'flag': '🇦🇹', 'dial': '+43'},
+        'BD': {'slug': 'bangladesh', 'name': 'Bangladesh', 'flag': '🇧🇩', 'dial': '+880'},
+        'BE': {'slug': 'belgium', 'name': 'Belgium', 'flag': '🇧🇪', 'dial': '+32'},
+        'BA': {'slug': 'bosniaandherzegovina', 'name': 'Bosnia and Herzegovina', 'flag': '🇧🇦', 'dial': '+387'},
         'BR': {'slug': 'brazil', 'name': 'Brazil', 'flag': '🇧🇷', 'dial': '+55'},
-        'ZA': {'slug': 'southafrica', 'name': 'South Africa', 'flag': '🇿🇦', 'dial': '+27'},
-        'GH': {'slug': 'ghana', 'name': 'Ghana', 'flag': '🇬🇭', 'dial': '+233'},
+        'BG': {'slug': 'bulgaria', 'name': 'Bulgaria', 'flag': '🇧🇬', 'dial': '+359'},
+        'CM': {'slug': 'cameroon', 'name': 'Cameroon', 'flag': '🇨🇲', 'dial': '+237'},
+        'CA': {'slug': 'canada', 'name': 'Canada', 'flag': '🇨🇦', 'dial': '+1'},
+        'TD': {'slug': 'chad', 'name': 'Chad', 'flag': '🇹🇩', 'dial': '+235'},
+        'CN': {'slug': 'china', 'name': 'China', 'flag': '🇨🇳', 'dial': '+86'},
+        'CO': {'slug': 'colombia', 'name': 'Colombia', 'flag': '🇨🇴', 'dial': '+57'},
+        'HR': {'slug': 'croatia', 'name': 'Croatia', 'flag': '🇭🇷', 'dial': '+385'},
+        'CZ': {'slug': 'czechrepublic', 'name': 'Czech Republic', 'flag': '🇨🇿', 'dial': '+420'},
+        'EG': {'slug': 'egypt', 'name': 'Egypt', 'flag': '🇪🇬', 'dial': '+20'},
+        'EE': {'slug': 'estonia', 'name': 'Estonia', 'flag': '🇪🇪', 'dial': '+372'},
+        'FR': {'slug': 'france', 'name': 'France', 'flag': '🇫🇷', 'dial': '+33'},
+        'GE': {'slug': 'georgia', 'name': 'Georgia', 'flag': '🇬🇪', 'dial': '+995'},
+        'DE': {'slug': 'germany', 'name': 'Germany', 'flag': '🇩🇪', 'dial': '+49'},
+        'GR': {'slug': 'greece', 'name': 'Greece', 'flag': '🇬🇷', 'dial': '+30'},
+        'HK': {'slug': 'hongkong', 'name': 'Hong Kong', 'flag': '🇭🇰', 'dial': '+852'},
+        'HU': {'slug': 'hungary', 'name': 'Hungary', 'flag': '🇭🇺', 'dial': '+36'},
+        'IN': {'slug': 'india', 'name': 'India', 'flag': '🇮🇳', 'dial': '+91'},
+        'ID': {'slug': 'indonesia', 'name': 'Indonesia', 'flag': '🇮🇩', 'dial': '+62'},
+        'IQ': {'slug': 'iraq', 'name': 'Iraq', 'flag': '🇮🇶', 'dial': '+964'},
+        'IE': {'slug': 'ireland', 'name': 'Ireland', 'flag': '🇮🇪', 'dial': '+353'},
+        'IL': {'slug': 'israel', 'name': 'Israel', 'flag': '🇮🇱', 'dial': '+972'},
+        'IT': {'slug': 'italy', 'name': 'Italy', 'flag': '🇮🇹', 'dial': '+39'},
+        'KZ': {'slug': 'kazakhstan', 'name': 'Kazakhstan', 'flag': '🇰🇿', 'dial': '+7'},
         'KE': {'slug': 'kenya', 'name': 'Kenya', 'flag': '🇰🇪', 'dial': '+254'},
-        'RU': {'slug': 'russia', 'name': 'Russia', 'flag': '🇷🇺', 'dial': '+7'}
+        'KG': {'slug': 'kyrgyzstan', 'name': 'Kyrgyzstan', 'flag': '🇰🇬', 'dial': '+996'},
+        'LV': {'slug': 'latvia', 'name': 'Latvia', 'flag': '🇱🇻', 'dial': '+371'},
+        'LR': {'slug': 'liberia', 'name': 'Liberia', 'flag': '🇱🇷', 'dial': '+231'},
+        'LT': {'slug': 'lithuania', 'name': 'Lithuania', 'flag': '🇱🇹', 'dial': '+370'},
+        'MY': {'slug': 'malaysia', 'name': 'Malaysia', 'flag': '🇲🇾', 'dial': '+60'},
+        'MX': {'slug': 'mexico', 'name': 'Mexico', 'flag': '🇲🇽', 'dial': '+52'},
+        'MD': {'slug': 'moldova', 'name': 'Moldova', 'flag': '🇲🇩', 'dial': '+373'},
+        'MA': {'slug': 'morocco', 'name': 'Morocco', 'flag': '🇲🇦', 'dial': '+212'},
+        'NL': {'slug': 'netherlands', 'name': 'Netherlands', 'flag': '🇳🇱', 'dial': '+31'},
+        'NZ': {'slug': 'newzealand', 'name': 'New Zealand', 'flag': '🇳🇿', 'dial': '+64'},
+        'NG': {'slug': 'nigeria', 'name': 'Nigeria', 'flag': '🇳🇬', 'dial': '+234'},
+        'PE': {'slug': 'peru', 'name': 'Peru', 'flag': '🇵🇪', 'dial': '+51'},
+        'PH': {'slug': 'philippines', 'name': 'Philippines', 'flag': '🇵🇭', 'dial': '+63'},
+        'PL': {'slug': 'poland', 'name': 'Poland', 'flag': '🇵🇱', 'dial': '+48'},
+        'PT': {'slug': 'portugal', 'name': 'Portugal', 'flag': '🇵🇹', 'dial': '+351'},
+        'RO': {'slug': 'romania', 'name': 'Romania', 'flag': '🇷🇴', 'dial': '+40'},
+        'SK': {'slug': 'slovakia', 'name': 'Slovakia', 'flag': '🇸🇰', 'dial': '+421'},
+        'SI': {'slug': 'slovenia', 'name': 'Slovenia', 'flag': '🇸🇮', 'dial': '+386'},
+        'ZA': {'slug': 'southafrica', 'name': 'South Africa', 'flag': '🇿🇦', 'dial': '+27'},
+        'ES': {'slug': 'spain', 'name': 'Spain', 'flag': '🇪🇸', 'dial': '+34'},
+        'SE': {'slug': 'sweden', 'name': 'Sweden', 'flag': '🇸🇪', 'dial': '+46'},
+        'TH': {'slug': 'thailand', 'name': 'Thailand', 'flag': '🇹🇭', 'dial': '+66'},
+        'TR': {'slug': 'turkey', 'name': 'Turkey', 'flag': '🇹🇷', 'dial': '+90'},
+        'UA': {'slug': 'ukraine', 'name': 'Ukraine', 'flag': '🇺🇦', 'dial': '+380'},
+        'GB': {'slug': 'unitedkingdom', 'name': 'United Kingdom', 'flag': '🇬🇧', 'dial': '+44'},
+        'UZ': {'slug': 'uzbekistan', 'name': 'Uzbekistan', 'flag': '🇺🇿', 'dial': '+998'},
+        'VN': {'slug': 'vietnam', 'name': 'Vietnam', 'flag': '🇻🇳', 'dial': '+84'},
     }
 
     # Common service display name -> VirtualSMS service code mapping
     SERVICE_SLUGS = {
+        'wa': {'code': 'wa', 'name': 'WhatsApp'},
         'whatsapp': {'code': 'wa', 'name': 'WhatsApp'},
+        'wa_biz': {'code': 'wa_biz', 'name': 'WhatsApp Business'},
+        'whatsapp business': {'code': 'wa_biz', 'name': 'WhatsApp Business'},
+        'tg': {'code': 'tg', 'name': 'Telegram'},
         'telegram': {'code': 'tg', 'name': 'Telegram'},
-        'google': {'code': 'go', 'name': 'Google / Gmail'},
-        'gmail': {'code': 'go', 'name': 'Google / Gmail'},
-        'youtube': {'code': 'go', 'name': 'Google / Gmail'},
+        'go': {'code': 'go', 'name': 'Google / Gmail / YouTube'},
+        'google': {'code': 'go', 'name': 'Google / Gmail / YouTube'},
+        'gmail': {'code': 'go', 'name': 'Google / Gmail / YouTube'},
+        'youtube': {'code': 'go', 'name': 'Google / Gmail / YouTube'},
+        'dr': {'code': 'dr', 'name': 'OpenAI / ChatGPT'},
         'openai': {'code': 'dr', 'name': 'OpenAI / ChatGPT'},
         'chatgpt': {'code': 'dr', 'name': 'OpenAI / ChatGPT'},
-        'instagram': {'code': 'ig', 'name': 'Instagram'},
+        'ig': {'code': 'ig', 'name': 'Instagram / Threads'},
+        'instagram': {'code': 'ig', 'name': 'Instagram / Threads'},
+        'threads': {'code': 'ig', 'name': 'Instagram / Threads'},
+        'lf': {'code': 'lf', 'name': 'TikTok'},
         'tiktok': {'code': 'lf', 'name': 'TikTok'},
-        'facebook': {'code': 'fb', 'name': 'Facebook'},
+        'douyin': {'code': 'lf', 'name': 'TikTok'},
+        'fb': {'code': 'fb', 'name': 'Facebook / Meta'},
+        'facebook': {'code': 'fb', 'name': 'Facebook / Meta'},
+        'meta': {'code': 'fb', 'name': 'Facebook / Meta'},
+        'tw': {'code': 'tw', 'name': 'Twitter / X'},
         'twitter': {'code': 'tw', 'name': 'Twitter / X'},
         'x': {'code': 'tw', 'name': 'Twitter / X'},
+        'oi': {'code': 'oi', 'name': 'Tinder'},
         'tinder': {'code': 'oi', 'name': 'Tinder'},
+        'ds': {'code': 'ds', 'name': 'Discord'},
         'discord': {'code': 'ds', 'name': 'Discord'},
+        'fu': {'code': 'fu', 'name': 'Snapchat'},
         'snapchat': {'code': 'fu', 'name': 'Snapchat'},
+        'nf': {'code': 'nf', 'name': 'Netflix'},
         'netflix': {'code': 'nf', 'name': 'Netflix'},
+        'ub': {'code': 'ub', 'name': 'Uber'},
         'uber': {'code': 'ub', 'name': 'Uber'},
-        'apple': {'code': 'wx', 'name': 'Apple'},
+        'wx': {'code': 'wx', 'name': 'Apple ID / iCloud'},
+        'apple': {'code': 'wx', 'name': 'Apple ID / iCloud'},
+        'icloud': {'code': 'wx', 'name': 'Apple ID / iCloud'},
+        'mm': {'code': 'mm', 'name': 'Microsoft'},
         'microsoft': {'code': 'mm', 'name': 'Microsoft'},
+        'am': {'code': 'am', 'name': 'Amazon'},
         'amazon': {'code': 'am', 'name': 'Amazon'},
+        'ts': {'code': 'ts', 'name': 'PayPal'},
         'paypal': {'code': 'ts', 'name': 'PayPal'},
+        'mb': {'code': 'mb', 'name': 'Yahoo'},
+        'yahoo': {'code': 'mb', 'name': 'Yahoo'},
+        'mt': {'code': 'mt', 'name': 'Steam'},
+        'steam': {'code': 'mt', 'name': 'Steam'},
+        'li': {'code': 'li', 'name': 'LinkedIn'},
+        'linkedin': {'code': 'li', 'name': 'LinkedIn'},
+        'bl': {'code': 'bl', 'name': 'Bigo Live'},
+        'bigo live': {'code': 'bl', 'name': 'Bigo Live'},
+        're': {'code': 're', 'name': 'Reddit'},
+        'reddit': {'code': 're', 'name': 'Reddit'},
         'bank verification': {'code': 'ot', 'name': 'Bank Verification'},
-        'other': {'code': 'ot', 'name': 'Other Platforms'}
+        'bank': {'code': 'ot', 'name': 'Bank Verification'},
+        'other': {'code': 'ot', 'name': 'Other Platforms'},
+        'ot': {'code': 'ot', 'name': 'Other Platforms'}
     }
 
     _client = None
@@ -507,15 +613,15 @@ class SIMProviderService:
         return dynamic_catalog
 
     @classmethod
-    def purchase_number(cls, country_code: str, service_name: str, operator: str = 'any') -> dict:
-        """Allocates a virtual number from 5sim.
-        Falls back to local preview mode if API key is not yet configured.
+    def purchase_number(cls, country_code: str, service_name: str, operator: str = 'any', service_code: str = None) -> dict:
+        """Allocates a virtual number from VirtualSMS.io.
+        Falls back to local preview mode if API key is not configured.
         """
         client = cls.get_client()
         cc_clean = (country_code or 'US').upper().strip()
         svc_clean = (service_name or 'WhatsApp').strip()
 
-        # Map country to 5sim slug
+        # Map country to metadata and slug
         c_meta = cls.COUNTRY_SLUGS.get(cc_clean)
         if c_meta:
             country_slug = c_meta['slug']
@@ -530,47 +636,29 @@ class SIMProviderService:
                 country_slug = cc_clean.lower()
                 country_name = cc_clean
 
-        # Map service to 5sim code
-        svc_lookup = svc_clean.lower().split('/')[0].strip()
-        s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
-        if s_meta:
-            service_code = s_meta['code']
+        # Resolve service code
+        if service_code:
+            svc_code_clean = str(service_code).strip().lower()
         else:
-            service_code = svc_lookup.replace(' ', '').replace('-', '').lower()
-
-        # For WhatsApp and Telegram, automatically route to the 2nd cheapest operator to avoid recycled/blocked lines
-        is_whatsapp = (service_code == 'whatsapp') or ('whatsapp' in svc_clean.lower())
-        is_telegram = (service_code == 'telegram') or ('telegram' in svc_clean.lower())
-        if is_whatsapp and (not operator or operator == 'any'):
-            wa_info = cls.get_whatsapp_operator_info(country_slug)
-            if wa_info and wa_info.get('operator'):
-                operator = wa_info['operator']
-        elif is_telegram and (not operator or operator == 'any'):
-            tg_info = cls.get_telegram_operator_info(country_slug)
-            if tg_info and tg_info.get('operator'):
-                operator = tg_info['operator']
-
-        # If operator is still 'any', check if catalog specifies a preferred operator
-        if not operator or operator == 'any':
-            cat = cls.get_catalog()
-            matched_c = next((c for c in cat if c.get('country_code', '').upper() == cc_clean or c.get('country_slug', '').lower() == country_slug.lower()), None)
-            if matched_c:
-                matched_s = next((s for s in matched_c.get('services', []) if (s.get('code') or '').lower() == service_code.lower() or (s.get('name') or '').lower() == svc_clean.lower()), None)
-                if matched_s and matched_s.get('operator') and matched_s.get('operator') != 'any':
-                    operator = matched_s['operator']
+            svc_lookup = svc_clean.lower().split('/')[0].strip()
+            s_meta = cls.SERVICE_SLUGS.get(svc_lookup)
+            if s_meta:
+                svc_code_clean = s_meta['code']
+            else:
+                svc_code_clean = svc_lookup.replace(' ', '').replace('-', '').lower()
 
         order_ref = f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"
 
         # If VirtualSMS is configured, make real API purchase
         if client.is_configured:
-            buy_res = client.buy_activation(country_code=cc_clean, country_slug=country_slug, service_code=service_code, operator=operator)
+            buy_res = client.buy_activation(country_code=cc_clean, country_slug=country_slug, service_code=svc_code_clean, operator='standard')
             if not buy_res.get('success'):
                 return buy_res
 
             prov_id = buy_res.get('provider_order_id')
             phone = buy_res.get('phone_number')
             prov_cost = buy_res.get('provider_cost', 0.0)
-            retail_price, margin = cls.calculate_retail_price(base_cost=prov_cost, service_code=service_code, provider_type='5sim', country_code=cc_clean)
+            retail_price, margin = cls.calculate_retail_price(base_cost=prov_cost, service_code=svc_code_clean, provider_type='virtualsms', country_code=cc_clean)
 
             return {
                 'success': True,
@@ -581,8 +669,8 @@ class SIMProviderService:
                 'country_name': country_name,
                 'country_slug': country_slug,
                 'service_name': svc_clean,
-                'service_code': service_code,
-                'operator': buy_res.get('operator', operator),
+                'service_code': svc_code_clean,
+                'operator': 'standard',
                 'provider_cost': prov_cost,
                 'retail_price': retail_price,
                 'profit_margin': margin,
@@ -607,8 +695,8 @@ class SIMProviderService:
             'country_name': c_meta['name'] if c_meta else country_name,
             'country_slug': country_slug,
             'service_name': svc_clean,
-            'service_code': service_code,
-            'operator': operator,
+            'service_code': svc_code_clean,
+            'operator': 'standard',
             'provider_cost': 0.50,
             'retail_price': 1.00,
             'profit_margin': 0.50,

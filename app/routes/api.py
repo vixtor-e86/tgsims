@@ -25,6 +25,7 @@ def purchase_sim():
     country_code = data.get('country_code', 'US').upper()
     country_name = data.get('country_name', 'United States')
     service_name = data.get('service_name', 'WhatsApp')
+    service_code = data.get('service_code')
     operator = data.get('operator') or 'any'
     try:
         price = float(data.get('price', 2.50))
@@ -41,7 +42,7 @@ def purchase_sim():
         }), 400
 
     # 2. Allocate Virtual Number
-    sim_result = SIMProviderService.purchase_number(country_code, service_name, operator=operator)
+    sim_result = SIMProviderService.purchase_number(country_code, service_name, operator=operator, service_code=service_code)
     if not sim_result or not sim_result.get('success'):
         err_msg = (sim_result or {}).get('message') or 'No numbers currently available for this service. Please select another country or try again shortly.'
         return jsonify({
@@ -74,14 +75,14 @@ def purchase_sim():
     order_data = {
         'order_reference': order_ref,
         'service_name': service_name,
-        'service_code': service_name.lower().replace(' ', '_'),
+        'service_code': sim_result.get('service_code') or service_code or service_name.lower().replace(' ', '_'),
         'country_name': country_name,
         'country_code': country_code,
         'country_slug': country_name.lower().replace(' ', '_'),
         'phone_number': sim_result.get('phone_number', ''),
         'user_cost': price,
         'price': price,
-        'provider_cost': 0.00,
+        'provider_cost': float(sim_result.get('provider_cost') or 0.00),
         'provider_order_id': sim_result.get('provider_order_id', ''),
         'order_type': 'activation',
         'status': 'pending',

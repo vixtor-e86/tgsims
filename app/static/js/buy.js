@@ -125,6 +125,7 @@
         t.type = "button";
         t.className = "opt-tile";
         t.dataset.name = s.name;
+        t.dataset.code = s.code || "";
         if (state.service && state.service.name === s.name) t.classList.add("is-selected");
         t.innerHTML =
           '<span class="opt-tile-check">' + svg(G.check) + "</span>" +
@@ -208,6 +209,7 @@
           country_code: state.country.country_code,
           country_name: state.country.country_name,
           service_name: state.service.name,
+          service_code: state.service.code || "",
           operator: state.service.operator || "any",
           price: state.service.price
         })
