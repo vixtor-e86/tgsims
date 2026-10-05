@@ -267,7 +267,10 @@ def check_sms(order_id):
         timed_out = False
         timeout_reason = "Auto-cancelled: SMS timeout"
 
-        if order.get('expires_at'):
+        is_react = (order.get('order_type') == 'reactivation') or ('reactivat' in str(order.get('full_sms_text', '')).lower()) or ('reactivat' in str(order.get('notes', '')).lower())
+
+        if is_react and order.get('expires_at'):
+            # Reactivation order: wait until carrier window expires
             try:
                 exp_str = str(order.get('expires_at')).replace('Z', '+00:00')
                 try:
@@ -278,10 +281,11 @@ def check_sms(order_id):
                     exp_dt = exp_dt.replace(tzinfo=datetime.timezone.utc)
                 if now > exp_dt:
                     timed_out = True
-                    timeout_reason = "Auto-cancelled: Verification window expired"
+                    timeout_reason = "Auto-cancelled: Reactivation window expired"
             except Exception as e:
                 print(f"[check_sms] expires_at parse error: {e}")
         elif order.get('created_at'):
+            # Normal number purchase: strictly 5 minutes (300 seconds) timeout
             try:
                 cat_str = str(order.get('created_at')).replace('Z', '+00:00')
                 try:
@@ -297,7 +301,6 @@ def check_sms(order_id):
                 print(f"[check_sms] created_at parse error: {e}")
 
         if timed_out:
-            is_react = (order.get('order_type') == 'reactivation') or ('reactivat' in str(order.get('full_sms_text', '')).lower()) or ('reactivat' in str(order.get('notes', '')).lower())
             prov_id = order.get('provider_order_id')
             if not is_react and prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
                 try:

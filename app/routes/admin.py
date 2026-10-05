@@ -194,6 +194,52 @@ def pricing():
             except Exception as e:
                 flash(f'Error syncing 5SIM wholesale prices: {e}', 'error')
 
+        elif action == 'update_rental_price':
+            service_code = request.form.get('service_code', '').strip().lower()
+            service_name = request.form.get('service_name', '').strip()
+            duration_days = request.form.get('duration_days', 3)
+            price_val = request.form.get('custom_price_usd', '').strip()
+            try:
+                custom_price = float(price_val) if price_val else None
+                if service_code and duration_days:
+                    ok = SettingsService.update_rental_price(
+                        service_code=service_code,
+                        duration_days=int(duration_days),
+                        custom_price_usd=custom_price,
+                        service_name=service_name
+                    )
+                    if ok:
+                        if custom_price and custom_price > 0:
+                            flash(f'Custom selling price saved for {service_name or service_code} ({duration_days} Days) at ${custom_price:.2f}.', 'success')
+                        else:
+                            flash(f'Custom price cleared for {service_name or service_code} ({duration_days} Days). Reverted to auto-markup.', 'info')
+                    else:
+                        flash('Failed to save rental price. Please ensure migration 012 is executed in Supabase.', 'error')
+                else:
+                    flash('Missing service code or duration.', 'error')
+            except Exception as e:
+                flash(f'Error saving rental price: {e}', 'error')
+
+        elif action == 'reset_rental_price':
+            service_code = request.form.get('service_code', '').strip().lower()
+            duration_days = request.form.get('duration_days', 3)
+            try:
+                if service_code and duration_days:
+                    SettingsService.reset_rental_price(service_code, int(duration_days))
+                    flash(f'Custom price removed for {service_code} ({duration_days} Days). Standard dynamic markup restored.', 'info')
+            except Exception as e:
+                flash(f'Error resetting rental price: {e}', 'error')
+
+        elif action == 'sync_rental_prices':
+            try:
+                ok, msg, count = SettingsService.sync_rental_wholesale_prices()
+                if ok:
+                    flash(msg, 'success')
+                else:
+                    flash(msg, 'error')
+            except Exception as e:
+                flash(f'Error syncing rental wholesale prices from TextVerified: {e}', 'error')
+
         return redirect(url_for('admin.pricing'))
 
     settings = SettingsService.get_settings(force_refresh=True)
@@ -253,12 +299,16 @@ def pricing():
         'textverified': tv_catalog
     }
 
+    # Dedicated long-term rental catalog (10 core services across 3, 7, 14, 30 days)
+    rental_catalog = SIMProviderService.get_rental_catalog()
+
     return render_template(
         'admin/pricing.html',
         settings=settings,
         overrides=overrides,
         examples=examples,
         services_catalog=services_catalog,
+        rental_catalog=rental_catalog,
         active_page='pricing'
     )
 

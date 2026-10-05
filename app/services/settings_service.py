@@ -239,3 +239,152 @@ class SettingsService:
         except Exception as e:
             print(f"[SettingsService] Error deleting price override: {e}")
             return False
+
+    # =========================================================================
+    # DEDICATED RENTAL PRICING (DATABASE-DRIVEN)
+    # =========================================================================
+
+    @classmethod
+    def get_rental_pricing_records(cls) -> List[Dict[str, Any]]:
+        """Fetch all rental pricing records from public.rental_service_pricing in Supabase."""
+        admin = get_supabase_admin()
+        if not admin:
+            return []
+        try:
+            res = admin.table('rental_service_pricing').select('*').order('service_name').order('duration_days').execute()
+            return res.data or []
+        except Exception as e:
+            print(f"[SettingsService] rental_service_pricing load notice: {e}")
+            return []
+
+    @classmethod
+    def get_rental_pricing_map(cls) -> Dict[tuple, Dict[str, Any]]:
+        """Returns map of (service_code, duration_days) -> row from rental_service_pricing."""
+        records = cls.get_rental_pricing_records()
+        pmap = {}
+        for r in records:
+            sc = str(r.get('service_code', '')).lower().strip()
+            days = int(r.get('duration_days', 3))
+            pmap[(sc, days)] = {
+                'id': r.get('id'),
+                'service_code': sc,
+                'service_name': r.get('service_name', sc.capitalize()),
+                'duration_days': days,
+                'wholesale_price_usd': float(r.get('wholesale_price_usd') or 0.00),
+                'custom_price_usd': float(r.get('custom_price_usd')) if r.get('custom_price_usd') is not None else None,
+                'is_active': bool(r.get('is_active', True)),
+                'updated_at': r.get('updated_at')
+            }
+        return pmap
+
+    @classmethod
+    def update_rental_price(
+        cls,
+        service_code: str,
+        duration_days: int,
+        custom_price_usd: Optional[float],
+        service_name: str = ''
+    ) -> bool:
+        """Sets or updates a custom price override for a rental service & duration."""
+        admin = get_supabase_admin()
+        if not admin:
+            return False
+        sc = service_code.strip().lower()
+        days = int(duration_days)
+        now_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        try:
+            row = {
+                'service_code': sc,
+                'service_name': service_name or sc.capitalize(),
+                'duration_days': days,
+                'custom_price_usd': float(custom_price_usd) if custom_price_usd is not None and custom_price_usd > 0 else None,
+                'updated_at': now_iso
+            }
+            admin.table('rental_service_pricing').upsert(row, on_conflict='service_code,duration_days').execute()
+            return True
+        except Exception as e:
+            print(f"[SettingsService] Error updating rental price: {e}")
+            return False
+
+    @classmethod
+    def reset_rental_price(cls, service_code: str, duration_days: int) -> bool:
+        """Resets custom price override to NULL (so it falls back to dynamic markup)."""
+        admin = get_supabase_admin()
+        if not admin:
+            return False
+        sc = service_code.strip().lower()
+        days = int(duration_days)
+        now_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        try:
+            admin.table('rental_service_pricing')\
+                .update({'custom_price_usd': None, 'updated_at': now_iso})\
+                .eq('service_code', sc)\
+                .eq('duration_days', days)\
+                .execute()
+            return True
+        except Exception as e:
+            print(f"[SettingsService] Error resetting rental price: {e}")
+            return False
+
+    @classmethod
+    def sync_rental_wholesale_prices(cls) -> tuple[bool, str, int]:
+        """Fetches live wholesale rental prices from TextVerified API for all 10 core services
+        across durations (3, 7, 14, 30 days) and persists them directly into the database.
+        """
+        from app.services.sim_provider import SIMProviderService
+        try:
+            from textverified import RentalDuration, NumberType, ReservationCapability
+        except ImportError:
+            return False, "TextVerified SDK is not installed or unavailable.", 0
+
+        tv = SIMProviderService.get_textverified_client()
+        if not tv:
+            return False, "TextVerified API credentials are not configured.", 0
+
+        admin = get_supabase_admin()
+        if not admin:
+            return False, "Database connection is not available.", 0
+
+        durations = {
+            3: RentalDuration.THREE_DAY,
+            7: RentalDuration.SEVEN_DAY,
+            14: RentalDuration.FOURTEEN_DAY,
+            30: RentalDuration.THIRTY_DAY
+        }
+
+        services = SIMProviderService.RENTAL_SERVICES
+        updated_count = 0
+        now_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+
+        for svc in services:
+            sc = svc['code'].strip().lower()
+            sname = svc.get('name', sc.capitalize())
+            for days, rd in durations.items():
+                try:
+                    p = tv.reservations.pricing(
+                        service_name=sc,
+                        duration=rd,
+                        number_type=NumberType.MOBILE,
+                        capability=ReservationCapability.SMS,
+                        area_code=False,
+                        always_on=False,
+                        is_renewable=False
+                    )
+                    cost = float(getattr(p, 'price', 0.0) or 0.0)
+                    if cost > 0:
+                        admin.table('rental_service_pricing').upsert({
+                            'service_code': sc,
+                            'service_name': sname,
+                            'duration_days': days,
+                            'wholesale_price_usd': cost,
+                            'updated_at': now_iso
+                        }, on_conflict='service_code,duration_days').execute()
+                        updated_count += 1
+                except Exception as ep:
+                    print(f"[SettingsService] rental pricing sync note ({sc}, {days}d): {ep}")
+
+        if updated_count > 0:
+            return True, f"Successfully refreshed wholesale prices for {updated_count} rental options directly from TextVerified!", updated_count
+        else:
+            return False, "No prices could be updated. Please ensure migration 012 has been run in Supabase SQL editor.", 0
+

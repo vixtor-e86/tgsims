@@ -544,7 +544,167 @@
   {% endif %}
 </div>
 
-<script id="admin-services-catalog" type="application/json">
+{# ========================================================================= #}
+{# DEDICATED NUMBER RENTALS PRICING CONTROL (DATABASE-BACKED)               #}
+{# ========================================================================= #}
+<div class="settings-panel" id="rentals-pricing-section">
+  <div class="settings-panel-header">
+    <div>
+      <h2>{{ icon('phone') }} Dedicated Number Rentals Pricing Control</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+        Manage wholesale costs and set custom retail prices for all 10 core dedicated line rental services across 3, 7, 14, and 30-day durations. Custom prices override standard dynamic markup.
+      </p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+      <form action="{{ url_for('admin.pricing') }}" method="POST" style="margin: 0;" onsubmit="var b=this.querySelector('button'); b.disabled=true; b.innerHTML='Syncing Live Prices...';">
+        <input type="hidden" name="action" value="sync_rental_prices">
+        <button type="submit" class="btn btn-secondary btn-sm" title="Re-sync wholesale rental prices directly from TextVerified live API into the database">
+          {{ icon('refresh') }} Refresh Prices from TextVerified
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="settings-panel-body" style="gap: 1.25rem;">
+    {# Filter bar & Search #}
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+        <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-right: 0.35rem; text-transform: uppercase;">Duration:</span>
+        <button type="button" class="btn btn-xs btn-primary rental-filter-btn" data-filter="all">All Tiers</button>
+        <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="3">3 Days</button>
+        <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="7">7 Days</button>
+        <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="14">14 Days</button>
+        <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="30">30 Days</button>
+      </div>
+
+      <div style="position: relative; min-width: 240px;">
+        <input type="text" id="rental-service-search" class="affix-field" placeholder="Filter rental service..."
+               style="height: 34px; font-size: 0.85rem; border-radius: var(--r-sm); width: 100%;">
+      </div>
+    </div>
+
+    {# Rental Pricing Table #}
+    {% if rental_catalog %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+              <th style="padding: 0.75rem 0.6rem;">Service Name</th>
+              <th style="padding: 0.75rem 0.6rem;">Duration</th>
+              <th style="padding: 0.75rem 0.6rem;">Wholesale Cost (USD)</th>
+              <th style="padding: 0.75rem 0.6rem;">Selling Price</th>
+              <th style="padding: 0.75rem 0.6rem;">Pricing Mode</th>
+              <th style="padding: 0.75rem 0.6rem; text-align: right;">Custom Selling Price (USD)</th>
+            </tr>
+          </thead>
+          <tbody id="rental-pricing-tbody">
+            {% for svc in rental_catalog %}
+              {% for days_str in ['3', '7', '14', '30'] %}
+                {% set p = svc.pricing[days_str] %}
+                <tr class="rental-row"
+                    data-duration="{{ days_str }}"
+                    data-service="{{ svc.name|lower }} {{ svc.code|lower }}"
+                    style="border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+                  <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <span>{{ svc.name }}</span>
+                      <code style="font-size: 0.75rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs); color: var(--text-muted);">{{ svc.code }}</code>
+                    </div>
+                  </td>
+                  <td style="padding: 0.75rem 0.6rem;">
+                    <span class="badge badge-brand" style="font-size: 0.75rem; font-weight: 700;">{{ days_str }} Days</span>
+                  </td>
+                  <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text-muted);">
+                    ${{ '%.2f'|format(p.base_cost_usd) }}
+                  </td>
+                  <td style="padding: 0.75rem 0.6rem; font-weight: 700; color: var(--hue-success);">
+                    ${{ '%.2f'|format(p.retail_usd) }}
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">
+                      ({{ p.formatted_ngn }})
+                    </span>
+                  </td>
+                  <td style="padding: 0.75rem 0.6rem;">
+                    {% if p.is_custom %}
+                      <span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 700;">Custom Fixed</span>
+                    {% else %}
+                      <span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>
+                    {% endif %}
+                  </td>
+                  <td style="padding: 0.75rem 0.6rem; text-align: right;">
+                    <form action="{{ url_for('admin.pricing') }}" method="POST" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0;">
+                      <input type="hidden" name="action" value="update_rental_price">
+                      <input type="hidden" name="service_code" value="{{ svc.code }}">
+                      <input type="hidden" name="service_name" value="{{ svc.name }}">
+                      <input type="hidden" name="duration_days" value="{{ days_str }}">
+                      <div class="affix-input-group" style="width: 110px; margin: 0;">
+                        <span class="affix-addon prefix" style="height: 32px; min-width: 28px; padding: 0 0.5rem; font-size: 0.85rem;">$</span>
+                        <input type="number" step="0.01" min="0.10" name="custom_price_usd" class="affix-field has-prefix"
+                               style="height: 32px; font-size: 0.88rem; padding: 0 0.5rem !important;"
+                               value="{{ '%.2f'|format(p.custom_price_usd) if p.custom_price_usd else '' }}"
+                               placeholder="{{ '%.2f'|format(p.retail_usd) }}">
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-xs" style="height: 32px; padding: 0 0.65rem;" title="Save Custom Price">
+                        Save
+                      </button>
+                      {% if p.is_custom %}
+                        <button type="button" class="btn btn-ghost btn-xs text-danger" style="height: 32px; padding: 0 0.4rem;" title="Reset to auto markup"
+                                onclick="var f=this.form; f.action.value='reset_rental_price'; f.submit();">
+                          {{ icon('trash') }}
+                        </button>
+                      {% endif %}
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.9rem;">
+        No rental services found.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function() {
+  var filterBtns = document.querySelectorAll('.rental-filter-btn');
+  var searchInput = document.getElementById('rental-service-search');
+  var rows = document.querySelectorAll('.rental-row');
+
+  function applyFilter() {
+    var activeBtn = document.querySelector('.rental-filter-btn.btn-primary');
+    var activeFilter = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+    var q = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+    rows.forEach(function(row) {
+      var d = row.getAttribute('data-duration');
+      var s = (row.getAttribute('data-service') || '').toLowerCase();
+      var matchesDuration = (activeFilter === 'all' || d === activeFilter);
+      var matchesSearch = (!q || s.indexOf(q) !== -1);
+      row.style.display = (matchesDuration && matchesSearch) ? '' : 'none';
+    });
+  }
+
+  filterBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      filterBtns.forEach(function(b) {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-secondary');
+      });
+      btn.classList.remove('btn-secondary');
+      btn.classList.add('btn-primary');
+      applyFilter();
+    });
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applyFilter);
+  }
+})();
+</script>
   {{ services_catalog|tojson|safe }}
 </script>
 

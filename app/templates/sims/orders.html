@@ -181,10 +181,6 @@
                           title="Reactivate this number to receive another OTP code">
                     {{ icon('refresh') }} Reactivate
                   </button>
-                {% else %}
-                  <span class="badge badge-neutral badge-sm" style="font-size:0.7rem; padding:4px 8px; border-radius:var(--r-sm);" title="Reactivation window has expired with the carrier (typically 2-3 weeks). For long-term retention, rent a number.">
-                    {{ icon('clock') }} Reactivation Ended
-                  </span>
                 {% endif %}
                 <a href="{{ reorder_url }}" class="btn btn-secondary btn-sm">Re-order</a>
               </div>
@@ -693,19 +689,12 @@
             if (window.toast) window.toast(data.message || 'Could not reactivate number.', 'error');
             if (data.reactivation_expired) {
               closeReactivateModal();
-              // Permanently remove Reactivate button and replace with Reactivation Ended badge on the row
+              // Remove Reactivate button so it goes blank
               var row = document.querySelector('tr[data-order-row][data-order-id="' + targetReactivateId + '"]');
               if (row) {
                 var rBtn = row.querySelector('button[data-action="reactivate"]');
                 if (rBtn) {
-                  var badge = document.createElement('span');
-                  badge.className = 'badge badge-neutral badge-sm';
-                  badge.style.fontSize = '0.7rem';
-                  badge.style.padding = '4px 8px';
-                  badge.style.borderRadius = 'var(--r-sm)';
-                  badge.title = 'Reactivation window closed: carrier slot rotated.';
-                  badge.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Reactivation Ended';
-                  rBtn.parentNode.replaceChild(badge, rBtn);
+                  rBtn.remove();
                 }
               }
             } else {

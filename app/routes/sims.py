@@ -104,7 +104,8 @@ def my_sims():
 
         remaining = 300
         elapsed = 0
-        if o.get('expires_at'):
+        if is_react and o.get('expires_at'):
+            # Only reactivation orders use TextVerified's dynamic carrier window (e.g. 20m, 60m, 120m)
             try:
                 exp_str = str(o['expires_at']).replace('Z', '+00:00')
                 try:
@@ -129,6 +130,7 @@ def my_sims():
                 remaining = 0
                 elapsed = 300
         elif o.get('created_at'):
+            # Normal number purchases: strictly 5 minutes (300 seconds) wait time!
             try:
                 cat_str = str(o['created_at']).replace('Z', '+00:00')
                 try:
@@ -148,8 +150,8 @@ def my_sims():
         # Reactivation rule: Reactivations CANNOT be cancelled manually. User must wait until time exhausts or OTP arrives.
         o['can_cancel'] = (not is_react) and (elapsed >= 180)
 
-        # Reactivation retention window: Lines are only valid for 2-3 weeks (21 days) or until marked expired
-        react_closed = bool(o.get('reactivation_expired')) or (elapsed >= 21 * 86400)
+        # Reactivation availability: Reactivation is available unless carrier rejected reactivation
+        react_closed = bool(o.get('reactivation_expired'))
         o['reactivation_closed'] = react_closed
         o['can_reactivate'] = (not react_closed) and has_received_otp
 

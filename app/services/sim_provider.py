@@ -986,7 +986,6 @@ class SIMProviderService:
                         'package_name': 'Reliable Package',
                         'provider_line': 'Dedicated Cellular',
                         'price': charge_price,
-                        'expires_at': exp_iso,
                         'status': 'pending',
                     }
                 except Exception as e:
@@ -1158,46 +1157,22 @@ class SIMProviderService:
             if not tv_client:
                 return {'success': False, 'message': 'Verification service temporarily unavailable.'}
 
-            # --- STEP 1: PRE-CHECK CARRIER LINE AVAILABILITY (BEFORE DEDUCTING FUNDS) ---
+            # --- STEP 1: CHECK IF CARRIER LINE IS CURRENTLY ALREADY ACTIVE / WAITING FOR OTP ---
             expires_at_iso = None
             try:
                 v_chk = tv_client.verifications.details(tv_id)
-                can_react = getattr(getattr(v_chk, 'reactivate', None), 'can_reactivate', None)
-                if can_react is False:
-                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
-                    return {
-                        'success': False,
-                        'message': 'This number is no longer available for reactivation in carrier banks. The carrier slot has expired or rotated away.',
-                        'reactivation_expired': True
-                    }
-                # Check if line is already open/pending in carrier network
-                chk_st = getattr(v_chk.state, 'value', str(v_chk.state)).lower() if hasattr(v_chk, 'state') else ''
-                if 'pending' in chk_st or 'active' in chk_st or 'open' in chk_st:
+                chk_st = str(getattr(v_chk, 'state', '')).lower()
+                if any(s in chk_st for s in ['pending', 'active', 'open', 'reactivated']):
                     if hasattr(v_chk, 'ends_at') and v_chk.ends_at:
                         expires_at_iso = v_chk.ends_at.isoformat() if hasattr(v_chk.ends_at, 'isoformat') else str(v_chk.ends_at)
                     cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
                     return {
                         'success': True,
-                        'message': 'Number line is already active! Line is open for your OTP code.',
+                        'message': 'Number is reactivated and waiting for your new OTP code.',
                         'order_reference': order.get('order_reference')
                     }
             except Exception as ex_chk:
-                err_chk = str(ex_chk).lower()
-                print(f"[SIMProviderService] TextVerified pre-check error: {ex_chk}")
-                if '404' in err_chk or 'not found' in err_chk:
-                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
-                    return {
-                        'success': False,
-                        'message': 'This number line has expired beyond the carrier reactivation window. Please rent a number or order a new one.',
-                        'reactivation_expired': True
-                    }
-                if 'cannot be reactivated' in err_chk:
-                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
-                    return {
-                        'success': False,
-                        'message': 'This number is no longer available for reactivation in carrier banks. Line retention has ended.',
-                        'reactivation_expired': True
-                    }
+                print(f"[SIMProviderService] TextVerified details check note: {ex_chk}")
 
             # --- STEP 2: DEDUCT REACTIVATION FEE FROM USER WALLET ---
             if user_id:
@@ -1242,13 +1217,13 @@ class SIMProviderService:
                             amount=REACTIVATION_FEE,
                             trans_type='refund',
                             reference=f"REF-REACT-{uuid.uuid4().hex[:8].upper()}",
-                            description="Refund: Carrier line closed",
+                            description="Refund: Reactivation unavailable",
                             order_id=order.get('id')
                         )
                     cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
                     return {
                         'success': False,
-                        'message': 'Could not reactivate this line with carrier. The reactivation window has closed.',
+                        'message': 'This number is no longer available for reactivation from carrier. Your wallet has been refunded.',
                         'reactivation_expired': True
                     }
             except Exception as e:
@@ -1266,11 +1241,11 @@ class SIMProviderService:
                     cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
                     return {
                         'success': True,
-                        'message': 'Number line is already active! Line is open for your OTP code.',
+                        'message': 'Number is reactivated and waiting for your new OTP code.',
                         'order_reference': order.get('order_reference')
                     }
 
-                # Refund the reactivation fee on carrier failure
+                # Refund the reactivation fee immediately on carrier failure
                 if fee_deducted and user_id:
                     try:
                         DBService.credit_wallet_balance(
@@ -1285,22 +1260,15 @@ class SIMProviderService:
                         print(f"[SIMProviderService] Error refunding reactivation fee: {ex}")
 
                 if 'insufficient balance' in err_str or 'insufficientbalance' in err_str:
-                    return {'success': False, 'message': 'Carrier service balance is currently low. Please contact support.'}
-                if 'cannot be reactivated' in err_str:
-                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
-                    return {
-                        'success': False,
-                        'message': 'This number cannot be reactivated (carrier slot has rotated away or retention ended).',
-                        'reactivation_expired': True
-                    }
-                if '404' in err_str or 'not found' in err_str:
-                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
-                    return {
-                        'success': False,
-                        'message': 'This number line has expired beyond the carrier reactivation window. Please order a new number or rent one.',
-                        'reactivation_expired': True
-                    }
-                return {'success': False, 'message': 'Carrier reactivation is unavailable for this number at the moment.'}
+                    return {'success': False, 'message': 'Carrier service balance is currently low. Please contact support. (Your fee was refunded)'}
+
+                # Carrier slot unavailable / expired / 404 / 400: mark expired so button goes blank
+                cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                return {
+                    'success': False,
+                    'message': 'This number cannot be reactivated with the carrier. The fee has been refunded to your wallet.',
+                    'reactivation_expired': True
+                }
 
         return {'success': False, 'message': 'Reactivation is only supported on Reliable Package numbers.'}
 
@@ -1507,7 +1475,9 @@ class SIMProviderService:
 
     @classmethod
     def get_rental_catalog(cls) -> list:
-        """Returns the rental catalog with wholesale and retail prices calculated for 3, 7, 14, and 30 days."""
+        """Returns the rental catalog with wholesale and retail prices calculated for 3, 7, 14, and 30 days,
+        incorporating live wholesale database costs and admin custom selling price overrides.
+        """
         from app.services.settings_service import SettingsService
         try:
             pct, floor = SettingsService.get_textverified_markup()
@@ -1517,18 +1487,40 @@ class SIMProviderService:
             ngn_rate = 1600.00
 
         mult = 1.0 + (pct / 100.0)
+        try:
+            db_pricing = SettingsService.get_rental_pricing_map()
+        except Exception as e:
+            print(f"[SIMProviderService] rental pricing DB fetch error: {e}")
+            db_pricing = {}
+
         catalog = []
         for svc in cls.RENTAL_SERVICES:
             item = dict(svc)
+            code = svc['code'].strip().lower()
             pricing = {}
-            for days, base_cost in svc['base_pricing'].items():
-                retail_usd = round(max(base_cost * mult, base_cost + floor), 2)
+            for days, default_cost in svc['base_pricing'].items():
+                db_item = db_pricing.get((code, days))
+                if db_item and db_item.get('wholesale_price_usd'):
+                    wholesale_cost = float(db_item['wholesale_price_usd'])
+                else:
+                    wholesale_cost = float(default_cost)
+
+                custom_price = db_item.get('custom_price_usd') if db_item else None
+                if custom_price is not None and float(custom_price) > 0:
+                    retail_usd = round(float(custom_price), 2)
+                    is_custom = True
+                else:
+                    retail_usd = round(max(wholesale_cost * mult, wholesale_cost + floor), 2)
+                    is_custom = False
+
                 retail_ngn = round(retail_usd * ngn_rate, 2)
                 pricing[str(days)] = {
                     'days': days,
-                    'base_cost_usd': base_cost,
+                    'base_cost_usd': wholesale_cost,
                     'retail_usd': retail_usd,
                     'retail_ngn': retail_ngn,
+                    'is_custom': is_custom,
+                    'custom_price_usd': custom_price,
                     'formatted_usd': f"${retail_usd:.2f}",
                     'formatted_ngn': f"₦{retail_ngn:,.2f}"
                 }
