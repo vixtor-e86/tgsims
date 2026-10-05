@@ -475,15 +475,37 @@ class SIMProviderService:
             pct, floor = 30.0, 0.30
 
         mult = 1.0 + (pct / 100.0)
+
+        # Real VirtualSMS wholesale pricing map (flat rate across all countries)
+        VSMS_BASE_COSTS = {
+            'whatsapp': 0.12, 'telegram': 0.15, 'google': 0.02, 'gmail': 0.02,
+            'openai': 0.30, 'chatgpt': 0.30, 'instagram': 0.02, 'facebook': 0.02,
+            'twitter': 0.03, 'x': 0.03, 'tiktok': 0.04, 'snapchat': 0.10,
+            'discord': 0.05, 'linkedin': 0.15, 'binance': 0.20, 'paypal': 0.30,
+            'apple': 0.25, 'amazon': 0.15, 'netflix': 0.10, 'tinder': 0.20,
+            'uber': 0.15, 'other': 0.20
+        }
+
         dynamic_catalog = []
         for c in raw_countries:
             c_copy = dict(c)
             services_list = []
             for s in c.get('services', []):
                 s_copy = dict(s)
-                base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.50))
+                s_name = (s.get('name') or '').lower()
+                s_code = (s.get('code') or '').lower()
+
+                # Check VirtualSMS wholesale price first
+                base = None
+                for vk, vp in VSMS_BASE_COSTS.items():
+                    if vk in s_code or vk in s_name:
+                        base = vp
+                        break
+                if base is None:
+                    base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.20))
+
                 s_copy['base_cost'] = base
-                # Worldwide catalog uses 5sim dynamic profit margin % and floor (US overrides apply exclusively to US numbers)
+                # Worldwide catalog uses VirtualSMS dynamic profit margin % and floor
                 s_copy['price'] = round(max(base * mult, base + floor), 2)
                 services_list.append(s_copy)
             c_copy['services'] = services_list
@@ -545,9 +567,9 @@ class SIMProviderService:
 
         order_ref = f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"
 
-        # If 5sim is configured, make real API purchase
+        # If VirtualSMS is configured, make real API purchase
         if client.is_configured:
-            buy_res = client.buy_activation(country_slug=country_slug, service_code=service_code, operator=operator)
+            buy_res = client.buy_activation(country_code=cc_clean, country_slug=country_slug, service_code=service_code, operator=operator)
             if not buy_res.get('success'):
                 return buy_res
 
@@ -1090,7 +1112,7 @@ class SIMProviderService:
         charge_price = float(price) if price else 0.85
 
         if client.is_configured:
-            buy_res = client.buy_activation(country_slug=country_slug, service_code=service_code, operator=operator)
+            buy_res = client.buy_activation(country_code=cc_clean, country_slug=country_slug, service_code=service_code, operator=operator)
             if buy_res.get('success'):
                 return {
                     'success': True,

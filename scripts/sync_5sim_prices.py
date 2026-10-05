@@ -105,20 +105,81 @@ def extract_best_service_prices(raw_5sim_data, country_slug: str):
     return result
 
 
-def sync_catalog(raw_5sim_data=None):
-    """Updates app/data/catalog.json, app/data/whatsapp_operators.json, app/data/telegram_operators.json, and app/data/5sim_us_services.json with real wholesale costs."""
-    try:
-        from scripts.sync_virtualsms_prices import sync_virtualsms_us_services
-        sync_virtualsms_us_services()
-    except Exception as e:
-        print(f"[!] Note on sync_virtualsms_us_services: {e}")
+def sync_virtualsms_catalog():
+    """Fetch live wholesale prices from VirtualSMS.io and update catalog.json."""
+    from app.services.sim_provider import VirtualSMSClient, SIMProviderService
+    client = VirtualSMSClient()
+    services_resp = client.get_services()
+    if not isinstance(services_resp, dict) or 'services' not in services_resp:
+        return False
 
-    if raw_5sim_data is None:
-        raw_5sim_data = fetch_5sim_live_prices()
-        if not raw_5sim_data:
-            print("[-] Cannot sync 5sim raw catalog: Failed to retrieve 5SIM pricing data.")
-            # VirtualSMS US sync already succeeded above
-            return True
+    vsms_services = services_resp.get('services', [])
+    vsms_lookup = {}
+    for s in vsms_services:
+        s_name = (s.get('name') or '').lower().strip()
+        s_id = (s.get('id') or '').lower().strip()
+        price = float(s.get('price') or 0.20)
+        vsms_lookup[s_id] = price
+        vsms_lookup[s_name] = price
+        if 'whatsapp' in s_name:
+            vsms_lookup['whatsapp'] = price
+        elif 'telegram' in s_name:
+            vsms_lookup['telegram'] = price
+        elif 'google' in s_name or 'gmail' in s_name:
+            vsms_lookup['google'] = price
+            vsms_lookup['gmail'] = price
+            vsms_lookup['google / gmail'] = price
+        elif 'openai' in s_name or 'chatgpt' in s_name:
+            vsms_lookup['openai'] = price
+            vsms_lookup['chatgpt'] = price
+            vsms_lookup['openai / chatgpt'] = price
+        elif 'twitter' in s_name:
+            vsms_lookup['twitter'] = price
+            vsms_lookup['twitter / x'] = price
+        elif 'instagram' in s_name:
+            vsms_lookup['instagram'] = price
+        elif 'facebook' in s_name:
+            vsms_lookup['facebook'] = price
+        elif 'tiktok' in s_name:
+            vsms_lookup['tiktok'] = price
+        elif 'tinder' in s_name:
+            vsms_lookup['tinder'] = price
+        elif 'netflix' in s_name:
+            vsms_lookup['netflix'] = price
+
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'data'))
+    catalog_path = os.path.join(data_dir, 'catalog.json')
+    if os.path.exists(catalog_path):
+        with open(catalog_path, 'r', encoding='utf-8') as f:
+            catalog = json.load(f)
+
+        for country in catalog:
+            for s in country.get('services', []):
+                s_name_lower = (s.get('name') or '').lower().strip()
+                s_code_lower = (s.get('code') or '').lower().strip()
+                matched = vsms_lookup.get(s_code_lower) or vsms_lookup.get(s_name_lower)
+                if not matched:
+                    for vk, vp in vsms_lookup.items():
+                        if vk in s_name_lower:
+                            matched = vp
+                            break
+                if matched:
+                    s['base_cost'] = matched
+                    s['price'] = matched
+
+        with open(catalog_path, 'w', encoding='utf-8') as f:
+            json.dump(catalog, f, indent=2)
+
+    SIMProviderService._cached_raw_catalog = None
+    return True
+
+
+def sync_catalog(raw_5sim_data=None):
+    """Updates app/data/catalog.json with real wholesale costs from VirtualSMS."""
+    ok_vsms = sync_virtualsms_catalog()
+    if ok_vsms:
+        print("[+] Successfully synced live wholesale prices from VirtualSMS.io API.")
+        return True
 
     data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app', 'data'))
     catalog_path = os.path.join(data_dir, 'catalog.json')
