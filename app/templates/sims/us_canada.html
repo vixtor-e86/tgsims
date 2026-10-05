@@ -80,16 +80,16 @@
 
   {# Box 2: Reliable Package Numbers (Dedicated Non-VoIP with Reactivation) #}
   <section class="card card-pad quick-buy us-quick-box" data-box="premium">
-    <div class="card-head">
+    <div class="card-head" style="position:relative; margin-bottom:var(--sp-4);">
       <h2 class="card-title">{{ icon('shield') }} Reliable Package Numbers</h2>
-      <span class="badge badge-info">{{ icon('refresh') }} Reactivatable</span>
-    </div>
-
-    <div style="background:rgba(37, 99, 235, 0.06); border:1px solid rgba(37, 99, 235, 0.2); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-bottom:var(--sp-4); font-size:var(--fs-xs); line-height:1.5; color:var(--text-dim);">
-      <div style="display:flex; align-items:flex-start; gap:8px;">
-        <span style="color:var(--brand); flex-shrink:0; margin-top:1px;">{{ icon('info') }}</span>
-        <div>
-          <strong style="color:var(--text);">Reactivation Notice:</strong> Number reactivation is typically guaranteed for <strong>2 to 3 weeks</strong> while the carrier line is reserved. Beyond this period, lines rotate and can no longer be reactivated. For guaranteed long-term retention (3 to 30+ days), please use <a href="{{ url_for('sims.rentals') }}" style="color:var(--brand); font-weight:600; text-decoration:underline;">Rent a Number</a>.
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="badge badge-info">{{ icon('refresh') }} Reactivatable</span>
+        <div class="info-tooltip-wrapper" tabindex="0" title="Click or hover for reactivation details">
+          <span class="info-tooltip-icon" aria-label="Reactivation info">{{ icon('info') }}</span>
+          <div class="info-tooltip-popover">
+            <strong style="color:var(--text); display:block; margin-bottom:4px;">Reactivation Notice:</strong>
+            Number reactivation is typically guaranteed for <strong>2 to 3 weeks</strong> while the carrier line is reserved. Beyond this period, lines rotate and can no longer be reactivated. For guaranteed long-term retention (3 to 30+ days), please use <a href="{{ url_for('sims.rentals') }}" style="color:var(--brand); font-weight:600; text-decoration:underline;">Rent a Number</a>.
+          </div>
         </div>
       </div>
     </div>
@@ -271,6 +271,93 @@
   text-align: center;
   font-size: var(--fs-xs);
   color: var(--text-muted);
+}
+
+/* Proportional Icon Sizing */
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-title svg.tg-ico {
+  width: 24px;
+  height: 24px;
+}
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title svg.tg-ico {
+  width: 22px;
+  height: 22px;
+}
+.quick-buy-note svg.tg-ico {
+  width: 16px;
+  height: 16px;
+}
+.badge svg.tg-ico {
+  width: 14px;
+  height: 14px;
+}
+
+.info-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  outline: none;
+}
+.info-tooltip-icon {
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: all var(--t-fast);
+}
+.info-tooltip-icon:hover,
+.info-tooltip-wrapper:focus .info-tooltip-icon,
+.info-tooltip-wrapper:hover .info-tooltip-icon {
+  color: var(--brand);
+  border-color: var(--brand);
+  background: rgba(37, 99, 235, 0.12);
+}
+.info-tooltip-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  max-width: min(280px, 85vw);
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  box-shadow: 0 12px 28px -4px rgba(0,0,0,0.35);
+  z-index: 200;
+  display: none;
+  pointer-events: auto;
+}
+.info-tooltip-popover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 10px;
+  border: 6px solid transparent;
+  border-bottom-color: var(--border-strong, var(--border));
+}
+.info-tooltip-wrapper:hover .info-tooltip-popover,
+.info-tooltip-wrapper:focus .info-tooltip-popover,
+.info-tooltip-wrapper:focus-within .info-tooltip-popover {
+  display: block;
+  animation: us-drop-anim 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 </style>
 {% endblock %}

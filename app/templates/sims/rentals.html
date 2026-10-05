@@ -4,18 +4,9 @@
 {% block title %}Rent a Number | {{ BRAND }}{% endblock %}
 
 {% block page %}
-<div class="page-head" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:var(--sp-4);">
-  <div>
-    <h1 class="page-title">{{ icon('clock') }} Rent a Number</h1>
-    <p class="page-subtitle">Dedicated US carrier lines reserved exclusively for your account. Receive unlimited verification codes for days or weeks.</p>
-  </div>
-  <div style="display:flex; align-items:center; gap:var(--sp-3);">
-    <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-full); padding:6px 16px; font-size:var(--fs-sm); display:flex; align-items:center; gap:8px;">
-      <span class="td-dim">Balance:</span>
-      <span class="td-strong text-brand" data-usd="{{ '%.2f'|format(wallet.balance) }}">${{ '%.2f'|format(wallet.balance) }}</span>
-    </div>
-    <a href="{{ url_for('wallet.index') }}" class="btn btn-secondary btn-sm">{{ icon('wallet') }} Top Up</a>
-  </div>
+<div class="page-head">
+  <h1 class="page-title">{{ icon('clock') }} Rent a Number</h1>
+  <p class="page-subtitle">Dedicated US carrier lines reserved exclusively for your account. Receive unlimited verification codes for days or weeks.</p>
 </div>
 
 {# ---- Retention & Feature Banner ---- #}
@@ -482,97 +473,119 @@
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
+/* Icon Sizing: Ensure Clock, Shield, and Header icons are prominent & proportional */
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-title svg.tg-ico {
+  width: 26px;
+  height: 26px;
+}
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title svg.tg-ico {
+  width: 22px;
+  height: 22px;
+}
+.modal-header div[style*="border-radius:var(--r-full)"] svg.tg-ico {
+  width: 22px;
+  height: 22px;
+}
+.quick-buy-note svg.tg-ico {
+  width: 16px;
+  height: 16px;
+}
+.badge svg.tg-ico {
+  width: 14px;
+  height: 14px;
+}
+
+/* Scrollable Tables on Mobile & Small Screens */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Responsive Mobile View for Rent a Number Page */
 @media (max-width: 680px) {
-  /* Quick Rent Duration Tabs: 2-column grid for thumb tap targets */
+  /* Quick Rent Duration Tabs: compact 2-column grid */
   .rental-duration-tabs {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px !important;
-    padding: 6px !important;
+    gap: 6px !important;
+    padding: 4px !important;
   }
   .rental-tab-btn {
-    padding: 10px 8px !important;
-    font-size: 0.82rem !important;
+    padding: 8px 6px !important;
+    font-size: 0.78rem !important;
     text-align: center !important;
-    min-height: 42px !important;
+    min-height: 38px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     font-weight: 700 !important;
   }
 
-  /* List Table responsive mobile card-row view without horizontal overflow */
-  #rentalTable thead {
-    display: none !important;
-  }
-  #rentalTable, #rentalTable tbody {
-    display: block !important;
+  /* Table is cleanly scrollable horizontally with all columns intact */
+  #rentalTable,
+  .table-wrap table {
+    min-width: 560px !important;
     width: 100% !important;
+    border-collapse: collapse !important;
   }
-  #rentalTable tr[data-service-row] {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 12px 6px !important;
-    border-bottom: 1px solid var(--border) !important;
-    gap: 10px !important;
-    background: var(--surface) !important;
-  }
-  #rentalTable tr[data-service-row] > td:nth-child(1) {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-  }
-  /* Hide desktop Carrier Pool & separate Retention column */
-  #rentalTable tr[data-service-row] > td:nth-child(2),
-  #rentalTable tr[data-service-row] > td:nth-child(3) {
-    display: none !important;
-  }
-  /* Show mobile retention & cellular badge under service name */
-  .rental-meta-mobile {
-    display: flex !important;
-  }
-  /* Price Column */
-  #rentalTable tr[data-service-row] > td:nth-child(4) {
-    flex: 0 0 auto !important;
-    padding: 0 !important;
-    border: none !important;
-    text-align: right !important;
-  }
-  #rentalTable tr[data-service-row] > td:nth-child(4) [data-row-price] {
-    font-size: 0.92rem !important;
-    font-weight: 800 !important;
-  }
-  /* Action Button Column */
-  #rentalTable tr[data-service-row] > td:nth-child(5) {
-    flex: 0 0 auto !important;
-    padding: 0 !important;
-    border: none !important;
-  }
-  #rentalTable tr[data-service-row] > td:nth-child(5) .btn {
-    padding: 7px 12px !important;
+  #rentalTable th,
+  #rentalTable td,
+  .table-wrap th,
+  .table-wrap td {
+    padding: 8px 10px !important;
     font-size: 0.8rem !important;
-    min-height: 36px !important;
-    font-weight: 700 !important;
+    white-space: nowrap !important;
+  }
+  #rentalTable td:first-child {
+    white-space: normal !important;
+    min-width: 170px !important;
+  }
+  #rentalTable td:first-child .td-strong {
+    font-size: 0.82rem !important;
+  }
+  #rentalTable td:first-child .td-dim {
+    font-size: 0.7rem !important;
+  }
+  #rentalTable .btn,
+  .table-wrap .btn {
+    padding: 5px 12px !important;
+    font-size: 0.78rem !important;
+    min-height: 32px !important;
+    font-weight: 600 !important;
+  }
+  #rentalTable [data-row-price] {
+    font-size: 0.85rem !important;
   }
 
-  /* Compact spacing on phones */
+  /* Compact spacing for small devices */
   .card.card-pad {
     padding: var(--sp-4) !important;
   }
   .page-title {
-    font-size: 1.35rem !important;
+    font-size: 1.3rem !important;
   }
   .page-subtitle {
-    font-size: 0.82rem !important;
+    font-size: 0.8rem !important;
   }
   .price-box {
-    padding: 10px 14px !important;
+    padding: 10px 12px !important;
   }
   .price-box-value {
-    font-size: 1.25rem !important;
+    font-size: 1.2rem !important;
+  }
+  .price-box-label {
+    font-size: 0.72rem !important;
   }
 }
 </style>
