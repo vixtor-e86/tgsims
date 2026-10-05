@@ -92,8 +92,12 @@ class SettingsService:
     def get_fivesim_markup(cls) -> tuple[float, float]:
         """Returns (fivesim_markup_percent, fivesim_min_profit_usd)."""
         settings = cls.get_settings()
-        pct = float(settings.get('virtualsms_markup_percent') or settings.get('fivesim_markup_percent', 30.00))
-        floor = float(settings.get('virtualsms_min_profit_usd') or settings.get('fivesim_min_profit_usd', 0.30))
+        raw_pct = settings.get('virtualsms_markup_percent') if settings.get('virtualsms_markup_percent') is not None else settings.get('fivesim_markup_percent')
+        raw_floor = settings.get('virtualsms_min_profit_usd') if settings.get('virtualsms_min_profit_usd') is not None else settings.get('fivesim_min_profit_usd')
+        pct = float(raw_pct if raw_pct is not None else 30.00)
+        floor = float(raw_floor if raw_floor is not None else 0.35)
+        if pct <= 0.0 and floor <= 0.0:
+            pct, floor = 30.00, 0.35
         return pct, floor
 
     @classmethod

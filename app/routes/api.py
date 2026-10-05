@@ -43,9 +43,10 @@ def purchase_sim():
     # 2. Allocate Virtual Number
     sim_result = SIMProviderService.purchase_number(country_code, service_name, operator=operator)
     if not sim_result or not sim_result.get('success'):
+        err_msg = (sim_result or {}).get('message') or 'No numbers currently available for this service. Please select another country or try again shortly.'
         return jsonify({
             'success': False,
-            'message': 'No numbers currently available for this service. Please select another country or try again shortly.'
+            'message': err_msg
         }), 503
 
     order_ref = sim_result.get('order_reference') or f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"

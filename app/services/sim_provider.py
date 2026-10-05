@@ -471,20 +471,20 @@ class SIMProviderService:
         try:
             from app.services.settings_service import SettingsService
             pct, floor = SettingsService.get_fivesim_markup()
+            all_overrides = SettingsService.get_price_overrides()
+            overrides = {
+                o['service_code'].strip().lower(): float(o['override_price_usd'])
+                for o in all_overrides
+                if o.get('provider_type') in ('5sim', 'virtualsms', 'all') and o.get('is_active', True) and o.get('service_code')
+            }
         except Exception:
-            pct, floor = 30.0, 0.30
+            pct, floor = 30.0, 0.35
+            overrides = {}
+
+        if pct <= 0.0 and floor <= 0.0:
+            pct, floor = 30.0, 0.35
 
         mult = 1.0 + (pct / 100.0)
-
-        # Real VirtualSMS wholesale pricing map (flat rate across all countries)
-        VSMS_BASE_COSTS = {
-            'whatsapp': 0.12, 'telegram': 0.15, 'google': 0.02, 'gmail': 0.02,
-            'openai': 0.30, 'chatgpt': 0.30, 'instagram': 0.02, 'facebook': 0.02,
-            'twitter': 0.03, 'x': 0.03, 'tiktok': 0.04, 'snapchat': 0.10,
-            'discord': 0.05, 'linkedin': 0.15, 'binance': 0.20, 'paypal': 0.30,
-            'apple': 0.25, 'amazon': 0.15, 'netflix': 0.10, 'tinder': 0.20,
-            'uber': 0.15, 'other': 0.20
-        }
 
         dynamic_catalog = []
         for c in raw_countries:
@@ -492,21 +492,15 @@ class SIMProviderService:
             services_list = []
             for s in c.get('services', []):
                 s_copy = dict(s)
-                s_name = (s.get('name') or '').lower()
-                s_code = (s.get('code') or '').lower()
-
-                # Check VirtualSMS wholesale price first
-                base = None
-                for vk, vp in VSMS_BASE_COSTS.items():
-                    if vk in s_code or vk in s_name:
-                        base = vp
-                        break
-                if base is None:
-                    base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.20))
-
+                s_code = (s.get('code') or '').lower().strip()
+                base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.50))
                 s_copy['base_cost'] = base
-                # Worldwide catalog uses VirtualSMS dynamic profit margin % and floor
-                s_copy['price'] = round(max(base * mult, base + floor), 2)
+
+                if s_code in overrides:
+                    s_copy['price'] = overrides[s_code]
+                    s_copy['is_override'] = True
+                else:
+                    s_copy['price'] = round(max(base * mult, base + floor), 2)
                 services_list.append(s_copy)
             c_copy['services'] = services_list
             dynamic_catalog.append(c_copy)
@@ -874,16 +868,40 @@ class SIMProviderService:
         if cls._cached_5sim_us_services_raw is not None:
             return cls._cached_5sim_us_services_raw
 
-        import json
-        import os
-        data_path = os.path.join(os.path.dirname(__file__), '..', 'data', '5sim_us_services.json')
         raw = []
-        if os.path.exists(data_path):
-            try:
-                with open(data_path, 'r', encoding='utf-8') as f:
-                    raw = json.load(f)
-            except Exception as e:
-                print(f"[SIMProviderService] Error loading 5sim_us_services.json: {e}")
+        # 1. Attempt loading directly from Supabase database table service_catalog
+        try:
+            from app.services.supabase_client import get_supabase_admin
+            admin = get_supabase_admin()
+            if admin:
+                res = admin.table('service_catalog').select('*').eq('country_code', 'US').eq('is_active', True).execute()
+                if res.data and len(res.data) > 0:
+                    for row in res.data:
+                        raw.append({
+                            'id': f"{row['service_code']}_us",
+                            'service_name': row['service_name'],
+                            'service_code': row['service_code'],
+                            'operator': row.get('operator') or 'standard',
+                            'name': row['service_name'],
+                            'quality': 'Economy Pool',
+                            'price_usd': float(row.get('retail_price') or 1.00),
+                            'base_cost_usd': float(row.get('provider_cost') or 0.20),
+                            'count': int(row.get('available_count') or 100)
+                        })
+        except Exception as e:
+            print(f"[SIMProviderService] Error querying service_catalog from Supabase: {e}")
+
+        # 2. Fallback to cached JSON file if DB query returned nothing
+        if not raw:
+            import json
+            import os
+            data_path = os.path.join(os.path.dirname(__file__), '..', 'data', '5sim_us_services.json')
+            if os.path.exists(data_path):
+                try:
+                    with open(data_path, 'r', encoding='utf-8') as f:
+                        raw = json.load(f)
+                except Exception as e:
+                    print(f"[SIMProviderService] Error loading 5sim_us_services.json: {e}")
 
         if not raw:
             raw = cls.FIVESIM_US_SERVICES_WITH_ROUTES
@@ -900,33 +918,32 @@ class SIMProviderService:
 
         cheapest_list = []
         for sc, items in grouped.items():
-            if sc in ('whatsapp', 'telegram'):
-                # Select second cheapest operator for WhatsApp and Telegram to avoid recycled/blocked lines
-                stock_items = [it for it in items if (it.get('count') or 0) >= 5]
-                if not stock_items:
-                    stock_items = [it for it in items if (it.get('count') or 0) > 0]
-                if not stock_items:
-                    stock_items = items
-                stock_items.sort(key=lambda x: (float(x.get('price_usd') or 9999), -(x.get('count') or 0)))
-                best = dict(stock_items[1] if len(stock_items) >= 2 else stock_items[0])
-            else:
-                items_sorted = sorted(items, key=lambda x: (0 if (x.get('count') or 0) > 0 else 1, float(x.get('price_usd') or 9999)))
-                best = dict(items_sorted[0])
+            best = dict(items[0])
             svc_name = best.get('service_name') or best.get('name') or sc.title()
-            if '(' in svc_name:
-                svc_name = svc_name.split('(')[0].strip()
             best['name'] = svc_name
             best['service_name'] = svc_name
             best['quality'] = 'Economy Pool'
             cheapest_list.append(best)
 
-        cheapest_list.sort(key=lambda x: x.get('service_name', '').lower())
+        # Priority ordering: popular services top, then alphabetical, Any Other at bottom
+        POPULAR_KEYS = {
+            'wa': 1, 'wa_biz': 2, 'whatsapp': 1, 'telegram': 3, 'tg': 3, 'google': 4, 'go': 4,
+            'instagram': 5, 'ig': 5, 'twitter': 6, 'tw': 6, 'openai': 7, 'dr': 7, 'tiktok': 8, 'lf': 8,
+            'facebook': 9, 'fb': 9, 'tinder': 10, 'oi': 10, 'apple': 11, 'wx': 11, 'discord': 12, 'ds': 12,
+            'uber': 13, 'ub': 13, 'amazon': 14, 'am': 14, 'netflix': 15, 'nf': 15, 'paypal': 16, 'ts': 16,
+            'ot': 99, 'other': 99
+        }
+        cheapest_list.sort(key=lambda x: (
+            0 if POPULAR_KEYS.get(str(x.get('service_code')).lower(), 50) < 50 else (2 if POPULAR_KEYS.get(str(x.get('service_code')).lower()) == 99 else 1),
+            POPULAR_KEYS.get(str(x.get('service_code')).lower(), 50),
+            str(x.get('service_name', '')).lower()
+        ))
         cls._cached_5sim_us_services_raw = cheapest_list
         return cls._cached_5sim_us_services_raw
 
     @classmethod
     def get_5sim_us_services(cls, apply_markup: bool = True) -> list:
-        """Loads full catalog of 5sim USA services with dynamic admin markup and price overrides applied."""
+        """Loads full catalog of USA services with dynamic admin markup and price overrides applied."""
         raw_list = cls._load_raw_5sim_us_services()
         if not apply_markup:
             return raw_list
@@ -938,24 +955,21 @@ class SIMProviderService:
             overrides = {
                 o['service_code'].strip().lower(): float(o['override_price_usd'])
                 for o in all_overrides
-                if o.get('provider_type') in ('5sim', 'all') and o.get('is_active', True) and o.get('service_code')
+                if o.get('provider_type') in ('5sim', 'virtualsms', 'all') and o.get('is_active', True) and o.get('service_code')
             }
         except Exception:
-            pct, floor = 30.0, 0.30
+            pct, floor = 30.0, 0.35
             overrides = {}
 
-        mult = 1.0 + (pct / 100.0)
         marked = []
         for s in raw_list:
             item = dict(s)
-            base = float(s.get('price_usd') or 0.50)
-            item['base_cost_usd'] = base
             sc = str(s.get('service_code') or '').strip().lower()
             if sc in overrides:
                 item['price_usd'] = overrides[sc]
                 item['is_override'] = True
             else:
-                item['price_usd'] = round(max(base * mult, base + floor), 2)
+                item['price_usd'] = round(float(s.get('price_usd') or 0.85), 2)
             marked.append(item)
         return marked
 
