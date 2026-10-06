@@ -6,8 +6,8 @@
     "operator": "standard",
     "name": "WhatsApp",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
-    "base_cost_usd": 0.38,
+    "price_usd": 1.95,
+    "base_cost_usd": 1.95,
     "count": 1000
   },
   {
@@ -17,7 +17,7 @@
     "operator": "standard",
     "name": "Telegram",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -28,8 +28,8 @@
     "operator": "standard",
     "name": "Google / Gmail / YouTube",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
-    "base_cost_usd": 0.09,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -39,8 +39,8 @@
     "operator": "standard",
     "name": "Instagram / Threads",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
-    "base_cost_usd": 0.11,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -50,8 +50,8 @@
     "operator": "standard",
     "name": "Twitter / X",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
-    "base_cost_usd": 0.05,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -61,7 +61,7 @@
     "operator": "standard",
     "name": "OpenAI / ChatGPT",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -72,8 +72,8 @@
     "operator": "standard",
     "name": "TikTok",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
-    "base_cost_usd": 0.05,
+    "price_usd": 1.31,
+    "base_cost_usd": 1.31,
     "count": 1000
   },
   {
@@ -83,8 +83,8 @@
     "operator": "standard",
     "name": "Facebook / Meta",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
-    "base_cost_usd": 0.14,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -94,7 +94,7 @@
     "operator": "standard",
     "name": "Tinder",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -105,8 +105,8 @@
     "operator": "standard",
     "name": "Apple ID / iCloud",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
-    "base_cost_usd": 0.05,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -116,8 +116,8 @@
     "operator": "standard",
     "name": "Discord",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
-    "base_cost_usd": 0.05,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -127,7 +127,7 @@
     "operator": "standard",
     "name": "Uber",
     "quality": "Economy Pool",
-    "price_usd": 0.45,
+    "price_usd": 0.1,
     "base_cost_usd": 0.1,
     "count": 1000
   },
@@ -138,8 +138,8 @@
     "operator": "standard",
     "name": "Amazon",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
-    "base_cost_usd": 0.09,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -149,8 +149,8 @@
     "operator": "standard",
     "name": "Netflix",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
-    "base_cost_usd": 0.34,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -160,8 +160,8 @@
     "operator": "standard",
     "name": "PayPal",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
-    "base_cost_usd": 0.27,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -171,7 +171,7 @@
     "operator": "standard",
     "name": "Snapchat",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -182,7 +182,7 @@
     "operator": "standard",
     "name": "Microsoft",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -193,7 +193,7 @@
     "operator": "standard",
     "name": "Yahoo",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -204,7 +204,7 @@
     "operator": "standard",
     "name": "Steam",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -215,8 +215,8 @@
     "operator": "standard",
     "name": "LinkedIn",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
-    "base_cost_usd": 0.09,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -226,7 +226,7 @@
     "operator": "standard",
     "name": "Bigo Live",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -237,7 +237,7 @@
     "operator": "standard",
     "name": "Reddit",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -248,7 +248,7 @@
     "operator": "standard",
     "name": "2dehands",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -259,7 +259,7 @@
     "operator": "standard",
     "name": "2ememain",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -270,7 +270,7 @@
     "operator": "standard",
     "name": "2ГИС",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -281,7 +281,7 @@
     "operator": "standard",
     "name": "360Kredi",
     "quality": "Economy Pool",
-    "price_usd": 0.56,
+    "price_usd": 0.21,
     "base_cost_usd": 0.21,
     "count": 1000
   },
@@ -292,7 +292,7 @@
     "operator": "standard",
     "name": "7-Eleven",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -303,7 +303,7 @@
     "operator": "standard",
     "name": "999 md",
     "quality": "Economy Pool",
-    "price_usd": 1.46,
+    "price_usd": 1.11,
     "base_cost_usd": 1.11,
     "count": 1000
   },
@@ -314,7 +314,7 @@
     "operator": "standard",
     "name": "99app",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -325,7 +325,7 @@
     "operator": "standard",
     "name": "Abastece-aí",
     "quality": "Economy Pool",
-    "price_usd": 2.47,
+    "price_usd": 1.9,
     "base_cost_usd": 1.9,
     "count": 1000
   },
@@ -336,7 +336,7 @@
     "operator": "standard",
     "name": "AdaModal",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -347,7 +347,7 @@
     "operator": "standard",
     "name": "AdmiralBet",
     "quality": "Economy Pool",
-    "price_usd": 0.75,
+    "price_usd": 0.4,
     "base_cost_usd": 0.4,
     "count": 1000
   },
@@ -358,7 +358,7 @@
     "operator": "standard",
     "name": "Adobe",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -369,7 +369,7 @@
     "operator": "standard",
     "name": "Adverts",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -380,7 +380,7 @@
     "operator": "standard",
     "name": "Affirm",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -391,7 +391,7 @@
     "operator": "standard",
     "name": "AGIBANK",
     "quality": "Economy Pool",
-    "price_usd": 0.83,
+    "price_usd": 0.48,
     "base_cost_usd": 0.48,
     "count": 1000
   },
@@ -402,7 +402,7 @@
     "operator": "standard",
     "name": "Ahlan",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -413,7 +413,7 @@
     "operator": "standard",
     "name": "aiqfome",
     "quality": "Economy Pool",
-    "price_usd": 0.9,
+    "price_usd": 0.55,
     "base_cost_usd": 0.55,
     "count": 1000
   },
@@ -424,7 +424,7 @@
     "operator": "standard",
     "name": "Air Miles",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -435,7 +435,7 @@
     "operator": "standard",
     "name": "Airba Fresh",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -446,7 +446,7 @@
     "operator": "standard",
     "name": "Airbnb",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -457,7 +457,7 @@
     "operator": "standard",
     "name": "Airtasker",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -468,7 +468,7 @@
     "operator": "standard",
     "name": "Airtel",
     "quality": "Economy Pool",
-    "price_usd": 0.41,
+    "price_usd": 0.06,
     "base_cost_usd": 0.06,
     "count": 1000
   },
@@ -479,7 +479,7 @@
     "operator": "standard",
     "name": "AIS PLAY",
     "quality": "Economy Pool",
-    "price_usd": 0.59,
+    "price_usd": 0.24,
     "base_cost_usd": 0.24,
     "count": 1000
   },
@@ -490,7 +490,7 @@
     "operator": "standard",
     "name": "Akulaku",
     "quality": "Economy Pool",
-    "price_usd": 0.76,
+    "price_usd": 0.41,
     "base_cost_usd": 0.41,
     "count": 1000
   },
@@ -501,7 +501,7 @@
     "operator": "standard",
     "name": "Alchemy",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -512,8 +512,8 @@
     "operator": "standard",
     "name": "Alfagift",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
-    "base_cost_usd": 0.27,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -523,7 +523,7 @@
     "operator": "standard",
     "name": "Alfamidi",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -534,7 +534,7 @@
     "operator": "standard",
     "name": "AlFursan",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -545,7 +545,7 @@
     "operator": "standard",
     "name": "AliExpress",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -556,7 +556,7 @@
     "operator": "standard",
     "name": "Alignable",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -567,7 +567,7 @@
     "operator": "standard",
     "name": "Alipay/Alibaba/1688",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -578,7 +578,7 @@
     "operator": "standard",
     "name": "All Access",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -589,7 +589,7 @@
     "operator": "standard",
     "name": "Allegro",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -600,7 +600,7 @@
     "operator": "standard",
     "name": "AlloBank",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -611,7 +611,7 @@
     "operator": "standard",
     "name": "Amap 高德地图",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -622,7 +622,7 @@
     "operator": "standard",
     "name": "AmarthaFin",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -633,7 +633,7 @@
     "operator": "standard",
     "name": "Amaze Super App",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -644,7 +644,7 @@
     "operator": "standard",
     "name": "Ankama",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -655,8 +655,8 @@
     "operator": "standard",
     "name": "AOL",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
-    "base_cost_usd": 0.05,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -666,7 +666,7 @@
     "operator": "standard",
     "name": "ArenaPlus",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -677,7 +677,7 @@
     "operator": "standard",
     "name": "Ari10",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -688,7 +688,7 @@
     "operator": "standard",
     "name": "ASAAS",
     "quality": "Economy Pool",
-    "price_usd": 0.95,
+    "price_usd": 0.6,
     "base_cost_usd": 0.6,
     "count": 1000
   },
@@ -699,7 +699,7 @@
     "operator": "standard",
     "name": "AsianDating",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -710,7 +710,7 @@
     "operator": "standard",
     "name": "Askable",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -721,7 +721,7 @@
     "operator": "standard",
     "name": "Astra Otoshop",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -732,7 +732,7 @@
     "operator": "standard",
     "name": "AstraPay",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -743,7 +743,7 @@
     "operator": "standard",
     "name": "Astropay",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -754,7 +754,7 @@
     "operator": "standard",
     "name": "ASVLA",
     "quality": "Economy Pool",
-    "price_usd": 1.95,
+    "price_usd": 1.5,
     "base_cost_usd": 1.5,
     "count": 1000
   },
@@ -765,7 +765,7 @@
     "operator": "standard",
     "name": "Atlas Earth",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -776,7 +776,7 @@
     "operator": "standard",
     "name": "AttaPoll",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -787,7 +787,7 @@
     "operator": "standard",
     "name": "Aukro",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -798,7 +798,7 @@
     "operator": "standard",
     "name": "Autodesk",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -809,7 +809,7 @@
     "operator": "standard",
     "name": "AVON",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -820,7 +820,7 @@
     "operator": "standard",
     "name": "Badoo",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -831,7 +831,7 @@
     "operator": "standard",
     "name": "BAGI",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -842,7 +842,7 @@
     "operator": "standard",
     "name": "Bantusaku",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -853,7 +853,7 @@
     "operator": "standard",
     "name": "BAT",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -864,7 +864,7 @@
     "operator": "standard",
     "name": "Bazaraki",
     "quality": "Economy Pool",
-    "price_usd": 1.95,
+    "price_usd": 1.5,
     "base_cost_usd": 1.5,
     "count": 1000
   },
@@ -875,8 +875,8 @@
     "operator": "standard",
     "name": "Bazos",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
-    "base_cost_usd": 0.08,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -886,7 +886,7 @@
     "operator": "standard",
     "name": "Bebeclub",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -897,7 +897,7 @@
     "operator": "standard",
     "name": "BeBoo",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -908,7 +908,7 @@
     "operator": "standard",
     "name": "Beebs",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -919,7 +919,7 @@
     "operator": "standard",
     "name": "bet365",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -930,7 +930,7 @@
     "operator": "standard",
     "name": "Betano",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -941,7 +941,7 @@
     "operator": "standard",
     "name": "Betfair",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -952,7 +952,7 @@
     "operator": "standard",
     "name": "Betflag",
     "quality": "Economy Pool",
-    "price_usd": 3.12,
+    "price_usd": 2.4,
     "base_cost_usd": 2.4,
     "count": 1000
   },
@@ -963,7 +963,7 @@
     "operator": "standard",
     "name": "betlive",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -974,7 +974,7 @@
     "operator": "standard",
     "name": "BetMen",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -985,7 +985,7 @@
     "operator": "standard",
     "name": "BharatPe",
     "quality": "Economy Pool",
-    "price_usd": 0.59,
+    "price_usd": 0.24,
     "base_cost_usd": 0.24,
     "count": 1000
   },
@@ -996,7 +996,7 @@
     "operator": "standard",
     "name": "Biedronka",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -1007,7 +1007,7 @@
     "operator": "standard",
     "name": "Big Cash",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -1018,7 +1018,7 @@
     "operator": "standard",
     "name": "BigBasket",
     "quality": "Economy Pool",
-    "price_usd": 0.59,
+    "price_usd": 0.24,
     "base_cost_usd": 0.24,
     "count": 1000
   },
@@ -1029,7 +1029,7 @@
     "operator": "standard",
     "name": "Bilibili",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -1040,7 +1040,7 @@
     "operator": "standard",
     "name": "Bilkraft",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -1051,7 +1051,7 @@
     "operator": "standard",
     "name": "Binance",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -1062,7 +1062,7 @@
     "operator": "standard",
     "name": "BinBin",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1073,7 +1073,7 @@
     "operator": "standard",
     "name": "Bingo Plus",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -1084,7 +1084,7 @@
     "operator": "standard",
     "name": "BIP",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -1095,7 +1095,7 @@
     "operator": "standard",
     "name": "Bipa",
     "quality": "Economy Pool",
-    "price_usd": 0.9,
+    "price_usd": 0.55,
     "base_cost_usd": 0.55,
     "count": 1000
   },
@@ -1106,7 +1106,7 @@
     "operator": "standard",
     "name": "BitcoinBon",
     "quality": "Economy Pool",
-    "price_usd": 1.69,
+    "price_usd": 1.3,
     "base_cost_usd": 1.3,
     "count": 1000
   },
@@ -1117,7 +1117,7 @@
     "operator": "standard",
     "name": "Bitrue",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1128,7 +1128,7 @@
     "operator": "standard",
     "name": "Bitso",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -1139,7 +1139,7 @@
     "operator": "standard",
     "name": "BlaBlaCar",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -1150,7 +1150,7 @@
     "operator": "standard",
     "name": "BLIBLI",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -1161,7 +1161,7 @@
     "operator": "standard",
     "name": "BLINK by BonusLink",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -1172,7 +1172,7 @@
     "operator": "standard",
     "name": "Bliq",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1183,7 +1183,7 @@
     "operator": "standard",
     "name": "Blizzard",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -1194,7 +1194,7 @@
     "operator": "standard",
     "name": "Bolt",
     "quality": "Economy Pool",
-    "price_usd": 0.61,
+    "price_usd": 0.26,
     "base_cost_usd": 0.26,
     "count": 1000
   },
@@ -1205,7 +1205,7 @@
     "operator": "standard",
     "name": "Bookmakers",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -1216,7 +1216,7 @@
     "operator": "standard",
     "name": "Botim",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1227,7 +1227,7 @@
     "operator": "standard",
     "name": "Boyaa",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -1238,7 +1238,7 @@
     "operator": "standard",
     "name": "BP",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -1249,7 +1249,7 @@
     "operator": "standard",
     "name": "BPJSTK",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -1260,7 +1260,7 @@
     "operator": "standard",
     "name": "Bradesco",
     "quality": "Economy Pool",
-    "price_usd": 1.1,
+    "price_usd": 0.75,
     "base_cost_usd": 0.75,
     "count": 1000
   },
@@ -1271,7 +1271,7 @@
     "operator": "standard",
     "name": "Brahma",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -1282,7 +1282,7 @@
     "operator": "standard",
     "name": "Brevo",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1293,7 +1293,7 @@
     "operator": "standard",
     "name": "Budweiser",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -1304,7 +1304,7 @@
     "operator": "standard",
     "name": "Bumble",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -1315,7 +1315,7 @@
     "operator": "standard",
     "name": "Bunda",
     "quality": "Economy Pool",
-    "price_usd": 0.76,
+    "price_usd": 0.41,
     "base_cost_usd": 0.41,
     "count": 1000
   },
@@ -1326,7 +1326,7 @@
     "operator": "standard",
     "name": "Bunq",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -1337,7 +1337,7 @@
     "operator": "standard",
     "name": "Burger King",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -1348,7 +1348,7 @@
     "operator": "standard",
     "name": "Bybit",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -1359,7 +1359,7 @@
     "operator": "standard",
     "name": "C6 Bank",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -1370,7 +1370,7 @@
     "operator": "standard",
     "name": "Cabify",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -1381,7 +1381,7 @@
     "operator": "standard",
     "name": "Cadbury",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -1392,7 +1392,7 @@
     "operator": "standard",
     "name": "Caffe Nero",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -1403,7 +1403,7 @@
     "operator": "standard",
     "name": "CAIXA",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -1414,7 +1414,7 @@
     "operator": "standard",
     "name": "CaltexGO",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -1425,7 +1425,7 @@
     "operator": "standard",
     "name": "Canal RCN",
     "quality": "Economy Pool",
-    "price_usd": 0.76,
+    "price_usd": 0.41,
     "base_cost_usd": 0.41,
     "count": 1000
   },
@@ -1436,7 +1436,7 @@
     "operator": "standard",
     "name": "Capital One",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -1447,7 +1447,7 @@
     "operator": "standard",
     "name": "Careem",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -1458,7 +1458,7 @@
     "operator": "standard",
     "name": "Carousell",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -1469,7 +1469,7 @@
     "operator": "standard",
     "name": "Carrefour",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -1480,7 +1480,7 @@
     "operator": "standard",
     "name": "Casa it",
     "quality": "Economy Pool",
-    "price_usd": 2.22,
+    "price_usd": 1.71,
     "base_cost_usd": 1.71,
     "count": 1000
   },
@@ -1491,7 +1491,7 @@
     "operator": "standard",
     "name": "Casa Pariurilor",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -1502,7 +1502,7 @@
     "operator": "standard",
     "name": "Casino Plus",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1513,7 +1513,7 @@
     "operator": "standard",
     "name": "Casino Portugal",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -1524,7 +1524,7 @@
     "operator": "standard",
     "name": "Casino/bet/gambling",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1535,7 +1535,7 @@
     "operator": "standard",
     "name": "Chagee",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -1546,7 +1546,7 @@
     "operator": "standard",
     "name": "ChargePoint",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1557,7 +1557,7 @@
     "operator": "standard",
     "name": "CHECK24",
     "quality": "Economy Pool",
-    "price_usd": 1.69,
+    "price_usd": 1.3,
     "base_cost_usd": 1.3,
     "count": 1000
   },
@@ -1568,7 +1568,7 @@
     "operator": "standard",
     "name": "Chime",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -1579,7 +1579,7 @@
     "operator": "standard",
     "name": "Chispa",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1590,7 +1590,7 @@
     "operator": "standard",
     "name": "Chocofamily",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -1601,7 +1601,7 @@
     "operator": "standard",
     "name": "Chronodrive",
     "quality": "Economy Pool",
-    "price_usd": 1.82,
+    "price_usd": 1.4,
     "base_cost_usd": 1.4,
     "count": 1000
   },
@@ -1612,7 +1612,7 @@
     "operator": "standard",
     "name": "Cita Previa",
     "quality": "Economy Pool",
-    "price_usd": 1.62,
+    "price_usd": 1.25,
     "base_cost_usd": 1.25,
     "count": 1000
   },
@@ -1623,7 +1623,7 @@
     "operator": "standard",
     "name": "ClassPass",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -1634,7 +1634,7 @@
     "operator": "standard",
     "name": "Claude",
     "quality": "Economy Pool",
-    "price_usd": 0.57,
+    "price_usd": 0.22,
     "base_cost_usd": 0.22,
     "count": 1000
   },
@@ -1645,7 +1645,7 @@
     "operator": "standard",
     "name": "Clearpay",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -1656,7 +1656,7 @@
     "operator": "standard",
     "name": "Cloud Manager",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -1667,7 +1667,7 @@
     "operator": "standard",
     "name": "Cloud.ru",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -1678,7 +1678,7 @@
     "operator": "standard",
     "name": "Club Q8",
     "quality": "Economy Pool",
-    "price_usd": 2.22,
+    "price_usd": 1.71,
     "base_cost_usd": 1.71,
     "count": 1000
   },
@@ -1689,7 +1689,7 @@
     "operator": "standard",
     "name": "Clubhouse",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -1700,7 +1700,7 @@
     "operator": "standard",
     "name": "CMB",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -1711,7 +1711,7 @@
     "operator": "standard",
     "name": "Coca-Cola",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -1722,7 +1722,7 @@
     "operator": "standard",
     "name": "Codashop",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -1733,7 +1733,7 @@
     "operator": "standard",
     "name": "Colombian Cupid",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -1744,7 +1744,7 @@
     "operator": "standard",
     "name": "ContiCazino",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -1755,7 +1755,7 @@
     "operator": "standard",
     "name": "Continente",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -1766,7 +1766,7 @@
     "operator": "standard",
     "name": "Corona",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -1777,7 +1777,7 @@
     "operator": "standard",
     "name": "COSMOTE",
     "quality": "Economy Pool",
-    "price_usd": 1.82,
+    "price_usd": 1.4,
     "base_cost_usd": 1.4,
     "count": 1000
   },
@@ -1788,8 +1788,8 @@
     "operator": "standard",
     "name": "Craigslist",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
-    "base_cost_usd": 0.09,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -1799,7 +1799,7 @@
     "operator": "standard",
     "name": "Credinex",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -1810,7 +1810,7 @@
     "operator": "standard",
     "name": "CROCOBET",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -1821,7 +1821,7 @@
     "operator": "standard",
     "name": "Cruzeiro",
     "quality": "Economy Pool",
-    "price_usd": 1.15,
+    "price_usd": 0.8,
     "base_cost_usd": 0.8,
     "count": 1000
   },
@@ -1832,7 +1832,7 @@
     "operator": "standard",
     "name": "cryptocom",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -1843,7 +1843,7 @@
     "operator": "standard",
     "name": "Cryptonow",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -1854,7 +1854,7 @@
     "operator": "standard",
     "name": "Crystalbet",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -1865,7 +1865,7 @@
     "operator": "standard",
     "name": "CupidMedia",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -1876,7 +1876,7 @@
     "operator": "standard",
     "name": "Curve",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -1887,7 +1887,7 @@
     "operator": "standard",
     "name": "D4",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -1898,7 +1898,7 @@
     "operator": "standard",
     "name": "Dabble",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -1909,7 +1909,7 @@
     "operator": "standard",
     "name": "Daki",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -1920,7 +1920,7 @@
     "operator": "standard",
     "name": "Damai",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -1931,7 +1931,7 @@
     "operator": "standard",
     "name": "Dana",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -1942,7 +1942,7 @@
     "operator": "standard",
     "name": "Datanyze",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -1953,7 +1953,7 @@
     "operator": "standard",
     "name": "Daya Auto",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -1964,7 +1964,7 @@
     "operator": "standard",
     "name": "DBS Bank",
     "quality": "Economy Pool",
-    "price_usd": 2.6,
+    "price_usd": 2.0,
     "base_cost_usd": 2.0,
     "count": 1000
   },
@@ -1975,7 +1975,7 @@
     "operator": "standard",
     "name": "DealShare",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -1986,7 +1986,7 @@
     "operator": "standard",
     "name": "Deliveroo",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -1997,7 +1997,7 @@
     "operator": "standard",
     "name": "Depop",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -2008,7 +2008,7 @@
     "operator": "standard",
     "name": "DiDi",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -2019,7 +2019,7 @@
     "operator": "standard",
     "name": "DiDiFood",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -2030,7 +2030,7 @@
     "operator": "standard",
     "name": "Dil Mil",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2041,7 +2041,7 @@
     "operator": "standard",
     "name": "Dingtone",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -2052,7 +2052,7 @@
     "operator": "standard",
     "name": "Disney Plus",
     "quality": "Economy Pool",
-    "price_usd": 1.95,
+    "price_usd": 1.5,
     "base_cost_usd": 1.5,
     "count": 1000
   },
@@ -2063,7 +2063,7 @@
     "operator": "standard",
     "name": "DocuSign",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -2074,7 +2074,7 @@
     "operator": "standard",
     "name": "DOKU",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -2085,7 +2085,7 @@
     "operator": "standard",
     "name": "DoneDeal",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -2096,7 +2096,7 @@
     "operator": "standard",
     "name": "DoorDash",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -2107,7 +2107,7 @@
     "operator": "standard",
     "name": "Dostavista",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -2118,7 +2118,7 @@
     "operator": "standard",
     "name": "Dott",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2129,7 +2129,7 @@
     "operator": "standard",
     "name": "Dotz",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -2140,7 +2140,7 @@
     "operator": "standard",
     "name": "Dream11",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -2151,7 +2151,7 @@
     "operator": "standard",
     "name": "DrugVokrug",
     "quality": "Economy Pool",
-    "price_usd": 0.47,
+    "price_usd": 0.12,
     "base_cost_usd": 0.12,
     "count": 1000
   },
@@ -2162,7 +2162,7 @@
     "operator": "standard",
     "name": "Duet",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -2173,7 +2173,7 @@
     "operator": "standard",
     "name": "Easycash",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -2184,7 +2184,7 @@
     "operator": "standard",
     "name": "eBay",
     "quality": "Economy Pool",
-    "price_usd": 0.55,
+    "price_usd": 0.2,
     "base_cost_usd": 0.2,
     "count": 1000
   },
@@ -2195,7 +2195,7 @@
     "operator": "standard",
     "name": "eFood",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -2206,7 +2206,7 @@
     "operator": "standard",
     "name": "Eleme 饿了么",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -2217,7 +2217,7 @@
     "operator": "standard",
     "name": "EMAG",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -2228,7 +2228,7 @@
     "operator": "standard",
     "name": "Eneba",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -2239,7 +2239,7 @@
     "operator": "standard",
     "name": "Enilive",
     "quality": "Economy Pool",
-    "price_usd": 3.54,
+    "price_usd": 2.72,
     "base_cost_usd": 2.72,
     "count": 1000
   },
@@ -2250,7 +2250,7 @@
     "operator": "standard",
     "name": "Enjoei",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -2261,7 +2261,7 @@
     "operator": "standard",
     "name": "Epic Games",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -2272,7 +2272,7 @@
     "operator": "standard",
     "name": "Ero Me",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -2283,7 +2283,7 @@
     "operator": "standard",
     "name": "EscapeFromTarkov",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -2294,7 +2294,7 @@
     "operator": "standard",
     "name": "ESX",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -2305,7 +2305,7 @@
     "operator": "standard",
     "name": "eToro",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -2316,7 +2316,7 @@
     "operator": "standard",
     "name": "Eurobet",
     "quality": "Economy Pool",
-    "price_usd": 3.12,
+    "price_usd": 2.4,
     "base_cost_usd": 2.4,
     "count": 1000
   },
@@ -2327,7 +2327,7 @@
     "operator": "standard",
     "name": "eWallet",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -2338,7 +2338,7 @@
     "operator": "standard",
     "name": "Factory",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -2349,7 +2349,7 @@
     "operator": "standard",
     "name": "FastMoss",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2360,7 +2360,7 @@
     "operator": "standard",
     "name": "Fastwork",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -2371,7 +2371,7 @@
     "operator": "standard",
     "name": "Fawry",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -2382,7 +2382,7 @@
     "operator": "standard",
     "name": "FDJ ParionsSport",
     "quality": "Economy Pool",
-    "price_usd": 1.45,
+    "price_usd": 1.1,
     "base_cost_usd": 1.1,
     "count": 1000
   },
@@ -2393,8 +2393,8 @@
     "operator": "standard",
     "name": "Feeld",
     "quality": "Economy Pool",
-    "price_usd": 0.41,
-    "base_cost_usd": 0.06,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -2404,7 +2404,7 @@
     "operator": "standard",
     "name": "Feels",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -2415,7 +2415,7 @@
     "operator": "standard",
     "name": "FeetFinder",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -2426,7 +2426,7 @@
     "operator": "standard",
     "name": "Fetch",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -2437,7 +2437,7 @@
     "operator": "standard",
     "name": "FieldStar",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -2448,7 +2448,7 @@
     "operator": "standard",
     "name": "FIFGROUP MOBILE CUSTOMER",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2459,7 +2459,7 @@
     "operator": "standard",
     "name": "FilipinoCupid",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2470,7 +2470,7 @@
     "operator": "standard",
     "name": "Finplus",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -2481,7 +2481,7 @@
     "operator": "standard",
     "name": "Finya",
     "quality": "Economy Pool",
-    "price_usd": 1.45,
+    "price_usd": 1.1,
     "base_cost_usd": 1.1,
     "count": 1000
   },
@@ -2492,7 +2492,7 @@
     "operator": "standard",
     "name": "Firebase",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -2503,7 +2503,7 @@
     "operator": "standard",
     "name": "Five Surveys",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -2514,7 +2514,7 @@
     "operator": "standard",
     "name": "Fiverr",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -2525,7 +2525,7 @@
     "operator": "standard",
     "name": "Flink",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2536,7 +2536,7 @@
     "operator": "standard",
     "name": "Flowwow",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -2547,7 +2547,7 @@
     "operator": "standard",
     "name": "Foodora",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2558,7 +2558,7 @@
     "operator": "standard",
     "name": "Foodpanda",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -2569,7 +2569,7 @@
     "operator": "standard",
     "name": "Foody",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -2580,7 +2580,7 @@
     "operator": "standard",
     "name": "FOOTDISTRICT",
     "quality": "Economy Pool",
-    "price_usd": 2.16,
+    "price_usd": 1.66,
     "base_cost_usd": 1.66,
     "count": 1000
   },
@@ -2591,7 +2591,7 @@
     "operator": "standard",
     "name": "Fore Coffee",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -2602,7 +2602,7 @@
     "operator": "standard",
     "name": "Fotka",
     "quality": "Economy Pool",
-    "price_usd": 1.1,
+    "price_usd": 0.75,
     "base_cost_usd": 0.75,
     "count": 1000
   },
@@ -2613,7 +2613,7 @@
     "operator": "standard",
     "name": "FotoCasa",
     "quality": "Economy Pool",
-    "price_usd": 2.05,
+    "price_usd": 1.58,
     "base_cost_usd": 1.58,
     "count": 1000
   },
@@ -2624,7 +2624,7 @@
     "operator": "standard",
     "name": "France Mobilities",
     "quality": "Economy Pool",
-    "price_usd": 1.56,
+    "price_usd": 1.2,
     "base_cost_usd": 1.2,
     "count": 1000
   },
@@ -2635,7 +2635,7 @@
     "operator": "standard",
     "name": "Freelancer",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2646,7 +2646,7 @@
     "operator": "standard",
     "name": "FreeNow",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -2657,7 +2657,7 @@
     "operator": "standard",
     "name": "Fruitz",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -2668,7 +2668,7 @@
     "operator": "standard",
     "name": "FunPay",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -2679,7 +2679,7 @@
     "operator": "standard",
     "name": "Fups",
     "quality": "Economy Pool",
-    "price_usd": 22.43,
+    "price_usd": 17.25,
     "base_cost_usd": 17.25,
     "count": 1000
   },
@@ -2690,8 +2690,19 @@
     "operator": "standard",
     "name": "GAIL`s Bakery",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
+    "count": 1000
+  },
+  {
+    "id": "bri_us",
+    "service_name": "Gardrops",
+    "service_code": "bri",
+    "operator": "standard",
+    "name": "Gardrops",
+    "quality": "Economy Pool",
+    "price_usd": 2.0,
+    "base_cost_usd": 2.0,
     "count": 1000
   },
   {
@@ -2701,7 +2712,7 @@
     "operator": "standard",
     "name": "GCash",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -2712,7 +2723,7 @@
     "operator": "standard",
     "name": "Geekay",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2723,7 +2734,7 @@
     "operator": "standard",
     "name": "Gemini",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -2734,7 +2745,7 @@
     "operator": "standard",
     "name": "Genome",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -2745,7 +2756,7 @@
     "operator": "standard",
     "name": "Genspark",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2756,7 +2767,7 @@
     "operator": "standard",
     "name": "Getir",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -2767,7 +2778,7 @@
     "operator": "standard",
     "name": "Getnet",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -2778,7 +2789,7 @@
     "operator": "standard",
     "name": "Gett",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -2789,7 +2800,7 @@
     "operator": "standard",
     "name": "GG",
     "quality": "Economy Pool",
-    "price_usd": 0.76,
+    "price_usd": 0.41,
     "base_cost_usd": 0.41,
     "count": 1000
   },
@@ -2800,7 +2811,7 @@
     "operator": "standard",
     "name": "Glovo",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -2811,7 +2822,7 @@
     "operator": "standard",
     "name": "GMX",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -2822,7 +2833,7 @@
     "operator": "standard",
     "name": "GNJOY",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -2833,7 +2844,7 @@
     "operator": "standard",
     "name": "Godrej",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -2844,7 +2855,7 @@
     "operator": "standard",
     "name": "GoFundMe",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -2855,7 +2866,7 @@
     "operator": "standard",
     "name": "Gojek",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -2866,7 +2877,7 @@
     "operator": "standard",
     "name": "GoMoney",
     "quality": "Economy Pool",
-    "price_usd": 1.15,
+    "price_usd": 0.8,
     "base_cost_usd": 0.8,
     "count": 1000
   },
@@ -2877,7 +2888,7 @@
     "operator": "standard",
     "name": "GoogleVoice",
     "quality": "Economy Pool",
-    "price_usd": 0.82,
+    "price_usd": 0.47,
     "base_cost_usd": 0.47,
     "count": 1000
   },
@@ -2888,7 +2899,7 @@
     "operator": "standard",
     "name": "Gopuff",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -2899,7 +2910,7 @@
     "operator": "standard",
     "name": "GovBr",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -2910,7 +2921,7 @@
     "operator": "standard",
     "name": "Grab",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -2921,7 +2932,7 @@
     "operator": "standard",
     "name": "Grailed",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -2932,7 +2943,7 @@
     "operator": "standard",
     "name": "Greggs",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -2943,7 +2954,7 @@
     "operator": "standard",
     "name": "Greywoods",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -2954,7 +2965,7 @@
     "operator": "standard",
     "name": "Grindr",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -2965,7 +2976,7 @@
     "operator": "standard",
     "name": "Gringo",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -2976,7 +2987,7 @@
     "operator": "standard",
     "name": "GroupMe",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -2987,7 +2998,7 @@
     "operator": "standard",
     "name": "Grupo Madero",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -2998,7 +3009,7 @@
     "operator": "standard",
     "name": "Guiche Web",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -3009,7 +3020,7 @@
     "operator": "standard",
     "name": "Guthabende",
     "quality": "Economy Pool",
-    "price_usd": 1.69,
+    "price_usd": 1.3,
     "base_cost_usd": 1.3,
     "count": 1000
   },
@@ -3020,7 +3031,7 @@
     "operator": "standard",
     "name": "Guzman y Gomez",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -3031,7 +3042,7 @@
     "operator": "standard",
     "name": "GymPlius",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -3042,7 +3053,7 @@
     "operator": "standard",
     "name": "Happn",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -3053,7 +3064,7 @@
     "operator": "standard",
     "name": "Hepsiburadacom",
     "quality": "Economy Pool",
-    "price_usd": 0.55,
+    "price_usd": 0.2,
     "base_cost_usd": 0.2,
     "count": 1000
   },
@@ -3064,7 +3075,7 @@
     "operator": "standard",
     "name": "Her",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -3075,7 +3086,7 @@
     "operator": "standard",
     "name": "Hey Cash",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3086,7 +3097,7 @@
     "operator": "standard",
     "name": "High 5 Casino",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -3097,7 +3108,7 @@
     "operator": "standard",
     "name": "hily",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -3108,7 +3119,7 @@
     "operator": "standard",
     "name": "Hinge",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -3119,7 +3130,7 @@
     "operator": "standard",
     "name": "Hitnspin",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -3130,7 +3141,7 @@
     "operator": "standard",
     "name": "Hostinger",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -3141,7 +3152,7 @@
     "operator": "standard",
     "name": "HOT51",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3152,7 +3163,7 @@
     "operator": "standard",
     "name": "Hotel101",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3163,7 +3174,7 @@
     "operator": "standard",
     "name": "HUD",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -3174,7 +3185,7 @@
     "operator": "standard",
     "name": "HungerStation",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3185,7 +3196,7 @@
     "operator": "standard",
     "name": "HuntTheMouse",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -3196,7 +3207,7 @@
     "operator": "standard",
     "name": "Idealista",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -3207,7 +3218,7 @@
     "operator": "standard",
     "name": "IFood",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -3218,7 +3229,7 @@
     "operator": "standard",
     "name": "ImmoScout24",
     "quality": "Economy Pool",
-    "price_usd": 2.15,
+    "price_usd": 1.65,
     "base_cost_usd": 1.65,
     "count": 1000
   },
@@ -3229,7 +3240,7 @@
     "operator": "standard",
     "name": "Immowelt",
     "quality": "Economy Pool",
-    "price_usd": 1.39,
+    "price_usd": 1.04,
     "base_cost_usd": 1.04,
     "count": 1000
   },
@@ -3240,7 +3251,7 @@
     "operator": "standard",
     "name": "Immutable Play",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3251,7 +3262,7 @@
     "operator": "standard",
     "name": "Imo",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -3262,7 +3273,7 @@
     "operator": "standard",
     "name": "Indeed",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3273,7 +3284,7 @@
     "operator": "standard",
     "name": "IndiaGold",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -3284,7 +3295,7 @@
     "operator": "standard",
     "name": "Indomaret",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -3295,7 +3306,7 @@
     "operator": "standard",
     "name": "INDOPAKET",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3306,7 +3317,7 @@
     "operator": "standard",
     "name": "Indosaku",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -3317,7 +3328,7 @@
     "operator": "standard",
     "name": "inDriver",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -3328,7 +3339,7 @@
     "operator": "standard",
     "name": "InfinitePay",
     "quality": "Economy Pool",
-    "price_usd": 0.96,
+    "price_usd": 0.61,
     "base_cost_usd": 0.61,
     "count": 1000
   },
@@ -3339,7 +3350,7 @@
     "operator": "standard",
     "name": "Ininal",
     "quality": "Economy Pool",
-    "price_usd": 22.43,
+    "price_usd": 17.25,
     "base_cost_usd": 17.25,
     "count": 1000
   },
@@ -3350,7 +3361,7 @@
     "operator": "standard",
     "name": "InPost",
     "quality": "Economy Pool",
-    "price_usd": 1.61,
+    "price_usd": 1.24,
     "base_cost_usd": 1.24,
     "count": 1000
   },
@@ -3361,7 +3372,7 @@
     "operator": "standard",
     "name": "Intel SAP",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3372,7 +3383,7 @@
     "operator": "standard",
     "name": "InternationalCupid",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -3383,7 +3394,7 @@
     "operator": "standard",
     "name": "Ipsos iSay",
     "quality": "Economy Pool",
-    "price_usd": 0.76,
+    "price_usd": 0.41,
     "base_cost_usd": 0.41,
     "count": 1000
   },
@@ -3394,7 +3405,7 @@
     "operator": "standard",
     "name": "IQOS",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -3405,7 +3416,7 @@
     "operator": "standard",
     "name": "IRCTC",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -3416,7 +3427,7 @@
     "operator": "standard",
     "name": "Itau",
     "quality": "Economy Pool",
-    "price_usd": 1.0,
+    "price_usd": 0.65,
     "base_cost_usd": 0.65,
     "count": 1000
   },
@@ -3427,7 +3438,7 @@
     "operator": "standard",
     "name": "IZI",
     "quality": "Economy Pool",
-    "price_usd": 0.75,
+    "price_usd": 0.4,
     "base_cost_usd": 0.4,
     "count": 1000
   },
@@ -3438,7 +3449,7 @@
     "operator": "standard",
     "name": "Jago",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3449,7 +3460,7 @@
     "operator": "standard",
     "name": "JDcom",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -3460,7 +3471,7 @@
     "operator": "standard",
     "name": "Jeevansathi",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3471,7 +3482,7 @@
     "operator": "standard",
     "name": "Joyride",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -3482,7 +3493,7 @@
     "operator": "standard",
     "name": "JTExpress",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -3493,7 +3504,7 @@
     "operator": "standard",
     "name": "Jush",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -3504,7 +3515,7 @@
     "operator": "standard",
     "name": "Just Eat",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3515,7 +3526,7 @@
     "operator": "standard",
     "name": "Justdating",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -3526,7 +3537,7 @@
     "operator": "standard",
     "name": "Jòfogàs",
     "quality": "Economy Pool",
-    "price_usd": 2.7,
+    "price_usd": 2.08,
     "base_cost_usd": 2.08,
     "count": 1000
   },
@@ -3537,7 +3548,7 @@
     "operator": "standard",
     "name": "KabanchikUA",
     "quality": "Economy Pool",
-    "price_usd": 1.56,
+    "price_usd": 1.2,
     "base_cost_usd": 1.2,
     "count": 1000
   },
@@ -3548,7 +3559,7 @@
     "operator": "standard",
     "name": "Kaggle",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -3559,7 +3570,7 @@
     "operator": "standard",
     "name": "Kaito",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3570,8 +3581,8 @@
     "operator": "standard",
     "name": "KakaoTalk",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
-    "base_cost_usd": 0.38,
+    "price_usd": 0.36,
+    "base_cost_usd": 0.36,
     "count": 1000
   },
   {
@@ -3581,7 +3592,7 @@
     "operator": "standard",
     "name": "Karos",
     "quality": "Economy Pool",
-    "price_usd": 0.75,
+    "price_usd": 0.4,
     "base_cost_usd": 0.4,
     "count": 1000
   },
@@ -3592,7 +3603,7 @@
     "operator": "standard",
     "name": "KCEX",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -3603,7 +3614,7 @@
     "operator": "standard",
     "name": "KeepCalling",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -3614,7 +3625,7 @@
     "operator": "standard",
     "name": "KeeTa 美团",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -3625,7 +3636,7 @@
     "operator": "standard",
     "name": "KFC",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -3636,7 +3647,7 @@
     "operator": "standard",
     "name": "Kimi",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -3647,7 +3658,7 @@
     "operator": "standard",
     "name": "KKTIX",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -3658,7 +3669,7 @@
     "operator": "standard",
     "name": "Klarna",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -3669,7 +3680,7 @@
     "operator": "standard",
     "name": "kolesa.kz",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -3680,7 +3691,7 @@
     "operator": "standard",
     "name": "Kredito",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3691,7 +3702,7 @@
     "operator": "standard",
     "name": "Kwiff",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -3702,7 +3713,7 @@
     "operator": "standard",
     "name": "lalafo",
     "quality": "Economy Pool",
-    "price_usd": 2.08,
+    "price_usd": 1.6,
     "base_cost_usd": 1.6,
     "count": 1000
   },
@@ -3713,7 +3724,7 @@
     "operator": "standard",
     "name": "Lalamove",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -3724,7 +3735,7 @@
     "operator": "standard",
     "name": "Langit Musik",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3735,7 +3746,7 @@
     "operator": "standard",
     "name": "Las Vegas Casino",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -3746,7 +3757,7 @@
     "operator": "standard",
     "name": "Lazada",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -3757,7 +3768,7 @@
     "operator": "standard",
     "name": "Leboncoin",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -3768,7 +3779,7 @@
     "operator": "standard",
     "name": "LemFi",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -3779,19 +3790,8 @@
     "operator": "standard",
     "name": "LeoList",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
-    "count": 1000
-  },
-  {
-    "id": "brg_us",
-    "service_name": "Letgo",
-    "service_code": "brg",
-    "operator": "standard",
-    "name": "Letgo",
-    "quality": "Economy Pool",
-    "price_usd": 2.6,
-    "base_cost_usd": 2.0,
     "count": 1000
   },
   {
@@ -3801,7 +3801,7 @@
     "operator": "standard",
     "name": "Letual",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -3812,7 +3812,7 @@
     "operator": "standard",
     "name": "Lidl",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -3823,7 +3823,7 @@
     "operator": "standard",
     "name": "Lightning AI",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -3834,7 +3834,7 @@
     "operator": "standard",
     "name": "LikeCard",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -3845,7 +3845,7 @@
     "operator": "standard",
     "name": "Lime",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -3856,8 +3856,8 @@
     "operator": "standard",
     "name": "Line",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
-    "base_cost_usd": 0.07,
+    "price_usd": 0.45,
+    "base_cost_usd": 0.45,
     "count": 1000
   },
   {
@@ -3867,8 +3867,8 @@
     "operator": "standard",
     "name": "Line messenger",
     "quality": "Economy Pool",
-    "price_usd": 0.41,
-    "base_cost_usd": 0.06,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -3878,7 +3878,7 @@
     "operator": "standard",
     "name": "LinkAja",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -3889,7 +3889,7 @@
     "operator": "standard",
     "name": "LinkedIN",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -3900,8 +3900,8 @@
     "operator": "standard",
     "name": "Linode",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
-    "base_cost_usd": 0.16,
+    "price_usd": 0.14,
+    "base_cost_usd": 0.14,
     "count": 1000
   },
   {
@@ -3911,7 +3911,7 @@
     "operator": "standard",
     "name": "LOTTE Mart",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -3922,7 +3922,7 @@
     "operator": "standard",
     "name": "Lottomatica",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -3933,7 +3933,7 @@
     "operator": "standard",
     "name": "Lotus",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -3944,7 +3944,7 @@
     "operator": "standard",
     "name": "LoveRu",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -3955,7 +3955,7 @@
     "operator": "standard",
     "name": "LOVOO",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -3966,7 +3966,7 @@
     "operator": "standard",
     "name": "LuckyLand Slots",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -3977,7 +3977,7 @@
     "operator": "standard",
     "name": "Lyft",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -3988,7 +3988,7 @@
     "operator": "standard",
     "name": "Mail.ru",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -3999,7 +3999,7 @@
     "operator": "standard",
     "name": "Mamba",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -4010,7 +4010,7 @@
     "operator": "standard",
     "name": "Mantan",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -4021,7 +4021,7 @@
     "operator": "standard",
     "name": "Manus",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -4032,7 +4032,7 @@
     "operator": "standard",
     "name": "Marktde",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4043,7 +4043,7 @@
     "operator": "standard",
     "name": "Marktplaats",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -4054,7 +4054,7 @@
     "operator": "standard",
     "name": "Match",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -4065,7 +4065,7 @@
     "operator": "standard",
     "name": "MAX",
     "quality": "Economy Pool",
-    "price_usd": 2.6,
+    "price_usd": 2.0,
     "base_cost_usd": 2.0,
     "count": 1000
   },
@@ -4076,7 +4076,7 @@
     "operator": "standard",
     "name": "Maxim",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -4087,7 +4087,7 @@
     "operator": "standard",
     "name": "McDonalds",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -4098,7 +4098,7 @@
     "operator": "standard",
     "name": "MChat",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -4109,7 +4109,7 @@
     "operator": "standard",
     "name": "MEEFF",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4120,7 +4120,7 @@
     "operator": "standard",
     "name": "Meesho",
     "quality": "Economy Pool",
-    "price_usd": 0.47,
+    "price_usd": 0.12,
     "base_cost_usd": 0.12,
     "count": 1000
   },
@@ -4131,7 +4131,7 @@
     "operator": "standard",
     "name": "Meest",
     "quality": "Economy Pool",
-    "price_usd": 1.03,
+    "price_usd": 0.68,
     "base_cost_usd": 0.68,
     "count": 1000
   },
@@ -4142,7 +4142,7 @@
     "operator": "standard",
     "name": "MeiQFashion",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -4153,7 +4153,7 @@
     "operator": "standard",
     "name": "Mera Gaon",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -4164,7 +4164,7 @@
     "operator": "standard",
     "name": "Mercado",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -4175,7 +4175,7 @@
     "operator": "standard",
     "name": "Mercari",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -4186,7 +4186,7 @@
     "operator": "standard",
     "name": "Meta",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -4197,7 +4197,7 @@
     "operator": "standard",
     "name": "MEXC",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -4208,7 +4208,7 @@
     "operator": "standard",
     "name": "Midnite",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -4219,7 +4219,7 @@
     "operator": "standard",
     "name": "Milanuncios",
     "quality": "Economy Pool",
-    "price_usd": 1.95,
+    "price_usd": 1.5,
     "base_cost_usd": 1.5,
     "count": 1000
   },
@@ -4230,7 +4230,7 @@
     "operator": "standard",
     "name": "MiniPay",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -4241,7 +4241,7 @@
     "operator": "standard",
     "name": "Mobile DE",
     "quality": "Economy Pool",
-    "price_usd": 1.56,
+    "price_usd": 1.2,
     "base_cost_usd": 1.2,
     "count": 1000
   },
@@ -4252,7 +4252,7 @@
     "operator": "standard",
     "name": "Mocospace",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -4263,7 +4263,7 @@
     "operator": "standard",
     "name": "MOMO",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -4274,7 +4274,7 @@
     "operator": "standard",
     "name": "Monese",
     "quality": "Economy Pool",
-    "price_usd": 0.94,
+    "price_usd": 0.59,
     "base_cost_usd": 0.59,
     "count": 1000
   },
@@ -4285,7 +4285,7 @@
     "operator": "standard",
     "name": "Moneylion",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -4296,7 +4296,7 @@
     "operator": "standard",
     "name": "MoneyPay",
     "quality": "Economy Pool",
-    "price_usd": 22.43,
+    "price_usd": 17.25,
     "base_cost_usd": 17.25,
     "count": 1000
   },
@@ -4307,7 +4307,7 @@
     "operator": "standard",
     "name": "Monobank",
     "quality": "Economy Pool",
-    "price_usd": 1.69,
+    "price_usd": 1.3,
     "base_cost_usd": 1.3,
     "count": 1000
   },
@@ -4318,7 +4318,7 @@
     "operator": "standard",
     "name": "Monzo",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -4329,7 +4329,7 @@
     "operator": "standard",
     "name": "MoonPay",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4340,7 +4340,7 @@
     "operator": "standard",
     "name": "MosGram",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4351,7 +4351,7 @@
     "operator": "standard",
     "name": "MotoRan",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -4362,7 +4362,7 @@
     "operator": "standard",
     "name": "MotorkuX",
     "quality": "Economy Pool",
-    "price_usd": 0.55,
+    "price_usd": 0.2,
     "base_cost_usd": 0.2,
     "count": 1000
   },
@@ -4373,7 +4373,7 @@
     "operator": "standard",
     "name": "Move It",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -4384,7 +4384,7 @@
     "operator": "standard",
     "name": "MrQ",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -4395,7 +4395,7 @@
     "operator": "standard",
     "name": "MSport",
     "quality": "Economy Pool",
-    "price_usd": 1.05,
+    "price_usd": 0.7,
     "base_cost_usd": 0.7,
     "count": 1000
   },
@@ -4406,7 +4406,7 @@
     "operator": "standard",
     "name": "Muzz",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -4417,7 +4417,7 @@
     "operator": "standard",
     "name": "My TELUS",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -4428,7 +4428,7 @@
     "operator": "standard",
     "name": "My11Circle",
     "quality": "Economy Pool",
-    "price_usd": 0.47,
+    "price_usd": 0.12,
     "base_cost_usd": 0.12,
     "count": 1000
   },
@@ -4439,7 +4439,7 @@
     "operator": "standard",
     "name": "myBCA",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4450,7 +4450,7 @@
     "operator": "standard",
     "name": "myboost",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -4461,7 +4461,7 @@
     "operator": "standard",
     "name": "Mycashbacks",
     "quality": "Economy Pool",
-    "price_usd": 1.56,
+    "price_usd": 1.2,
     "base_cost_usd": 1.2,
     "count": 1000
   },
@@ -4472,7 +4472,7 @@
     "operator": "standard",
     "name": "myGLO",
     "quality": "Economy Pool",
-    "price_usd": 0.66,
+    "price_usd": 0.31,
     "base_cost_usd": 0.31,
     "count": 1000
   },
@@ -4483,7 +4483,7 @@
     "operator": "standard",
     "name": "MyGo",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -4494,7 +4494,7 @@
     "operator": "standard",
     "name": "myIM3",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -4505,7 +4505,7 @@
     "operator": "standard",
     "name": "myPOS",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4516,7 +4516,7 @@
     "operator": "standard",
     "name": "myTVSUPER",
     "quality": "Economy Pool",
-    "price_usd": 1.18,
+    "price_usd": 0.83,
     "base_cost_usd": 0.83,
     "count": 1000
   },
@@ -4527,7 +4527,7 @@
     "operator": "standard",
     "name": "MyValue",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -4538,7 +4538,7 @@
     "operator": "standard",
     "name": "Natura Avon",
     "quality": "Economy Pool",
-    "price_usd": 0.9,
+    "price_usd": 0.55,
     "base_cost_usd": 0.55,
     "count": 1000
   },
@@ -4549,7 +4549,7 @@
     "operator": "standard",
     "name": "Naver",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -4560,7 +4560,7 @@
     "operator": "standard",
     "name": "NCsoft",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -4571,7 +4571,7 @@
     "operator": "standard",
     "name": "Neon",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -4582,7 +4582,7 @@
     "operator": "standard",
     "name": "Neosurf",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -4593,7 +4593,7 @@
     "operator": "standard",
     "name": "Netease",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -4604,7 +4604,7 @@
     "operator": "standard",
     "name": "NETELLER",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -4615,7 +4615,7 @@
     "operator": "standard",
     "name": "Netmarble",
     "quality": "Economy Pool",
-    "price_usd": 0.93,
+    "price_usd": 0.58,
     "base_cost_usd": 0.58,
     "count": 1000
   },
@@ -4626,7 +4626,7 @@
     "operator": "standard",
     "name": "Netwin",
     "quality": "Economy Pool",
-    "price_usd": 2.18,
+    "price_usd": 1.68,
     "base_cost_usd": 1.68,
     "count": 1000
   },
@@ -4637,7 +4637,7 @@
     "operator": "standard",
     "name": "Nexon",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4648,7 +4648,7 @@
     "operator": "standard",
     "name": "Next",
     "quality": "Economy Pool",
-    "price_usd": 0.83,
+    "price_usd": 0.48,
     "base_cost_usd": 0.48,
     "count": 1000
   },
@@ -4659,7 +4659,7 @@
     "operator": "standard",
     "name": "Nextdoor",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4670,7 +4670,7 @@
     "operator": "standard",
     "name": "Nike",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -4681,7 +4681,7 @@
     "operator": "standard",
     "name": "Njuškalo",
     "quality": "Economy Pool",
-    "price_usd": 0.61,
+    "price_usd": 0.26,
     "base_cost_usd": 0.26,
     "count": 1000
   },
@@ -4692,7 +4692,7 @@
     "operator": "standard",
     "name": "Noon",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -4703,8 +4703,8 @@
     "operator": "standard",
     "name": "NovaPoshta",
     "quality": "Economy Pool",
-    "price_usd": 1.48,
-    "base_cost_usd": 1.13,
+    "price_usd": 0.9,
+    "base_cost_usd": 0.9,
     "count": 1000
   },
   {
@@ -4714,7 +4714,7 @@
     "operator": "standard",
     "name": "Nttgame",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -4725,7 +4725,7 @@
     "operator": "standard",
     "name": "Nubank",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -4736,7 +4736,7 @@
     "operator": "standard",
     "name": "NutriClub",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -4747,7 +4747,7 @@
     "operator": "standard",
     "name": "Não Me Perturbe",
     "quality": "Economy Pool",
-    "price_usd": 0.9,
+    "price_usd": 0.55,
     "base_cost_usd": 0.55,
     "count": 1000
   },
@@ -4758,7 +4758,7 @@
     "operator": "standard",
     "name": "OffGamers",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4769,7 +4769,7 @@
     "operator": "standard",
     "name": "ok.ru",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -4780,7 +4780,7 @@
     "operator": "standard",
     "name": "OKbet",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -4791,7 +4791,7 @@
     "operator": "standard",
     "name": "OkCupid",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -4802,7 +4802,7 @@
     "operator": "standard",
     "name": "OKX",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -4813,7 +4813,7 @@
     "operator": "standard",
     "name": "Olacabs",
     "quality": "Economy Pool",
-    "price_usd": 0.41,
+    "price_usd": 0.06,
     "base_cost_usd": 0.06,
     "count": 1000
   },
@@ -4824,7 +4824,7 @@
     "operator": "standard",
     "name": "Oldubil",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -4835,7 +4835,7 @@
     "operator": "standard",
     "name": "OneForma",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -4846,7 +4846,7 @@
     "operator": "standard",
     "name": "OnePay",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -4857,7 +4857,7 @@
     "operator": "standard",
     "name": "Onet",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -4868,7 +4868,7 @@
     "operator": "standard",
     "name": "Onion Academy 洋葱学园",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -4879,7 +4879,7 @@
     "operator": "standard",
     "name": "OPAP",
     "quality": "Economy Pool",
-    "price_usd": 1.82,
+    "price_usd": 1.4,
     "base_cost_usd": 1.4,
     "count": 1000
   },
@@ -4890,7 +4890,7 @@
     "operator": "standard",
     "name": "Opera Mini",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -4901,8 +4901,8 @@
     "operator": "standard",
     "name": "Oriflame",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
-    "base_cost_usd": 0.18,
+    "price_usd": 0.45,
+    "base_cost_usd": 0.45,
     "count": 1000
   },
   {
@@ -4912,7 +4912,7 @@
     "operator": "standard",
     "name": "Oskelly",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -4923,7 +4923,7 @@
     "operator": "standard",
     "name": "Outlier",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -4934,7 +4934,7 @@
     "operator": "standard",
     "name": "OVO",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -4945,7 +4945,7 @@
     "operator": "standard",
     "name": "Ozan",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -4956,7 +4956,7 @@
     "operator": "standard",
     "name": "OZON",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -4967,7 +4967,7 @@
     "operator": "standard",
     "name": "PAC Cash",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -4978,7 +4978,7 @@
     "operator": "standard",
     "name": "PaddyPower",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -4989,7 +4989,7 @@
     "operator": "standard",
     "name": "PagBank",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -5000,7 +5000,7 @@
     "operator": "standard",
     "name": "Panvel",
     "quality": "Economy Pool",
-    "price_usd": 1.05,
+    "price_usd": 0.7,
     "base_cost_usd": 0.7,
     "count": 1000
   },
@@ -5011,7 +5011,7 @@
     "operator": "standard",
     "name": "Papara",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -5022,7 +5022,7 @@
     "operator": "standard",
     "name": "PAPER",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -5033,7 +5033,7 @@
     "operator": "standard",
     "name": "ParenTeam",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -5044,7 +5044,7 @@
     "operator": "standard",
     "name": "paycell",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -5055,7 +5055,7 @@
     "operator": "standard",
     "name": "Payoneer",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -5066,7 +5066,7 @@
     "operator": "standard",
     "name": "Paysafecard",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -5077,7 +5077,7 @@
     "operator": "standard",
     "name": "Paysend",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -5088,7 +5088,7 @@
     "operator": "standard",
     "name": "Paysera",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5099,7 +5099,7 @@
     "operator": "standard",
     "name": "Paytm",
     "quality": "Economy Pool",
-    "price_usd": 1.64,
+    "price_usd": 1.26,
     "base_cost_usd": 1.26,
     "count": 1000
   },
@@ -5110,7 +5110,7 @@
     "operator": "standard",
     "name": "PayWell",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -5121,7 +5121,7 @@
     "operator": "standard",
     "name": "PEDIR GAS",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -5132,7 +5132,7 @@
     "operator": "standard",
     "name": "Pegasus Airlines",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -5143,7 +5143,7 @@
     "operator": "standard",
     "name": "Perfect World 完美世界",
     "quality": "Economy Pool",
-    "price_usd": 2.5,
+    "price_usd": 1.92,
     "base_cost_usd": 1.92,
     "count": 1000
   },
@@ -5154,7 +5154,7 @@
     "operator": "standard",
     "name": "Pets4Homes",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -5165,7 +5165,7 @@
     "operator": "standard",
     "name": "PhonePe",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -5176,7 +5176,7 @@
     "operator": "standard",
     "name": "Picpay",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -5187,7 +5187,7 @@
     "operator": "standard",
     "name": "Pinduoduo",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -5198,7 +5198,7 @@
     "operator": "standard",
     "name": "PlayerAuctions",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -5209,7 +5209,7 @@
     "operator": "standard",
     "name": "PlayOJO",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -5220,7 +5220,7 @@
     "operator": "standard",
     "name": "PlayTime",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -5231,7 +5231,7 @@
     "operator": "standard",
     "name": "PLN Mobile",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -5242,7 +5242,7 @@
     "operator": "standard",
     "name": "Pockit",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -5253,7 +5253,7 @@
     "operator": "standard",
     "name": "pof.com",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -5264,7 +5264,7 @@
     "operator": "standard",
     "name": "Poparide",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -5275,7 +5275,7 @@
     "operator": "standard",
     "name": "Poshmark",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -5286,7 +5286,7 @@
     "operator": "standard",
     "name": "PPC",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -5297,7 +5297,7 @@
     "operator": "standard",
     "name": "Premmia",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -5308,7 +5308,7 @@
     "operator": "standard",
     "name": "Prime Opinion",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5319,7 +5319,7 @@
     "operator": "standard",
     "name": "Privalia",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -5330,7 +5330,7 @@
     "operator": "standard",
     "name": "Prodege",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -5341,7 +5341,7 @@
     "operator": "standard",
     "name": "Profee",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -5352,7 +5352,7 @@
     "operator": "standard",
     "name": "Prom",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -5363,7 +5363,7 @@
     "operator": "standard",
     "name": "ProtonMail",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -5374,7 +5374,7 @@
     "operator": "standard",
     "name": "Publi24",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -5385,7 +5385,7 @@
     "operator": "standard",
     "name": "Qpon",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -5396,7 +5396,7 @@
     "operator": "standard",
     "name": "Quero-Quero PAG",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -5407,7 +5407,7 @@
     "operator": "standard",
     "name": "Quoka",
     "quality": "Economy Pool",
-    "price_usd": 1.1,
+    "price_usd": 0.75,
     "base_cost_usd": 0.75,
     "count": 1000
   },
@@ -5418,7 +5418,7 @@
     "operator": "standard",
     "name": "QwikCilver",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -5429,7 +5429,7 @@
     "operator": "standard",
     "name": "Radiate",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -5440,7 +5440,7 @@
     "operator": "standard",
     "name": "Rappi",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -5451,7 +5451,7 @@
     "operator": "standard",
     "name": "Razer",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -5462,7 +5462,7 @@
     "operator": "standard",
     "name": "Rebtel",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -5473,7 +5473,7 @@
     "operator": "standard",
     "name": "RecargaPay",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -5484,7 +5484,7 @@
     "operator": "standard",
     "name": "ReclameAQUI",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -5495,7 +5495,7 @@
     "operator": "standard",
     "name": "RedBook",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -5506,7 +5506,7 @@
     "operator": "standard",
     "name": "Redbubble",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -5517,7 +5517,7 @@
     "operator": "standard",
     "name": "Reddit",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -5528,7 +5528,7 @@
     "operator": "standard",
     "name": "Rediffmail",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -5539,7 +5539,7 @@
     "operator": "standard",
     "name": "Remitly",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5550,7 +5550,7 @@
     "operator": "standard",
     "name": "RetailMeNot",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -5561,7 +5561,7 @@
     "operator": "standard",
     "name": "Revolut",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5572,7 +5572,7 @@
     "operator": "standard",
     "name": "Rewardy",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -5583,7 +5583,7 @@
     "operator": "standard",
     "name": "Ria",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -5594,7 +5594,7 @@
     "operator": "standard",
     "name": "RIDE",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -5605,7 +5605,7 @@
     "operator": "standard",
     "name": "Ring4",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5616,7 +5616,7 @@
     "operator": "standard",
     "name": "Roblox",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -5627,7 +5627,7 @@
     "operator": "standard",
     "name": "robota.ua",
     "quality": "Economy Pool",
-    "price_usd": 1.4,
+    "price_usd": 1.05,
     "base_cost_usd": 1.05,
     "count": 1000
   },
@@ -5638,7 +5638,7 @@
     "operator": "standard",
     "name": "roomster",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -5649,7 +5649,7 @@
     "operator": "standard",
     "name": "Rozetka",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -5660,7 +5660,7 @@
     "operator": "standard",
     "name": "Rumbler",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -5671,7 +5671,7 @@
     "operator": "standard",
     "name": "RummyCircle",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -5682,7 +5682,7 @@
     "operator": "standard",
     "name": "Rupiah Cepat",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -5693,7 +5693,7 @@
     "operator": "standard",
     "name": "Rush",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -5704,7 +5704,7 @@
     "operator": "standard",
     "name": "Ryde",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -5715,7 +5715,7 @@
     "operator": "standard",
     "name": "SageMaker Studio Lab",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -5726,7 +5726,7 @@
     "operator": "standard",
     "name": "Sahibinden",
     "quality": "Economy Pool",
-    "price_usd": 0.61,
+    "price_usd": 0.26,
     "base_cost_usd": 0.26,
     "count": 1000
   },
@@ -5737,7 +5737,7 @@
     "operator": "standard",
     "name": "Salams",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -5748,7 +5748,7 @@
     "operator": "standard",
     "name": "SamsungShop",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5759,7 +5759,7 @@
     "operator": "standard",
     "name": "Santander",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -5770,7 +5770,7 @@
     "operator": "standard",
     "name": "SAPO",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -5781,7 +5781,7 @@
     "operator": "standard",
     "name": "Sber/Cooper",
     "quality": "Economy Pool",
-    "price_usd": 3.12,
+    "price_usd": 2.4,
     "base_cost_usd": 2.4,
     "count": 1000
   },
@@ -5792,7 +5792,7 @@
     "operator": "standard",
     "name": "Scalapay",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -5803,7 +5803,7 @@
     "operator": "standard",
     "name": "SeaBank",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -5814,7 +5814,7 @@
     "operator": "standard",
     "name": "Seated",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5825,7 +5825,7 @@
     "operator": "standard",
     "name": "SeLoger",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -5836,7 +5836,7 @@
     "operator": "standard",
     "name": "Sendwave",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -5847,7 +5847,7 @@
     "operator": "standard",
     "name": "SerpApi",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -5858,7 +5858,7 @@
     "operator": "standard",
     "name": "Setel",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -5869,7 +5869,7 @@
     "operator": "standard",
     "name": "Seven Bet",
     "quality": "Economy Pool",
-    "price_usd": 0.7,
+    "price_usd": 0.35,
     "base_cost_usd": 0.35,
     "count": 1000
   },
@@ -5880,7 +5880,7 @@
     "operator": "standard",
     "name": "Seznam",
     "quality": "Economy Pool",
-    "price_usd": 1.92,
+    "price_usd": 1.48,
     "base_cost_usd": 1.48,
     "count": 1000
   },
@@ -5891,7 +5891,7 @@
     "operator": "standard",
     "name": "Shafa",
     "quality": "Economy Pool",
-    "price_usd": 1.43,
+    "price_usd": 1.08,
     "base_cost_usd": 1.08,
     "count": 1000
   },
@@ -5902,7 +5902,7 @@
     "operator": "standard",
     "name": "ShareParty",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -5913,7 +5913,7 @@
     "operator": "standard",
     "name": "Shein",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -5924,7 +5924,7 @@
     "operator": "standard",
     "name": "Shell GO",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -5935,7 +5935,7 @@
     "operator": "standard",
     "name": "ShellBox",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -5946,7 +5946,7 @@
     "operator": "standard",
     "name": "Shokoladnica",
     "quality": "Economy Pool",
-    "price_usd": 1.62,
+    "price_usd": 1.25,
     "base_cost_usd": 1.25,
     "count": 1000
   },
@@ -5957,7 +5957,7 @@
     "operator": "standard",
     "name": "Shopback",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -5968,7 +5968,7 @@
     "operator": "standard",
     "name": "Shopee",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -5979,7 +5979,7 @@
     "operator": "standard",
     "name": "shopFarEast",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -5990,7 +5990,7 @@
     "operator": "standard",
     "name": "Shopify",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -6001,7 +6001,7 @@
     "operator": "standard",
     "name": "Shpock",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -6012,7 +6012,7 @@
     "operator": "standard",
     "name": "Sicredi",
     "quality": "Economy Pool",
-    "price_usd": 2.6,
+    "price_usd": 2.0,
     "base_cost_usd": 2.0,
     "count": 1000
   },
@@ -6023,7 +6023,7 @@
     "operator": "standard",
     "name": "Sideline",
     "quality": "Economy Pool",
-    "price_usd": 0.75,
+    "price_usd": 0.4,
     "base_cost_usd": 0.4,
     "count": 1000
   },
@@ -6034,7 +6034,7 @@
     "operator": "standard",
     "name": "Signal",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -6045,7 +6045,7 @@
     "operator": "standard",
     "name": "SiliconFlow 硅基流动",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6056,7 +6056,7 @@
     "operator": "standard",
     "name": "Singledk",
     "quality": "Economy Pool",
-    "price_usd": 1.43,
+    "price_usd": 1.08,
     "base_cost_usd": 1.08,
     "count": 1000
   },
@@ -6067,7 +6067,7 @@
     "operator": "standard",
     "name": "Sisal",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -6078,7 +6078,7 @@
     "operator": "standard",
     "name": "Skelbiu",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -6089,7 +6089,7 @@
     "operator": "standard",
     "name": "Skout",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -6100,7 +6100,7 @@
     "operator": "standard",
     "name": "Skrill",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -6111,7 +6111,7 @@
     "operator": "standard",
     "name": "SkyBet",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -6122,7 +6122,7 @@
     "operator": "standard",
     "name": "Skype",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6133,7 +6133,7 @@
     "operator": "standard",
     "name": "SkyTV",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -6144,7 +6144,7 @@
     "operator": "standard",
     "name": "Smiles",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6155,7 +6155,7 @@
     "operator": "standard",
     "name": "Smitten",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -6166,7 +6166,7 @@
     "operator": "standard",
     "name": "Smotryoshka",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -6177,7 +6177,7 @@
     "operator": "standard",
     "name": "SNAI",
     "quality": "Economy Pool",
-    "price_usd": 2.22,
+    "price_usd": 1.71,
     "base_cost_usd": 1.71,
     "count": 1000
   },
@@ -6188,7 +6188,7 @@
     "operator": "standard",
     "name": "SNKRDUNK",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6199,7 +6199,7 @@
     "operator": "standard",
     "name": "SoulApp",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -6210,7 +6210,7 @@
     "operator": "standard",
     "name": "Spark Driver",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -6221,7 +6221,7 @@
     "operator": "standard",
     "name": "SpatenOktoberfest",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -6232,7 +6232,7 @@
     "operator": "standard",
     "name": "SportMaster",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -6243,7 +6243,7 @@
     "operator": "standard",
     "name": "Spotify",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -6254,7 +6254,7 @@
     "operator": "standard",
     "name": "Square",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -6265,7 +6265,7 @@
     "operator": "standard",
     "name": "Stanleybet",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -6276,7 +6276,7 @@
     "operator": "standard",
     "name": "Starbucks",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -6287,7 +6287,7 @@
     "operator": "standard",
     "name": "Stoiximan",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -6298,7 +6298,7 @@
     "operator": "standard",
     "name": "Strato",
     "quality": "Economy Pool",
-    "price_usd": 1.48,
+    "price_usd": 1.13,
     "base_cost_usd": 1.13,
     "count": 1000
   },
@@ -6309,7 +6309,7 @@
     "operator": "standard",
     "name": "Subito",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -6320,7 +6320,7 @@
     "operator": "standard",
     "name": "SumUp",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -6331,7 +6331,7 @@
     "operator": "standard",
     "name": "Suno",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -6342,7 +6342,7 @@
     "operator": "standard",
     "name": "Superbet",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -6353,7 +6353,7 @@
     "operator": "standard",
     "name": "Supercell",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -6364,7 +6364,7 @@
     "operator": "standard",
     "name": "SwaRail",
     "quality": "Economy Pool",
-    "price_usd": 1.1,
+    "price_usd": 0.75,
     "base_cost_usd": 0.75,
     "count": 1000
   },
@@ -6375,7 +6375,7 @@
     "operator": "standard",
     "name": "Swiggy",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -6386,7 +6386,7 @@
     "operator": "standard",
     "name": "SwitchUp",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -6397,7 +6397,7 @@
     "operator": "standard",
     "name": "Tala",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -6408,7 +6408,7 @@
     "operator": "standard",
     "name": "Talabat",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -6419,7 +6419,7 @@
     "operator": "standard",
     "name": "Tango",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
+    "price_usd": 0.11,
     "base_cost_usd": 0.11,
     "count": 1000
   },
@@ -6430,7 +6430,7 @@
     "operator": "standard",
     "name": "TanTan",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -6441,7 +6441,7 @@
     "operator": "standard",
     "name": "Taptap Send",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -6452,7 +6452,7 @@
     "operator": "standard",
     "name": "Tata Neu",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -6463,7 +6463,7 @@
     "operator": "standard",
     "name": "Tealive",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -6474,7 +6474,7 @@
     "operator": "standard",
     "name": "Temu",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -6485,7 +6485,7 @@
     "operator": "standard",
     "name": "Tencent QQ",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -6496,7 +6496,7 @@
     "operator": "standard",
     "name": "Tennents",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -6507,7 +6507,7 @@
     "operator": "standard",
     "name": "TextFree",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -6518,7 +6518,7 @@
     "operator": "standard",
     "name": "TheFork",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -6529,7 +6529,7 @@
     "operator": "standard",
     "name": "TheL",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -6540,7 +6540,7 @@
     "operator": "standard",
     "name": "This Fate",
     "quality": "Economy Pool",
-    "price_usd": 2.91,
+    "price_usd": 2.24,
     "base_cost_usd": 2.24,
     "count": 1000
   },
@@ -6551,7 +6551,7 @@
     "operator": "standard",
     "name": "Thumbtack",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -6562,7 +6562,7 @@
     "operator": "standard",
     "name": "Ticketmaster",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -6573,7 +6573,7 @@
     "operator": "standard",
     "name": "Tinkoff VoiceKit",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -6584,7 +6584,7 @@
     "operator": "standard",
     "name": "Tise",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -6595,7 +6595,7 @@
     "operator": "standard",
     "name": "Tokopedia",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -6606,7 +6606,7 @@
     "operator": "standard",
     "name": "TOMORO COFFEE",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -6617,7 +6617,7 @@
     "operator": "standard",
     "name": "TOP",
     "quality": "Economy Pool",
-    "price_usd": 1.1,
+    "price_usd": 0.75,
     "base_cost_usd": 0.75,
     "count": 1000
   },
@@ -6628,7 +6628,7 @@
     "operator": "standard",
     "name": "TotalPass",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -6639,7 +6639,7 @@
     "operator": "standard",
     "name": "Touch n Go TNG",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -6650,7 +6650,7 @@
     "operator": "standard",
     "name": "Trade Republic",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -6661,7 +6661,7 @@
     "operator": "standard",
     "name": "Transfergo",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -6672,7 +6672,7 @@
     "operator": "standard",
     "name": "Treasury",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -6683,7 +6683,7 @@
     "operator": "standard",
     "name": "Trendyol",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -6694,7 +6694,7 @@
     "operator": "standard",
     "name": "Trip",
     "quality": "Economy Pool",
-    "price_usd": 0.54,
+    "price_usd": 0.19,
     "base_cost_usd": 0.19,
     "count": 1000
   },
@@ -6705,7 +6705,7 @@
     "operator": "standard",
     "name": "Truecaller",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -6716,7 +6716,7 @@
     "operator": "standard",
     "name": "TrueMoney",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6727,7 +6727,7 @@
     "operator": "standard",
     "name": "TRUTH SOCIAL",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -6738,7 +6738,7 @@
     "operator": "standard",
     "name": "Twilio",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -6749,7 +6749,7 @@
     "operator": "standard",
     "name": "Twitch",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -6760,7 +6760,7 @@
     "operator": "standard",
     "name": "UATAS",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6771,7 +6771,7 @@
     "operator": "standard",
     "name": "Ubisoft",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -6782,7 +6782,7 @@
     "operator": "standard",
     "name": "UFC",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6793,7 +6793,7 @@
     "operator": "standard",
     "name": "Uklon",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -6804,7 +6804,7 @@
     "operator": "standard",
     "name": "Ukrnet",
     "quality": "Economy Pool",
-    "price_usd": 0.43,
+    "price_usd": 0.08,
     "base_cost_usd": 0.08,
     "count": 1000
   },
@@ -6815,7 +6815,7 @@
     "operator": "standard",
     "name": "Ultragaz",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -6826,7 +6826,7 @@
     "operator": "standard",
     "name": "UNNI 강남언니",
     "quality": "Economy Pool",
-    "price_usd": 0.55,
+    "price_usd": 0.2,
     "base_cost_usd": 0.2,
     "count": 1000
   },
@@ -6837,7 +6837,7 @@
     "operator": "standard",
     "name": "UOL Host",
     "quality": "Economy Pool",
-    "price_usd": 0.93,
+    "price_usd": 0.58,
     "base_cost_usd": 0.58,
     "count": 1000
   },
@@ -6848,7 +6848,7 @@
     "operator": "standard",
     "name": "Upward",
     "quality": "Economy Pool",
-    "price_usd": 0.67,
+    "price_usd": 0.32,
     "base_cost_usd": 0.32,
     "count": 1000
   },
@@ -6859,7 +6859,7 @@
     "operator": "standard",
     "name": "Upwork",
     "quality": "Economy Pool",
-    "price_usd": 0.49,
+    "price_usd": 0.14,
     "base_cost_usd": 0.14,
     "count": 1000
   },
@@ -6870,7 +6870,7 @@
     "operator": "standard",
     "name": "Valora",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -6881,7 +6881,7 @@
     "operator": "standard",
     "name": "Veeka",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -6892,7 +6892,7 @@
     "operator": "standard",
     "name": "Vercel",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -6903,7 +6903,7 @@
     "operator": "standard",
     "name": "Vesseo",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -6914,7 +6914,7 @@
     "operator": "standard",
     "name": "VFS GLOBAL",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -6925,7 +6925,7 @@
     "operator": "standard",
     "name": "Viber",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -6936,7 +6936,7 @@
     "operator": "standard",
     "name": "Vidio",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6947,7 +6947,7 @@
     "operator": "standard",
     "name": "VIMpay",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -6958,7 +6958,7 @@
     "operator": "standard",
     "name": "Vinted",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -6969,7 +6969,7 @@
     "operator": "standard",
     "name": "Vision Plus",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -6980,8 +6980,8 @@
     "operator": "standard",
     "name": "vk.com",
     "quality": "Economy Pool",
-    "price_usd": 0.46,
-    "base_cost_usd": 0.11,
+    "price_usd": 1.05,
+    "base_cost_usd": 1.05,
     "count": 1000
   },
   {
@@ -6991,7 +6991,7 @@
     "operator": "standard",
     "name": "Voggt",
     "quality": "Economy Pool",
-    "price_usd": 1.62,
+    "price_usd": 1.25,
     "base_cost_usd": 1.25,
     "count": 1000
   },
@@ -7002,7 +7002,7 @@
     "operator": "standard",
     "name": "Voi",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -7013,7 +7013,7 @@
     "operator": "standard",
     "name": "Volcengine 火山引擎",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -7024,7 +7024,7 @@
     "operator": "standard",
     "name": "Vonage",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -7035,7 +7035,7 @@
     "operator": "standard",
     "name": "VooV Meeting",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -7046,7 +7046,7 @@
     "operator": "standard",
     "name": "Wallapop",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -7057,7 +7057,7 @@
     "operator": "standard",
     "name": "WalletHub",
     "quality": "Economy Pool",
-    "price_usd": 0.78,
+    "price_usd": 0.43,
     "base_cost_usd": 0.43,
     "count": 1000
   },
@@ -7068,7 +7068,7 @@
     "operator": "standard",
     "name": "Walmart",
     "quality": "Economy Pool",
-    "price_usd": 0.69,
+    "price_usd": 0.34,
     "base_cost_usd": 0.34,
     "count": 1000
   },
@@ -7079,7 +7079,7 @@
     "operator": "standard",
     "name": "Warpcast",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -7090,7 +7090,7 @@
     "operator": "standard",
     "name": "Watsons MY",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -7101,7 +7101,7 @@
     "operator": "standard",
     "name": "WEBDE",
     "quality": "Economy Pool",
-    "price_usd": 0.61,
+    "price_usd": 0.26,
     "base_cost_usd": 0.26,
     "count": 1000
   },
@@ -7112,7 +7112,7 @@
     "operator": "standard",
     "name": "Webmotors",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -7123,7 +7123,7 @@
     "operator": "standard",
     "name": "WeChat",
     "quality": "Economy Pool",
-    "price_usd": 0.51,
+    "price_usd": 0.16,
     "base_cost_usd": 0.16,
     "count": 1000
   },
@@ -7134,7 +7134,7 @@
     "operator": "standard",
     "name": "Weex",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -7145,7 +7145,7 @@
     "operator": "standard",
     "name": "Weibo",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -7156,7 +7156,7 @@
     "operator": "standard",
     "name": "WePoker",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -7167,7 +7167,7 @@
     "operator": "standard",
     "name": "WeTalk",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -7178,7 +7178,7 @@
     "operator": "standard",
     "name": "WeTV",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -7189,7 +7189,7 @@
     "operator": "standard",
     "name": "Weverse",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -7200,7 +7200,7 @@
     "operator": "standard",
     "name": "Whatnot",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -7211,7 +7211,7 @@
     "operator": "standard",
     "name": "Whoosh",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -7222,7 +7222,7 @@
     "operator": "standard",
     "name": "Wildberries",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -7233,7 +7233,7 @@
     "operator": "standard",
     "name": "will",
     "quality": "Economy Pool",
-    "price_usd": 0.93,
+    "price_usd": 0.58,
     "base_cost_usd": 0.58,
     "count": 1000
   },
@@ -7244,7 +7244,7 @@
     "operator": "standard",
     "name": "willhaben",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -7255,7 +7255,7 @@
     "operator": "standard",
     "name": "Winner",
     "quality": "Economy Pool",
-    "price_usd": 0.59,
+    "price_usd": 0.24,
     "base_cost_usd": 0.24,
     "count": 1000
   },
@@ -7266,7 +7266,7 @@
     "operator": "standard",
     "name": "WinzoGame",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -7277,7 +7277,7 @@
     "operator": "standard",
     "name": "Wise",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -7288,7 +7288,7 @@
     "operator": "standard",
     "name": "Wolt",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -7299,7 +7299,7 @@
     "operator": "standard",
     "name": "WooPlus",
     "quality": "Economy Pool",
-    "price_usd": 0.76,
+    "price_usd": 0.41,
     "base_cost_usd": 0.41,
     "count": 1000
   },
@@ -7310,7 +7310,7 @@
     "operator": "standard",
     "name": "WorldRemit",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   },
@@ -7321,7 +7321,7 @@
     "operator": "standard",
     "name": "Wuling",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -7332,7 +7332,7 @@
     "operator": "standard",
     "name": "X5ID",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -7343,7 +7343,7 @@
     "operator": "standard",
     "name": "Xiaomi",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -7354,7 +7354,7 @@
     "operator": "standard",
     "name": "Yalla",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -7365,8 +7365,8 @@
     "operator": "standard",
     "name": "Yandex/Uber",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
-    "base_cost_usd": 0.05,
+    "price_usd": 0.75,
+    "base_cost_usd": 0.75,
     "count": 1000
   },
   {
@@ -7376,7 +7376,7 @@
     "operator": "standard",
     "name": "Yara Farmcare",
     "quality": "Economy Pool",
-    "price_usd": 0.62,
+    "price_usd": 0.27,
     "base_cost_usd": 0.27,
     "count": 1000
   },
@@ -7387,7 +7387,7 @@
     "operator": "standard",
     "name": "Yemeksepeti",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -7398,7 +7398,7 @@
     "operator": "standard",
     "name": "YooMoney",
     "quality": "Economy Pool",
-    "price_usd": 0.65,
+    "price_usd": 0.3,
     "base_cost_usd": 0.3,
     "count": 1000
   },
@@ -7409,7 +7409,7 @@
     "operator": "standard",
     "name": "Yophone",
     "quality": "Economy Pool",
-    "price_usd": 0.58,
+    "price_usd": 0.23,
     "base_cost_usd": 0.23,
     "count": 1000
   },
@@ -7420,7 +7420,7 @@
     "operator": "standard",
     "name": "YouDo",
     "quality": "Economy Pool",
-    "price_usd": 0.55,
+    "price_usd": 0.2,
     "base_cost_usd": 0.2,
     "count": 1000
   },
@@ -7431,7 +7431,7 @@
     "operator": "standard",
     "name": "YouGov Shopper",
     "quality": "Economy Pool",
-    "price_usd": 1.56,
+    "price_usd": 1.2,
     "base_cost_usd": 1.2,
     "count": 1000
   },
@@ -7442,7 +7442,7 @@
     "operator": "standard",
     "name": "youla.ru",
     "quality": "Economy Pool",
-    "price_usd": 0.4,
+    "price_usd": 0.05,
     "base_cost_usd": 0.05,
     "count": 1000
   },
@@ -7453,7 +7453,7 @@
     "operator": "standard",
     "name": "YUEWEN 阅文集团",
     "quality": "Economy Pool",
-    "price_usd": 0.6,
+    "price_usd": 0.25,
     "base_cost_usd": 0.25,
     "count": 1000
   },
@@ -7464,7 +7464,7 @@
     "operator": "standard",
     "name": "Zara",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -7475,7 +7475,7 @@
     "operator": "standard",
     "name": "ZeeNow",
     "quality": "Economy Pool",
-    "price_usd": 1.0,
+    "price_usd": 0.65,
     "base_cost_usd": 0.65,
     "count": 1000
   },
@@ -7486,7 +7486,7 @@
     "operator": "standard",
     "name": "Zen",
     "quality": "Economy Pool",
-    "price_usd": 0.71,
+    "price_usd": 0.36,
     "base_cost_usd": 0.36,
     "count": 1000
   },
@@ -7497,7 +7497,7 @@
     "operator": "standard",
     "name": "Zepto",
     "quality": "Economy Pool",
-    "price_usd": 0.68,
+    "price_usd": 0.33,
     "base_cost_usd": 0.33,
     "count": 1000
   },
@@ -7508,7 +7508,7 @@
     "operator": "standard",
     "name": "Zhihu",
     "quality": "Economy Pool",
-    "price_usd": 1.1,
+    "price_usd": 0.75,
     "base_cost_usd": 0.75,
     "count": 1000
   },
@@ -7519,7 +7519,7 @@
     "operator": "standard",
     "name": "Zilch",
     "quality": "Economy Pool",
-    "price_usd": 0.94,
+    "price_usd": 0.59,
     "base_cost_usd": 0.59,
     "count": 1000
   },
@@ -7530,7 +7530,7 @@
     "operator": "standard",
     "name": "Zinia",
     "quality": "Economy Pool",
-    "price_usd": 1.69,
+    "price_usd": 1.3,
     "base_cost_usd": 1.3,
     "count": 1000
   },
@@ -7541,7 +7541,7 @@
     "operator": "standard",
     "name": "Zoho",
     "quality": "Economy Pool",
-    "price_usd": 0.42,
+    "price_usd": 0.07,
     "base_cost_usd": 0.07,
     "count": 1000
   },
@@ -7552,7 +7552,7 @@
     "operator": "standard",
     "name": "Zomato",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -7563,7 +7563,7 @@
     "operator": "standard",
     "name": "ZUL",
     "quality": "Economy Pool",
-    "price_usd": 0.98,
+    "price_usd": 0.63,
     "base_cost_usd": 0.63,
     "count": 1000
   },
@@ -7574,7 +7574,7 @@
     "operator": "standard",
     "name": "Zupee",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -7585,7 +7585,7 @@
     "operator": "standard",
     "name": "ZUS Coffee",
     "quality": "Economy Pool",
-    "price_usd": 0.53,
+    "price_usd": 0.18,
     "base_cost_usd": 0.18,
     "count": 1000
   },
@@ -7596,7 +7596,7 @@
     "operator": "standard",
     "name": "ZéDelivery",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -7607,7 +7607,7 @@
     "operator": "standard",
     "name": "Şikayet var",
     "quality": "Economy Pool",
-    "price_usd": 0.73,
+    "price_usd": 0.38,
     "base_cost_usd": 0.38,
     "count": 1000
   },
@@ -7618,7 +7618,7 @@
     "operator": "standard",
     "name": "Вплюсе",
     "quality": "Economy Pool",
-    "price_usd": 0.8,
+    "price_usd": 0.45,
     "base_cost_usd": 0.45,
     "count": 1000
   },
@@ -7629,7 +7629,7 @@
     "operator": "standard",
     "name": "Вчасно",
     "quality": "Economy Pool",
-    "price_usd": 1.82,
+    "price_usd": 1.4,
     "base_cost_usd": 1.4,
     "count": 1000
   },
@@ -7640,7 +7640,7 @@
     "operator": "standard",
     "name": "Лемана ПРО",
     "quality": "Economy Pool",
-    "price_usd": 0.75,
+    "price_usd": 0.4,
     "base_cost_usd": 0.4,
     "count": 1000
   },
@@ -7651,7 +7651,7 @@
     "operator": "standard",
     "name": "Столото",
     "quality": "Economy Pool",
-    "price_usd": 0.85,
+    "price_usd": 0.5,
     "base_cost_usd": 0.5,
     "count": 1000
   },
@@ -7662,7 +7662,7 @@
     "operator": "standard",
     "name": "Сільпо",
     "quality": "Economy Pool",
-    "price_usd": 1.48,
+    "price_usd": 1.13,
     "base_cost_usd": 1.13,
     "count": 1000
   },
@@ -7673,7 +7673,7 @@
     "operator": "standard",
     "name": "同程旅行 Tongcheng Travel",
     "quality": "Economy Pool",
-    "price_usd": 0.63,
+    "price_usd": 0.28,
     "base_cost_usd": 0.28,
     "count": 1000
   },
@@ -7684,7 +7684,7 @@
     "operator": "standard",
     "name": "汇旺 Huione Pay",
     "quality": "Economy Pool",
-    "price_usd": 0.64,
+    "price_usd": 0.29,
     "base_cost_usd": 0.29,
     "count": 1000
   },
@@ -7695,7 +7695,7 @@
     "operator": "standard",
     "name": "Other Platforms",
     "quality": "Economy Pool",
-    "price_usd": 0.44,
+    "price_usd": 0.09,
     "base_cost_usd": 0.09,
     "count": 1000
   }

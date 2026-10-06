@@ -123,6 +123,44 @@ POPULAR_PRIORITY = {
     'mb': 19, 'mt': 20, 'li': 21, 'bl': 22, 're': 23, 'ot': 999
 }
 
+# Exact wholesale prices charged by VirtualSMS.io for United States numbers
+US_WHOLESALE_BASE_PRICES = {
+    'wa': 1.95,
+    'wa_biz': 1.95,
+    'go': 1.05,
+    'ig': 0.75,
+    'fb': 1.05,
+    'tw': 0.75,
+    'lf': 1.31,
+    'tt': 1.31,
+    'ds': 1.05,
+    'sn': 0.45,
+    'ts': 0.75,
+    'sig': 0.75,
+    'li': 0.75,
+    'am': 1.05,
+    'nf': 1.05,
+    'wx': 0.75,
+    'cld': 0.75,
+    'cb': 1.05,
+    'cr': 0.75,
+    'rb': 0.75,
+    'st': 0.75,
+    'ws': 0.75,
+    'ca': 1.05,
+    'ab': 0.45,
+    'bm': 1.05,
+    'bn': 0.75,
+    'wc': 0.75,
+    'me': 1.05,
+    'pm': 1.05,
+    'vk': 1.05,
+    'rd': 0.75,
+    'ya': 0.75,
+    'ms': 0.90,
+    'kt': 0.36
+}
+
 # Core services for which we actively fetch per-country wholesale prices in parallel
 CORE_TRACKED_SERVICES = [
     'wa', 'tg', 'go', 'ig', 'fb', 'tw', 'lf', 'dr', 'oi', 'wx',
@@ -334,8 +372,17 @@ def sync_virtualsms_us_services() -> bool:
         if not sid:
             continue
         clean_name = CLEAN_SERVICE_NAMES.get(sid) or s.get('service_name', '').strip() or sid.title()
-        base_cost = float(s.get('base_price') or 0.20)
-        retail_price = round(max(base_cost * mult, base_cost + floor), 2)
+        
+        # Exact wholesale price charged by VirtualSMS for US, falling back to service base_price
+        if sid in US_WHOLESALE_BASE_PRICES:
+            base_cost = US_WHOLESALE_BASE_PRICES[sid]
+        else:
+            base_cost = float(s.get('base_price') or 0.20)
+
+        if pct <= 0.0 and floor <= 0.0:
+            retail_price = round(base_cost, 2)
+        else:
+            retail_price = round(max(base_cost * mult, base_cost + floor), 2)
 
         item = {
             'id': f"{sid}_us",

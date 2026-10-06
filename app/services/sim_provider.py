@@ -4,9 +4,11 @@ and complete white-labeling (no third-party provider names disclosed to end user
 """
 
 import os
+import re
 import requests
 import uuid
 import datetime
+from typing import Optional, Dict, Any, List
 from app.config import Config
 from app.services.supabase_client import get_supabase_admin, mock_db
 
@@ -195,6 +197,28 @@ class VirtualSMSClient:
             print(f"[VirtualSMSClient] Connection error during purchase: {e}")
             return {'success': False, 'message': 'Network timeout while contacting verification server. Please try again.'}
 
+    @staticmethod
+    def _extract_otp_code(text: str) -> Optional[str]:
+        """Extract verification OTP code from raw SMS text."""
+        if not text:
+            return None
+        text_clean = str(text).strip()
+        # 1. Match code keyword pattern e.g. "code: 510-056", "verification code is 482910", "pin: 1234"
+        m = re.search(r'(?:code|codice|código|pin|verification\s*code|is)[:\s]+([A-Za-z0-9\-]{4,10})', text_clean, re.I)
+        if m:
+            c = m.group(1).strip()
+            if any(ch.isdigit() for ch in c):
+                return c
+        # 2. Match hyphenated code e.g. "510-056"
+        m = re.search(r'\b(\d{3}-\d{3})\b', text_clean)
+        if m:
+            return m.group(1).strip()
+        # 3. Match 4 to 8 digit standalone code
+        m = re.search(r'\b(\d{4,8})\b', text_clean)
+        if m:
+            return m.group(1).strip()
+        return None
+
     def check_order(self, provider_order_id: str) -> dict:
         """Check order status and incoming SMS messages."""
         if not self.is_configured or not provider_order_id:
@@ -208,22 +232,34 @@ class VirtualSMSClient:
                 status = str(data.get('status', 'PENDING')).upper()
 
                 latest_code = data.get('sms_code') or data.get('code')
-                latest_text = data.get('sms_text') or data.get('text')
+                latest_text = data.get('sms_text') or data.get('text') or data.get('content')
                 latest_sms_id = provider_order_id
 
-                if not latest_code and sms_list and len(sms_list) > 0:
+                if sms_list and len(sms_list) > 0:
                     last_sms = sms_list[-1]
                     if isinstance(last_sms, dict):
-                        latest_code = last_sms.get('code') or last_sms.get('sms_code')
-                        latest_text = last_sms.get('text') or last_sms.get('sms_text') or last_sms.get('message')
+                        latest_code = last_sms.get('code') or last_sms.get('sms_code') or latest_code
+                        latest_text = (
+                            last_sms.get('content')
+                            or last_sms.get('text')
+                            or last_sms.get('sms_text')
+                            or last_sms.get('message')
+                            or latest_text
+                        )
                         latest_sms_id = str(last_sms.get('id') or provider_order_id)
                     else:
                         latest_text = str(last_sms)
 
+                # If code was not parsed natively by provider, parse it from the SMS text
+                if not latest_code and latest_text:
+                    latest_code = self._extract_otp_code(latest_text)
+
+                has_sms = bool(latest_code or (sms_list and len(sms_list) > 0) or latest_text)
+
                 return {
                     'success': True,
                     'status': status,
-                    'has_sms': bool(latest_code or (sms_list and len(sms_list) > 0)),
+                    'has_sms': has_sms,
                     'sms_code': latest_code,
                     'full_sms': latest_text or (f"Your verification code is: {latest_code}" if latest_code else None),
                     'provider_sms_id': latest_sms_id,
@@ -465,12 +501,16 @@ class SIMProviderService:
                     override_p = overrides[sc]
                     return override_p, round(override_p - base_cost, 4)
         except Exception:
-            pct, floor = 30.0, 0.30
+            pct, floor = 0.0, 0.0
 
-        mult = 1.0 + (pct / 100.0)
-        markup = max(base_cost * mult, base_cost + floor)
-        retail_price = round(markup, 2)
-        profit_margin = round(retail_price - base_cost, 4)
+        if pct <= 0.0 and floor <= 0.0:
+            retail_price = round(base_cost, 2)
+            profit_margin = 0.0
+        else:
+            mult = 1.0 + (pct / 100.0)
+            markup = max(base_cost * mult, base_cost + floor)
+            retail_price = round(markup, 2)
+            profit_margin = round(retail_price - base_cost, 4)
         return retail_price, profit_margin
 
     _cached_raw_catalog = None
@@ -584,11 +624,8 @@ class SIMProviderService:
                 if o.get('provider_type') in ('5sim', 'virtualsms', 'all') and o.get('is_active', True) and o.get('service_code')
             }
         except Exception:
-            pct, floor = 30.0, 0.35
+            pct, floor = 0.0, 0.0
             overrides = {}
-
-        if pct <= 0.0 and floor <= 0.0:
-            pct, floor = 30.0, 0.35
 
         mult = 1.0 + (pct / 100.0)
 
@@ -605,6 +642,8 @@ class SIMProviderService:
                 if s_code in overrides:
                     s_copy['price'] = overrides[s_code]
                     s_copy['is_override'] = True
+                elif pct <= 0.0 and floor <= 0.0:
+                    s_copy['price'] = round(base, 2)
                 else:
                     s_copy['price'] = round(max(base * mult, base + floor), 2)
                 services_list.append(s_copy)
@@ -1046,18 +1085,25 @@ class SIMProviderService:
                 if o.get('provider_type') in ('5sim', 'virtualsms', 'all') and o.get('is_active', True) and o.get('service_code')
             }
         except Exception:
-            pct, floor = 30.0, 0.35
+            pct, floor = 0.0, 0.0
             overrides = {}
+
+        mult = 1.0 + (pct / 100.0)
 
         marked = []
         for s in raw_list:
             item = dict(s)
             sc = str(s.get('service_code') or '').strip().lower()
+            base = float(s.get('base_cost_usd') or s.get('base_cost') or s.get('price_usd') or 0.20)
+            item['base_cost_usd'] = base
+
             if sc in overrides:
                 item['price_usd'] = overrides[sc]
                 item['is_override'] = True
+            elif pct <= 0.0 and floor <= 0.0:
+                item['price_usd'] = round(base, 2)
             else:
-                item['price_usd'] = round(float(s.get('price_usd') or 0.85), 2)
+                item['price_usd'] = round(max(base * mult, base + floor), 2)
             marked.append(item)
         return marked
 
