@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 from app.services.sim_provider import SIMProviderService
 from app.services.db_service import DBService
-from app.services.cryptomus_service import CryptomusService
+from app.services.oxapay_service import OXAPayService
 from app.services.squad_service import SquadService
 import datetime
 import uuid
@@ -519,24 +519,24 @@ def deposit():
 
 
 # =============================================================================
-# CRYPTOMUS CRYPTOCURRENCY GATEWAY APIS (Primary - $1 minimum)
+# OXAPAY CRYPTOCURRENCY GATEWAY APIS (Primary - $1 minimum, supports Nigeria)
 # =============================================================================
 
 @api_bp.route('/payments/crypto/currencies', methods=['GET'])
 def get_crypto_currencies():
     """Returns supported cryptocurrency payment options and gateway status."""
-    currencies = list(CryptomusService.SUPPORTED_CURRENCIES)
+    currencies = list(OXAPayService.SUPPORTED_CURRENCIES)
     return jsonify({
         'success': True,
         'currencies': currencies,
-        'gateway_active': CryptomusService.is_configured(),
-        'min_deposit': CryptomusService.MIN_DEPOSIT_USD
+        'gateway_active': OXAPayService.is_configured(),
+        'min_deposit': OXAPayService.MIN_DEPOSIT_USD
     })
 
 
 @api_bp.route('/payments/crypto/create', methods=['POST'])
 def create_crypto_payment():
-    """Generates a dedicated crypto deposit address with QR code for the authenticated user."""
+    """Generates a hosted crypto payment invoice for the authenticated user."""
     user_id = _get_current_user_id()
     if not user_id:
         return jsonify({'success': False, 'message': 'Please sign in to make a deposit.'}), 401
@@ -548,25 +548,25 @@ def create_crypto_payment():
         amount = 0.0
 
     currency = (data.get('currency') or 'USDT').strip().upper()
-    network = (data.get('network') or 'TRON').strip().upper()
+    network  = (data.get('network') or 'TRON').strip().upper()
 
     if amount <= 0:
         return jsonify({'success': False, 'message': 'Deposit amount must be greater than zero.'}), 400
 
-    if amount < CryptomusService.MIN_DEPOSIT_USD:
+    if amount < OXAPayService.MIN_DEPOSIT_USD:
         return jsonify({
             'success': False,
-            'message': f'Minimum cryptocurrency deposit is ${CryptomusService.MIN_DEPOSIT_USD:.2f} USD. Please enter ${CryptomusService.MIN_DEPOSIT_USD:.2f} or more.'
+            'message': f'Minimum cryptocurrency deposit is ${OXAPayService.MIN_DEPOSIT_USD:.2f} USD. Please enter ${OXAPayService.MIN_DEPOSIT_USD:.2f} or more.'
         }), 400
 
-    user_data = session.get('user', {})
-    user_email = user_data.get('email', '')
+    user_data   = session.get('user', {})
+    user_email  = user_data.get('email', '')
 
     proto = request.headers.get('X-Forwarded-Proto') or request.scheme
-    host = request.headers.get('X-Forwarded-Host') or request.host
+    host  = request.headers.get('X-Forwarded-Host') or request.host
     callback_url = f"{proto}://{host}/api/payments/crypto/webhook"
 
-    res = CryptomusService.create_payment(
+    res = OXAPayService.create_payment(
         amount_usd=amount,
         currency=currency,
         network=network,
@@ -601,40 +601,40 @@ def check_crypto_payment_status(payment_id):
             'message': 'Deposit credited successfully.'
         })
 
-    res = CryptomusService.process_payment_update(payment_id)
+    res = OXAPayService.process_payment_update(payment_id)
     wallet = DBService.get_wallet(user_id)
     res['balance'] = wallet.get('balance', 0.00)
-    res['is_completed'] = res.get('status') in ('paid', 'paid_over')
+    res['is_completed'] = res.get('status') in ('paid',)
     return jsonify(res)
 
 
 @api_bp.route('/payments/crypto/webhook', methods=['POST'])
-def cryptomus_webhook():
+def oxapay_webhook():
     """
-    Public webhook receiver for Cryptomus payment notifications.
-    Enforces MD5 signature validation and out-of-band verification.
+    Public webhook receiver for OXAPay payment notifications.
+    Enforces HMAC-SHA512 signature validation and out-of-band verification.
     """
-    received_sign = request.headers.get('sign') or request.json.get('sign', '') if request.is_json else ''
+    received_hmac = request.headers.get('hmac', '')
 
     payload_body = request.get_data()
     payload = request.get_json(force=True, silent=True) or {}
     if not payload:
         return jsonify({'error': 'Invalid JSON body'}), 400
 
-    # Verify signature
-    is_valid = CryptomusService.verify_webhook_signature(payload_body, received_sign)
-    if not is_valid:
-        print(f"[Cryptomus Webhook] Invalid signature for payment {payload.get('uuid')}")
-        # Don't reject - proceed with out-of-band verification for safety
-        pass
+    # Verify HMAC signature
+    if received_hmac:
+        is_valid = OXAPayService.verify_webhook_signature(payload_body, received_hmac)
+        if not is_valid:
+            print(f"[OXAPay Webhook] Invalid signature for trackId {payload.get('trackId')}")
+            return jsonify({'error': 'Invalid signature'}), 403
 
-    payment_uuid = payload.get('uuid') or payload.get('payment_id')
-    if not payment_uuid:
-        return jsonify({'error': 'Missing payment UUID'}), 400
+    track_id = str(payload.get('trackId') or payload.get('track_id') or '')
+    if not track_id:
+        return jsonify({'error': 'Missing trackId'}), 400
 
-    print(f"[Cryptomus Webhook] Received event for UUID: {payment_uuid}, status: {payload.get('status')}")
+    print(f"[OXAPay Webhook] Received event for trackId: {track_id}, status: {payload.get('status')}")
 
-    res = CryptomusService.process_payment_update(payment_uuid, webhook_payload=payload)
+    res = OXAPayService.process_payment_update(track_id, webhook_payload=payload)
     return jsonify({'status': 'ok', 'result': res}), 200
 
 

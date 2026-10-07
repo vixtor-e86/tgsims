@@ -1070,9 +1070,9 @@ class DBService:
 
     @staticmethod
     def get_crypto_deposit_by_payment_id(payment_id: str, user_id: str = None) -> dict:
-        """Looks up a crypto deposit transaction by payment UUID (Cryptomus or NowPayments)."""
-        # Try both Cryptomus (CM-) and NowPayments (NP-) reference prefixes
-        refs_to_try = [f"CM-{payment_id}", f"NP-{payment_id}"]
+        """Looks up a crypto deposit transaction by payment ID (OXAPay, Cryptomus, or NowPayments)."""
+        # Try OXAPay (OP-), Cryptomus (CM-), and NowPayments (NP-) reference prefixes
+        refs_to_try = [f"OP-{payment_id}", f"CM-{payment_id}", f"NP-{payment_id}"]
         admin = get_supabase_admin()
         if admin:
             try:
@@ -1106,11 +1106,11 @@ class DBService:
                                 notes: str = 'Automated crypto IPN verification',
                                 metadata_update: dict = None) -> dict:
         """
-        Idempotently marks a crypto deposit (Cryptomus or NowPayments) as completed
+        Idempotently marks a crypto deposit (OXAPay, Cryptomus, or NowPayments) as completed
         and credits the user's wallet. Guarantees protection against double-crediting.
         """
-        # Support both Cryptomus (CM-) and NowPayments (NP-) prefixes
-        refs_to_try = [f"CM-{payment_id}", f"NP-{payment_id}"]
+        # Support OXAPay (OP-), Cryptomus (CM-), and NowPayments (NP-) prefixes
+        refs_to_try = [f"OP-{payment_id}", f"CM-{payment_id}", f"NP-{payment_id}"]
         admin = get_supabase_admin()
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -1505,8 +1505,13 @@ class DBService:
                                       network: str = '', order_id: str = '',
                                       extra_meta: dict = None) -> dict:
         """Records a pending crypto deposit transaction for real-time tracking."""
-        gateway = (extra_meta or {}).get('gateway', 'cryptomus')
-        ref = f"CM-{payment_id}" if gateway == 'cryptomus' else f"NP-{payment_id}"
+        gateway = (extra_meta or {}).get('gateway', 'oxapay')
+        if gateway == 'oxapay':
+            ref = f"OP-{payment_id}"
+        elif gateway == 'cryptomus':
+            ref = f"CM-{payment_id}"
+        else:
+            ref = f"NP-{payment_id}"
         meta = {
             'payment_id': str(payment_id),
             'pay_address': pay_address,

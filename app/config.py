@@ -26,10 +26,8 @@ class Config:
     NOWPAYMENTS_IPN_SECRET = (os.getenv('NOWPAYMENTS_IPN_SECRET') or '').strip()
     NOWPAYMENTS_BASE_URL = (os.getenv('NOWPAYMENTS_BASE_URL') or 'https://api.nowpayments.io/v1').strip().rstrip('/')
 
-    # Cryptomus (primary crypto gateway - $1 minimum)
-    CRYPTOMUS_MERCHANT_ID = (os.getenv('CRYPTOMUS_MERCHANT_ID') or '').strip()
-    CRYPTOMUS_PAYMENT_API_KEY = (os.getenv('CRYPTOMUS_PAYMENT_API_KEY') or '').strip()
-    CRYPTOMUS_PAYOUT_API_KEY = (os.getenv('CRYPTOMUS_PAYOUT_API_KEY') or '').strip()
+    # OXAPay (primary crypto gateway — supports Nigeria, $1 minimum)
+    OXAPAY_API_KEY = (os.getenv('OXAPAY_API_KEY') or '').strip()
 
     # Squad (NGN payment gateway - virtual accounts, card, bank transfer)
     SQUAD_SECRET_KEY = (os.getenv('SQUAD_SECRET_KEY') or '').strip()

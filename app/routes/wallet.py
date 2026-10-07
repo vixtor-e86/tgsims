@@ -1,7 +1,7 @@
 """Wallet & billing routes."""
 from flask import Blueprint, render_template, session, redirect, url_for
 from app.services.db_service import DBService
-from app.services.cryptomus_service import CryptomusService
+from app.services.oxapay_service import OXAPayService
 from app.services.squad_service import SquadService
 
 wallet_bp = Blueprint('wallet', __name__, url_prefix='/wallet')
@@ -58,15 +58,15 @@ def fund():
     from app.services.settings_service import SettingsService
     settings = SettingsService.get_settings()
 
-    # Crypto gateway info
-    crypto_currencies = CryptomusService.SUPPORTED_CURRENCIES
-    crypto_active = CryptomusService.is_configured()
-    crypto_min = CryptomusService.MIN_DEPOSIT_USD
+    # Crypto gateway info (OXAPay)
+    crypto_currencies = OXAPayService.SUPPORTED_CURRENCIES
+    crypto_active     = OXAPayService.is_configured()
+    crypto_min        = OXAPayService.MIN_DEPOSIT_USD
 
     # Squad info
-    squad_active = SquadService.is_configured()
+    squad_active     = SquadService.is_configured()
     squad_public_key = SquadService.get_public_key() if squad_active else ''
-    squad_account = DBService.get_squad_virtual_account(user['id'])
+    squad_account    = DBService.get_squad_virtual_account(user['id'])
 
     return render_template('wallet/fund.html', wallet=wallet,
                            presets_ngn=presets_ngn, methods=methods,
@@ -80,3 +80,4 @@ def fund():
                            squad_account=squad_account,
                            # Legacy compat
                            nowpayments_active=crypto_active)
+

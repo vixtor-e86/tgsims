@@ -126,10 +126,9 @@
       <label class="fund-label" for="crypto-currency-select">Select Cryptocurrency & Network</label>
       <select id="crypto-currency-select" class="input" style="width: 100%; font-weight: 600; padding: 0.65rem 0.85rem;" data-crypto-select>
         {% for c in crypto_currencies %}
-        <option value="{{ c.ticker }}" data-network="{{ c.network }}" data-symbol="{{ c.symbol }}"
-                data-display-network="{{ c.display_network }}" data-badge="{{ c.badge }}"
-                {% if c.ticker == 'USDT' and c.network == 'TRON' %}selected{% endif %}>
-          {{ c.name }} &bull; {{ c.display_network }} ({{ c.badge }})
+        <option value="{{ c.coin }}" data-network="{{ c.network }}" data-coin="{{ c.coin }}"
+                {% if c.coin == 'USDT' and c.network == 'TRON' %}selected{% endif %}>
+          {{ c.label }}
         </option>
         {% endfor %}
       </select>
@@ -213,7 +212,7 @@
   </section>
 </div>
 
-{# ---- Cryptomus Crypto Payment Modal ---- #}
+{# ---- OXAPay Crypto Payment Modal ---- #}
 <div class="modal" id="crypto-payment-modal" data-crypto-modal>
   <div class="modal-box" style="max-width: 480px; text-align: center;">
     <div class="modal-header">
@@ -238,39 +237,32 @@
         </span>
       </div>
 
-      <!-- QR Code -->
+      <!-- QR Code (generated client-side from payLink URL) -->
       <div style="display: inline-block; padding: 0.65rem; background: #ffffff; border-radius: var(--r-md); box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-bottom: 1.25rem; border: 1px solid var(--border);">
-        <img id="crypto-qr-code" src="" alt="Payment QR Code" style="width: 190px; height: 190px; display: block; image-rendering: pixelated; margin: 0 auto;">
+        <div id="crypto-qr-container" style="width: 190px; height: 190px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 0.78rem; color: #666;">Loading QR…</span>
+        </div>
       </div>
 
       <!-- Amount Box -->
       <div style="margin-bottom: 0.85rem; text-align: left; background: var(--surface-2); padding: 0.75rem 1rem; border-radius: var(--r-md); border: 1px solid var(--border);">
-        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; letter-spacing: 0.04em;">Exact Amount to Send</div>
+        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; letter-spacing: 0.04em;">Amount to Pay (USD)</div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; gap: 0.5rem;">
           <span style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--text);" id="crypto-modal-amount">0.00</span>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-amount" style="padding: 0.3rem 0.7rem; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.35rem;">
-            {{ icon('copy') }} <span>Copy</span>
-          </button>
+          <span class="badge" id="crypto-modal-network" style="font-size: 0.72rem; padding: 0.15rem 0.6rem; text-transform: uppercase; background: rgba(99,102,241,0.12); color: #6366f1; border: 1px solid rgba(99,102,241,0.25); border-radius: 999px;">USDT</span>
         </div>
       </div>
 
-      <!-- Address Box -->
-      <div style="margin-bottom: 1rem; text-align: left; background: var(--surface-2); padding: 0.75rem 1rem; border-radius: var(--r-md); border: 1px solid var(--border);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; letter-spacing: 0.04em;">Deposit Address</div>
-          <span class="badge badge-info" id="crypto-modal-network" style="font-size: 0.7rem; padding: 0.15rem 0.5rem; text-transform: uppercase;">TRON</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; gap: 0.5rem;">
-          <span style="font-size: 0.82rem; font-family: var(--font-mono); color: var(--text); word-break: break-all; line-height: 1.3;" id="crypto-modal-address">---</span>
-          <button type="button" class="btn btn-primary btn-sm" id="btn-copy-address" style="padding: 0.35rem 0.85rem; font-size: 0.78rem; flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.35rem;">
-            {{ icon('copy') }} <span>Copy</span>
-          </button>
-        </div>
-      </div>
+      <!-- Open Payment Page Button -->
+      <a id="btn-open-payment-page" href="#" target="_blank" rel="noopener"
+         class="btn btn-primary btn-block"
+         style="margin-bottom: 1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+        {{ icon('external-link') }} Open Secure Payment Page
+      </a>
 
       <!-- Safety Notice -->
       <div style="font-size: 0.78rem; color: #f59e0b; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--r-sm); padding: 0.65rem 0.85rem; text-align: left; margin-bottom: 1.25rem; line-height: 1.45;">
-        <strong>Safety Note:</strong> Send only <strong id="crypto-notice-symbol">USDT</strong> via the <strong id="crypto-notice-network">Tron (TRC20)</strong> network. Sending via another network or less than the required amount may result in delays or lost funds.
+        <strong>How it works:</strong> Scan the QR code or click "Open Secure Payment Page" to complete your crypto payment. Your wallet is credited automatically once confirmed on the blockchain.
       </div>
 
       <!-- Control Buttons -->

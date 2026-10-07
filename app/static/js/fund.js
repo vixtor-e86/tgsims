@@ -1,8 +1,8 @@
 /* ==========================================================================
    fund.js  -  Fund Your Wallet Page Interactions
    Supports 3 payment methods:
-   1. Dedicated Virtual Account (Squad - auto-credits on bank transfer)
-   2. Cryptocurrency (Cryptomus - $1 minimum)
+   1. Dedicated Virtual Account (Squad — auto-credits on bank transfer)
+   2. Cryptocurrency (OXAPay — $1 minimum, hosted payment page)
    3. Card / Bank Transfer (Squad inline + dynamic account)
    ========================================================================== */
 (function () {
@@ -11,56 +11,51 @@
   var container = document.querySelector("[data-fund]");
   if (!container) return;
 
-  var amountInput = container.querySelector("[data-amount-input]");
-  var amountSymbol = container.querySelector("[data-amount-symbol]");
-  var presetButtons = container.querySelectorAll("[data-preset]");
-  var methodButtons = container.querySelectorAll("[data-method]");
+  var amountInput    = container.querySelector("[data-amount-input]");
+  var amountSymbol   = container.querySelector("[data-amount-symbol]");
+  var presetButtons  = container.querySelectorAll("[data-preset]");
+  var methodButtons  = container.querySelectorAll("[data-method]");
   var dedicatedFields = container.querySelector("[data-dedicated-fields]");
-  var cryptoFields = container.querySelector("[data-crypto-fields]");
+  var cryptoFields   = container.querySelector("[data-crypto-fields]");
   var cardBankFields = container.querySelector("[data-card-bank-fields]");
-  var cryptoSelect = container.querySelector("[data-crypto-select]");
-  var submitBtn = container.querySelector("[data-fund-submit]");
-  var confirmLabel = container.querySelector("[data-confirm-label]");
-  var summaryAmount = container.querySelector("[data-summary-amount]");
-  var summaryFee = container.querySelector("[data-summary-fee]");
-  var summaryTotal = container.querySelector("[data-summary-total]");
+  var cryptoSelect   = container.querySelector("[data-crypto-select]");
+  var submitBtn      = container.querySelector("[data-fund-submit]");
+  var confirmLabel   = container.querySelector("[data-confirm-label]");
+  var summaryAmount  = container.querySelector("[data-summary-amount]");
+  var summaryFee     = container.querySelector("[data-summary-fee]");
+  var summaryTotal   = container.querySelector("[data-summary-total]");
   var defaultPresets = container.querySelector("[data-default-presets]");
-  var cryptoPresets = container.querySelector("[data-crypto-presets]");
+  var cryptoPresets  = container.querySelector("[data-crypto-presets]");
   var cryptoMinWarning = document.getElementById("crypto-min-warning");
   var cryptoCurrEntered = document.getElementById("crypto-curr-entered");
   var orderSummaryBlock = document.getElementById("order-summary-block");
 
   // Crypto Modal elements
-  var cryptoModal = document.getElementById("crypto-payment-modal");
-  var modalTitle = document.getElementById("modal-crypto-title");
-  var modalOrderId = document.getElementById("modal-crypto-order-id");
-  var modalStatusPill = document.getElementById("crypto-status-pill");
-  var modalStatusText = document.getElementById("crypto-status-text");
-  var modalQrCode = document.getElementById("crypto-qr-code");
-  var modalAmount = document.getElementById("crypto-modal-amount");
-  var modalAddress = document.getElementById("crypto-modal-address");
-  var modalNetwork = document.getElementById("crypto-modal-network");
-  var noticeSymbol = document.getElementById("crypto-notice-symbol");
-  var noticeNetwork = document.getElementById("crypto-notice-network");
-  var btnCopyAmount = document.getElementById("btn-copy-amount");
-  var btnCopyAddress = document.getElementById("btn-copy-address");
-  var btnCheckStatus = document.getElementById("btn-check-crypto-status");
-  var closeBtns = document.querySelectorAll("[data-close-crypto-modal]");
+  var cryptoModal       = document.getElementById("crypto-payment-modal");
+  var modalTitle        = document.getElementById("modal-crypto-title");
+  var modalOrderId      = document.getElementById("modal-crypto-order-id");
+  var modalStatusPill   = document.getElementById("crypto-status-pill");
+  var modalStatusText   = document.getElementById("crypto-status-text");
+  var modalQrContainer  = document.getElementById("crypto-qr-container");
+  var modalAmount       = document.getElementById("crypto-modal-amount");
+  var modalNetwork      = document.getElementById("crypto-modal-network");
+  var btnOpenPage       = document.getElementById("btn-open-payment-page");
+  var btnCheckStatus    = document.getElementById("btn-check-crypto-status");
+  var closeBtns         = document.querySelectorAll("[data-close-crypto-modal]");
 
   // Squad / config from data attributes
-  var FEE_RATE = parseFloat(container.getAttribute("data-fee-rate")) || 0.015;
-  var squadActive = container.getAttribute("data-squad-active") === "true";
-  var cryptoActive = container.getAttribute("data-crypto-active") === "true";
-  var CRYPTO_MIN = parseFloat(container.getAttribute("data-crypto-min")) || 1.0;
+  var FEE_RATE        = parseFloat(container.getAttribute("data-fee-rate")) || 0.015;
+  var squadActive     = container.getAttribute("data-squad-active") === "true";
+  var cryptoActive    = container.getAttribute("data-crypto-active") === "true";
+  var CRYPTO_MIN      = parseFloat(container.getAttribute("data-crypto-min")) || 1.0;
   var SQUAD_PUBLIC_KEY = container.getAttribute("data-squad-public-key") || "";
 
-  var currentUSD = 0;
-  var currentNGN = 0;
-  var activePaymentId = null;
-  var pollInterval = null;
-  var currentPayAmountRaw = "";
-  var currentAddressRaw = "";
-  var activeSubMethod = "card"; // within card-bank: 'card' or 'bank'
+  var currentUSD       = 0;
+  var currentNGN       = 0;
+  var activePaymentId  = null;   // OXAPay track_id
+  var activePayLink    = null;   // OXAPay hosted page URL
+  var pollInterval     = null;
+  var activeSubMethod  = "card"; // within card-bank: 'card' or 'bank'
 
   function cur() {
     return window.TgCurrency || {
@@ -83,7 +78,6 @@
     if (!amountInput) return;
     var methodId = getActiveMethodId();
     if (methodId === "crypto") {
-      // show USD for crypto
       amountInput.value = currentUSD > 0 ? currentUSD.toFixed(2) : "";
     } else {
       var displayValue = currentNGN > 0 ? currentNGN : (currentUSD * cur().rate);
@@ -92,19 +86,19 @@
   }
 
   function syncSummary() {
-    var methodId = getActiveMethodId();
-    var isCrypto = (methodId === "crypto");
+    var methodId   = getActiveMethodId();
+    var isCrypto   = (methodId === "crypto");
     var isDedicated = (methodId === "dedicated");
-    var isCardBank = (methodId === "card");
+    var isCardBank  = (methodId === "card");
 
-    // 0% fee on crypto and dedicated; 1.5% on card
+    // 0% fee on crypto and dedicated; 1.5% on card (not bank sub-method)
     var effectiveFeeRate = (isCrypto || isDedicated || activeSubMethod === "bank") ? 0.0 : FEE_RATE;
-    var feeUSD = currentUSD * effectiveFeeRate;
+    var feeUSD   = currentUSD * effectiveFeeRate;
     var totalUSD = currentUSD + feeUSD;
 
     if (summaryAmount) summaryAmount.setAttribute("data-usd", currentUSD.toFixed(4));
-    if (summaryFee) summaryFee.setAttribute("data-usd", feeUSD.toFixed(4));
-    if (summaryTotal) summaryTotal.setAttribute("data-usd", totalUSD.toFixed(4));
+    if (summaryFee)    summaryFee.setAttribute("data-usd", feeUSD.toFixed(4));
+    if (summaryTotal)  summaryTotal.setAttribute("data-usd", totalUSD.toFixed(4));
     cur().render(container);
 
     // Crypto min warning
@@ -118,7 +112,6 @@
       }
     }
 
-    // Summary visibility
     if (orderSummaryBlock) {
       orderSummaryBlock.style.display = isDedicated ? "none" : "";
     }
@@ -134,8 +127,8 @@
           confirmLabel.textContent = "Minimum $" + CRYPTO_MIN.toFixed(2) + " Required";
         } else {
           var optEl = cryptoSelect ? cryptoSelect.options[cryptoSelect.selectedIndex] : null;
-          var sym = optEl ? (optEl.getAttribute("data-symbol") || "Crypto") : "Crypto";
-          confirmLabel.textContent = "Generate " + sym + " Deposit Address";
+          var coin = optEl ? (optEl.getAttribute("data-coin") || optEl.value || "Crypto") : "Crypto";
+          confirmLabel.textContent = "Pay $" + currentUSD.toFixed(2) + " in " + coin;
         }
       } else if (isCardBank && activeSubMethod === "bank") {
         confirmLabel.textContent = currentUSD > 0
@@ -152,9 +145,9 @@
     }
 
     if (submitBtn) {
-      var disabledDedicated = isDedicated; // dedicated button not in flow
-      var disabledCrypto = isCrypto && (currentUSD <= 0 || isUnderCryptoMin || !cryptoActive);
-      var disabledCard = isCardBank && currentNGN < 100;
+      var disabledDedicated = isDedicated;
+      var disabledCrypto    = isCrypto && (currentUSD <= 0 || isUnderCryptoMin || !cryptoActive);
+      var disabledCard      = isCardBank && currentNGN < 100;
       submitBtn.disabled = (disabledDedicated || disabledCrypto || disabledCard);
     }
   }
@@ -179,11 +172,9 @@
       var val = parseFloat(amountInput.value) || 0;
       var methodId = getActiveMethodId();
       if (methodId === "crypto") {
-        // Input is USD for crypto
         currentUSD = val;
         currentNGN = val * cur().rate;
       } else {
-        // Input is NGN for other methods
         currentNGN = val;
         currentUSD = val / cur().rate;
       }
@@ -196,19 +187,16 @@
   function syncMethodFields() {
     var methodId = getActiveMethodId();
     if (dedicatedFields) dedicatedFields.style.display = (methodId === "dedicated") ? "" : "none";
-    if (cryptoFields) cryptoFields.style.display = (methodId === "crypto") ? "" : "none";
-    if (cardBankFields) cardBankFields.style.display = (methodId === "card") ? "" : "none";
+    if (cryptoFields)    cryptoFields.style.display    = (methodId === "crypto")    ? "" : "none";
+    if (cardBankFields)  cardBankFields.style.display  = (methodId === "card")      ? "" : "none";
 
-    // Show/hide presets
     if (defaultPresets) defaultPresets.style.display = (methodId === "crypto") ? "none" : "";
-    if (cryptoPresets) cryptoPresets.style.display = (methodId === "crypto") ? "" : "none";
+    if (cryptoPresets)  cryptoPresets.style.display  = (methodId === "crypto") ? "" : "none";
 
-    // Update amount symbol
     if (amountSymbol) {
       amountSymbol.textContent = (methodId === "crypto") ? "$" : cur().symbol;
     }
 
-    // Reset amount input
     currentUSD = 0;
     currentNGN = 0;
     if (amountInput) amountInput.value = "";
@@ -226,10 +214,10 @@
   });
 
   // Sub-method switching (card vs bank within card-bank tab)
-  var subCardBtn = document.getElementById("sub-card-btn");
-  var subBankBtn = document.getElementById("sub-bank-btn");
-  var cardSection = document.getElementById("card-section");
-  var bankSection = document.getElementById("bank-section");
+  var subCardBtn     = document.getElementById("sub-card-btn");
+  var subBankBtn     = document.getElementById("sub-bank-btn");
+  var cardSection    = document.getElementById("card-section");
+  var bankSection    = document.getElementById("bank-section");
   var bankTransferResult = document.getElementById("bank-transfer-result");
 
   function switchSubMethod(sub) {
@@ -272,20 +260,12 @@
     if (window.toast) window.toast("Copied to clipboard!", "success");
   };
 
-  if (btnCopyAmount) {
-    var origAmtHtml = btnCopyAmount.innerHTML;
-    btnCopyAmount.addEventListener("click", function () {
-      copyText(currentPayAmountRaw, btnCopyAmount, origAmtHtml);
-      if (window.toast) window.toast("Amount copied.", "info");
-    });
-  }
-
-  if (btnCopyAddress) {
-    var origAddrHtml = btnCopyAddress.innerHTML;
-    btnCopyAddress.addEventListener("click", function () {
-      copyText(currentAddressRaw, btnCopyAddress, origAddrHtml);
-      if (window.toast) window.toast("Deposit address copied.", "info");
-    });
+  // ---- QR CODE GENERATION (client-side via Google Charts API) ----
+  function renderQRCode(url) {
+    if (!modalQrContainer) return;
+    var encodedUrl = encodeURIComponent(url);
+    var qrImgUrl   = "https://chart.googleapis.com/chart?chs=190x190&cht=qr&choe=UTF-8&chl=" + encodedUrl;
+    modalQrContainer.innerHTML = '<img src="' + qrImgUrl + '" alt="Payment QR Code" style="width:190px;height:190px;display:block;margin:0 auto;" />';
   }
 
   // ---- CLOSE CRYPTO MODAL ----
@@ -319,33 +299,34 @@
         }
 
         var status = (data.status || "").toLowerCase();
-        if (data.is_completed || status === "paid" || status === "paid_over") {
+        if (data.is_completed || status === "paid") {
           // PAYMENT COMPLETED
           if (modalStatusPill) {
-            modalStatusPill.style.background = "rgba(16, 185, 129, 0.15)";
-            modalStatusPill.style.color = "#10b981";
-            modalStatusPill.style.borderColor = "rgba(16, 185, 129, 0.35)";
+            modalStatusPill.style.background   = "rgba(16, 185, 129, 0.15)";
+            modalStatusPill.style.color        = "#10b981";
+            modalStatusPill.style.borderColor  = "rgba(16, 185, 129, 0.35)";
           }
           if (modalStatusText) modalStatusText.textContent = "Payment Confirmed & Balance Credited!";
           if (btnCheckStatus) {
             btnCheckStatus.textContent = "Go to Wallet Overview";
-            btnCheckStatus.className = "btn btn-primary btn-block";
-            btnCheckStatus.onclick = function () { window.location.href = "/wallet"; };
+            btnCheckStatus.className   = "btn btn-primary btn-block";
+            btnCheckStatus.onclick     = function () { window.location.href = "/wallet"; };
           }
+          if (btnOpenPage) btnOpenPage.style.display = "none";
           if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
           if (window.toast) window.toast("Deposit successfully credited to your wallet!", "success");
-        } else if (status === "confirming" || status === "confirm_check") {
+        } else if (status === "confirming") {
           if (modalStatusText) modalStatusText.textContent = "Detected on blockchain (confirming…)";
           if (modalStatusPill) {
-            modalStatusPill.style.background = "rgba(99, 102, 241, 0.15)";
-            modalStatusPill.style.color = "#6366f1";
+            modalStatusPill.style.background  = "rgba(99, 102, 241, 0.15)";
+            modalStatusPill.style.color       = "#6366f1";
             modalStatusPill.style.borderColor = "rgba(99, 102, 241, 0.35)";
           }
-        } else if (status === "cancel" || status === "fail" || status === "expired") {
+        } else if (status === "expired" || status === "failed" || status === "canceled" || status === "cancelled") {
           if (modalStatusText) modalStatusText.textContent = "Session expired or failed.";
           if (modalStatusPill) {
-            modalStatusPill.style.background = "rgba(239, 68, 68, 0.15)";
-            modalStatusPill.style.color = "#ef4444";
+            modalStatusPill.style.background  = "rgba(239, 68, 68, 0.15)";
+            modalStatusPill.style.color       = "#ef4444";
             modalStatusPill.style.borderColor = "rgba(239, 68, 68, 0.35)";
           }
           if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
@@ -354,7 +335,7 @@
         }
       })
       .catch(function (err) {
-        console.warn("[Cryptomus Polling] error:", err);
+        console.warn("[OXAPay Polling] error:", err);
         if (isManualClick && btnCheckStatus) {
           btnCheckStatus.disabled = false;
           btnCheckStatus.textContent = "Check Status Now";
@@ -368,7 +349,7 @@
 
   // ---- DEDICATED ACCOUNT CREATION ----
   var btnCreateAccount = document.getElementById("btn-create-dedicated-account");
-  var accountResult = document.getElementById("dedicated-account-result");
+  var accountResult    = document.getElementById("dedicated-account-result");
 
   if (btnCreateAccount) {
     btnCreateAccount.addEventListener("click", function () {
@@ -406,7 +387,7 @@
           if (btnCreateAccount) btnCreateAccount.style.display = "none";
           if (window.toast) window.toast("Dedicated account created! Reload to view it.", "success", 6000);
         })
-        .catch(function (err) {
+        .catch(function () {
           btnCreateAccount.disabled = false;
           if (label) label.textContent = "Generate My Account";
           if (window.toast) window.toast("Network error. Please try again.", "error");
@@ -425,7 +406,7 @@
         return;
       }
 
-      // CRYPTO
+      // CRYPTO (OXAPay)
       if (methodId === "crypto") {
         if (currentUSD <= 0) {
           if (window.toast) window.toast("Please enter an amount to deposit.", "error");
@@ -436,23 +417,21 @@
           return;
         }
 
-        var optEl = cryptoSelect ? cryptoSelect.options[cryptoSelect.selectedIndex] : null;
+        var optEl           = cryptoSelect ? cryptoSelect.options[cryptoSelect.selectedIndex] : null;
         var selectedCurrency = optEl ? optEl.value : "USDT";
-        var selectedNetwork = optEl ? (optEl.getAttribute("data-network") || "TRON") : "TRON";
-        var selectedSymbol = optEl ? (optEl.getAttribute("data-symbol") || "USDT") : "USDT";
-        var selectedDisplayNet = optEl ? (optEl.getAttribute("data-display-network") || selectedNetwork) : selectedNetwork;
+        var selectedNetwork  = optEl ? (optEl.getAttribute("data-network") || "TRON") : "TRON";
 
         submitBtn.disabled = true;
         var prevLabel = confirmLabel ? confirmLabel.textContent : "Confirm";
-        if (confirmLabel) confirmLabel.textContent = "Generating Secure Deposit Address…";
+        if (confirmLabel) confirmLabel.textContent = "Generating Secure Payment Session…";
 
         fetch("/api/payments/crypto/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            amount: currentUSD,
+            amount:   currentUSD,
             currency: selectedCurrency,
-            network: selectedNetwork
+            network:  selectedNetwork
           })
         })
           .then(function (res) { return res.json(); })
@@ -465,38 +444,44 @@
               return;
             }
 
-            // Populate modal
-            activePaymentId = data.payment_id;
-            currentPayAmountRaw = String(data.pay_amount);
-            currentAddressRaw = data.pay_address;
+            // OXAPay returns: track_id, pay_link, amount_usd, currency, network, order_id
+            activePaymentId = data.track_id;
+            activePayLink   = data.pay_link;
 
-            if (modalTitle) modalTitle.textContent = "Deposit " + data.pay_currency + " (" + (data.network || selectedDisplayNet) + ")";
-            if (modalOrderId) modalOrderId.textContent = data.order_id || ("CM-" + data.payment_id);
-            if (modalQrCode) modalQrCode.src = data.qr_code_url;
-            if (modalAmount) modalAmount.textContent = data.pay_amount + " " + data.pay_currency;
-            if (modalAddress) modalAddress.textContent = data.pay_address;
-            if (modalNetwork) modalNetwork.textContent = data.network || selectedNetwork;
-            if (noticeSymbol) noticeSymbol.textContent = data.pay_currency;
-            if (noticeNetwork) noticeNetwork.textContent = data.network || selectedDisplayNet;
+            if (modalTitle)   modalTitle.textContent   = "Pay $" + data.amount_usd + " in " + data.currency;
+            if (modalOrderId) modalOrderId.textContent = data.order_id || ("OP-" + data.track_id);
+            if (modalAmount)  modalAmount.textContent  = "$" + parseFloat(data.amount_usd).toFixed(2);
+            if (modalNetwork) modalNetwork.textContent = data.currency + " / " + (data.network || selectedNetwork);
+
+            // Set "Open Payment Page" button href
+            if (btnOpenPage) {
+              btnOpenPage.href = data.pay_link || "#";
+              btnOpenPage.style.display = "";
+            }
+
+            // Generate QR code from pay_link URL
+            if (data.pay_link) {
+              renderQRCode(data.pay_link);
+            }
 
             // Reset status badge
             if (modalStatusPill) {
-              modalStatusPill.style.background = "rgba(245, 158, 11, 0.15)";
-              modalStatusPill.style.color = "#f59e0b";
+              modalStatusPill.style.background  = "rgba(245, 158, 11, 0.15)";
+              modalStatusPill.style.color       = "#f59e0b";
               modalStatusPill.style.borderColor = "rgba(245, 158, 11, 0.3)";
             }
             if (modalStatusText) modalStatusText.textContent = "Waiting for transaction…";
 
             if (btnCheckStatus) {
               btnCheckStatus.textContent = "Check Status Now";
-              btnCheckStatus.className = "btn btn-secondary btn-block";
-              btnCheckStatus.onclick = function () { checkCryptoStatus(true); };
+              btnCheckStatus.className   = "btn btn-secondary btn-block";
+              btnCheckStatus.onclick     = function () { checkCryptoStatus(true); };
             }
 
             if (cryptoModal) cryptoModal.classList.add("is-open");
 
             if (pollInterval) clearInterval(pollInterval);
-            pollInterval = setInterval(function () { checkCryptoStatus(false); }, 8000);
+            pollInterval = setInterval(function () { checkCryptoStatus(false); }, 10000);
           })
           .catch(function () {
             submitBtn.disabled = false;
