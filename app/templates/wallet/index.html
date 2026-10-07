@@ -11,33 +11,16 @@
   </div>
 </div>
 
-<div class="wallet-grid">
+<div class="wallet-grid" style="grid-template-columns: 1fr;">
   {# ---- Total balance hero ---- #}
-  <section class="balance-card">
-        <span class="balance-chip">{{ icon('wallet') }}</span>
+  <section class="balance-card" style="min-height: auto; padding: var(--sp-8);">
+    <span class="balance-chip">{{ icon('wallet') }}</span>
     <span class="balance-label">Total Balance</span>
     <div class="balance-value" data-usd="{{ '%.2f'|format(wallet.balance) }}">₦{{ '{:,.2f}'.format(wallet.balance * NGN_PER_USD) }}</div>
-    <p class="balance-sub">Funds available for instant use across 200+ platforms.</p>
-    <div style="display:flex; gap:var(--sp-2); flex-wrap:wrap;">
-      <a href="{{ url_for('wallet.fund') }}" class="btn btn-primary">{{ icon('plus') }} Add Funds</a>
-      <a href="{{ url_for('account.referral') }}" class="btn btn-secondary" style="background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.25); color:#fff;">{{ icon('gift') }} Referral Wallet</a>
-    </div>
-  </section>
-
-  {# ---- Payment method selector ---- #}
-  <section class="card card-pad method-card">
-    <h2 class="card-title">Payment Method</h2>
-    <div class="method-list">
-      {% for m in methods %}
-      <a class="method {{ 'is-active' if loop.first else '' }}" href="{{ url_for('wallet.fund') }}">
-        <span class="method-radio"></span>
-        <span class="method-meta">
-          <span class="method-label">{{ m.label }}</span>
-          <span class="method-note">{{ m.note }}</span>
-        </span>
-        <span class="method-ico">{{ icon(m.icon) }}</span>
-      </a>
-      {% endfor %}
+    <p class="balance-sub">Funds available for instant use across 200+ verification services.</p>
+    <div style="display:flex; gap:var(--sp-3); flex-wrap:wrap; margin-top:var(--sp-3);">
+      <a href="{{ url_for('wallet.fund') }}" class="btn btn-primary btn-lg" style="font-weight:700;">{{ icon('plus') }} Add Funds</a>
+      <a href="{{ url_for('account.referral') }}" class="btn btn-secondary btn-lg" style="background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.25); color:#fff;">{{ icon('gift') }} Referral Wallet</a>
     </div>
   </section>
 </div>

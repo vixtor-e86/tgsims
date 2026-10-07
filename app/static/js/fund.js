@@ -126,6 +126,29 @@
         syncSummary();
       });
     });
+
+    // Highlight any preset that matches the current amount
+    presetsContainer.querySelectorAll(".preset-btn").forEach(function (btn) {
+      if (btn.hasAttribute("data-preset-usd")) {
+        var u = parseFloat(btn.getAttribute("data-preset-usd")) || 0;
+        if (currentUSD > 0 && Math.abs(u - currentUSD) < 0.01) btn.classList.add("is-active");
+      } else if (btn.hasAttribute("data-preset-ngn")) {
+        var n = parseFloat(btn.getAttribute("data-preset-ngn")) || 0;
+        if (currentNGN > 0 && Math.abs(n - currentNGN) < 1) btn.classList.add("is-active");
+      }
+    });
+  }
+
+  function syncInputDisplay() {
+    if (!amountInput) return;
+    if (currentUSD <= 0 && currentNGN <= 0) return;
+    var methodId = getActiveMethodId();
+    var usdMode = isUSD() || methodId === "crypto";
+    if (usdMode) {
+      amountInput.value = currentUSD > 0 ? parseFloat(currentUSD.toFixed(2)).toString() : "";
+    } else {
+      amountInput.value = currentNGN > 0 ? Math.round(currentNGN).toString() : "";
+    }
   }
 
   function syncSummary() {
@@ -546,6 +569,7 @@
   document.addEventListener("currencychange", function () {
     syncSymbol();
     renderPresets();
+    syncInputDisplay();
     syncSummary();
   });
 
