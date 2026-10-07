@@ -47,8 +47,10 @@
               data-method data-method-id="{{ m.id }}">
         <span class="pay-check">{{ icon('check') }}</span>
         <span class="pay-method-ico">{{ icon(m.icon) }}</span>
-        <span class="pay-method-label">{{ m.label }}</span>
-        <span class="pay-method-note">{{ m.note }}</span>
+        <span class="pay-method-meta">
+          <span class="pay-method-label">{{ m.label }}</span>
+          <span class="pay-method-note">{{ m.note }}</span>
+        </span>
       </button>
       {% endfor %}
     </div>

@@ -1568,17 +1568,19 @@
 .amount-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .amount-input { -moz-appearance: textfield; }
 
-/* Quick-pick preset amounts  -  pill row */
+/* Quick-pick preset amounts  -  responsive grid */
 .preset-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  width: 100%;
 }
 .preset-btn {
-  flex: 1;
-  min-width: 92px;
-  padding: 0.6rem 0.9rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.6rem 0.4rem;
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   color: var(--text);
@@ -1587,13 +1589,22 @@
   border-radius: var(--r-full);
   cursor: pointer;
   text-align: center;
-  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), color var(--dur) var(--ease);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), color var(--dur) var(--ease), transform 0.1s ease;
 }
-.preset-btn:hover { border-color: var(--brand-400); }
+.preset-btn:hover { border-color: var(--brand-400); background: var(--surface-2); }
+.preset-btn:active { transform: scale(0.97); }
 .preset-btn.is-active {
   border-color: var(--brand-500);
   background: var(--brand-soft);
   color: var(--brand);
+  font-weight: var(--fw-extra);
+  box-shadow: 0 0 0 1px var(--brand-500);
 }
 
 /* Small caps section label */
@@ -1608,7 +1619,7 @@
 /* Payment method  -  horizontal selectable cards */
 .pay-methods {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--sp-3);
 }
 .pay-method {
@@ -1699,10 +1710,151 @@
 }
 .fund-secure svg { width: 14px; height: 14px; }
 
-@media (max-width: 560px) {
-  .pay-methods { grid-template-columns: 1fr; }
-  .card-fields-row { grid-template-columns: 1fr; }
-  .preset-btn { min-width: 0; }
+@media (max-width: 640px) {
+  /* Wallet page hero card */
+  .wallet-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-4);
+  }
+  .balance-card {
+    padding: var(--sp-5) var(--sp-4) !important;
+    border-radius: var(--r-lg);
+    min-height: auto;
+  }
+  .balance-chip {
+    width: 38px;
+    height: 38px;
+    margin-bottom: var(--sp-3);
+  }
+  .balance-chip svg { width: 20px; height: 20px; }
+  .balance-label {
+    font-size: 0.72rem;
+  }
+  .balance-value {
+    font-size: clamp(1.75rem, 7.5vw, 2.35rem);
+    margin-top: var(--sp-1);
+  }
+  .balance-sub {
+    font-size: 0.82rem;
+    margin-top: var(--sp-1);
+    margin-bottom: var(--sp-4);
+  }
+  .balance-card .btn {
+    font-size: 0.88rem;
+    padding: 0.65rem 1rem;
+    flex: 1 1 130px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Fund page card & inputs */
+  .fund-shell {
+    width: 100%;
+    margin-inline: 0;
+  }
+  .fund-shell .card.card-pad {
+    padding: 1.25rem 1rem;
+    border-radius: var(--r-lg);
+  }
+  .amount-input {
+    font-size: 1.45rem;
+    padding: 0.75rem 0.85rem 0.75rem 2.65rem;
+  }
+  .amount-symbol {
+    font-size: 1.35rem;
+    left: 0.85rem;
+  }
+
+  /* Amount presets on mobile: 5 equal columns, touch-friendly */
+  .preset-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.35rem;
+    margin-top: 0.65rem;
+  }
+  .preset-btn {
+    min-height: 44px;
+    padding: 0.5rem 0.15rem;
+    font-size: clamp(0.7rem, 2.8vw, 0.82rem);
+    border-radius: var(--r-md);
+  }
+
+  /* Payment methods on mobile: sleek horizontal tap cards */
+  .pay-methods {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+  .pay-method {
+    flex-direction: row;
+    text-align: left;
+    padding: 0.85rem 1rem;
+    gap: 0.85rem;
+    align-items: center;
+  }
+  .pay-method-ico {
+    flex-shrink: 0;
+  }
+  .pay-method-ico svg {
+    width: 24px;
+    height: 24px;
+  }
+  .pay-method-meta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .pay-method-label {
+    font-size: 0.88rem;
+  }
+  .pay-method-note {
+    font-size: 0.76rem;
+  }
+  .pay-check {
+    position: static;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  /* Order summary on mobile */
+  .order-summary {
+    padding: 0.85rem 1rem;
+    margin-top: 1.25rem;
+    border-radius: var(--r-md);
+  }
+  .summary-row {
+    font-size: 0.82rem;
+    padding: 0.35rem 0;
+  }
+  .summary-total {
+    font-size: 0.95rem;
+    margin-top: 0.4rem;
+    padding-top: 0.5rem;
+  }
+  .summary-total strong {
+    font-size: 1.15rem;
+  }
+
+  /* Recent activity table */
+  .recent-activity {
+    padding: 1.25rem 1rem;
+    border-radius: var(--r-lg);
+  }
+  .recent-activity .card-title {
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Extra-compact phones (e.g. 320px - 360px) */
+  .preset-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+  .preset-btn {
+    min-height: 40px;
+    font-size: 0.78rem;
+  }
 }
 
 /* ==========================================================================
