@@ -260,12 +260,13 @@
     if (window.toast) window.toast("Copied to clipboard!", "success");
   };
 
-  // ---- QR CODE GENERATION (client-side via Google Charts API) ----
+  // ---- QR CODE GENERATION (client-side via QRServer with QuickChart fallback) ----
   function renderQRCode(url) {
     if (!modalQrContainer) return;
     var encodedUrl = encodeURIComponent(url);
-    var qrImgUrl   = "https://chart.googleapis.com/chart?chs=190x190&cht=qr&choe=UTF-8&chl=" + encodedUrl;
-    modalQrContainer.innerHTML = '<img src="' + qrImgUrl + '" alt="Payment QR Code" style="width:190px;height:190px;display:block;margin:0 auto;" />';
+    var primaryUrl = "https://api.qrserver.com/v1/create-qr-code/?size=190x190&margin=4&data=" + encodedUrl;
+    var fallbackUrl = "https://quickchart.io/qr?size=190&text=" + encodedUrl;
+    modalQrContainer.innerHTML = '<img src="' + primaryUrl + '" alt="Payment QR Code" style="width:190px;height:190px;display:block;margin:0 auto;border-radius:6px;" onerror="this.onerror=null;this.src=\'' + fallbackUrl + '\';" />';
   }
 
   // ---- CLOSE CRYPTO MODAL ----

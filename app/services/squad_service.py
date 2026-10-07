@@ -100,17 +100,19 @@ class SquadService:
         # Customer ref must be unique per user
         customer_ref = f"TGS{user_id[:8].replace('-', '').upper()}"
 
+        clean_phone = (phone or '08000000000').replace('+234', '0').replace(' ', '').replace('-', '')[:11]
         payload = {
             'customer_identifier': customer_ref,
             'first_name': (full_name.split(' ')[0] if ' ' in full_name else full_name)[:50],
             'last_name': (full_name.split(' ', 1)[1] if ' ' in full_name else 'User')[:50],
             'middle_name': '',
             'email': email,
-            'phone': phone or '08000000000',
+            'mobile_num': clean_phone,
+            'phone': clean_phone,
             'bvn': bvn or '',
         }
 
-        result = cls._post('virtual-account/create', payload)
+        result = cls._post('virtual-account', payload)
         return result
 
     @classmethod

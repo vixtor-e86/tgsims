@@ -127,14 +127,17 @@ class OXAPayService:
             }
         )
 
+        qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=6&data={pay_link}" if pay_link else ""
+
         return {
-            'success':    True,
-            'track_id':   track_id,
-            'pay_link':   pay_link,
-            'amount_usd': amount_usd,
-            'currency':   pay_currency,
-            'network':    network,
-            'order_id':   order_id,
+            'success':     True,
+            'track_id':    track_id,
+            'pay_link':    pay_link,
+            'qr_code_url': qr_code_url,
+            'amount_usd':  amount_usd,
+            'currency':    pay_currency,
+            'network':     network,
+            'order_id':    order_id,
         }
 
     # ------------------------------------------------------------------
