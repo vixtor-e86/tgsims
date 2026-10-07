@@ -1,11 +1,9 @@
 /* ==========================================================================
-   fund.js  -  Fund Your Wallet Page Interactions & Enterprise Crypto Gateway
-   - Preset amount pills (set USD canonical, render active currency)
-   - Manual amount entry (user types active currency, convert to USD)
-   - Payment method cards (Card, Crypto, Bank Transfer)
-   - Dynamic 0% fee for Crypto, 1.5% fee for Card
-   - NOWPayments Crypto Modal with dynamic QR code & 1-click clipboard copy
-   - Real-time blockchain status polling with idempotency & instant balance credit
+   fund.js  -  Fund Your Wallet Page Interactions
+   Supports 3 payment methods:
+   1. Dedicated Virtual Account (Squad - auto-credits on bank transfer)
+   2. Cryptocurrency (Cryptomus - $1 minimum)
+   3. Card / Bank Transfer (Squad inline + dynamic account)
    ========================================================================== */
 (function () {
   "use strict";
@@ -17,9 +15,9 @@
   var amountSymbol = container.querySelector("[data-amount-symbol]");
   var presetButtons = container.querySelectorAll("[data-preset]");
   var methodButtons = container.querySelectorAll("[data-method]");
-  var cardFields = container.querySelector("[data-card-fields]");
+  var dedicatedFields = container.querySelector("[data-dedicated-fields]");
   var cryptoFields = container.querySelector("[data-crypto-fields]");
-  var bankFields = container.querySelector("[data-bank-fields]");
+  var cardBankFields = container.querySelector("[data-card-bank-fields]");
   var cryptoSelect = container.querySelector("[data-crypto-select]");
   var submitBtn = container.querySelector("[data-fund-submit]");
   var confirmLabel = container.querySelector("[data-confirm-label]");
@@ -30,8 +28,9 @@
   var cryptoPresets = container.querySelector("[data-crypto-presets]");
   var cryptoMinWarning = document.getElementById("crypto-min-warning");
   var cryptoCurrEntered = document.getElementById("crypto-curr-entered");
+  var orderSummaryBlock = document.getElementById("order-summary-block");
 
-  // Modal elements
+  // Crypto Modal elements
   var cryptoModal = document.getElementById("crypto-payment-modal");
   var modalTitle = document.getElementById("modal-crypto-title");
   var modalOrderId = document.getElementById("modal-crypto-order-id");
@@ -48,37 +47,58 @@
   var btnCheckStatus = document.getElementById("btn-check-crypto-status");
   var closeBtns = document.querySelectorAll("[data-close-crypto-modal]");
 
+  // Squad / config from data attributes
   var FEE_RATE = parseFloat(container.getAttribute("data-fee-rate")) || 0.015;
-  var currentUSD = 0; // Canonical amount in USD
+  var squadActive = container.getAttribute("data-squad-active") === "true";
+  var cryptoActive = container.getAttribute("data-crypto-active") === "true";
+  var CRYPTO_MIN = parseFloat(container.getAttribute("data-crypto-min")) || 1.0;
+  var SQUAD_PUBLIC_KEY = container.getAttribute("data-squad-public-key") || "";
+
+  var currentUSD = 0;
+  var currentNGN = 0;
   var activePaymentId = null;
   var pollInterval = null;
   var currentPayAmountRaw = "";
   var currentAddressRaw = "";
+  var activeSubMethod = "card"; // within card-bank: 'card' or 'bank'
 
-  function cur() { return window.TgCurrency || { rate: 1600, symbol: "₦", format: function(v){ return "₦" + v.toFixed(2); }, render: function(){} }; }
+  function cur() {
+    return window.TgCurrency || {
+      rate: 1600, symbol: "₦",
+      format: function (v) { return "₦" + v.toFixed(2); },
+      render: function () {}
+    };
+  }
 
   function getActiveMethodId() {
     var active = container.querySelector("[data-method].is-active");
-    return active ? active.getAttribute("data-method-id") : "card";
+    return active ? active.getAttribute("data-method-id") : "dedicated";
   }
 
-  // Reflect active currency symbol next to amount input
   function syncSymbol() {
     if (amountSymbol) amountSymbol.textContent = cur().symbol;
   }
 
-  // Show active-currency equivalent of currentUSD in input
   function syncInput() {
     if (!amountInput) return;
-    var displayValue = currentUSD * cur().rate;
-    amountInput.value = displayValue > 0 ? displayValue.toFixed(2) : "";
+    var methodId = getActiveMethodId();
+    if (methodId === "crypto") {
+      // show USD for crypto
+      amountInput.value = currentUSD > 0 ? currentUSD.toFixed(2) : "";
+    } else {
+      var displayValue = currentNGN > 0 ? currentNGN : (currentUSD * cur().rate);
+      amountInput.value = displayValue > 0 ? displayValue.toFixed(2) : "";
+    }
   }
 
-  // Recompute deposit / fee / total and confirm-button label
   function syncSummary() {
     var methodId = getActiveMethodId();
-    // 0% fee on crypto and direct bank; 1.5% on card
-    var effectiveFeeRate = (methodId === "crypto" || methodId === "bank") ? 0.0 : FEE_RATE;
+    var isCrypto = (methodId === "crypto");
+    var isDedicated = (methodId === "dedicated");
+    var isCardBank = (methodId === "card");
+
+    // 0% fee on crypto and dedicated; 1.5% on card
+    var effectiveFeeRate = (isCrypto || isDedicated || activeSubMethod === "bank") ? 0.0 : FEE_RATE;
     var feeUSD = currentUSD * effectiveFeeRate;
     var totalUSD = currentUSD + feeUSD;
 
@@ -87,81 +107,112 @@
     if (summaryTotal) summaryTotal.setAttribute("data-usd", totalUSD.toFixed(4));
     cur().render(container);
 
-    var isCrypto = (methodId === "crypto");
-    var isUnderCryptoMin = isCrypto && currentUSD > 0 && currentUSD < 19.999;
-
+    // Crypto min warning
+    var isUnderCryptoMin = isCrypto && currentUSD > 0 && currentUSD < CRYPTO_MIN;
     if (cryptoMinWarning && cryptoCurrEntered) {
       if (isUnderCryptoMin) {
         cryptoMinWarning.style.display = "";
-        var valFormatted = "$" + currentUSD.toFixed(2);
-        if (cur().symbol !== "$") {
-          valFormatted += " (≈ " + cur().format(currentUSD * cur().rate, { decimals: 0 }) + ")";
-        }
-        cryptoCurrEntered.textContent = valFormatted;
+        cryptoCurrEntered.textContent = "$" + currentUSD.toFixed(2);
       } else {
         cryptoMinWarning.style.display = "none";
       }
     }
 
+    // Summary visibility
+    if (orderSummaryBlock) {
+      orderSummaryBlock.style.display = isDedicated ? "none" : "";
+    }
+
+    // Button label & state
     if (confirmLabel) {
-      if (currentUSD <= 0) {
-        confirmLabel.textContent = "Confirm Deposit";
-      } else if (isUnderCryptoMin) {
-        confirmLabel.textContent = "Minimum $20.00 Required for Crypto";
+      if (isDedicated) {
+        confirmLabel.textContent = "Use Dedicated Account";
       } else if (isCrypto) {
-        confirmLabel.textContent = "Generate " + getSelectedCryptoName() + " Deposit Address";
-      } else if (methodId === "bank") {
-        confirmLabel.textContent = "View Bank Transfer Details (" + cur().format(totalUSD, { decimals: 2 }) + ")";
+        if (currentUSD <= 0) {
+          confirmLabel.textContent = "Enter Amount to Deposit";
+        } else if (isUnderCryptoMin) {
+          confirmLabel.textContent = "Minimum $" + CRYPTO_MIN.toFixed(2) + " Required";
+        } else {
+          var optEl = cryptoSelect ? cryptoSelect.options[cryptoSelect.selectedIndex] : null;
+          var sym = optEl ? (optEl.getAttribute("data-symbol") || "Crypto") : "Crypto";
+          confirmLabel.textContent = "Generate " + sym + " Deposit Address";
+        }
+      } else if (isCardBank && activeSubMethod === "bank") {
+        confirmLabel.textContent = currentUSD > 0
+          ? "Generate Transfer Account (₦" + currentNGN.toLocaleString("en-NG", {maximumFractionDigits: 0}) + ")"
+          : "Enter Amount";
+      } else if (isCardBank) {
+        var totalNGN = totalUSD * cur().rate;
+        confirmLabel.textContent = currentUSD > 0
+          ? "Pay ₦" + totalNGN.toLocaleString("en-NG", {maximumFractionDigits: 0}) + " by Card"
+          : "Enter Amount";
       } else {
-        confirmLabel.textContent = "Confirm Deposit of " + cur().format(totalUSD, { decimals: 2 });
+        confirmLabel.textContent = "Confirm Deposit";
       }
     }
+
     if (submitBtn) {
-      submitBtn.disabled = (currentUSD <= 0 || isUnderCryptoMin);
+      var disabledDedicated = isDedicated; // dedicated button not in flow
+      var disabledCrypto = isCrypto && (currentUSD <= 0 || isUnderCryptoMin || !cryptoActive);
+      var disabledCard = isCardBank && currentNGN < 100;
+      submitBtn.disabled = (disabledDedicated || disabledCrypto || disabledCard);
     }
   }
 
-  function getSelectedCryptoName() {
-    if (!cryptoSelect) return "Crypto";
-    var opt = cryptoSelect.options[cryptoSelect.selectedIndex];
-    return opt ? (opt.getAttribute("data-symbol") || "Crypto") : "Crypto";
-  }
-
-  function clearPresetActive() {
-    presetButtons.forEach(function (b) { b.classList.remove("is-active"); });
-  }
-
-  // Preset pills: set canonical USD
+  // Amount presets
   presetButtons.forEach(function (btn) {
     btn.addEventListener("click", function () {
-      currentUSD = parseFloat(btn.getAttribute("data-usd")) || 0;
+      var usd = parseFloat(btn.getAttribute("data-usd")) || 0;
+      var ngn = parseFloat(btn.getAttribute("data-ngn")) || (usd * cur().rate);
+      currentUSD = usd;
+      currentNGN = ngn;
       syncInput();
       syncSummary();
-      clearPresetActive();
+      presetButtons.forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
     });
   });
 
-  // Manual entry: user types in active currency -> convert to USD
+  // Manual amount entry
   if (amountInput) {
     amountInput.addEventListener("input", function () {
-      var displayValue = parseFloat(amountInput.value) || 0;
-      currentUSD = displayValue / cur().rate;
+      var val = parseFloat(amountInput.value) || 0;
+      var methodId = getActiveMethodId();
+      if (methodId === "crypto") {
+        // Input is USD for crypto
+        currentUSD = val;
+        currentNGN = val * cur().rate;
+      } else {
+        // Input is NGN for other methods
+        currentNGN = val;
+        currentUSD = val / cur().rate;
+      }
       syncSummary();
-      clearPresetActive();
+      presetButtons.forEach(function (b) { b.classList.remove("is-active"); });
     });
   }
 
-  // Method switching: toggle Card, Crypto, and Bank sections
+  // Method switching
   function syncMethodFields() {
     var methodId = getActiveMethodId();
-    if (cardFields) cardFields.style.display = (methodId === "card") ? "" : "none";
+    if (dedicatedFields) dedicatedFields.style.display = (methodId === "dedicated") ? "" : "none";
     if (cryptoFields) cryptoFields.style.display = (methodId === "crypto") ? "" : "none";
-    if (bankFields) bankFields.style.display = (methodId === "bank") ? "" : "none";
+    if (cardBankFields) cardBankFields.style.display = (methodId === "card") ? "" : "none";
 
-    // Toggle presets between fiat/card and dedicated crypto amounts
+    // Show/hide presets
     if (defaultPresets) defaultPresets.style.display = (methodId === "crypto") ? "none" : "";
     if (cryptoPresets) cryptoPresets.style.display = (methodId === "crypto") ? "" : "none";
+
+    // Update amount symbol
+    if (amountSymbol) {
+      amountSymbol.textContent = (methodId === "crypto") ? "$" : cur().symbol;
+    }
+
+    // Reset amount input
+    currentUSD = 0;
+    currentNGN = 0;
+    if (amountInput) amountInput.value = "";
+    presetButtons.forEach(function (b) { b.classList.remove("is-active"); });
 
     syncSummary();
   }
@@ -174,13 +225,30 @@
     });
   });
 
-  if (cryptoSelect) {
-    cryptoSelect.addEventListener("change", function () {
-      syncSummary();
-    });
+  // Sub-method switching (card vs bank within card-bank tab)
+  var subCardBtn = document.getElementById("sub-card-btn");
+  var subBankBtn = document.getElementById("sub-bank-btn");
+  var cardSection = document.getElementById("card-section");
+  var bankSection = document.getElementById("bank-section");
+  var bankTransferResult = document.getElementById("bank-transfer-result");
+
+  function switchSubMethod(sub) {
+    activeSubMethod = sub;
+    if (subCardBtn) subCardBtn.classList.toggle("is-active", sub === "card");
+    if (subBankBtn) subBankBtn.classList.toggle("is-active", sub === "bank");
+    if (cardSection) cardSection.style.display = (sub === "card") ? "" : "none";
+    if (bankSection) bankSection.style.display = (sub === "bank") ? "" : "none";
+    syncSummary();
   }
 
-  // Copy to clipboard helper
+  if (subCardBtn) subCardBtn.addEventListener("click", function () { switchSubMethod("card"); });
+  if (subBankBtn) subBankBtn.addEventListener("click", function () { switchSubMethod("bank"); });
+
+  if (cryptoSelect) {
+    cryptoSelect.addEventListener("change", function () { syncSummary(); });
+  }
+
+  // ---- COPY TO CLIPBOARD ----
   function copyText(val, btnEl, originalHtml) {
     if (!navigator.clipboard) {
       var ta = document.createElement("textarea");
@@ -198,11 +266,17 @@
     }
   }
 
+  window.copyToClipboard = function (val, btnEl) {
+    var orig = btnEl ? btnEl.innerHTML : "";
+    copyText(val, btnEl, orig);
+    if (window.toast) window.toast("Copied to clipboard!", "success");
+  };
+
   if (btnCopyAmount) {
-    var origAmountHtml = btnCopyAmount.innerHTML;
+    var origAmtHtml = btnCopyAmount.innerHTML;
     btnCopyAmount.addEventListener("click", function () {
-      copyText(currentPayAmountRaw, btnCopyAmount, origAmountHtml);
-      if (window.toast) window.toast("Exact crypto amount copied to clipboard.", "info");
+      copyText(currentPayAmountRaw, btnCopyAmount, origAmtHtml);
+      if (window.toast) window.toast("Amount copied.", "info");
     });
   }
 
@@ -210,31 +284,25 @@
     var origAddrHtml = btnCopyAddress.innerHTML;
     btnCopyAddress.addEventListener("click", function () {
       copyText(currentAddressRaw, btnCopyAddress, origAddrHtml);
-      if (window.toast) window.toast("Deposit address copied to clipboard.", "info");
+      if (window.toast) window.toast("Deposit address copied.", "info");
     });
   }
 
-  // Close modal controls
+  // ---- CLOSE CRYPTO MODAL ----
   function closeCryptoModal() {
     if (cryptoModal) cryptoModal.classList.remove("is-open");
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
-    }
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
   }
 
-  closeBtns.forEach(function (btn) {
-    btn.addEventListener("click", closeCryptoModal);
-  });
-
+  closeBtns.forEach(function (btn) { btn.addEventListener("click", closeCryptoModal); });
   if (cryptoModal) {
     cryptoModal.addEventListener("click", function (e) {
       if (e.target === cryptoModal) closeCryptoModal();
     });
   }
 
-  // Real-time status polling & check status
-  function checkPaymentStatus(isManualClick) {
+  // ---- CRYPTO STATUS POLLING ----
+  function checkCryptoStatus(isManualClick) {
     if (!activePaymentId) return;
 
     if (isManualClick && btnCheckStatus) {
@@ -251,54 +319,42 @@
         }
 
         var status = (data.status || "").toLowerCase();
-        if (data.is_completed || status === "finished" || status === "confirmed" || status === "sending") {
+        if (data.is_completed || status === "paid" || status === "paid_over") {
           // PAYMENT COMPLETED
           if (modalStatusPill) {
             modalStatusPill.style.background = "rgba(16, 185, 129, 0.15)";
             modalStatusPill.style.color = "#10b981";
             modalStatusPill.style.borderColor = "rgba(16, 185, 129, 0.35)";
           }
-          if (modalStatusText) {
-            modalStatusText.textContent = "Payment Confirmed & Balance Credited!";
-          }
+          if (modalStatusText) modalStatusText.textContent = "Payment Confirmed & Balance Credited!";
           if (btnCheckStatus) {
             btnCheckStatus.textContent = "Go to Wallet Overview";
             btnCheckStatus.className = "btn btn-primary btn-block";
-            btnCheckStatus.onclick = function () {
-              window.location.href = "/wallet";
-            };
+            btnCheckStatus.onclick = function () { window.location.href = "/wallet"; };
           }
-          if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-          }
-          if (window.toast) {
-            window.toast("Deposit successfully credited to your wallet balance!", "success");
-          }
-        } else if (status === "confirming") {
+          if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+          if (window.toast) window.toast("Deposit successfully credited to your wallet!", "success");
+        } else if (status === "confirming" || status === "confirm_check") {
           if (modalStatusText) modalStatusText.textContent = "Detected on blockchain (confirming…)";
           if (modalStatusPill) {
             modalStatusPill.style.background = "rgba(99, 102, 241, 0.15)";
             modalStatusPill.style.color = "#6366f1";
             modalStatusPill.style.borderColor = "rgba(99, 102, 241, 0.35)";
           }
-        } else if (status === "failed" || status === "expired") {
+        } else if (status === "cancel" || status === "fail" || status === "expired") {
           if (modalStatusText) modalStatusText.textContent = "Session expired or failed.";
           if (modalStatusPill) {
             modalStatusPill.style.background = "rgba(239, 68, 68, 0.15)";
             modalStatusPill.style.color = "#ef4444";
             modalStatusPill.style.borderColor = "rgba(239, 68, 68, 0.35)";
           }
-          if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-          }
+          if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
         } else {
           if (modalStatusText) modalStatusText.textContent = "Waiting for transaction…";
         }
       })
       .catch(function (err) {
-        console.warn("[NOWPayments Polling] error:", err);
+        console.warn("[Cryptomus Polling] error:", err);
         if (isManualClick && btnCheckStatus) {
           btnCheckStatus.disabled = false;
           btnCheckStatus.textContent = "Check Status Now";
@@ -307,56 +363,87 @@
   }
 
   if (btnCheckStatus) {
-    btnCheckStatus.addEventListener("click", function () {
-      checkPaymentStatus(true);
+    btnCheckStatus.addEventListener("click", function () { checkCryptoStatus(true); });
+  }
+
+  // ---- DEDICATED ACCOUNT CREATION ----
+  var btnCreateAccount = document.getElementById("btn-create-dedicated-account");
+  var accountResult = document.getElementById("dedicated-account-result");
+
+  if (btnCreateAccount) {
+    btnCreateAccount.addEventListener("click", function () {
+      var label = document.getElementById("create-account-label");
+      btnCreateAccount.disabled = true;
+      if (label) label.textContent = "Generating your account…";
+
+      fetch("/api/payments/squad/virtual-account/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          btnCreateAccount.disabled = false;
+          if (label) label.textContent = "Generate My Account";
+
+          if (!data.success) {
+            if (window.toast) window.toast(data.message || "Failed to create account. Please try again.", "error");
+            return;
+          }
+
+          var acc = data.account || {};
+          if (accountResult) {
+            accountResult.style.display = "";
+            accountResult.innerHTML =
+              '<div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: var(--r-md); padding: 1rem; text-align: left;">' +
+              '<div style="font-weight: 700; color: #10b981; margin-bottom: 0.5rem;">✓ Account Created Successfully!</div>' +
+              '<div><strong>Bank:</strong> ' + (acc.bank_name || '') + '</div>' +
+              '<div style="font-size: 1.2rem; font-weight: 800; font-family: monospace; margin-top: 0.35rem;">' + (acc.account_number || '') + '</div>' +
+              '<div style="font-size: 0.8rem; color: var(--text-dim);">' + (acc.account_name || '') + '</div>' +
+              '<div style="margin-top: 0.5rem; font-size: 0.78rem; color: var(--text-dim);">Reload the page to see your account details here.</div>' +
+              '</div>';
+          }
+
+          if (btnCreateAccount) btnCreateAccount.style.display = "none";
+          if (window.toast) window.toast("Dedicated account created! Reload to view it.", "success", 6000);
+        })
+        .catch(function (err) {
+          btnCreateAccount.disabled = false;
+          if (label) label.textContent = "Generate My Account";
+          if (window.toast) window.toast("Network error. Please try again.", "error");
+        });
     });
   }
 
-  // Handle Submit Button Click
+  // ---- SUBMIT HANDLER ----
   if (submitBtn) {
     submitBtn.addEventListener("click", function () {
-      if (currentUSD <= 0) {
-        if (window.toast) window.toast("Please enter an amount to fund.", "error");
-        return;
-      }
-
       var methodId = getActiveMethodId();
 
-      // CASE 1: BANK TRANSFER
-      if (methodId === "bank") {
-        if (bankFields) bankFields.scrollIntoView({ behavior: "smooth" });
-        if (window.toast) window.toast("Please review the direct bank transfer details below.", "info");
+      // DEDICATED ACCOUNT - no submit flow needed
+      if (methodId === "dedicated") {
+        if (window.toast) window.toast("Transfer to your dedicated account anytime – it auto-credits your wallet.", "info", 5000);
         return;
       }
 
-      // CASE 2: CARD PAYMENT
-      if (methodId === "card") {
-        var cardNum = (document.getElementById("card-number") || {}).value || "";
-        if (!cardNum.replace(/\s+/g, "")) {
-          if (window.toast) window.toast("Please enter your card number to proceed.", "error");
-          return;
-        }
-        var totalUSD = currentUSD * (1 + FEE_RATE);
-        if (window.toast) window.toast("Initiating card charge of " + cur().format(totalUSD, { decimals: 2 }) + "…", "info", 4000);
-        return;
-      }
-
-      // CASE 3: CRYPTOCURRENCY VIA NOWPAYMENTS
+      // CRYPTO
       if (methodId === "crypto") {
-        if (currentUSD < 19.999) {
-          if (window.toast) {
-            window.toast("The minimum deposit for Cryptocurrency is $20.00 USD (≈ ₦" + Math.round(20 * cur().rate).toLocaleString() + ").", "error");
-          }
+        if (currentUSD <= 0) {
+          if (window.toast) window.toast("Please enter an amount to deposit.", "error");
+          return;
+        }
+        if (currentUSD < CRYPTO_MIN) {
+          if (window.toast) window.toast("Minimum crypto deposit is $" + CRYPTO_MIN.toFixed(2) + " USD.", "error");
           return;
         }
 
-        var selectedCoin = cryptoSelect ? cryptoSelect.value : "usdttrc20";
-        var selectedOpt = cryptoSelect ? cryptoSelect.options[cryptoSelect.selectedIndex] : null;
-        var selectedSymbol = selectedOpt ? selectedOpt.getAttribute("data-symbol") : "USDT";
-        var selectedNetwork = selectedOpt ? selectedOpt.getAttribute("data-network") : "Tron (TRC20)";
+        var optEl = cryptoSelect ? cryptoSelect.options[cryptoSelect.selectedIndex] : null;
+        var selectedCurrency = optEl ? optEl.value : "USDT";
+        var selectedNetwork = optEl ? (optEl.getAttribute("data-network") || "TRON") : "TRON";
+        var selectedSymbol = optEl ? (optEl.getAttribute("data-symbol") || "USDT") : "USDT";
+        var selectedDisplayNet = optEl ? (optEl.getAttribute("data-display-network") || selectedNetwork) : selectedNetwork;
 
         submitBtn.disabled = true;
-        var prevLabel = confirmLabel ? confirmLabel.textContent : "Confirm Deposit";
+        var prevLabel = confirmLabel ? confirmLabel.textContent : "Confirm";
         if (confirmLabel) confirmLabel.textContent = "Generating Secure Deposit Address…";
 
         fetch("/api/payments/crypto/create", {
@@ -364,7 +451,8 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             amount: currentUSD,
-            currency: selectedCoin
+            currency: selectedCurrency,
+            network: selectedNetwork
           })
         })
           .then(function (res) { return res.json(); })
@@ -377,21 +465,21 @@
               return;
             }
 
-            // Populate Modal
+            // Populate modal
             activePaymentId = data.payment_id;
-            currentPayAmountRaw = data.pay_amount.toString();
+            currentPayAmountRaw = String(data.pay_amount);
             currentAddressRaw = data.pay_address;
 
-            if (modalTitle) modalTitle.textContent = "Deposit " + data.pay_currency + " (" + (data.network || selectedNetwork) + ")";
-            if (modalOrderId) modalOrderId.textContent = data.order_id || ("NP-" + data.payment_id);
+            if (modalTitle) modalTitle.textContent = "Deposit " + data.pay_currency + " (" + (data.network || selectedDisplayNet) + ")";
+            if (modalOrderId) modalOrderId.textContent = data.order_id || ("CM-" + data.payment_id);
             if (modalQrCode) modalQrCode.src = data.qr_code_url;
             if (modalAmount) modalAmount.textContent = data.pay_amount + " " + data.pay_currency;
             if (modalAddress) modalAddress.textContent = data.pay_address;
             if (modalNetwork) modalNetwork.textContent = data.network || selectedNetwork;
             if (noticeSymbol) noticeSymbol.textContent = data.pay_currency;
-            if (noticeNetwork) noticeNetwork.textContent = data.network || selectedNetwork;
+            if (noticeNetwork) noticeNetwork.textContent = data.network || selectedDisplayNet;
 
-            // Reset Status Badge
+            // Reset status badge
             if (modalStatusPill) {
               modalStatusPill.style.background = "rgba(245, 158, 11, 0.15)";
               modalStatusPill.style.color = "#f59e0b";
@@ -402,22 +490,134 @@
             if (btnCheckStatus) {
               btnCheckStatus.textContent = "Check Status Now";
               btnCheckStatus.className = "btn btn-secondary btn-block";
-              btnCheckStatus.onclick = function () { checkPaymentStatus(true); };
+              btnCheckStatus.onclick = function () { checkCryptoStatus(true); };
             }
 
-            // Open Modal
             if (cryptoModal) cryptoModal.classList.add("is-open");
 
-            // Start automated polling every 6 seconds
             if (pollInterval) clearInterval(pollInterval);
-            pollInterval = setInterval(function () {
-              checkPaymentStatus(false);
-            }, 6000);
+            pollInterval = setInterval(function () { checkCryptoStatus(false); }, 8000);
           })
-          .catch(function (err) {
+          .catch(function () {
             submitBtn.disabled = false;
             if (confirmLabel) confirmLabel.textContent = prevLabel;
-            if (window.toast) window.toast("Network error generating crypto address. Please try again.", "error");
+            if (window.toast) window.toast("Network error. Please try again.", "error");
+          });
+        return;
+      }
+
+      // CARD / BANK
+      if (methodId === "card") {
+        if (currentNGN < 100) {
+          if (window.toast) window.toast("Please enter an amount of at least ₦100.", "error");
+          return;
+        }
+
+        // BANK TRANSFER - generate dynamic account
+        if (activeSubMethod === "bank") {
+          submitBtn.disabled = true;
+          if (confirmLabel) confirmLabel.textContent = "Generating Transfer Account…";
+
+          fetch("/api/payments/squad/bank-transfer/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ amount_ngn: currentNGN })
+          })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              submitBtn.disabled = false;
+              syncSummary();
+
+              if (!data.success) {
+                if (window.toast) window.toast(data.message || "Failed to generate account.", "error");
+                return;
+              }
+
+              if (bankTransferResult) {
+                bankTransferResult.style.display = "";
+                bankTransferResult.innerHTML =
+                  '<div style="background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.2); border-radius: var(--r-md); padding: 1rem;">' +
+                  '<div style="font-weight: 700; color: var(--text); margin-bottom: 0.5rem;">Transfer Details (valid 10 mins)</div>' +
+                  '<div style="display: flex; flex-direction: column; gap: 0.4rem;">' +
+                  '<div><span style="color:var(--text-dim);">Bank:</span> <strong>' + (data.bank_name || '') + '</strong></div>' +
+                  '<div><span style="color:var(--text-dim);">Account:</span> <strong style="font-family:monospace; font-size:1.1rem;">' + (data.account_number || '') + '</strong>' +
+                  ' <button type="button" onclick="copyToClipboard(\'' + data.account_number + '\', this)" class="btn btn-secondary btn-sm" style="padding:0.2rem 0.6rem; font-size:0.75rem;">Copy</button></div>' +
+                  '<div><span style="color:var(--text-dim);">Name:</span> <strong>' + (data.account_name || '') + '</strong></div>' +
+                  '<div><span style="color:var(--text-dim);">Amount:</span> <strong style="color:#6366f1;">₦' + currentNGN.toLocaleString('en-NG', {maximumFractionDigits: 2}) + '</strong></div>' +
+                  '</div>' +
+                  '<div style="font-size:0.78rem; color:var(--text-dim); margin-top:0.5rem; padding:0.5rem; background: rgba(245,158,11,0.08); border-radius: var(--r-sm); border: 1px solid rgba(245,158,11,0.2);">Send the <strong>exact amount</strong> above. Account expires in 10 minutes. Your wallet will be credited automatically.</div>' +
+                  '</div>';
+              }
+              if (window.toast) window.toast("Transfer account generated! Send ₦" + currentNGN.toLocaleString() + " now.", "success", 8000);
+            })
+            .catch(function () {
+              submitBtn.disabled = false;
+              syncSummary();
+              if (window.toast) window.toast("Network error. Please try again.", "error");
+            });
+          return;
+        }
+
+        // CARD PAYMENT - Squad inline
+        if (!squadActive || !SQUAD_PUBLIC_KEY) {
+          if (window.toast) window.toast("Card payments are not available right now. Please use another method.", "error");
+          return;
+        }
+
+        submitBtn.disabled = true;
+        if (confirmLabel) confirmLabel.textContent = "Initializing Card Payment…";
+
+        fetch("/api/payments/squad/card/initiate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount_ngn: currentNGN })
+        })
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            submitBtn.disabled = false;
+            syncSummary();
+
+            if (!data.success) {
+              if (window.toast) window.toast(data.message || "Failed to start card payment.", "error");
+              return;
+            }
+
+            // If checkout_url returned, open it
+            if (data.checkout_url) {
+              window.open(data.checkout_url, "_blank");
+              return;
+            }
+
+            // Use Squad inline SDK if available
+            if (window.squad) {
+              var squadInstance = new window.squad({
+                onclose: function () {
+                  if (window.toast) window.toast("Payment window closed. Check your wallet if you completed payment.", "info", 5000);
+                },
+                onload: function () {},
+                onpayment: function (resp) {
+                  if (resp && (resp.transaction_status === "success" || resp.status === "success")) {
+                    if (window.toast) window.toast("Payment received! Your wallet will be credited shortly.", "success", 6000);
+                    setTimeout(function () { window.location.href = "/wallet"; }, 3000);
+                  }
+                },
+                key: SQUAD_PUBLIC_KEY,
+                email: (window.TgUser && window.TgUser.email) || "",
+                amount: Math.round(currentNGN * 100), // kobo
+                currency_code: "NGN",
+                transaction_ref: data.reference
+              });
+              squadInstance.setup();
+              squadInstance.open();
+            } else {
+              if (window.toast) window.toast("Redirecting to payment page…", "info");
+              if (data.checkout_url) window.location.href = data.checkout_url;
+            }
+          })
+          .catch(function () {
+            submitBtn.disabled = false;
+            syncSummary();
+            if (window.toast) window.toast("Network error. Please try again.", "error");
           });
       }
     });

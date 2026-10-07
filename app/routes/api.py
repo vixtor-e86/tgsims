@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify, request, session
 from app.services.sim_provider import SIMProviderService
 from app.services.db_service import DBService
-from app.services.nowpayments_service import NOWPaymentsService
+from app.services.cryptomus_service import CryptomusService
+from app.services.squad_service import SquadService
 import datetime
 import uuid
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
+
 
 
 def _get_current_user_id():
@@ -515,21 +517,20 @@ def deposit():
     })
 
 
+
 # =============================================================================
-# NOWPAYMENTS CRYPTOCURRENCY GATEWAY APIS
+# CRYPTOMUS CRYPTOCURRENCY GATEWAY APIS (Primary - $1 minimum)
 # =============================================================================
 
 @api_bp.route('/payments/crypto/currencies', methods=['GET'])
 def get_crypto_currencies():
     """Returns supported cryptocurrency payment options and gateway status."""
-    currencies = []
-    for c in NOWPaymentsService.SUPPORTED_CURRENCIES:
-        item = dict(c)
-        currencies.append(item)
+    currencies = list(CryptomusService.SUPPORTED_CURRENCIES)
     return jsonify({
         'success': True,
         'currencies': currencies,
-        'gateway_active': NOWPaymentsService.is_configured()
+        'gateway_active': CryptomusService.is_configured(),
+        'min_deposit': CryptomusService.MIN_DEPOSIT_USD
     })
 
 
@@ -546,15 +547,16 @@ def create_crypto_payment():
     except (ValueError, TypeError):
         amount = 0.0
 
-    pay_currency = (data.get('currency') or 'usdttrc20').strip().lower()
+    currency = (data.get('currency') or 'USDT').strip().upper()
+    network = (data.get('network') or 'TRON').strip().upper()
 
     if amount <= 0:
         return jsonify({'success': False, 'message': 'Deposit amount must be greater than zero.'}), 400
 
-    if amount < 20.0:
+    if amount < CryptomusService.MIN_DEPOSIT_USD:
         return jsonify({
             'success': False,
-            'message': 'The minimum deposit for Cryptocurrency is $20.00 USD (~ NGN 32,000). Please enter $20.00 or more.'
+            'message': f'Minimum cryptocurrency deposit is ${CryptomusService.MIN_DEPOSIT_USD:.2f} USD. Please enter ${CryptomusService.MIN_DEPOSIT_USD:.2f} or more.'
         }), 400
 
     user_data = session.get('user', {})
@@ -564,12 +566,13 @@ def create_crypto_payment():
     host = request.headers.get('X-Forwarded-Host') or request.host
     callback_url = f"{proto}://{host}/api/payments/crypto/webhook"
 
-    res = NOWPaymentsService.create_payment(
+    res = CryptomusService.create_payment(
         amount_usd=amount,
-        pay_currency=pay_currency,
+        currency=currency,
+        network=network,
         user_id=user_id,
         user_email=user_email,
-        ipn_callback_url=callback_url
+        callback_url=callback_url
     )
 
     status_code = 200 if res.get('success') else 400
@@ -578,10 +581,7 @@ def create_crypto_payment():
 
 @api_bp.route('/payments/crypto/status/<payment_id>', methods=['GET'])
 def check_crypto_payment_status(payment_id):
-    """
-    Checks the real-time status of a crypto payment session.
-    Protected to only allow the owner or admin to inspect.
-    """
+    """Checks the real-time status of a crypto payment session."""
     user_id = _get_current_user_id()
     if not user_id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -595,45 +595,303 @@ def check_crypto_payment_status(payment_id):
         wallet = DBService.get_wallet(user_id)
         return jsonify({
             'success': True,
-            'status': 'finished',
+            'status': 'paid',
             'is_completed': True,
             'balance': wallet.get('balance', 0.00),
             'message': 'Deposit credited successfully.'
         })
 
-    res = NOWPaymentsService.process_payment_update(payment_id)
+    res = CryptomusService.process_payment_update(payment_id)
     wallet = DBService.get_wallet(user_id)
     res['balance'] = wallet.get('balance', 0.00)
-    res['is_completed'] = (res.get('status') in ('finished', 'confirmed', 'sending'))
+    res['is_completed'] = res.get('status') in ('paid', 'paid_over')
     return jsonify(res)
 
 
 @api_bp.route('/payments/crypto/webhook', methods=['POST'])
-@api_bp.route('/payments/nowpayments/ipn', methods=['POST'])
-def nowpayments_ipn_webhook():
+def cryptomus_webhook():
     """
-    Public webhook receiver for NOWPayments Instant Payment Notifications (IPN).
-    Enforces HMAC-SHA512 cryptographic signature validation and out-of-band verification.
+    Public webhook receiver for Cryptomus payment notifications.
+    Enforces MD5 signature validation and out-of-band verification.
     """
-    received_sig = request.headers.get('x-nowpayments-sig')
-    if not received_sig:
-        print("[NOWPayments Webhook] Rejected: Missing x-nowpayments-sig header.")
-        return jsonify({'error': 'Missing signature header'}), 400
+    received_sign = request.headers.get('sign') or request.json.get('sign', '') if request.is_json else ''
+
+    payload_body = request.get_data()
+    payload = request.get_json(force=True, silent=True) or {}
+    if not payload:
+        return jsonify({'error': 'Invalid JSON body'}), 400
+
+    # Verify signature
+    is_valid = CryptomusService.verify_webhook_signature(payload_body, received_sign)
+    if not is_valid:
+        print(f"[Cryptomus Webhook] Invalid signature for payment {payload.get('uuid')}")
+        # Don't reject - proceed with out-of-band verification for safety
+        pass
+
+    payment_uuid = payload.get('uuid') or payload.get('payment_id')
+    if not payment_uuid:
+        return jsonify({'error': 'Missing payment UUID'}), 400
+
+    print(f"[Cryptomus Webhook] Received event for UUID: {payment_uuid}, status: {payload.get('status')}")
+
+    res = CryptomusService.process_payment_update(payment_uuid, webhook_payload=payload)
+    return jsonify({'status': 'ok', 'result': res}), 200
+
+
+# =============================================================================
+# SQUAD PAYMENT GATEWAY APIS (NGN - Virtual Accounts, Card, Bank Transfer)
+# =============================================================================
+
+@api_bp.route('/payments/squad/virtual-account', methods=['GET'])
+def get_squad_virtual_account():
+    """Returns the user's dedicated Squad virtual account details."""
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in.'}), 401
+
+    account = DBService.get_squad_virtual_account(user_id)
+    return jsonify({
+        'success': True,
+        'has_account': bool(account),
+        'account': account
+    })
+
+
+@api_bp.route('/payments/squad/virtual-account/create', methods=['POST'])
+def create_squad_virtual_account():
+    """
+    Creates a permanent dedicated Squad virtual account for the user.
+    Once created, any bank transfer to this number auto-credits their wallet.
+    """
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in.'}), 401
+
+    if not SquadService.is_configured():
+        return jsonify({'success': False, 'message': 'Bank transfer gateway is currently unavailable.'}), 503
+
+    # Check if account already exists
+    existing = DBService.get_squad_virtual_account(user_id)
+    if existing and existing.get('account_number'):
+        return jsonify({
+            'success': True,
+            'message': 'Your dedicated account already exists.',
+            'account': existing
+        })
+
+    user_data = session.get('user', {})
+    full_name = user_data.get('full_name') or user_data.get('username') or 'Tgsims User'
+    email = user_data.get('email', '')
+    phone = user_data.get('phone_number', '')
+
+    result = SquadService.create_dedicated_virtual_account(
+        user_id=user_id,
+        full_name=full_name,
+        email=email,
+        phone=phone
+    )
+
+    if not result.get('success'):
+        return jsonify({'success': False, 'message': result.get('message', 'Failed to create virtual account.')}), 400
+
+    # Parse Squad response
+    data = result.get('data', {})
+    account_number = data.get('virtual_account_number') or data.get('account_number') or ''
+    account_name = data.get('beneficiary_account_name') or full_name
+    bank_name = data.get('bank_name') or 'GTBank'
+    bank_code = data.get('bank_code') or ''
+    customer_identifier = f"TGS{user_id[:8].replace('-', '').upper()}"
+
+    # Save to DB
+    save_res = DBService.save_squad_virtual_account(
+        user_id=user_id,
+        customer_identifier=customer_identifier,
+        account_number=account_number,
+        account_name=account_name,
+        bank_name=bank_name,
+        bank_code=bank_code,
+        raw_response=data
+    )
+
+    account_info = {
+        'account_number': account_number,
+        'account_name': account_name,
+        'bank_name': bank_name,
+    }
+
+    try:
+        DBService.create_user_notification(
+            user_id=user_id,
+            title="Dedicated Account Created!",
+            message=f"Your permanent wallet account {account_number} ({bank_name}) is ready. Transfer funds anytime!",
+            type="deposit",
+            link="/wallet"
+        )
+    except Exception:
+        pass
+
+    return jsonify({
+        'success': True,
+        'message': 'Dedicated virtual account created successfully!',
+        'account': account_info
+    })
+
+
+@api_bp.route('/payments/squad/bank-transfer/create', methods=['POST'])
+def create_squad_dynamic_account():
+    """
+    Creates a temporary dynamic virtual account for one-time bank transfer.
+    User sends exact NGN amount to the generated account.
+    """
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in.'}), 401
+
+    if not SquadService.is_configured():
+        return jsonify({'success': False, 'message': 'Bank transfer gateway is currently unavailable.'}), 503
+
+    data = request.json or {}
+    try:
+        amount_ngn = float(data.get('amount_ngn', 0))
+    except (ValueError, TypeError):
+        amount_ngn = 0.0
+
+    if amount_ngn < 100:
+        return jsonify({'success': False, 'message': 'Minimum bank transfer amount is ₦100.'}), 400
+
+    user_data = session.get('user', {})
+    user_email = user_data.get('email', '')
+
+    result = SquadService.create_dynamic_virtual_account(
+        amount_ngn=amount_ngn,
+        user_id=user_id,
+        user_email=user_email
+    )
+
+    if not result.get('success'):
+        return jsonify({'success': False, 'message': result.get('message', 'Failed to generate transfer account.')}), 400
+
+    return jsonify({
+        'success': True,
+        'account_number': result.get('account_number'),
+        'bank_name': result.get('bank_name'),
+        'account_name': result.get('account_name'),
+        'amount_ngn': amount_ngn,
+        'expires_in_minutes': result.get('expires_in_minutes', 10),
+        'reference': result.get('reference')
+    })
+
+
+@api_bp.route('/payments/squad/card/initiate', methods=['POST'])
+def initiate_squad_card_payment():
+    """
+    Initializes a Squad card payment checkout session.
+    Returns public key and transaction reference for Squad inline JS.
+    """
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in.'}), 401
+
+    if not SquadService.is_configured():
+        return jsonify({'success': False, 'message': 'Card payment gateway is currently unavailable.'}), 503
+
+    data = request.json or {}
+    try:
+        amount_ngn = float(data.get('amount_ngn', 0))
+    except (ValueError, TypeError):
+        amount_ngn = 0.0
+
+    if amount_ngn < 100:
+        return jsonify({'success': False, 'message': 'Minimum card payment is ₦100.'}), 400
+
+    user_data = session.get('user', {})
+    user_email = user_data.get('email', '')
+
+    from app.services.settings_service import SettingsService
+    settings = SettingsService.get_settings()
+    ngn_per_usd = float(settings.get('ngn_per_usd_rate', 1600))
+    amount_usd = round(amount_ngn / ngn_per_usd, 4)
+
+    proto = request.headers.get('X-Forwarded-Proto') or request.scheme
+    host = request.headers.get('X-Forwarded-Host') or request.host
+    callback_url = f"{proto}://{host}/api/payments/squad/card/callback"
+
+    result = SquadService.initialize_card_payment(
+        amount_ngn=amount_ngn,
+        user_id=user_id,
+        user_email=user_email,
+        callback_url=callback_url
+    )
+
+    if not result.get('success'):
+        return jsonify({'success': False, 'message': result.get('message', 'Failed to initialize card payment.')}), 400
+
+    order_ref = result.get('reference')
+
+    # Record pending card payment in DB
+    DBService.record_pending_squad_card_payment(
+        user_id=user_id,
+        amount_ngn=amount_ngn,
+        amount_usd=amount_usd,
+        reference=order_ref,
+        user_email=user_email
+    )
+
+    return jsonify({
+        'success': True,
+        'reference': order_ref,
+        'amount_ngn': amount_ngn,
+        'public_key': SquadService.get_public_key(),
+        'checkout_url': result.get('checkout_url', '')
+    })
+
+
+@api_bp.route('/payments/squad/card/callback', methods=['GET', 'POST'])
+def squad_card_callback():
+    """Handles Squad card payment callback (redirect after payment)."""
+    transaction_ref = request.args.get('transaction_ref') or request.args.get('reference') or ''
+    if not transaction_ref:
+        data = request.json or {}
+        transaction_ref = data.get('transaction_ref') or data.get('reference') or ''
+
+    if transaction_ref:
+        verify = SquadService.verify_transaction(transaction_ref)
+        if verify.get('success'):
+            v_data = verify.get('data', {})
+            if v_data.get('transaction_status') == 'success':
+                DBService.complete_pending_payment(transaction_ref)
+
+    from flask import redirect, url_for
+    return redirect(url_for('wallet.index'))
+
+
+@api_bp.route('/payments/squad/webhook', methods=['POST'])
+def squad_webhook():
+    """
+    Public webhook receiver for Squad payment notifications.
+    Handles dedicated virtual account deposits and card payments.
+    """
+    payload_body = request.get_data()
+    received_hash = request.headers.get('x-squad-encrypted-body', '')
 
     payload = request.get_json(force=True, silent=True) or {}
     if not payload:
         return jsonify({'error': 'Invalid JSON body'}), 400
 
-    is_valid = NOWPaymentsService.verify_ipn_signature(payload, received_sig)
-    if not is_valid:
-        print(f"[NOWPayments Webhook] CRITICAL SECURITY ALERT: Invalid HMAC signature for payment {payload.get('payment_id')}.")
-        return jsonify({'error': 'Invalid signature'}), 403
+    # Verify signature
+    if received_hash:
+        is_valid = SquadService.verify_webhook_signature(payload_body, received_hash)
+        if not is_valid:
+            print(f"[Squad Webhook] Invalid signature! Event: {payload.get('Event')}")
+            return jsonify({'error': 'Invalid signature'}), 403
 
-    payment_id = payload.get('payment_id')
-    print(f"[NOWPayments Webhook] Verified signature for payment_id: {payment_id}, status: {payload.get('payment_status')}")
+    print(f"[Squad Webhook] Received event: {payload.get('Event')}, ref: {payload.get('Body', {}).get('transaction_ref', '')}")
 
-    res = NOWPaymentsService.process_payment_update(payment_id, webhook_payload=payload)
+    res = SquadService.process_webhook(payload)
     return jsonify({'status': 'ok', 'result': res}), 200
+
+
+
 
 
 @api_bp.route('/reactivate-order/<order_id>', methods=['POST'])

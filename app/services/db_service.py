@@ -1067,114 +1067,72 @@ class DBService:
             print(f"[DBService] reject_deposit_admin error: {e}")
             return {'success': False, 'message': f"Error rejecting deposit: {e}"}
 
-    @staticmethod
-    def record_pending_crypto_deposit(user_id: str, amount_usd: float, payment_id: str,
-                                      pay_address: str, pay_amount: float, pay_currency: str,
-                                      network: str = '', order_id: str = '',
-                                      extra_meta: dict = None) -> dict:
-        """Records a pending crypto deposit transaction for real-time tracking."""
-        ref = f"NP-{payment_id}"
-        meta = {
-            'payment_id': str(payment_id),
-            'pay_address': pay_address,
-            'pay_amount': pay_amount,
-            'pay_currency': pay_currency,
-            'network': network,
-            'order_id': order_id,
-            'gateway': 'nowpayments'
-        }
-        if extra_meta:
-            meta.update(extra_meta)
-
-        desc = f"Crypto Deposit ({pay_currency.upper()}) via NOWPayments"
-        admin = get_supabase_admin()
-        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
-
-        if not admin or not DBService._is_uuid(user_id):
-            existing = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
-            if existing:
-                return {'success': True, 'transaction': existing}
-            mock_tx = {
-                'id': f"np-tx-{len(mock_db.transactions) + 1}",
-                'user_id': user_id,
-                'amount': amount_usd,
-                'type': 'deposit',
-                'status': 'pending',
-                'reference': ref,
-                'description': desc,
-                'payment_channel': 'crypto_nowpayments',
-                'metadata': meta,
-                'created_at': now_iso
-            }
-            mock_db.transactions.insert(0, mock_tx)
-            return {'success': True, 'transaction': mock_tx}
-
-        try:
-            chk = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
-            if chk.data:
-                return {'success': True, 'transaction': chk.data[0]}
-
-            tx_data = {
-                'user_id': user_id,
-                'amount': amount_usd,
-                'type': 'deposit',
-                'status': 'pending',
-                'reference': ref,
-                'description': desc,
-                'payment_channel': 'crypto_nowpayments',
-                'metadata': meta
-            }
-            ins = admin.table('wallet_transactions').insert(tx_data).execute()
-            created_tx = ins.data[0] if ins.data else tx_data
-            return {'success': True, 'transaction': created_tx}
-        except Exception as e:
-            print(f"[DBService] record_pending_crypto_deposit error: {e}")
-            return {'success': False, 'message': str(e)}
 
     @staticmethod
     def get_crypto_deposit_by_payment_id(payment_id: str, user_id: str = None) -> dict:
-        """Looks up a crypto deposit transaction by its NOWPayments payment ID."""
-        ref = f"NP-{payment_id}"
+        """Looks up a crypto deposit transaction by payment UUID (Cryptomus or NowPayments)."""
+        # Try both Cryptomus (CM-) and NowPayments (NP-) reference prefixes
+        refs_to_try = [f"CM-{payment_id}", f"NP-{payment_id}"]
         admin = get_supabase_admin()
         if admin:
             try:
-                q = admin.table('wallet_transactions').select('*').eq('reference', ref)
+                for ref in refs_to_try:
+                    q = admin.table('wallet_transactions').select('*').eq('reference', ref)
+                    if user_id:
+                        q = q.eq('user_id', user_id)
+                    res = q.limit(1).execute()
+                    if res.data:
+                        return res.data[0]
+                # Also try metadata-based lookup
+                q2 = admin.table('wallet_transactions').select('*').eq('metadata->>payment_id', str(payment_id))
                 if user_id:
-                    q = q.eq('user_id', user_id)
-                res = q.limit(1).execute()
-                if res.data:
-                    return res.data[0]
+                    q2 = q2.eq('user_id', user_id)
+                res2 = q2.limit(1).execute()
+                if res2.data:
+                    return res2.data[0]
             except Exception as e:
                 print(f"[DBService] get_crypto_deposit_by_payment_id error: {e}")
 
-        tx = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
-        if tx and (not user_id or tx.get('user_id') == user_id):
-            return tx
+        for ref in refs_to_try:
+            tx = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
+            if tx and (not user_id or tx.get('user_id') == user_id):
+                return tx
         return None
+
+
 
     @staticmethod
     def complete_crypto_deposit(payment_id: str, actually_paid: float = None,
-                                notes: str = 'Automated NOWPayments IPN verification',
+                                notes: str = 'Automated crypto IPN verification',
                                 metadata_update: dict = None) -> dict:
         """
-        Idempotently marks a NOWPayments crypto deposit as completed and credits the user's wallet.
-        Guarantees protection against double-crediting.
+        Idempotently marks a crypto deposit (Cryptomus or NowPayments) as completed
+        and credits the user's wallet. Guarantees protection against double-crediting.
         """
-        ref = f"NP-{payment_id}"
+        # Support both Cryptomus (CM-) and NowPayments (NP-) prefixes
+        refs_to_try = [f"CM-{payment_id}", f"NP-{payment_id}"]
         admin = get_supabase_admin()
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
         if admin:
             try:
-                tx_res = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
-                if not tx_res.data:
+                tx_res = None
+                for ref in refs_to_try:
+                    chk = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
+                    if chk.data:
+                        tx_res = chk
+                        break
+
+                if not tx_res or not tx_res.data:
                     tx_res = admin.table('wallet_transactions').select('*').eq('metadata->>payment_id', str(payment_id)).limit(1).execute()
 
                 if not tx_res.data:
                     # Check mock fallback (e.g. demo users or local tests)
-                    tx_mock = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
+                    tx_mock = next((t for t in mock_db.transactions
+                                    if t.get('reference') in refs_to_try or
+                                    t.get('metadata', {}).get('payment_id') == str(payment_id)), None)
                     if not tx_mock:
-                        return {'success': False, 'message': f'Transaction for NOWPayments ID {payment_id} not found.'}
+                        return {'success': False, 'message': f'Transaction for payment ID {payment_id} not found.'}
                 else:
                     tx_mock = None
 
@@ -1183,6 +1141,7 @@ class DBService:
                     tx_id = tx['id']
                     user_id = tx['user_id']
                     amount_usd = float(tx.get('amount', 0.00))
+
 
                     if tx.get('status') == 'completed':
                         return {'success': True, 'already_completed': True, 'amount': amount_usd, 'user_id': user_id}
@@ -1303,25 +1262,307 @@ class DBService:
 
     @staticmethod
     def fail_crypto_deposit(payment_id: str, reason: str = 'Payment expired or failed in gateway') -> dict:
-        """Marks a pending crypto deposit as failed/cancelled."""
-        ref = f"NP-{payment_id}"
+        """Marks a pending crypto deposit (Cryptomus or NowPayments) as failed/cancelled."""
+        refs_to_try = [f"CM-{payment_id}", f"NP-{payment_id}"]
         admin = get_supabase_admin()
         if admin:
             try:
-                tx_res = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
-                if tx_res.data:
-                    tx = tx_res.data[0]
-                    if tx.get('status') != 'completed':
-                        meta = tx.get('metadata') or {}
-                        meta['failure_reason'] = reason
-                        admin.table('wallet_transactions').update({
-                            'status': 'failed',
-                            'metadata': meta
-                        }).eq('id', tx['id']).execute()
+                for ref in refs_to_try:
+                    tx_res = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
+                    if tx_res.data:
+                        tx = tx_res.data[0]
+                        if tx.get('status') != 'completed':
+                            meta = tx.get('metadata') or {}
+                            meta['failure_reason'] = reason
+                            admin.table('wallet_transactions').update({
+                                'status': 'failed',
+                                'metadata': meta
+                            }).eq('id', tx['id']).execute()
                         return {'success': True}
             except Exception as e:
                 print(f"[DBService] fail_crypto_deposit error: {e}")
         return {'success': False}
+
+
+    # =========================================================================
+    # SQUAD VIRTUAL ACCOUNT MANAGEMENT
+    # =========================================================================
+
+    @staticmethod
+    def get_squad_virtual_account(user_id: str) -> dict:
+        """Fetch the user's dedicated Squad virtual account (if it exists)."""
+        admin = get_supabase_admin()
+        if not admin or not DBService._is_uuid(user_id):
+            return None
+        try:
+            res = admin.table('squad_virtual_accounts') \
+                .select('*') \
+                .eq('user_id', user_id) \
+                .limit(1) \
+                .execute()
+            return res.data[0] if res.data else None
+        except Exception as e:
+            print(f"[DBService] get_squad_virtual_account error: {e}")
+            return None
+
+    @staticmethod
+    def save_squad_virtual_account(user_id: str, customer_identifier: str,
+                                    account_number: str, account_name: str,
+                                    bank_name: str, bank_code: str = '',
+                                    raw_response: dict = None) -> dict:
+        """Saves or updates the user's dedicated Squad virtual account."""
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        row = {
+            'user_id': user_id,
+            'customer_identifier': customer_identifier,
+            'account_number': account_number,
+            'account_name': account_name,
+            'bank_name': bank_name,
+            'bank_code': bank_code or '',
+            'is_active': True,
+            'squad_response': raw_response or {},
+            'updated_at': now_iso
+        }
+        if not admin or not DBService._is_uuid(user_id):
+            return {'success': True, 'mock': True, 'data': row}
+        try:
+            # Upsert by user_id
+            res = admin.table('squad_virtual_accounts') \
+                .upsert(row, on_conflict='user_id') \
+                .execute()
+            return {'success': True, 'data': res.data[0] if res.data else row}
+        except Exception as e:
+            print(f"[DBService] save_squad_virtual_account error: {e}")
+            return {'success': False, 'message': str(e)}
+
+    @staticmethod
+    def get_user_by_virtual_account(account_number: str) -> str:
+        """Returns the user_id associated with a Squad virtual account number."""
+        admin = get_supabase_admin()
+        if not admin:
+            return None
+        try:
+            res = admin.table('squad_virtual_accounts') \
+                .select('user_id') \
+                .eq('account_number', account_number) \
+                .eq('is_active', True) \
+                .limit(1) \
+                .execute()
+            return res.data[0]['user_id'] if res.data else None
+        except Exception as e:
+            print(f"[DBService] get_user_by_virtual_account error: {e}")
+            return None
+
+    @staticmethod
+    def transaction_exists(reference: str) -> bool:
+        """Checks if a wallet transaction with this reference already exists (idempotency guard)."""
+        admin = get_supabase_admin()
+        if not admin:
+            return any(t.get('reference') == reference for t in mock_db.transactions)
+        try:
+            res = admin.table('wallet_transactions') \
+                .select('id') \
+                .eq('reference', reference) \
+                .limit(1) \
+                .execute()
+            return bool(res.data)
+        except Exception as e:
+            print(f"[DBService] transaction_exists error: {e}")
+            return False
+
+    @staticmethod
+    def get_transaction_by_reference(reference: str) -> dict:
+        """Fetch a wallet transaction by its reference key."""
+        admin = get_supabase_admin()
+        if not admin:
+            return next((t for t in mock_db.transactions if t.get('reference') == reference), None)
+        try:
+            res = admin.table('wallet_transactions') \
+                .select('*') \
+                .eq('reference', reference) \
+                .limit(1) \
+                .execute()
+            return res.data[0] if res.data else None
+        except Exception as e:
+            print(f"[DBService] get_transaction_by_reference error: {e}")
+            return None
+
+    @staticmethod
+    def record_pending_squad_card_payment(user_id: str, amount_ngn: float, amount_usd: float,
+                                           reference: str, user_email: str = '') -> dict:
+        """Records a pending Squad card payment transaction."""
+        desc = f"Card Payment ₦{amount_ngn:,.2f} (${amount_usd:.2f})"
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        meta = {
+            'gateway': 'squad',
+            'payment_channel': 'card',
+            'amount_ngn': amount_ngn,
+            'user_email': user_email
+        }
+
+        if not admin or not DBService._is_uuid(user_id):
+            mock_tx = {
+                'id': f"sq-card-{len(mock_db.transactions) + 1}",
+                'user_id': user_id,
+                'amount': amount_usd,
+                'type': 'deposit',
+                'status': 'pending',
+                'reference': reference,
+                'description': desc,
+                'payment_channel': 'card',
+                'metadata': meta,
+                'created_at': now_iso
+            }
+            mock_db.transactions.insert(0, mock_tx)
+            return {'success': True, 'transaction': mock_tx}
+
+        try:
+            chk = admin.table('wallet_transactions').select('*').eq('reference', reference).limit(1).execute()
+            if chk.data:
+                return {'success': True, 'transaction': chk.data[0]}
+
+            tx_data = {
+                'user_id': user_id,
+                'amount': amount_usd,
+                'type': 'deposit',
+                'status': 'pending',
+                'reference': reference,
+                'description': desc,
+                'payment_channel': 'card',
+                'metadata': meta
+            }
+            ins = admin.table('wallet_transactions').insert(tx_data).execute()
+            return {'success': True, 'transaction': ins.data[0] if ins.data else tx_data}
+        except Exception as e:
+            print(f"[DBService] record_pending_squad_card_payment error: {e}")
+            return {'success': False, 'message': str(e)}
+
+    @staticmethod
+    def complete_pending_payment(reference: str, amount_ngn: float = None,
+                                  amount_usd: float = None) -> dict:
+        """Marks a pending payment transaction as completed and credits the user wallet."""
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        if not admin:
+            tx = next((t for t in mock_db.transactions if t.get('reference') == reference), None)
+            if not tx:
+                return {'success': False, 'message': 'Transaction not found.'}
+            if tx.get('status') == 'completed':
+                return {'success': True, 'already_completed': True}
+            tx['status'] = 'completed'
+            tx['verified_at'] = now_iso
+            user_id = tx['user_id']
+            credit = float(tx.get('amount', 0)) if not amount_usd else amount_usd
+            wallet = mock_db.wallets.get(user_id, {'balance': 0.00})
+            wallet['balance'] += credit
+            mock_db.wallets[user_id] = wallet
+            return {'success': True, 'new_balance': wallet['balance']}
+
+        try:
+            tx_res = admin.table('wallet_transactions').select('*').eq('reference', reference).limit(1).execute()
+            if not tx_res.data:
+                return {'success': False, 'message': f'Transaction {reference} not found.'}
+
+            tx = tx_res.data[0]
+            tx_id = tx['id']
+            user_id = tx['user_id']
+            credit_amount = float(amount_usd or tx.get('amount', 0))
+
+            if tx.get('status') == 'completed':
+                return {'success': True, 'already_completed': True}
+
+            meta = tx.get('metadata') or {}
+            if amount_ngn:
+                meta['amount_ngn'] = amount_ngn
+            meta['verified_at'] = now_iso
+
+            admin.table('wallet_transactions').update({
+                'status': 'completed',
+                'metadata': meta,
+                'verified_at': now_iso
+            }).eq('id', tx_id).execute()
+
+            # Credit wallet
+            w_res = admin.table('wallets').select('balance').eq('user_id', user_id).limit(1).execute()
+            cur_bal = float(w_res.data[0].get('balance', 0)) if w_res.data else 0.0
+            new_bal = round(cur_bal + credit_amount, 2)
+            admin.table('wallets').update({
+                'balance': new_bal,
+                'updated_at': now_iso
+            }).eq('user_id', user_id).execute()
+
+            return {'success': True, 'new_balance': new_bal, 'user_id': user_id}
+        except Exception as e:
+            print(f"[DBService] complete_pending_payment error: {e}")
+            return {'success': False, 'message': str(e)}
+
+    @staticmethod
+    def record_pending_crypto_deposit(user_id: str, amount_usd: float, payment_id: str,
+                                      pay_address: str, pay_amount: float, pay_currency: str,
+                                      network: str = '', order_id: str = '',
+                                      extra_meta: dict = None) -> dict:
+        """Records a pending crypto deposit transaction for real-time tracking."""
+        gateway = (extra_meta or {}).get('gateway', 'cryptomus')
+        ref = f"CM-{payment_id}" if gateway == 'cryptomus' else f"NP-{payment_id}"
+        meta = {
+            'payment_id': str(payment_id),
+            'pay_address': pay_address,
+            'pay_amount': pay_amount,
+            'pay_currency': pay_currency,
+            'network': network,
+            'order_id': order_id,
+            'gateway': gateway
+        }
+        if extra_meta:
+            meta.update(extra_meta)
+
+        desc = f"Crypto Deposit ({pay_currency.upper()}) via {gateway.title()}"
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        if not admin or not DBService._is_uuid(user_id):
+            existing = next((t for t in mock_db.transactions if t.get('reference') == ref), None)
+            if existing:
+                return {'success': True, 'transaction': existing}
+            mock_tx = {
+                'id': f"cm-tx-{len(mock_db.transactions) + 1}",
+                'user_id': user_id,
+                'amount': amount_usd,
+                'type': 'deposit',
+                'status': 'pending',
+                'reference': ref,
+                'description': desc,
+                'payment_channel': f'crypto_{gateway}',
+                'metadata': meta,
+                'created_at': now_iso
+            }
+            mock_db.transactions.insert(0, mock_tx)
+            return {'success': True, 'transaction': mock_tx}
+
+        try:
+            chk = admin.table('wallet_transactions').select('*').eq('reference', ref).limit(1).execute()
+            if chk.data:
+                return {'success': True, 'transaction': chk.data[0]}
+
+            tx_data = {
+                'user_id': user_id,
+                'amount': amount_usd,
+                'type': 'deposit',
+                'status': 'pending',
+                'reference': ref,
+                'description': desc,
+                'payment_channel': f'crypto_{gateway}',
+                'metadata': meta
+            }
+            ins = admin.table('wallet_transactions').insert(tx_data).execute()
+            created_tx = ins.data[0] if ins.data else tx_data
+            return {'success': True, 'transaction': created_tx}
+        except Exception as e:
+            print(f"[DBService] record_pending_crypto_deposit error: {e}")
+            return {'success': False, 'message': str(e)}
 
     @staticmethod
     def get_all_orders_admin(status_filter: str = None, limit: int = 100) -> list:
@@ -1338,7 +1579,7 @@ class DBService:
             if status_filter and status_filter != 'all':
                 q = q.eq('status', status_filter)
             res = q.order('created_at', desc=True).limit(limit).execute()
-            
+
             orders = res.data or []
             for o in orders:
                 prof = o.get('profiles') or {}

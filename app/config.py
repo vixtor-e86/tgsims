@@ -20,8 +20,19 @@ class Config:
     DEV_PASSWORD = os.getenv('DEV_PASSWORD', 'Icui4cu')
     TEXTVERIFIED_API_KEY = (os.getenv('TEXTVERIFIED_API_KEY') or '').strip()
     TEXTVERIFIED_USERNAME = (os.getenv('TEXTVERIFIED_USERNAME') or '').strip()
+
+    # Legacy NowPayments (kept for backward compat, no longer primary)
     NOWPAYMENTS_API_KEY = (os.getenv('NOWPAYMENTS_API_KEY') or '').strip()
     NOWPAYMENTS_IPN_SECRET = (os.getenv('NOWPAYMENTS_IPN_SECRET') or '').strip()
     NOWPAYMENTS_BASE_URL = (os.getenv('NOWPAYMENTS_BASE_URL') or 'https://api.nowpayments.io/v1').strip().rstrip('/')
-    SITE_LOCK_ENABLED = os.getenv('SITE_LOCK_ENABLED', 'false').lower() in ('true', '1', 'yes')
 
+    # Cryptomus (primary crypto gateway - $1 minimum)
+    CRYPTOMUS_MERCHANT_ID = (os.getenv('CRYPTOMUS_MERCHANT_ID') or '').strip()
+    CRYPTOMUS_PAYMENT_API_KEY = (os.getenv('CRYPTOMUS_PAYMENT_API_KEY') or '').strip()
+    CRYPTOMUS_PAYOUT_API_KEY = (os.getenv('CRYPTOMUS_PAYOUT_API_KEY') or '').strip()
+
+    # Squad (NGN payment gateway - virtual accounts, card, bank transfer)
+    SQUAD_SECRET_KEY = (os.getenv('SQUAD_SECRET_KEY') or '').strip()
+    SQUAD_PUBLIC_KEY = (os.getenv('SQUAD_PUBLIC_KEY') or '').strip()
+
+    SITE_LOCK_ENABLED = os.getenv('SITE_LOCK_ENABLED', 'false').lower() in ('true', '1', 'yes')
