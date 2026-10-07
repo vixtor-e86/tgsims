@@ -190,7 +190,7 @@ class SquadService:
             'currency': 'NGN',
             'transaction_ref': order_ref,
             'callback_url': callback_url or 'https://tgsims.com/api/payments/squad/card/callback',
-            'payment_channels': ['card'],
+            'payment_channels': ['card', 'bank', 'ussd', 'transfer'],
             'is_recurring': False,
             'pass_charge': False,  # Platform absorbs fee
         }
@@ -319,8 +319,8 @@ class SquadService:
 
             return credit_res
 
-        # --- Card Payment Success ---
-        elif event in ('charge.success', 'transaction.success') and body.get('transaction_ref', '').startswith('TGS-CARD-'):
+        # --- Card / Bank Transfer / Squad Checkout Payment Success ---
+        elif event in ('charge.success', 'transaction.success') or (body.get('transaction_ref', '').startswith('TGS-')):
             squad_ref = body.get('transaction_ref') or body.get('reference') or ''
             amount_ngn = float(body.get('amount') or 0) / 100
             user_email = body.get('email') or ''

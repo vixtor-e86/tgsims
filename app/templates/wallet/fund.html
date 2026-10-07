@@ -16,6 +16,7 @@
      data-squad-active="{{ 'true' if squad_active else 'false' }}"
      data-crypto-active="{{ 'true' if crypto_active else 'false' }}"
      data-crypto-min="{{ crypto_min }}"
+     data-ngn-per-usd="{{ NGN_PER_USD }}"
      data-squad-public-key="{{ squad_public_key }}">
 
   <section class="card card-pad">
@@ -28,22 +29,8 @@
              min="0" step="any" placeholder="0.00" autocomplete="off" data-amount-input>
     </div>
 
-    {# ---- Default Naira presets (Card & Bank) ---- #}
-    <div class="preset-row" id="default-presets" data-default-presets>
-      {% for p in presets_ngn %}
-      <button type="button" class="preset-btn" data-preset
-              data-ngn="{{ p }}" data-usd="{{ '%.4f'|format(p / NGN_PER_USD) }}" data-decimals="0">₦{{ '{:,.0f}'.format(p) }}</button>
-      {% endfor %}
-    </div>
-
-    {# ---- Crypto presets (small amounts now supported - $1 minimum) ---- #}
-    <div class="preset-row" id="crypto-presets" data-crypto-presets style="display: none;">
-      <button type="button" class="preset-btn" data-preset data-usd="1.0000" data-decimals="2">$1</button>
-      <button type="button" class="preset-btn" data-preset data-usd="5.0000" data-decimals="2">$5</button>
-      <button type="button" class="preset-btn" data-preset data-usd="10.0000" data-decimals="2">$10</button>
-      <button type="button" class="preset-btn" data-preset data-usd="20.0000" data-decimals="2">$20</button>
-      <button type="button" class="preset-btn" data-preset data-usd="50.0000" data-decimals="2">$50</button>
-    </div>
+    {# ---- Dynamic amount presets based on active currency ---- #}
+    <div class="preset-row" id="amount-presets" data-amount-presets></div>
 
     {# Crypto minimum warning #}
     <div id="crypto-min-warning" style="display: none; font-size: 0.8rem; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--r-sm); padding: 0.5rem 0.75rem; margin-top: 0.65rem; font-weight: 600; align-items: center; gap: 6px;">
@@ -147,44 +134,34 @@
       </div>
     </div>
 
-    {# ---- CARD / BANK TRANSFER ---- #}
+    {# ---- CARD / BANK TRANSFER (Squad) ---- #}
     <div class="card-bank-fields" data-card-bank-fields style="display: none; margin-top: var(--sp-4);">
-      {# Sub-method selector: Card or One-time Bank Transfer #}
-      <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-        <button type="button" class="btn btn-secondary btn-sm is-active" data-sub-method="card"
-                style="flex: 1; font-weight: 700;" id="sub-card-btn">
-          {{ icon('card') }} Card Payment
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm" data-sub-method="bank"
-                style="flex: 1; font-weight: 700;" id="sub-bank-btn">
-          {{ icon('bank') }} Bank Transfer
-        </button>
-      </div>
-
-      {# Card section #}
-      <div id="card-section" data-card-section>
-        {% if squad_active %}
-          <div style="padding: 0.75rem 1rem; background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.2); border-radius: var(--r-md); font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-            {{ icon('lock') }} Secure card processing. A 1.5% processing fee applies.
+      {% if squad_active %}
+        <div style="padding: 1rem 1.15rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); margin-bottom: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem; color: var(--text);">
+            Instant Bank Transfer, Card & USSD
           </div>
-        {% else %}
-          <p style="font-size: 0.85rem; color: var(--text-dim);">Card payments are being set up. Please use another method.</p>
-        {% endif %}
-      </div>
-
-      {# One-time bank transfer section #}
-      <div id="bank-section" data-bank-section style="display: none;">
-        {% if squad_active %}
-          <div style="padding: 0.85rem 1rem; background: var(--surface-2); border: 1px dashed var(--border); border-radius: var(--r-md); font-size: 0.85rem; color: var(--text-dim);">
-            <strong style="color: var(--text);">One-Time Bank Transfer:</strong> Click "Generate Transfer Account" to receive a temporary account number valid for 10 minutes. Send the exact amount.
+          <div style="font-size: 0.82rem; color: var(--text-dim); line-height: 1.45;">
+            Click <strong>Confirm Deposit</strong> to open the secure Squad payment window. You can complete your deposit using:
           </div>
-          <div id="bank-transfer-result" style="display: none; margin-top: 0.75rem;"></div>
-        {% else %}
-          <p style="font-size: 0.85rem; color: var(--text-dim);">
-            {{ settings.manual_bank_details or 'Please contact support to complete manual bank wire or fund via Crypto for instant automated crediting.' }}
-          </p>
-        {% endif %}
-      </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.65rem;">
+            <span class="badge" style="background: rgba(99,102,241,0.1); color: #6366f1; border: 1px solid rgba(99,102,241,0.25); font-size: 0.78rem; padding: 0.25rem 0.6rem;">
+              💳 Debit Card (Mastercard / Visa / Verve)
+            </span>
+            <span class="badge" style="background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.25); font-size: 0.78rem; padding: 0.25rem 0.6rem;">
+              🏦 Instant Bank Transfer (GTB, OPay, etc.)
+            </span>
+            <span class="badge" style="background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); font-size: 0.78rem; padding: 0.25rem 0.6rem;">
+              📱 USSD
+            </span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 0.6rem;">
+            A standard 1.5% processor fee applies. Your wallet is credited automatically within seconds once payment completes.
+          </div>
+        </div>
+      {% else %}
+        <p style="font-size: 0.85rem; color: var(--text-dim);">Payment gateway is being configured. Please use Cryptocurrency or contact support.</p>
+      {% endif %}
     </div>
 
     {# ---- Order summary ---- #}
@@ -297,5 +274,12 @@
 
 {% block scripts %}
   {{ super() if super else '' }}
-  <script src="{{ url_for('static', filename='js/fund.js') }}?v=2"></script>
+  <script src="https://checkout.squadco.com/widget/squad.min.js"></script>
+  <script>
+    window.TgUser = {
+      email: "{{ (user.email if user else '') | e }}",
+      id: "{{ (user.id if user else '') | e }}"
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/fund.js') }}?v=3"></script>
 {% endblock %}

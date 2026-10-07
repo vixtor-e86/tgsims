@@ -47,11 +47,9 @@ def fund():
     # Presets in Naira
     presets_ngn = [1000, 5000, 10000, 25000]
 
-    # 3 payment method options: Dedicated Account, Crypto, Card/Bank Transfer
     methods = [
-        {'id': 'dedicated', 'label': 'Dedicated Account', 'note': 'Permanent virtual account', 'icon': 'bank'},
-        {'id': 'crypto', 'label': 'Cryptocurrency', 'note': 'BTC, USDT, ETH & more', 'icon': 'crypto'},
-        {'id': 'card', 'label': 'Card / Bank Transfer', 'note': 'Visa, Mastercard, Bank', 'icon': 'card'},
+        {'id': 'card', 'label': 'Bank Transfer / Card', 'note': 'Squad Checkout (Instant Bank Transfer, Card & USSD)', 'icon': 'card'},
+        {'id': 'crypto', 'label': 'Cryptocurrency', 'note': 'Instant crypto deposit via OXAPay ($1 min)', 'icon': 'crypto'},
     ]
 
     fee_rate = 0.015  # 1.5% processing fee for card

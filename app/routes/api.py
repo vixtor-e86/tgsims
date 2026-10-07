@@ -805,7 +805,7 @@ def initiate_squad_card_payment():
         return jsonify({'success': False, 'message': 'Minimum card payment is ₦100.'}), 400
 
     user_data = session.get('user', {})
-    user_email = user_data.get('email', '')
+    user_email = (user_data.get('email') or '').strip() or f"user_{str(user_id)[:8]}@tgsims.com"
 
     from app.services.settings_service import SettingsService
     settings = SettingsService.get_settings()
