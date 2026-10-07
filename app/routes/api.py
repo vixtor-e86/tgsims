@@ -812,23 +812,10 @@ def initiate_squad_card_payment():
     ngn_per_usd = float(settings.get('ngn_per_usd_rate', 1600))
     amount_usd = round(amount_ngn / ngn_per_usd, 4)
 
-    proto = request.headers.get('X-Forwarded-Proto') or request.scheme
-    host = request.headers.get('X-Forwarded-Host') or request.host
-    callback_url = f"{proto}://{host}/api/payments/squad/card/callback"
+    import uuid
+    order_ref = f"TGS-SQ-{uuid.uuid4().hex[:12].upper()}"
 
-    result = SquadService.initialize_card_payment(
-        amount_ngn=amount_ngn,
-        user_id=user_id,
-        user_email=user_email,
-        callback_url=callback_url
-    )
-
-    if not result.get('success'):
-        return jsonify({'success': False, 'message': result.get('message', 'Failed to initialize card payment.')}), 400
-
-    order_ref = result.get('reference')
-
-    # Record pending card payment in DB
+    # Record pending payment in DB
     DBService.record_pending_squad_card_payment(
         user_id=user_id,
         amount_ngn=amount_ngn,
@@ -842,7 +829,6 @@ def initiate_squad_card_payment():
         'reference': order_ref,
         'amount_ngn': amount_ngn,
         'public_key': SquadService.get_public_key(),
-        'checkout_url': result.get('checkout_url', '')
     })
 
 
