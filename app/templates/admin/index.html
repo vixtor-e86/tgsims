@@ -100,16 +100,16 @@
       <a href="{{ url_for('admin.index') }}" class="btn btn-ghost btn-sm" title="Refresh balances">{{ icon('refresh') }}</a>
     </div>
 
-    {# VirtualSMS.io Balance #}
+    {# SMS Code API Balance #}
     <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem; margin-bottom: 0.75rem;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">VirtualSMS.io API (Global Pool)</span>
-          <div style="font-size: 0.78rem; color: var(--text-muted);">145+ countries &amp; USA Basic lines</div>
+          <span style="font-weight: 700; font-size: 0.95rem; color: var(--text);">SMS Code API (US Basic &amp; Global Pool)</span>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">240+ countries &amp; 10 USA Core routes (T-Mobile, AT&amp;T, etc.)</div>
         </div>
         <div style="text-align: right;">
-          {% if virtualsms_balance or fivesim_balance %}
-            {% set bal = virtualsms_balance or fivesim_balance %}
+          {% if smscode_balance or virtualsms_balance or fivesim_balance %}
+            {% set bal = smscode_balance or virtualsms_balance or fivesim_balance %}
             <div style="font-weight: 800; font-size: 1.15rem; color: var(--hue-success);" data-usd="{{ '%.2f'|format(bal.balance) }}">
               ${{ '%.2f'|format(bal.balance) }} {{ bal.currency }}
             </div>
@@ -117,7 +117,7 @@
               ≈ ₦{{ '{:,.2f}'.format(bal.balance * settings.ngn_per_usd_rate) }}
             </div>
           {% else %}
-            <span class="badge badge-warning" style="font-size: 0.75rem;">{{ virtualsms_err or fivesim_err or 'Check API Key' }}</span>
+            <span class="badge badge-warning" style="font-size: 0.75rem;">{{ smscode_err or virtualsms_err or fivesim_err or 'Check API Key' }}</span>
           {% endif %}
         </div>
       </div>

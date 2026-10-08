@@ -58,29 +58,31 @@ def index():
     stats = DBService.get_admin_overview_stats()
     settings = SettingsService.get_settings()
 
-    # Query live VirtualSMS.io balance
-    virtualsms_balance = None
-    virtualsms_err = None
+    # Query live SMS Code balance
+    smscode_balance = None
+    smscode_err = None
     try:
-        vsc = VirtualSMSClient()
-        if vsc.is_configured:
-            bal_res = vsc.get_balance()
+        sc_client = SIMProviderService.get_smscode_client()
+        if sc_client.is_configured:
+            bal_res = sc_client.get_balance()
             if bal_res.get('success'):
-                virtualsms_balance = {
+                smscode_balance = {
                     'balance': bal_res.get('balance'),
                     'currency': bal_res.get('currency', 'USD'),
                     'usd_estimate': bal_res.get('usd_estimate', 0.0)
                 }
             else:
-                virtualsms_err = bal_res.get('message')
+                smscode_err = bal_res.get('message')
         else:
-            virtualsms_err = "API Key not configured in .env"
+            smscode_err = "API Key not configured in .env"
     except Exception as e:
-        virtualsms_err = str(e)
+        smscode_err = str(e)
 
-    # Legacy alias for backward compatibility
-    fivesim_balance = virtualsms_balance
-    fivesim_err = virtualsms_err
+    # Legacy aliases
+    virtualsms_balance = smscode_balance
+    virtualsms_err = smscode_err
+    fivesim_balance = smscode_balance
+    fivesim_err = smscode_err
 
     # Query TextVerified client status & live balance
     tv_balance = None
@@ -117,6 +119,8 @@ def index():
         'admin/index.html',
         stats=stats,
         settings=settings,
+        smscode_balance=smscode_balance,
+        smscode_err=smscode_err,
         fivesim_balance=fivesim_balance,
         fivesim_err=fivesim_err,
         virtualsms_balance=virtualsms_balance,
@@ -135,15 +139,23 @@ def index():
 
 @admin_bp.route('/pricing', methods=['GET', 'POST'])
 def pricing():
-    """Manage USD/NGN exchange rate, 5sim markup %, TextVerified markup %, and Reactivation fee."""
+    """Manage USD/NGN exchange rate, SMS Code markup %, TextVerified markup %, and Reactivation fee."""
     if request.method == 'POST':
         action = request.form.get('action')
 
         if action == 'update_settings':
             try:
                 ngn_rate = float(request.form.get('ngn_per_usd_rate', 1600.00))
-                fivesim_pct = float(request.form.get('virtualsms_markup_percent') or request.form.get('fivesim_markup_percent', 30.00))
-                fivesim_floor = float(request.form.get('virtualsms_min_profit_usd') or request.form.get('fivesim_min_profit_usd', 0.30))
+                smscode_pct = float(
+                    request.form.get('smscode_markup_percent')
+                    or request.form.get('virtualsms_markup_percent')
+                    or request.form.get('fivesim_markup_percent', 30.00)
+                )
+                smscode_floor = float(
+                    request.form.get('smscode_min_profit_usd')
+                    or request.form.get('virtualsms_min_profit_usd')
+                    or request.form.get('fivesim_min_profit_usd', 0.30)
+                )
                 tv_pct = float(request.form.get('textverified_markup_percent', 25.00))
                 tv_floor = float(request.form.get('textverified_min_profit_usd', 0.50))
                 react_fee = float(request.form.get('reactivation_fee_usd', 1.00))
@@ -154,10 +166,12 @@ def pricing():
 
                 SettingsService.update_settings({
                     'ngn_per_usd_rate': ngn_rate,
-                    'virtualsms_markup_percent': fivesim_pct,
-                    'virtualsms_min_profit_usd': fivesim_floor,
-                    'fivesim_markup_percent': fivesim_pct,
-                    'fivesim_min_profit_usd': fivesim_floor,
+                    'smscode_markup_percent': smscode_pct,
+                    'smscode_min_profit_usd': smscode_floor,
+                    'virtualsms_markup_percent': smscode_pct,
+                    'virtualsms_min_profit_usd': smscode_floor,
+                    'fivesim_markup_percent': smscode_pct,
+                    'fivesim_min_profit_usd': smscode_floor,
                     'textverified_markup_percent': tv_pct,
                     'textverified_min_profit_usd': tv_floor,
                     'reactivation_fee_usd': react_fee,
@@ -173,9 +187,9 @@ def pricing():
         elif action == 'add_override':
             svc_code = request.form.get('service_code', '').strip().lower()
             svc_name = request.form.get('service_name', '').strip()
-            prov_type = request.form.get('provider_type', 'virtualsms').strip().lower()
-            if prov_type == '5sim':
-                prov_type = 'virtualsms'
+            prov_type = request.form.get('provider_type', 'smscode').strip().lower()
+            if prov_type in ('5sim', 'virtualsms'):
+                prov_type = 'smscode'
             try:
                 override_price = float(request.form.get('override_price_usd', 0.00))
                 notes = request.form.get('notes', '').strip()
@@ -193,16 +207,16 @@ def pricing():
                 SettingsService.delete_price_override(override_id)
                 flash('Price override removed.', 'info')
 
-        elif action in ('sync_5sim_prices', 'sync_virtualsms_prices'):
+        elif action in ('sync_smscode_prices', 'sync_5sim_prices', 'sync_virtualsms_prices'):
             try:
-                from scripts.sync_virtualsms_prices import sync_all
+                from scripts.sync_smscode_prices import sync_all
                 ok = sync_all()
                 if ok:
-                    flash('Successfully updated live VirtualSMS wholesale prices across all countries and services! Prices are now 100% current.', 'success')
+                    flash('Successfully updated live SMS Code wholesale prices across all countries and services! Prices are now 100% current.', 'success')
                 else:
-                    flash('Failed to reach VirtualSMS pricing server. Please try again in a few moments.', 'error')
+                    flash('Failed to reach SMS Code pricing server. Please check connection and try again.', 'error')
             except Exception as e:
-                flash(f'Error syncing VirtualSMS wholesale prices: {e}', 'error')
+                flash(f'Error syncing SMS Code wholesale prices: {e}', 'error')
 
         elif action == 'update_rental_price':
             service_code = request.form.get('service_code', '').strip().lower()

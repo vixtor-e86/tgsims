@@ -11,84 +11,101 @@
   </div>
 </div>
 
-<div class="grid-main-aside buy-grid"
+<div class="buy-three-container"
      data-buy
      data-catalog='{{ catalog|tojson }}'
+     data-operators-endpoint="/api/catalog/operators"
      data-endpoint="{{ url_for('api.purchase_sim') }}">
 
-  {# ---- Left column: selection steps ---- #}
-  <div>
-    {# Step 1: Country #}
-    <section class="card card-pad buy-step">
-      <div class="step-head">
-        <div class="step-head-title">
+  {# ---- List 1: Country List ---- #}
+  <div class="buy-column buy-column-country">
+    <div class="buy-column-head">
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
           <span class="step-num">1</span>
-          <h2 class="step-title">Select Country</h2>
-        </div>
-        <div class="input-group step-search">
-          <span class="input-icon">{{ icon('search') }}</span>
-          <input class="input" type="search" placeholder="Search countries..."
-                 data-country-search aria-label="Search countries">
-        </div>
+          <span>Country</span>
+        </h2>
+        <span class="badge badge-neutral" data-country-count>0</span>
       </div>
-      <div class="tile-grid-scroll">
-        <div class="tile-grid" data-country-grid></div>
+      <div class="input-group buy-column-search">
+        <span class="input-icon">{{ icon('search') }}</span>
+        <input class="input" type="search" placeholder="Search countries..."
+               data-country-search aria-label="Search countries">
       </div>
-    </section>
-
-    {# Step 2: Service #}
-    <section class="card card-pad buy-step">
-      <div class="step-head">
-        <div class="step-head-title">
-          <span class="step-num">2</span>
-          <h2 class="step-title">Select Service</h2>
-        </div>
-        <div class="input-group step-search">
-          <span class="input-icon">{{ icon('search') }}</span>
-          <input class="input" type="search" placeholder="Search services..."
-                 data-service-search aria-label="Search services">
-        </div>
-      </div>
-      <div class="tile-grid-scroll">
-        <div class="tile-grid" data-service-grid></div>
-      </div>
-    </section>
+    </div>
+    <div class="buy-column-list" data-country-list></div>
   </div>
 
-  {# ---- Right column: review & purchase ---- #}
-  <aside>
-    <section class="card card-pad review-card">
-      <div class="step-head-title" style="margin-bottom: var(--sp-5);">
-        <span class="step-num">3</span>
-        <h2 class="step-title">Review &amp; Purchase</h2>
+  {# ---- List 2: Service List ---- #}
+  <div class="buy-column buy-column-service">
+    <div class="buy-column-head">
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">2</span>
+          <span>Service</span>
+        </h2>
+        <span class="badge badge-neutral" data-service-count>0</span>
+      </div>
+      <div class="input-group buy-column-search">
+        <span class="input-icon">{{ icon('search') }}</span>
+        <input class="input" type="search" placeholder="Search services..."
+               data-service-search aria-label="Search services">
+      </div>
+    </div>
+    <div class="buy-column-list" data-service-list></div>
+  </div>
+
+  {# ---- List 3: Operators & Review / Checkout ---- #}
+  <div class="buy-column buy-column-operators">
+    <div class="buy-column-head">
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">3</span>
+          <span>Carrier &amp; Checkout</span>
+        </h2>
+        <span class="badge badge-brand" data-op-count>Active</span>
+      </div>
+      <p style="margin:0; font-size:0.75rem; color:var(--text-muted);">
+        Select carrier route for high delivery rate.
+      </p>
+    </div>
+
+    {# Operator Routes scrollable area #}
+    <div class="buy-column-list" data-operator-list></div>
+
+    {# Review & Checkout summary at bottom #}
+    <div class="buy-checkout-card">
+      <div class="buy-checkout-summary-row">
+        <span class="k">Country</span>
+        <span class="v" data-review-country>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Service</span>
+        <span class="v" data-review-service>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Carrier Route</span>
+        <span class="v" data-review-carrier>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Delivery</span>
+        <span class="badge badge-success">Instant Delivery</span>
       </div>
 
-      <div class="review-rows">
-        <div class="review-row">
-          <span class="k">Country</span>
-          <span class="v is-empty" data-review-country>-</span>
-        </div>
-        <div class="review-row">
-          <span class="k">Service</span>
-          <span class="v is-empty" data-review-service>-</span>
-        </div>
-        <div class="review-row">
-          <span class="k">Estimated Delivery</span>
-          <span class="badge badge-success" data-review-delivery>Instant</span>
-        </div>
-      </div>
-
-      <div class="review-total">
-        <span class="review-total-label">Total Price</span>
-        <span class="review-total-value" data-review-price data-usd="0">₦0.00</span>
+      <div class="buy-checkout-total">
+        <span style="font-weight:700; font-size:0.95rem; color:var(--text);">Total Price</span>
+        <span class="buy-checkout-total-val" data-review-price data-usd="0">₦0.00</span>
       </div>
 
       <button class="btn btn-primary btn-block btn-lg" data-buy-submit type="button" disabled>
-        {{ icon('cart') }} Order Number Now
+        {{ icon('bolt') }} Order Number Now
       </button>
-      <p class="review-secure">{{ icon('lock') }} Secure Payment</p>
-    </section>
-  </aside>
+      <p style="text-align:center; margin:0; font-size:0.72rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center; gap:4px;">
+        {{ icon('refresh') }} Auto-refund guarantee if no SMS received
+      </p>
+    </div>
+  </div>
+
 </div>
 
 {# ---- Why choose TGSims? ---- #}

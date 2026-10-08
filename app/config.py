@@ -9,12 +9,15 @@ class Config:
     SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '')
     SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
     RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
-    VIRTUALSMS_API_KEY = (os.getenv('VIRTUALSMS_API_KEY') or '').strip()
-    VIRTUALSMS_BASE_URL = (os.getenv('VIRTUALSMS_BASE_URL') or 'https://virtualsms.io/api/v1').strip().rstrip('/')
-    FIVESIM_API_KEY = (os.getenv('FIVESIM_API_KEY') or VIRTUALSMS_API_KEY or os.getenv('SIM_PROVIDER_API_KEY', '')).strip()
-    FIVESIM_BASE_URL = (os.getenv('FIVESIM_BASE_URL') or VIRTUALSMS_BASE_URL or 'https://virtualsms.io/api/v1').strip().rstrip('/')
-    SIM_PROVIDER_API_KEY = VIRTUALSMS_API_KEY or FIVESIM_API_KEY
-    SIM_PROVIDER_BASE_URL = VIRTUALSMS_BASE_URL or FIVESIM_BASE_URL
+    SMSCODE_API_KEY = (os.getenv('SMSCODE_API_KEY') or os.getenv('SIM_PROVIDER_API_KEY', '')).strip()
+    SMSCODE_BASE_URL = (os.getenv('SMSCODE_BASE_URL') or os.getenv('SIM_PROVIDER_BASE_URL', 'https://api.smscode.gg/v2')).strip().rstrip('/')
+    SIM_PROVIDER_API_KEY = SMSCODE_API_KEY
+    SIM_PROVIDER_BASE_URL = SMSCODE_BASE_URL
+    # Legacy alias
+    VIRTUALSMS_API_KEY = SMSCODE_API_KEY
+    VIRTUALSMS_BASE_URL = SMSCODE_BASE_URL
+    FIVESIM_API_KEY = SMSCODE_API_KEY
+    FIVESIM_BASE_URL = SMSCODE_BASE_URL
     PAYMENT_SECRET_KEY = os.getenv('PAYMENT_SECRET_KEY', '')
     PAYMENT_PUBLIC_KEY = os.getenv('PAYMENT_PUBLIC_KEY', '')
     DEV_PASSWORD = os.getenv('DEV_PASSWORD', 'Icui4cu')

@@ -1,8 +1,8 @@
 /* ==========================================================================
    us_canada.js  -  Buy US Number (Basic & Reliable Dedicated Lines)
    Handles dual Quick Buy boxes:
-     1. Basic Package (5sim multi-route options with different price tags)
-     2. Reliable Package (TextVerified 100% Non-VoIP dedicated cellular line)
+     1. Basic Package (SMS Code multi-route options with different price tags)
+     2. Reliable Package (Dedicated 100% Non-VoIP cellular lines)
    Features real-time search filtering, dynamic route pricing, currency flip,
    and instant checkout allocation.
    ========================================================================== */
@@ -83,13 +83,52 @@
     var clearBtn = boxEl.querySelector("[data-clear-btn]");
     var dropdownMenu = boxEl.querySelector("[data-dropdown-menu]");
     var selectEl = boxEl.querySelector("[data-service-select]");
+    var operatorSelect = boxEl.querySelector("[data-operator-select]");
+    var operatorField = boxEl.querySelector("[data-operator-field]");
     var priceEl = boxEl.querySelector("[data-price-val]");
     var submitBtn = boxEl.querySelector("[data-submit-btn]");
     var allServices = opts.services || [];
     var currentFiltered = allServices.slice();
     var selectedItem = null;
+    var selectedOperator = null;
     var highlightedIndex = -1;
     var isOpen = false;
+
+    function renderOperatorsForService(s) {
+      if (!operatorSelect) return;
+      if (s && s.operators && s.operators.length > 0) {
+        operatorSelect.innerHTML = "";
+        s.operators.forEach(function (op) {
+          var opt = document.createElement("option");
+          opt.value = op.operator_id;
+          var tag = op.is_tmobile ? " (Recommended)" : "";
+          opt.textContent = op.operator_name + tag + "  —  " + formatMoney(op.price_usd);
+          operatorSelect.appendChild(opt);
+        });
+        if (operatorField) operatorField.style.display = "block";
+        // Pre-select first operator (T-Mobile)
+        selectedOperator = s.operators[0];
+        operatorSelect.value = selectedOperator.operator_id;
+      } else {
+        selectedOperator = null;
+        if (operatorField) operatorField.style.display = "none";
+      }
+    }
+
+    if (operatorSelect) {
+      operatorSelect.addEventListener("change", function () {
+        var opId = operatorSelect.value;
+        if (selectedItem && selectedItem.operators) {
+          var matchedOp = selectedItem.operators.filter(function (op) {
+            return String(op.operator_id) === String(opId);
+          })[0];
+          if (matchedOp) {
+            selectedOperator = matchedOp;
+            updatePriceDisplay();
+          }
+        }
+      });
+    }
 
     function openDropdown() {
       if (!dropdownMenu) return;
@@ -191,6 +230,7 @@
         searchInput.value = s.service_name || s.name;
         if (clearBtn) clearBtn.style.display = "inline-block";
       }
+      renderOperatorsForService(s);
       updatePriceDisplay();
       if (submitBtn) submitBtn.disabled = false;
     }
@@ -206,6 +246,7 @@
         noneOpt.textContent = "No services match your search";
         selectEl.appendChild(noneOpt);
         selectedItem = null;
+        selectedOperator = null;
         if (priceEl) {
           priceEl.setAttribute("data-usd", "0");
           priceEl.textContent = formatMoney(0);
@@ -217,43 +258,12 @@
       var frag = document.createDocumentFragment();
       var selectedTargetId = preserveSelectionId || (selectedItem ? selectedItem.id : (items[0] ? items[0].id : null));
 
-      // Group full catalogs (>50 items) into Popular vs All Services
-      var isUnfiltered = (items.length === allServices.length) && (items.length > 50);
-
-      if (isUnfiltered) {
-        var popularGroup = document.createElement("optgroup");
-        popularGroup.label = opts.type === "premium"
-          ? "Popular Reliable Services (WhatsApp, Banking, Google...)"
-          : "Popular Services (WhatsApp, Google, Telegram...)";
-
-        var allGroup = document.createElement("optgroup");
-        allGroup.label = opts.type === "premium"
-          ? "All Dedicated Services (A to Z — 2,000+ Services)"
-          : "All Services (A to Z — 400+ Services)";
-
-        var popularCutoff = opts.type === "premium" ? 28 : 80;
-        items.forEach(function (s, idx) {
-          var opt = document.createElement("option");
-          opt.value = s.id;
-          opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
-          if (idx < popularCutoff) {
-            popularGroup.appendChild(opt);
-          } else {
-            allGroup.appendChild(opt);
-          }
-        });
-
-        frag.appendChild(popularGroup);
-        frag.appendChild(allGroup);
-      } else {
-        // Direct flat options for search results
-        items.forEach(function (s) {
-          var opt = document.createElement("option");
-          opt.value = s.id;
-          opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
-          frag.appendChild(opt);
-        });
-      }
+      items.forEach(function (s) {
+        var opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
+        frag.appendChild(opt);
+      });
 
       selectEl.appendChild(frag);
 
@@ -266,18 +276,20 @@
 
       var currentVal = selectEl.value;
       selectedItem = allServices.filter(function (s) { return s.id === currentVal; })[0] || items[0];
+      renderOperatorsForService(selectedItem);
       updatePriceDisplay();
       if (submitBtn) submitBtn.disabled = false;
     }
 
     function updatePriceDisplay() {
       if (!selectedItem || !priceEl) return;
-      var usd = String(selectedItem.price_usd);
-      priceEl.setAttribute("data-usd", usd);
+      var activeUsd = selectedOperator ? selectedOperator.price_usd : selectedItem.price_usd;
+      var usdStr = String(activeUsd);
+      priceEl.setAttribute("data-usd", usdStr);
       if (window.TgCurrency && window.TgCurrency.render) {
         window.TgCurrency.render(priceEl.parentNode);
       } else {
-        priceEl.textContent = formatMoney(usd);
+        priceEl.textContent = formatMoney(usdStr);
       }
     }
 
@@ -408,13 +420,18 @@
         submitBtn.setAttribute("aria-busy", "true");
         submitBtn.innerHTML = '<span class="spinner"></span> <span>Ordering Number...</span>';
 
+        var chosenPrice = selectedOperator ? selectedOperator.price_usd : selectedItem.price_usd;
+        var chosenOperatorName = selectedOperator ? (selectedOperator.operator_name || selectedOperator.operator_id) : (selectedItem.operator || "auto");
+        var chosenOperatorId = selectedOperator ? selectedOperator.operator_id : null;
+
         var payload = {
           country_code: "US",
           package_id: opts.packageId,
           service_name: selectedItem.service_name || selectedItem.name,
           service_code: selectedItem.service_code,
-          provider_id: selectedItem.operator || "auto",
-          price: selectedItem.price_usd,
+          provider_id: chosenOperatorName,
+          operator_id: chosenOperatorId,
+          price: chosenPrice,
         };
 
         fetch(opts.endpoint, {

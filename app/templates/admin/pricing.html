@@ -13,9 +13,9 @@
   </div>
   <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
     <form action="{{ url_for('admin.pricing') }}" method="POST" style="margin: 0;" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Syncing...';">
-      <input type="hidden" name="action" value="sync_5sim_prices">
-      <button type="submit" class="btn btn-secondary btn-sm" title="Re-sync wholesale prices directly from 5SIM live API">
-        {{ icon('refresh') }} Sync Live 5SIM Prices
+      <input type="hidden" name="action" value="sync_smscode_prices">
+      <button type="submit" class="btn btn-secondary btn-sm" title="Re-sync wholesale prices directly from SMS Code live API">
+        {{ icon('refresh') }} Sync Live SMS Code Prices
       </button>
     </form>
     <a href="{{ url_for('admin.index') }}" class="btn btn-secondary btn-sm">
@@ -266,13 +266,13 @@
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
         
-        {# VirtualSMS.io Card #}
+        {# SMS Code API Card #}
         <div class="provider-box">
           <div class="provider-box-header">
             <div class="provider-box-title">
-              {{ icon('server') }} VirtualSMS.io Markup (US Basic & Global SMS)
+              {{ icon('server') }} SMS Code API Markup (US Basic & Global SMS)
             </div>
-            <span class="badge badge-success">+{{ settings.fivesim_markup_percent }}%</span>
+            <span class="badge badge-success">+{{ settings.smscode_markup_percent or settings.fivesim_markup_percent }}%</span>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
@@ -281,7 +281,7 @@
                 Profit Margin (%)
               </label>
               <div class="affix-input-group">
-                <input type="number" step="0.5" min="0" max="500" name="fivesim_markup_percent" value="{{ settings.fivesim_markup_percent }}" class="affix-field has-suffix" required>
+                <input type="number" step="0.5" min="0" max="500" name="smscode_markup_percent" value="{{ settings.smscode_markup_percent or settings.fivesim_markup_percent }}" class="affix-field has-suffix" required>
                 <span class="affix-addon suffix">%</span>
               </div>
             </div>
@@ -292,7 +292,7 @@
               </label>
               <div class="affix-input-group">
                 <span class="affix-addon prefix">$</span>
-                <input type="number" step="0.05" min="0" max="20" name="fivesim_min_profit_usd" value="{{ '%.2f'|format(settings.fivesim_min_profit_usd) }}" class="affix-field has-prefix" required>
+                <input type="number" step="0.05" min="0" max="20" name="smscode_min_profit_usd" value="{{ '%.2f'|format(settings.smscode_min_profit_usd or settings.fivesim_min_profit_usd) }}" class="affix-field has-prefix" required>
               </div>
             </div>
           </div>
@@ -428,7 +428,7 @@
         {{ icon('tag') }} Fixed Service Price Overrides (US Numbers)
       </h2>
       <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.85rem;">
-        Set fixed retail prices for specific US services under 5sim (Basic) or TextVerified (Reliable). Global store countries will strictly use your standard dynamic profit margin and min floor.
+        Set fixed retail prices for specific US services under SMS Code (Basic) or TextVerified (Reliable). Global store countries will strictly use your standard dynamic profit margin and min floor.
       </p>
     </div>
   </div>
@@ -443,7 +443,7 @@
       <div>
         <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">US Provider Pool</label>
         <select name="provider_type" id="override-provider-type" class="input input-sm">
-          <option value="virtualsms">VirtualSMS.io (US Basic Package)</option>
+          <option value="smscode">SMS Code API (US Basic Package)</option>
           <option value="textverified">TextVerified (US Reliable Package)</option>
         </select>
       </div>
@@ -514,7 +514,7 @@
                 {% if ov.provider_type == 'textverified' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified (US Reliable)</span>
                 {% else %}
-                  <span class="badge badge-success" style="font-size: 0.75rem;">VirtualSMS (US Basic)</span>
+                  <span class="badge badge-success" style="font-size: 0.75rem;">SMS Code (US Basic)</span>
                 {% endif %}
               </td>
               <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--hue-success);">
@@ -935,12 +935,12 @@ script[type="application/json"] {
     'apple', 'discord', 'microsoft', 'steam', 'netflix', 'paypal', 'yahoo', 'snapchat', 'linkedin'
   ];
 
-  var currentProvider = providerSelect ? providerSelect.value : 'virtualsms';
+  var currentProvider = providerSelect ? providerSelect.value : 'smscode';
   var highlightedIndex = -1;
   var currentFiltered = [];
 
   function getCurrentServices() {
-    return (catalog && (catalog[currentProvider] || catalog['virtualsms'] || catalog['5sim'])) || [];
+    return (catalog && (catalog[currentProvider] || catalog['smscode'] || catalog['virtualsms'] || catalog['5sim'])) || [];
   }
 
   function populateSelectDropdown() {
@@ -1220,7 +1220,7 @@ function openDeleteOverrideModal(overrideId, serviceName, providerType, price) {
 
   inputId.value = overrideId;
   nameEl.textContent = serviceName;
-  provEl.textContent = providerType === 'textverified' ? 'TextVerified (US Reliable)' : '5sim (US Basic)';
+  provEl.textContent = providerType === 'textverified' ? 'TextVerified (US Reliable)' : 'SMS Code (US Basic)';
   priceEl.textContent = '$' + price;
 
   modal.classList.add('is-open');

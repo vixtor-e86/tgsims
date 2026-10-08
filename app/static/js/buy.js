@@ -1,162 +1,299 @@
 /* ==========================================================================
-   buy.js  -  Buy a Virtual Number
-   Tile-based country + service selector with a live Review & Purchase card.
-   Reads [data-buy] -> data-catalog (JSON) + data-endpoint (api.purchase_sim).
+   buy.js  -  Buy a Virtual Number (3-List Layout)
+   List 1: Country list (Searchable)
+   List 2: Services list (10 core services prioritized with Core badge)
+   List 3: Operators & Checkout list (Multi-operator breakdown for core services,
+           standard route for others, order summary & purchase button)
    ========================================================================== */
 (function () {
   "use strict";
 
-  var DIAL = { US: "+1", GB: "+44", CA: "+1", DE: "+49", NG: "+234",
-               GH: "+233", ZA: "+27", IN: "+91" };
+  var CORE_SLUGS = [
+    "whatsapp", "wa", "telegram", "tg", "google", "gmail", "youtube",
+    "instagram", "ig", "threads", "twitter", "tw", "x", "facebook", "fb",
+    "openai", "chatgpt", "tiktok", "discord", "apple", "icloud"
+  ];
 
-  /* Inline glyphs (mirror partials/icons.html) for well-known services. */
-  var G = {
-    chat: '<path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/>',
-    send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>',
-    mail: '<rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="m3 6 9 7 9-7"/>',
-    camera: '<path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h5L16 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.2"/>',
-    sparkles: '<path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15l-1.8-4.2L5.5 9l4.7-1.3L12 3z"/>',
-    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/>',
-    bank: '<path d="M3 10 12 4l9 6"/><path d="M4 10h16v9H4z"/><path d="M8 10v9M12 10v9M16 10v9M3 21h18"/>',
-    check: '<path d="M20 6 9 17l-5-5"/>'
-  };
-
-  function svg(inner) {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
-      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + "</svg>";
+  function isCoreService(code, name) {
+    var c = (code || "").toLowerCase();
+    var n = (name || "").toLowerCase();
+    for (var i = 0; i < CORE_SLUGS.length; i++) {
+      var s = CORE_SLUGS[i];
+      if (c === s || c.indexOf(s) > -1 || n.indexOf(s) > -1) return true;
+    }
+    return false;
   }
 
-  function svcVisual(name) {
-    var n = name.toLowerCase();
-    if (n.indexOf("whatsapp") > -1) return { cls: "svc-whatsapp", svg: G.chat };
-    if (n.indexOf("telegram") > -1) return { cls: "svc-telegram", svg: G.send };
-    if (n.indexOf("google") > -1 || n.indexOf("gmail") > -1) return { cls: "svc-google", svg: G.mail };
-    if (n.indexOf("instagram") > -1) return { cls: "svc-instagram", svg: G.camera };
-    if (n.indexOf("openai") > -1 || n.indexOf("chatgpt") > -1) return { cls: "svc-openai", svg: G.sparkles };
-    if (n.indexOf("tinder") > -1) return { cls: "svc-tinder", svg: G.sparkles };
-    if (n.indexOf("esim") > -1) return { cls: "svc-esim", svg: G.globe };
-    if (n.indexOf("bank") > -1) return { cls: "svc-generic", svg: G.bank };
-    if (n.indexOf("facebook") > -1) return { cls: "svc-facebook", letter: "f" };
-    if (n.indexOf("tiktok") > -1) return { cls: "svc-tiktok", letter: "T" };
-    return { cls: "svc-generic", letter: name.charAt(0).toUpperCase() };
+  function formatMoney(usd) {
+    if (window.TgCurrency && window.TgCurrency.format) {
+      return window.TgCurrency.format(usd);
+    }
+    var rate = Number(window.TG_NGN_PER_USD) || 1600;
+    return "₦" + (Number(usd) * rate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function flagBadge(code) {
-    return '<span class="flag-badge">' +
-      code.split("").map(function (ch) { return "<i>" + ch + "</i>"; }).join("") +
-      "</span>";
-  }
   function init() {
     var root = document.querySelector("[data-buy]");
     if (!root) return;
 
     var endpoint = root.getAttribute("data-endpoint") || "/api/purchase-sim";
+    var operatorsEndpoint = root.getAttribute("data-operators-endpoint") || "/api/catalog/operators";
+
     var catalog = [];
-    try { catalog = JSON.parse(root.getAttribute("data-catalog") || "[]"); }
-    catch (e) { catalog = []; }
+    try {
+      catalog = JSON.parse(root.getAttribute("data-catalog") || "[]");
+    } catch (e) {
+      catalog = [];
+    }
     if (!catalog.length) return;
 
-    var countryGrid = root.querySelector("[data-country-grid]");
-    var serviceGrid = root.querySelector("[data-service-grid]");
+    var countryListEl = root.querySelector("[data-country-list]");
+    var serviceListEl = root.querySelector("[data-service-list]");
+    var operatorListEl = root.querySelector("[data-operator-list]");
     var countrySearch = root.querySelector("[data-country-search]");
     var serviceSearch = root.querySelector("[data-service-search]");
+    var countryCount = root.querySelector("[data-country-count]");
+    var serviceCount = root.querySelector("[data-service-count]");
+    var opCount = root.querySelector("[data-op-count]");
+
     var reviewCountry = root.querySelector("[data-review-country]");
     var reviewService = root.querySelector("[data-review-service]");
+    var reviewCarrier = root.querySelector("[data-review-carrier]");
     var reviewPrice = root.querySelector("[data-review-price]");
     var submit = root.querySelector("[data-buy-submit]");
 
-    var state = { country: null, service: null };
+    var state = {
+      country: null,
+      service: null,
+      operator: null,
+      operators: [],
+      isLoadingOps: false
+    };
+
+    var operatorCache = {};
 
     function priceRender() {
-      if (window.TgCurrency && window.TgCurrency.render) window.TgCurrency.render(root);
+      if (window.TgCurrency && window.TgCurrency.render) {
+        window.TgCurrency.render(root);
+      }
     }
 
-    /* ---- Country tiles ---- */
+    /* ---- 1. Render Countries ---- */
     function renderCountries(filter) {
-      countryGrid.innerHTML = "";
+      if (!countryListEl) return;
+      countryListEl.innerHTML = "";
       var q = (filter || "").trim().toLowerCase();
+
       var shown = catalog.filter(function (c) {
-        return !q || c.country_name.toLowerCase().indexOf(q) > -1 ||
-               c.country_code.toLowerCase().indexOf(q) > -1;
+        return !q ||
+          c.country_name.toLowerCase().indexOf(q) > -1 ||
+          c.country_code.toLowerCase().indexOf(q) > -1;
       });
+
+      if (countryCount) countryCount.textContent = shown.length;
+
       if (!shown.length) {
-        countryGrid.innerHTML = '<div class="tile-empty">No countries match your search.</div>';
+        countryListEl.innerHTML = '<div class="buy-empty-msg">No countries found</div>';
         return;
       }
+
       shown.forEach(function (c) {
-        var t = document.createElement("button");
-        t.type = "button";
-        t.className = "opt-tile";
-        t.dataset.code = c.country_code;
-        if (state.country && state.country.country_code === c.country_code) t.classList.add("is-selected");
-        var flagHtml = c.flag
-          ? '<span style="font-size:1.65rem;line-height:1;margin-bottom:2px;">' + c.flag + '</span>'
-          : flagBadge(c.country_code);
-        t.innerHTML =
-          '<span class="opt-tile-check">' + svg(G.check) + "</span>" +
-          flagHtml +
-          '<span class="opt-tile-name">' + c.country_name + "</span>" +
-          '<span class="opt-tile-sub">' + (c.dial || DIAL[c.country_code] || "") + "</span>";
-        countryGrid.appendChild(t);
+        var row = document.createElement("button");
+        row.type = "button";
+        row.className = "buy-list-row";
+        if (state.country && state.country.country_code === c.country_code) {
+          row.classList.add("is-active");
+        }
+
+        var flagHtml = c.flag || "🌐";
+        row.innerHTML =
+          '<div class="buy-list-row-left">' +
+            '<span class="buy-list-flag">' + flagHtml + '</span>' +
+            '<div class="buy-list-text">' +
+              '<span class="buy-list-primary">' + c.country_name + '</span>' +
+              '<span class="buy-list-secondary">' + (c.dial || "") + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="buy-list-meta">' +
+            '<span class="badge badge-neutral" style="font-size:0.7rem;">' + (c.services ? c.services.length : 0) + '</span>' +
+          '</div>';
+
+        row.addEventListener("click", function () {
+          selectCountry(c.country_code);
+        });
+
+        countryListEl.appendChild(row);
       });
     }
 
-    /* ---- Service tiles (depend on selected country) ---- */
+    /* ---- 2. Render Services ---- */
     function renderServices(filter) {
-      serviceGrid.innerHTML = "";
+      if (!serviceListEl) return;
+      serviceListEl.innerHTML = "";
+
       if (!state.country) {
-        serviceGrid.innerHTML = '<div class="tile-empty">Select a country to see available services.</div>';
+        serviceListEl.innerHTML = '<div class="buy-empty-msg">Select a country first</div>';
+        if (serviceCount) serviceCount.textContent = "0";
         return;
       }
+
       var q = (filter || "").trim().toLowerCase();
-      var shown = state.country.services.filter(function (s) {
-        return !q || s.name.toLowerCase().indexOf(q) > -1;
+      var rawServices = (state.country.services || []).slice();
+
+      // Prioritize 10 core services
+      rawServices.sort(function (a, b) {
+        var aCore = isCoreService(a.code, a.name);
+        var bCore = isCoreService(b.code, b.name);
+        if (aCore && !bCore) return -1;
+        if (!aCore && bCore) return 1;
+        return a.name.localeCompare(b.name);
       });
+
+      var shown = rawServices.filter(function (s) {
+        return !q || s.name.toLowerCase().indexOf(q) > -1 || (s.code && s.code.toLowerCase().indexOf(q) > -1);
+      });
+
+      if (serviceCount) serviceCount.textContent = shown.length;
+
       if (!shown.length) {
-        serviceGrid.innerHTML = '<div class="tile-empty">No services match your search.</div>';
+        serviceListEl.innerHTML = '<div class="buy-empty-msg">No services match your search</div>';
         return;
       }
+
       shown.forEach(function (s) {
-        var vis = svcVisual(s.name);
-        var glyph = vis.svg
-          ? svg(vis.svg)
-          : '<span style="font-weight:800;font-size:1.15rem;line-height:1;">' + vis.letter + "</span>";
-        var t = document.createElement("button");
-        t.type = "button";
-        t.className = "opt-tile";
-        t.dataset.name = s.name;
-        t.dataset.code = s.code || "";
-        if (state.service && state.service.name === s.name) t.classList.add("is-selected");
-        t.innerHTML =
-          '<span class="opt-tile-check">' + svg(G.check) + "</span>" +
-          '<span class="svc-ico ' + vis.cls + '">' + glyph + "</span>" +
-          '<span class="opt-tile-name">' + s.name + "</span>" +
-          '<span class="opt-tile-sub" data-usd="' + s.price + '">' + s.price + "</span>";
-        serviceGrid.appendChild(t);
+        var row = document.createElement("button");
+        row.type = "button";
+        row.className = "buy-list-row";
+        if (state.service && (state.service.code === s.code || state.service.name === s.name)) {
+          row.classList.add("is-active");
+        }
+
+        var isCore = isCoreService(s.code, s.name);
+        var coreBadge = isCore ? '<span class="buy-list-badge-core">Core</span>' : '';
+        var letter = (s.name || "S").charAt(0).toUpperCase();
+
+        row.innerHTML =
+          '<div class="buy-list-row-left">' +
+            '<span class="badge badge-brand" style="width:24px;height:24px;display:grid;place-items:center;padding:0;font-size:0.75rem;font-weight:700;">' + letter + '</span>' +
+            '<div class="buy-list-text">' +
+              '<span class="buy-list-primary">' + s.name + '</span>' +
+              '<span class="buy-list-secondary">' + (isCore ? 'Multi-Operator Routes' : 'Standard Carrier') + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="buy-list-meta">' +
+            coreBadge +
+            '<span class="buy-list-price" data-usd="' + s.price + '">' + formatMoney(s.price) + '</span>' +
+          '</div>';
+
+        row.addEventListener("click", function () {
+          selectService(s);
+        });
+
+        serviceListEl.appendChild(row);
       });
+
       priceRender();
     }
 
-    /* ---- Review card ---- */
+    /* ---- 3. Render Operators (Column 3) ---- */
+    function renderOperators() {
+      if (!operatorListEl) return;
+      operatorListEl.innerHTML = "";
+
+      if (!state.country || !state.service) {
+        operatorListEl.innerHTML = '<div class="buy-empty-msg">Select a service to view carrier routes &amp; checkout</div>';
+        if (opCount) opCount.textContent = "Inactive";
+        return;
+      }
+
+      if (state.isLoadingOps) {
+        operatorListEl.innerHTML =
+          '<div class="buy-empty-msg" style="display:flex;align-items:center;justify-content:center;gap:8px;">' +
+            '<span class="spinner"></span> <span>Checking live carrier routes...</span>' +
+          '</div>';
+        if (opCount) opCount.textContent = "Loading...";
+        return;
+      }
+
+      var ops = state.operators || [];
+      if (opCount) opCount.textContent = ops.length + " Route" + (ops.length === 1 ? "" : "s");
+
+      if (!ops.length) {
+        // Fallback default route
+        var defOp = {
+          operator_name: "Standard Carrier Route",
+          operator_code: "standard",
+          operator_id: null,
+          price_usd: state.service.price,
+          available: state.service.available || 500
+        };
+        ops = [defOp];
+        state.operators = ops;
+        if (!state.operator) state.operator = defOp;
+      }
+
+      ops.forEach(function (op) {
+        var card = document.createElement("div");
+        card.className = "buy-op-card";
+        var isSelected = state.operator && (
+          (op.operator_id && state.operator.operator_id === op.operator_id) ||
+          (op.operator_name === state.operator.operator_name)
+        );
+        if (isSelected) card.classList.add("is-active");
+
+        var stockText = op.available ? "Stock: " + op.available.toLocaleString() + " lines" : "High Availability";
+
+        card.innerHTML =
+          '<div class="buy-op-info">' +
+            '<span class="buy-op-name">' +
+              (isSelected ? '✓ ' : '') + op.operator_name +
+            '</span>' +
+            '<span class="buy-op-stock">' + stockText + '</span>' +
+          '</div>' +
+          '<div class="buy-op-price" data-usd="' + op.price_usd + '">' +
+            formatMoney(op.price_usd) +
+          '</div>';
+
+        card.addEventListener("click", function () {
+          selectOperator(op);
+        });
+
+        operatorListEl.appendChild(card);
+      });
+
+      priceRender();
+    }
+
+    /* ---- Update Review Box ---- */
     function updateReview() {
       if (state.country) {
-        reviewCountry.classList.remove("is-empty");
-        reviewCountry.innerHTML = flagBadge(state.country.country_code) +
-          "<span>" + state.country.country_name + "</span>";
+        reviewCountry.textContent = state.country.country_name + " (" + (state.country.dial || state.country.country_code) + ")";
       } else {
-        reviewCountry.classList.add("is-empty");
         reviewCountry.textContent = "-";
       }
+
       if (state.service) {
-        reviewService.classList.remove("is-empty");
         reviewService.textContent = state.service.name;
-        reviewPrice.setAttribute("data-usd", String(state.service.price));
       } else {
-        reviewService.classList.add("is-empty");
         reviewService.textContent = "-";
-        reviewPrice.setAttribute("data-usd", "0");
       }
-      submit.disabled = !(state.country && state.service);
+
+      if (state.operator) {
+        reviewCarrier.textContent = state.operator.operator_name;
+        var p = state.operator.price_usd || state.service.price;
+        reviewPrice.setAttribute("data-usd", String(p));
+        reviewPrice.textContent = formatMoney(p);
+      } else if (state.service) {
+        reviewCarrier.textContent = "Standard Route";
+        reviewPrice.setAttribute("data-usd", String(state.service.price));
+        reviewPrice.textContent = formatMoney(state.service.price);
+      } else {
+        reviewCarrier.textContent = "-";
+        reviewPrice.setAttribute("data-usd", "0");
+        reviewPrice.textContent = formatMoney(0);
+      }
+
+      submit.disabled = !(state.country && state.service && state.operator);
       priceRender();
     }
 
@@ -164,55 +301,149 @@
       var c = catalog.filter(function (x) { return x.country_code === code; })[0];
       if (!c) return;
       state.country = c;
-      state.service = c.services[0] || null;
-      if (serviceSearch) serviceSearch.value = "";
+      state.service = (c.services && c.services.length) ? c.services[0] : null;
+      state.operator = null;
+      state.operators = [];
+
       renderCountries(countrySearch ? countrySearch.value : "");
-      renderServices("");
-      updateReview();
+      renderServices(serviceSearch ? serviceSearch.value : "");
+      if (state.service) {
+        fetchOperatorsForService(state.country, state.service);
+      } else {
+        renderOperators();
+        updateReview();
+      }
     }
 
-    function selectService(name) {
-      if (!state.country) return;
-      var s = state.country.services.filter(function (x) { return x.name === name; })[0];
-      if (!s) return;
+    function selectService(s) {
+      if (!state.country || !s) return;
       state.service = s;
-      root.querySelectorAll("[data-service-grid] .opt-tile").forEach(function (el) {
-        el.classList.toggle("is-selected", el.dataset.name === name);
-      });
+      state.operator = null;
+      state.operators = [];
+
+      // Highlight active service
+      if (serviceListEl) {
+        serviceListEl.querySelectorAll(".buy-list-row").forEach(function (el) {
+          el.classList.toggle("is-active", el.querySelector(".buy-list-primary") && el.querySelector(".buy-list-primary").textContent === s.name);
+        });
+      }
+
+      fetchOperatorsForService(state.country, s);
+    }
+
+    function selectOperator(op) {
+      state.operator = op;
+      renderOperators();
       updateReview();
     }
 
-    /* ---- Events ---- */
-    countryGrid.addEventListener("click", function (e) {
-      var tile = e.target.closest(".opt-tile");
-      if (tile && tile.dataset.code) selectCountry(tile.dataset.code);
-    });
-    serviceGrid.addEventListener("click", function (e) {
-      var tile = e.target.closest(".opt-tile");
-      if (tile && tile.dataset.name) selectService(tile.dataset.name);
-    });
-    if (countrySearch) countrySearch.addEventListener("input", function () { renderCountries(countrySearch.value); });
-    if (serviceSearch) serviceSearch.addEventListener("input", function () { renderServices(serviceSearch.value); });
+    function fetchOperatorsForService(country, service) {
+      var isCore = isCoreService(service.code, service.name);
+      var cacheKey = country.country_code + ":" + (service.code || service.name);
 
+      if (operatorCache[cacheKey]) {
+        applyOperators(operatorCache[cacheKey], service);
+        return;
+      }
+
+      if (!isCore) {
+        // Non-core service: use standard route immediately without extra API query
+        var singleOp = [{
+          operator_name: "Standard Carrier Route",
+          operator_code: "standard",
+          operator_id: null,
+          price_usd: service.price,
+          available: service.available || 500
+        }];
+        operatorCache[cacheKey] = singleOp;
+        applyOperators(singleOp, service);
+        return;
+      }
+
+      // Query operators API for core services
+      state.isLoadingOps = true;
+      renderOperators();
+      updateReview();
+
+      var url = operatorsEndpoint + "?country_code=" + encodeURIComponent(country.country_code) +
+                "&service_code=" + encodeURIComponent(service.code || service.name) +
+                "&service_name=" + encodeURIComponent(service.name);
+
+      fetch(url)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          state.isLoadingOps = false;
+          var ops = (data && data.operators && data.operators.length) ? data.operators : [];
+          if (!ops.length) {
+            ops = [{
+              operator_name: "Standard Carrier Route",
+              operator_code: "standard",
+              operator_id: null,
+              price_usd: service.price,
+              available: service.available || 500
+            }];
+          }
+          operatorCache[cacheKey] = ops;
+          applyOperators(ops, service);
+        })
+        .catch(function () {
+          state.isLoadingOps = false;
+          var fallback = [{
+            operator_name: "Standard Carrier Route",
+            operator_code: "standard",
+            operator_id: null,
+            price_usd: service.price,
+            available: service.available || 500
+          }];
+          applyOperators(fallback, service);
+        });
+    }
+
+    function applyOperators(ops, service) {
+      state.operators = ops;
+      // Pre-select cheapest operator (first item in sorted list)
+      state.operator = ops[0] || null;
+      renderOperators();
+      updateReview();
+    }
+
+    /* ---- Event Listeners ---- */
+    if (countrySearch) {
+      countrySearch.addEventListener("input", function () {
+        renderCountries(countrySearch.value);
+      });
+    }
+
+    if (serviceSearch) {
+      serviceSearch.addEventListener("input", function () {
+        renderServices(serviceSearch.value);
+      });
+    }
+
+    // Submit purchase
     submit.addEventListener("click", function () {
-      if (submit.disabled || !state.country || !state.service) return;
+      if (submit.disabled || !state.country || !state.service || !state.operator) return;
+
       var origHtml = submit.innerHTML;
       submit.disabled = true;
       submit.classList.add("is-loading");
       submit.setAttribute("aria-busy", "true");
       submit.innerHTML = '<span class="spinner"></span> <span>Ordering Number...</span>';
 
+      var payload = {
+        country_code: state.country.country_code,
+        country_name: state.country.country_name,
+        service_name: state.service.name,
+        service_code: state.service.code || "",
+        operator: state.operator.operator_code || state.operator.operator_name || "any",
+        operator_id: state.operator.operator_id || null,
+        price: state.operator.price_usd || state.service.price
+      };
+
       fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          country_code: state.country.country_code,
-          country_name: state.country.country_name,
-          service_name: state.service.name,
-          service_code: state.service.code || "",
-          operator: state.service.operator || "any",
-          price: state.service.price
-        })
+        body: JSON.stringify(payload)
       })
         .then(function (res) {
           if (res.status === 401) {
@@ -224,7 +455,7 @@
         .then(function (r) {
           if (!r.ok) throw new Error(r.data.message || "Could not complete purchase.");
           submit.innerHTML = '<span class="spinner"></span> <span>Number Allocated! Redirecting...</span>';
-          if (window.toast) window.toast(r.data.message || "Number purchased!", "success");
+          if (window.toast) window.toast(r.data.message || "Number purchased successfully!", "success");
           setTimeout(function () { window.location.href = "/sims/my-sims"; }, 700);
         })
         .catch(function (err) {
@@ -236,12 +467,17 @@
         });
     });
 
-    /* ---- Initial paint: preselect first country + service ---- */
-    state.country = catalog[0];
-    state.service = catalog[0].services[0] || null;
-    renderCountries("");
-    renderServices("");
-    updateReview();
+    // Currency toggle listener
+    document.addEventListener("currencychange", function () {
+      renderServices(serviceSearch ? serviceSearch.value : "");
+      renderOperators();
+      updateReview();
+    });
+
+    /* ---- Initial paint: preselect first country & service ---- */
+    if (catalog.length > 0) {
+      selectCountry(catalog[0].country_code);
+    }
   }
 
   if (document.readyState === "loading") {

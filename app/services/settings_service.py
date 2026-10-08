@@ -5,6 +5,10 @@ from app.services.supabase_client import get_supabase_admin, reset_supabase_admi
 # Default fallbacks if database table is completely unpopulated
 DEFAULT_SETTINGS = {
     'ngn_per_usd_rate': 1600.00,
+    'smscode_markup_percent': 30.00,
+    'smscode_min_profit_usd': 0.30,
+    'virtualsms_markup_percent': 30.00,
+    'virtualsms_min_profit_usd': 0.30,
     'fivesim_markup_percent': 30.00,
     'fivesim_min_profit_usd': 0.30,
     'textverified_markup_percent': 25.00,
@@ -89,19 +93,32 @@ class SettingsService:
         return float(settings.get('ngn_per_usd_rate', 1600.00))
 
     @classmethod
-    def get_fivesim_markup(cls) -> tuple[float, float]:
-        """Returns (fivesim_markup_percent, fivesim_min_profit_usd). Respects 0 profit if set by admin."""
+    def get_smscode_markup(cls) -> tuple[float, float]:
+        """Returns (smscode_markup_percent, smscode_min_profit_usd)."""
         settings = cls.get_settings()
-        raw_pct = settings.get('virtualsms_markup_percent') if settings.get('virtualsms_markup_percent') is not None else settings.get('fivesim_markup_percent')
-        raw_floor = settings.get('virtualsms_min_profit_usd') if settings.get('virtualsms_min_profit_usd') is not None else settings.get('fivesim_min_profit_usd')
-        pct = float(raw_pct if raw_pct is not None else 0.0)
-        floor = float(raw_floor if raw_floor is not None else 0.0)
+        raw_pct = (
+            settings.get('smscode_markup_percent')
+            if settings.get('smscode_markup_percent') is not None
+            else (settings.get('virtualsms_markup_percent') if settings.get('virtualsms_markup_percent') is not None else settings.get('fivesim_markup_percent'))
+        )
+        raw_floor = (
+            settings.get('smscode_min_profit_usd')
+            if settings.get('smscode_min_profit_usd') is not None
+            else (settings.get('virtualsms_min_profit_usd') if settings.get('virtualsms_min_profit_usd') is not None else settings.get('fivesim_min_profit_usd'))
+        )
+        pct = float(raw_pct if raw_pct is not None else 30.0)
+        floor = float(raw_floor if raw_floor is not None else 0.30)
         return pct, floor
 
     @classmethod
+    def get_fivesim_markup(cls) -> tuple[float, float]:
+        """Returns (smscode_markup_percent, smscode_min_profit_usd). Legacy alias."""
+        return cls.get_smscode_markup()
+
+    @classmethod
     def get_virtualsms_markup(cls) -> tuple[float, float]:
-        """Returns (virtualsms_markup_percent, virtualsms_min_profit_usd)."""
-        return cls.get_fivesim_markup()
+        """Returns (smscode_markup_percent, smscode_min_profit_usd). Legacy alias."""
+        return cls.get_smscode_markup()
 
     @classmethod
     def get_textverified_markup(cls) -> tuple[float, float]:
@@ -125,19 +142,19 @@ class SettingsService:
         clean_data = {}
         if 'ngn_per_usd_rate' in updates:
             clean_data['ngn_per_usd_rate'] = float(updates['ngn_per_usd_rate'])
-        if 'virtualsms_markup_percent' in updates:
-            clean_data['fivesim_markup_percent'] = float(updates['virtualsms_markup_percent'])
-            clean_data['virtualsms_markup_percent'] = float(updates['virtualsms_markup_percent'])
-        elif 'fivesim_markup_percent' in updates:
-            clean_data['fivesim_markup_percent'] = float(updates['fivesim_markup_percent'])
-            clean_data['virtualsms_markup_percent'] = float(updates['fivesim_markup_percent'])
 
-        if 'virtualsms_min_profit_usd' in updates:
-            clean_data['fivesim_min_profit_usd'] = float(updates['virtualsms_min_profit_usd'])
-            clean_data['virtualsms_min_profit_usd'] = float(updates['virtualsms_min_profit_usd'])
-        elif 'fivesim_min_profit_usd' in updates:
-            clean_data['fivesim_min_profit_usd'] = float(updates['fivesim_min_profit_usd'])
-            clean_data['virtualsms_min_profit_usd'] = float(updates['fivesim_min_profit_usd'])
+        # Support smscode, virtualsms, and fivesim keys interchangeably
+        sc_pct = updates.get('smscode_markup_percent') or updates.get('virtualsms_markup_percent') or updates.get('fivesim_markup_percent')
+        if sc_pct is not None:
+            clean_data['smscode_markup_percent'] = float(sc_pct)
+            clean_data['virtualsms_markup_percent'] = float(sc_pct)
+            clean_data['fivesim_markup_percent'] = float(sc_pct)
+
+        sc_floor = updates.get('smscode_min_profit_usd') or updates.get('virtualsms_min_profit_usd') or updates.get('fivesim_min_profit_usd')
+        if sc_floor is not None:
+            clean_data['smscode_min_profit_usd'] = float(sc_floor)
+            clean_data['virtualsms_min_profit_usd'] = float(sc_floor)
+            clean_data['fivesim_min_profit_usd'] = float(sc_floor)
         if 'textverified_markup_percent' in updates:
             clean_data['textverified_markup_percent'] = float(updates['textverified_markup_percent'])
         if 'textverified_min_profit_usd' in updates:

@@ -18,6 +18,100 @@ def _get_current_user_id():
     return None
 
 
+@api_bp.route('/catalog/operators', methods=['GET'])
+def get_catalog_operators():
+    """Fetches operator breakdown with calculated retail prices for a given country and service.
+    For the 10 core services, queries SMSCode catalog operators and products, picking the cheapest provider per operator.
+    """
+    country_code = request.args.get('country_code', 'US').strip().upper()
+    service_code = (request.args.get('service_code') or request.args.get('service') or '').strip().lower()
+    service_name = (request.args.get('service_name') or '').strip()
+
+    if not service_code and service_name:
+        s_lookup = service_name.lower().split('/')[0].strip()
+        s_meta = SIMProviderService.SERVICE_SLUGS.get(s_lookup)
+        service_code = s_meta['code'] if s_meta else s_lookup.replace(' ', '').lower()
+
+    # If US, return directly from the pre-computed US core services
+    if country_code in ('US', 'USA'):
+        us_services = SIMProviderService.get_smscode_us_services()
+        matched = None
+        for s in us_services:
+            if s.get('service_code') == service_code or s.get('catalog_slug') == service_code or service_code in s.get('catalog_slug', ''):
+                matched = s
+                break
+        if matched and matched.get('operators'):
+            return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': matched['operators']})
+
+    # For other countries:
+    client = SIMProviderService.get_client()
+    if not client.is_configured:
+        return jsonify({'success': True, 'operators': []})
+
+    cid = client.get_country_id(country_code)
+    pid = client.get_platform_id(service_code)
+
+    raw_ops = client.get_operators(country_id=cid, platform_id=pid)
+    if not raw_ops:
+        return jsonify({'success': True, 'operators': []})
+
+    # For each operator, get products, pick cheapest, calculate retail price
+    operators_list = []
+    for op in raw_ops:
+        op_id = op.get('operator_id')
+        if not op_id:
+            continue
+        raw_code = str(op.get('code') or '').lower()
+        op_name = op.get('name') or op.get('code', 'Carrier Route')
+
+        # Friendly formatting
+        if 'tmobile' in raw_code or 't-mobile' in op_name.lower():
+            op_name = 'T-Mobile'
+        elif 'at_t' in raw_code or 'at&t' in op_name.lower():
+            op_name = 'AT&T'
+        elif 'verizon' in raw_code or 'verizon' in op_name.lower():
+            op_name = 'Verizon'
+        elif 'vodafone' in raw_code or 'vodafone' in op_name.lower():
+            op_name = 'Vodafone'
+        elif 'ee' == raw_code:
+            op_name = 'EE (UK)'
+        elif 'o2' in raw_code:
+            op_name = 'O2'
+        elif 'three' in raw_code or '3' == raw_code:
+            op_name = 'Three'
+
+        # Query product tiers for this operator
+        products = client.get_products(country_id=cid, platform_id=pid, operator_id=op_id, limit=10)
+        if not products:
+            continue
+        products.sort(key=lambda p: float(p.get('price', {}).get('amount', 999)))
+        cheapest = products[0]
+        base_cost = float(cheapest.get('price', {}).get('amount', 0.50))
+        retail_price, margin = SIMProviderService.calculate_retail_price(
+            base_cost=base_cost,
+            service_code=service_code,
+            provider_type='smscode',
+            country_code=country_code
+        )
+        avail = int(cheapest.get('available_count') or 100)
+
+        operators_list.append({
+            'operator_id': op_id,
+            'operator_code': op.get('code'),
+            'operator_name': op_name,
+            'base_cost_usd': base_cost,
+            'price_usd': retail_price,
+            'price': retail_price,
+            'available': avail,
+            'catalog_product_id': cheapest.get('catalog_product_id'),
+            'cheapest_product_id': cheapest.get('id')
+        })
+
+    # Sort operators by price ascending
+    operators_list.sort(key=lambda o: o['price_usd'])
+    return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': operators_list})
+
+
 @api_bp.route('/purchase-sim', methods=['POST'])
 def purchase_sim():
     user_id = _get_current_user_id()
@@ -30,6 +124,14 @@ def purchase_sim():
     service_name = data.get('service_name', 'WhatsApp')
     service_code = data.get('service_code')
     operator = data.get('operator') or 'any'
+    operator_id = data.get('operator_id')
+
+    if operator_id is None and operator and str(operator).isdigit():
+        try:
+            operator_id = int(operator)
+        except Exception:
+            pass
+
     try:
         price = float(data.get('price', 2.50))
     except (ValueError, TypeError):
@@ -45,7 +147,13 @@ def purchase_sim():
         }), 400
 
     # 2. Allocate Virtual Number
-    sim_result = SIMProviderService.purchase_number(country_code, service_name, operator=operator, service_code=service_code)
+    sim_result = SIMProviderService.purchase_number(
+        country_code,
+        service_name,
+        operator=operator,
+        service_code=service_code,
+        operator_id=operator_id
+    )
     if not sim_result or not sim_result.get('success'):
         err_msg = (sim_result or {}).get('message') or 'No numbers currently available for this service. Please select another country or try again shortly.'
         return jsonify({
@@ -143,6 +251,13 @@ def purchase_us_canada():
     service_code = data.get('service_code')
     package_id = data.get('package_id', 'basic_pool')
     provider_id = data.get('provider_id', 'any')
+    operator_id = data.get('operator_id')
+
+    if operator_id is None and provider_id and str(provider_id).isdigit():
+        try:
+            operator_id = int(provider_id)
+        except Exception:
+            pass
 
     try:
         price = float(data.get('price', 1.25))
@@ -169,7 +284,8 @@ def purchase_us_canada():
         package_id=package_id,
         provider_id=provider_id,
         price=price,
-        service_code=service_code
+        service_code=service_code,
+        operator_id=operator_id
     )
 
     if not alloc_res or not alloc_res.get('success'):

@@ -1,0 +1,782 @@
+{
+  "whatsapp": {
+    "platform_id": 1,
+    "service_name": "WhatsApp",
+    "service_code": "whatsapp",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1369736780,
+        "catalog_product_id": 12537,
+        "base_price_usd": 1.9423,
+        "available": 1242,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1370423619,
+        "catalog_product_id": 12537,
+        "base_price_usd": 1.6719,
+        "available": 20,
+        "count_providers": 8
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370610112,
+        "catalog_product_id": 12537,
+        "base_price_usd": 1.9423,
+        "available": 59,
+        "count_providers": 5
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1370406696,
+        "catalog_product_id": 12537,
+        "base_price_usd": 2.14,
+        "available": 2913,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1369997514,
+        "catalog_product_id": 12537,
+        "base_price_usd": 3.7765,
+        "available": 1,
+        "count_providers": 3
+      }
+    ]
+  },
+  "telegram": {
+    "platform_id": 2,
+    "service_name": "Telegram",
+    "service_code": "telegram",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1370610461,
+        "catalog_product_id": 12538,
+        "base_price_usd": 0.2886,
+        "available": 593,
+        "count_providers": 7
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1370396366,
+        "catalog_product_id": 12538,
+        "base_price_usd": 0.2675,
+        "available": 398,
+        "count_providers": 10
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370608591,
+        "catalog_product_id": 12538,
+        "base_price_usd": 0.2886,
+        "available": 5,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1370496841,
+        "catalog_product_id": 12538,
+        "base_price_usd": 0.5338,
+        "available": 34,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 121,
+        "operator_code": "physic",
+        "operator_name": "Physic",
+        "cheapest_product_id": 1370531323,
+        "catalog_product_id": 12538,
+        "base_price_usd": 0.7724,
+        "available": 2286,
+        "count_providers": 1
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1370108123,
+        "catalog_product_id": 12538,
+        "base_price_usd": 0.7794,
+        "available": 3,
+        "count_providers": 9
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1370326347,
+        "catalog_product_id": 12538,
+        "base_price_usd": 4.914,
+        "available": 41,
+        "count_providers": 1
+      }
+    ]
+  },
+  "google-youtube-gmail": {
+    "platform_id": 5,
+    "service_name": "Google / Gmail / YouTube",
+    "service_code": "google-youtube-gmail",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1369966956,
+        "catalog_product_id": 12541,
+        "base_price_usd": 0.2532,
+        "available": 1613,
+        "count_providers": 8
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1369967713,
+        "catalog_product_id": 12541,
+        "base_price_usd": 0.1204,
+        "available": 251314,
+        "count_providers": 10
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1369796676,
+        "catalog_product_id": 12541,
+        "base_price_usd": 0.1204,
+        "available": 133235,
+        "count_providers": 10
+      },
+      {
+        "operator_id": 121,
+        "operator_code": "physic",
+        "operator_name": "Physic",
+        "cheapest_product_id": 1370531107,
+        "catalog_product_id": 12541,
+        "base_price_usd": 0.261,
+        "available": 2328,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370587069,
+        "catalog_product_id": 12541,
+        "base_price_usd": 0.2675,
+        "available": 2,
+        "count_providers": 5
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1370079754,
+        "catalog_product_id": 12541,
+        "base_price_usd": 0.4127,
+        "available": 100,
+        "count_providers": 5
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1370327022,
+        "catalog_product_id": 12541,
+        "base_price_usd": 1.0293,
+        "available": 37,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 115,
+        "operator_code": "h2o_wireless",
+        "operator_name": "H2O Wireless",
+        "cheapest_product_id": 1368833067,
+        "catalog_product_id": 12541,
+        "base_price_usd": 1.1967,
+        "available": 188,
+        "count_providers": 1
+      }
+    ]
+  },
+  "instagram-threads": {
+    "platform_id": 3,
+    "service_name": "Instagram / Threads",
+    "service_code": "instagram-threads",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1369862129,
+        "catalog_product_id": 12539,
+        "base_price_usd": 0.626,
+        "available": 128,
+        "count_providers": 1
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1369013583,
+        "catalog_product_id": 12539,
+        "base_price_usd": 0.0498,
+        "available": 1211,
+        "count_providers": 10
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370586781,
+        "catalog_product_id": 12539,
+        "base_price_usd": 0.5879,
+        "available": 9,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1370278390,
+        "catalog_product_id": 12539,
+        "base_price_usd": 0.603,
+        "available": 38,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1369933810,
+        "catalog_product_id": 12539,
+        "base_price_usd": 0.6035,
+        "available": 1,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1369997727,
+        "catalog_product_id": 12539,
+        "base_price_usd": 0.7394,
+        "available": 4,
+        "count_providers": 1
+      }
+    ]
+  },
+  "twitter": {
+    "platform_id": 6,
+    "service_name": "Twitter / X",
+    "service_code": "twitter",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1370120983,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.0431,
+        "available": 945,
+        "count_providers": 8
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1370524896,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.043,
+        "available": 60469,
+        "count_providers": 10
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1370192748,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.0442,
+        "available": 95132,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 121,
+        "operator_code": "physic",
+        "operator_name": "Physic",
+        "cheapest_product_id": 1370531244,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.0487,
+        "available": 1569,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370243589,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.0513,
+        "available": 688,
+        "count_providers": 3
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1368755000,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.0535,
+        "available": 220,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1368758398,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.131,
+        "available": 1,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 115,
+        "operator_code": "h2o_wireless",
+        "operator_name": "H2O Wireless",
+        "cheapest_product_id": 1368784578,
+        "catalog_product_id": 12542,
+        "base_price_usd": 0.2849,
+        "available": 190,
+        "count_providers": 1
+      }
+    ]
+  },
+  "facebook": {
+    "platform_id": 4,
+    "service_name": "Facebook / Meta",
+    "service_code": "facebook",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1370511746,
+        "catalog_product_id": 12540,
+        "base_price_usd": 0.0723,
+        "available": 1323,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1369004332,
+        "catalog_product_id": 12540,
+        "base_price_usd": 0.0723,
+        "available": 65012,
+        "count_providers": 10
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1369868318,
+        "catalog_product_id": 12540,
+        "base_price_usd": 0.1565,
+        "available": 1213,
+        "count_providers": 7
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370393883,
+        "catalog_product_id": 12540,
+        "base_price_usd": 0.4203,
+        "available": 607,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1370327024,
+        "catalog_product_id": 12540,
+        "base_price_usd": 0.4203,
+        "available": 24,
+        "count_providers": 1
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1369508662,
+        "catalog_product_id": 12540,
+        "base_price_usd": 1.9031,
+        "available": 98,
+        "count_providers": 1
+      }
+    ]
+  },
+  "openai": {
+    "platform_id": 20,
+    "service_name": "OpenAI / ChatGPT",
+    "service_code": "openai",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1370520631,
+        "catalog_product_id": 12556,
+        "base_price_usd": 0.2648,
+        "available": 962,
+        "count_providers": 7
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1369913624,
+        "catalog_product_id": 12556,
+        "base_price_usd": 0.2648,
+        "available": 1100,
+        "count_providers": 8
+      },
+      {
+        "operator_id": 115,
+        "operator_code": "h2o_wireless",
+        "operator_name": "H2O Wireless",
+        "cheapest_product_id": 1368818316,
+        "catalog_product_id": 12556,
+        "base_price_usd": 0.2648,
+        "available": 150,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1370389033,
+        "catalog_product_id": 12556,
+        "base_price_usd": 0.2648,
+        "available": 129194,
+        "count_providers": 10
+      },
+      {
+        "operator_id": 121,
+        "operator_code": "physic",
+        "operator_name": "Physic",
+        "cheapest_product_id": 1370530750,
+        "catalog_product_id": 12556,
+        "base_price_usd": 0.4639,
+        "available": 2386,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370505937,
+        "catalog_product_id": 12556,
+        "base_price_usd": 0.587,
+        "available": 2,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1370063071,
+        "catalog_product_id": 12556,
+        "base_price_usd": 8.3083,
+        "available": 8,
+        "count_providers": 1
+      }
+    ]
+  },
+  "tiktok-douyin": {
+    "platform_id": 7,
+    "service_name": "TikTok",
+    "service_code": "tiktok-douyin",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1370544052,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.0395,
+        "available": 531,
+        "count_providers": 7
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1368979044,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.0289,
+        "available": 65059,
+        "count_providers": 9
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1368837313,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.0289,
+        "available": 119314,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370422573,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.0395,
+        "available": 209,
+        "count_providers": 5
+      },
+      {
+        "operator_id": 115,
+        "operator_code": "h2o_wireless",
+        "operator_name": "H2O Wireless",
+        "cheapest_product_id": 1368785633,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.0618,
+        "available": 159,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 121,
+        "operator_code": "physic",
+        "operator_name": "Physic",
+        "cheapest_product_id": 1370531181,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.0624,
+        "available": 2384,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1370316862,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.1038,
+        "available": 18,
+        "count_providers": 8
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1369774374,
+        "catalog_product_id": 12543,
+        "base_price_usd": 0.1511,
+        "available": 1,
+        "count_providers": 1
+      }
+    ]
+  },
+  "discord": {
+    "platform_id": 8,
+    "service_name": "Discord",
+    "service_code": "discord",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1370206465,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0482,
+        "available": 3808,
+        "count_providers": 5
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1369823862,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0482,
+        "available": 194,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1369009314,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0482,
+        "available": 224,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1368822863,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0482,
+        "available": 251393,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1370062244,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0482,
+        "available": 1,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1368789382,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0482,
+        "available": 129277,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 121,
+        "operator_code": "physic",
+        "operator_name": "Physic",
+        "cheapest_product_id": 1370530754,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0539,
+        "available": 2386,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 115,
+        "operator_code": "h2o_wireless",
+        "operator_name": "H2O Wireless",
+        "cheapest_product_id": 1368833235,
+        "catalog_product_id": 12544,
+        "base_price_usd": 0.0571,
+        "available": 190,
+        "count_providers": 2
+      }
+    ]
+  },
+  "apple": {
+    "platform_id": 12,
+    "service_name": "Apple ID / iCloud",
+    "service_code": "apple",
+    "operators": [
+      {
+        "operator_id": 125,
+        "operator_code": "tmobile",
+        "operator_name": "T-Mobile (EE)",
+        "cheapest_product_id": 1370200109,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.0482,
+        "available": 3710,
+        "count_providers": 7
+      },
+      {
+        "operator_id": 111,
+        "operator_code": "at_t",
+        "operator_name": "AT&T",
+        "cheapest_product_id": 1370558287,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.0482,
+        "available": 45,
+        "count_providers": 6
+      },
+      {
+        "operator_id": 119,
+        "operator_code": "mint_mobile",
+        "operator_name": "Mint Mobile",
+        "cheapest_product_id": 1370558298,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.0482,
+        "available": 1027,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 124,
+        "operator_code": "textnow",
+        "operator_name": "TextNow",
+        "cheapest_product_id": 1368810176,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.0482,
+        "available": 317547,
+        "count_providers": 7
+      },
+      {
+        "operator_id": 127,
+        "operator_code": "us_mobile",
+        "operator_name": "US_MOBILE",
+        "cheapest_product_id": 1370558275,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.0482,
+        "available": 40,
+        "count_providers": 4
+      },
+      {
+        "operator_id": 128,
+        "operator_code": "verizon",
+        "operator_name": "Verizon",
+        "cheapest_product_id": 1369176095,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.0482,
+        "available": 126044,
+        "count_providers": 7
+      },
+      {
+        "operator_id": 121,
+        "operator_code": "physic",
+        "operator_name": "Physic",
+        "cheapest_product_id": 1370531306,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.0603,
+        "available": 2383,
+        "count_providers": 2
+      },
+      {
+        "operator_id": 115,
+        "operator_code": "h2o_wireless",
+        "operator_name": "H2O Wireless",
+        "cheapest_product_id": 1368794842,
+        "catalog_product_id": 12548,
+        "base_price_usd": 0.5271,
+        "available": 189,
+        "count_providers": 1
+      }
+    ]
+  }
+}
