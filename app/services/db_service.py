@@ -1294,34 +1294,45 @@ class DBService:
 
 
     # =========================================================================
-    # SQUAD VIRTUAL ACCOUNT MANAGEMENT
+    # DEDICATED VIRTUAL ACCOUNT MANAGEMENT (Korapay & Squad)
     # =========================================================================
 
     @staticmethod
-    def get_squad_virtual_account(user_id: str) -> dict:
-        """Fetch the user's dedicated Squad virtual account (if it exists)."""
+    def get_virtual_account(user_id: str) -> dict:
+        """Fetch the user's dedicated virtual account (Korapay or Squad)."""
         admin = get_supabase_admin()
         if not admin or not DBService._is_uuid(user_id):
-            return None
+            return getattr(mock_db, 'virtual_accounts', {}).get(user_id)
         try:
             res = admin.table('squad_virtual_accounts') \
                 .select('*') \
                 .eq('user_id', user_id) \
+                .eq('is_active', True) \
                 .limit(1) \
                 .execute()
             return res.data[0] if res.data else None
         except Exception as e:
-            print(f"[DBService] get_squad_virtual_account error: {e}")
+            print(f"[DBService] get_virtual_account error: {e}")
             return None
 
     @staticmethod
-    def save_squad_virtual_account(user_id: str, customer_identifier: str,
-                                    account_number: str, account_name: str,
-                                    bank_name: str, bank_code: str = '',
-                                    raw_response: dict = None) -> dict:
-        """Saves or updates the user's dedicated Squad virtual account."""
+    def get_squad_virtual_account(user_id: str) -> dict:
+        """Backward-compatible alias for get_virtual_account."""
+        return DBService.get_virtual_account(user_id)
+
+    @staticmethod
+    def save_virtual_account(user_id: str, customer_identifier: str,
+                             account_number: str, account_name: str,
+                             bank_name: str, bank_code: str = '',
+                             bvn: str = '', provider: str = 'korapay',
+                             raw_response: dict = None) -> dict:
+        """Saves or updates the user's dedicated virtual account (Korapay / Squad)."""
         admin = get_supabase_admin()
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        resp_payload = raw_response or {}
+        if isinstance(resp_payload, dict):
+            resp_payload['provider'] = provider
+
         row = {
             'user_id': user_id,
             'customer_identifier': customer_identifier,
@@ -1329,11 +1340,15 @@ class DBService:
             'account_name': account_name,
             'bank_name': bank_name,
             'bank_code': bank_code or '',
+            'bvn': bvn or '',
             'is_active': True,
-            'squad_response': raw_response or {},
+            'squad_response': resp_payload,
             'updated_at': now_iso
         }
         if not admin or not DBService._is_uuid(user_id):
+            if not hasattr(mock_db, 'virtual_accounts'):
+                mock_db.virtual_accounts = {}
+            mock_db.virtual_accounts[user_id] = row
             return {'success': True, 'mock': True, 'data': row}
         try:
             # Upsert by user_id
@@ -1342,14 +1357,34 @@ class DBService:
                 .execute()
             return {'success': True, 'data': res.data[0] if res.data else row}
         except Exception as e:
-            print(f"[DBService] save_squad_virtual_account error: {e}")
+            print(f"[DBService] save_virtual_account error: {e}")
             return {'success': False, 'message': str(e)}
 
     @staticmethod
+    def save_squad_virtual_account(user_id: str, customer_identifier: str,
+                                    account_number: str, account_name: str,
+                                    bank_name: str, bank_code: str = '',
+                                    raw_response: dict = None) -> dict:
+        """Backward-compatible alias for Squad virtual account saving."""
+        return DBService.save_virtual_account(
+            user_id=user_id,
+            customer_identifier=customer_identifier,
+            account_number=account_number,
+            account_name=account_name,
+            bank_name=bank_name,
+            bank_code=bank_code,
+            provider='squad',
+            raw_response=raw_response
+        )
+
+    @staticmethod
     def get_user_by_virtual_account(account_number: str) -> str:
-        """Returns the user_id associated with a Squad virtual account number."""
+        """Returns the user_id associated with a dedicated virtual account number."""
         admin = get_supabase_admin()
         if not admin:
+            for uid, va in getattr(mock_db, 'virtual_accounts', {}).items():
+                if va.get('account_number') == account_number:
+                    return uid
             return None
         try:
             res = admin.table('squad_virtual_accounts') \
@@ -1361,6 +1396,27 @@ class DBService:
             return res.data[0]['user_id'] if res.data else None
         except Exception as e:
             print(f"[DBService] get_user_by_virtual_account error: {e}")
+            return None
+
+    @staticmethod
+    def get_user_by_virtual_account_ref(account_ref: str) -> str:
+        """Returns the user_id associated with an account_reference / customer_identifier."""
+        admin = get_supabase_admin()
+        if not admin:
+            for uid, va in getattr(mock_db, 'virtual_accounts', {}).items():
+                if va.get('customer_identifier') == account_ref:
+                    return uid
+            return None
+        try:
+            res = admin.table('squad_virtual_accounts') \
+                .select('user_id') \
+                .eq('customer_identifier', account_ref) \
+                .eq('is_active', True) \
+                .limit(1) \
+                .execute()
+            return res.data[0]['user_id'] if res.data else None
+        except Exception as e:
+            print(f"[DBService] get_user_by_virtual_account_ref error: {e}")
             return None
 
     @staticmethod

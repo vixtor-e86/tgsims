@@ -3,6 +3,7 @@ from app.services.sim_provider import SIMProviderService
 from app.services.db_service import DBService
 from app.services.oxapay_service import OXAPayService
 from app.services.squad_service import SquadService
+from app.services.korapay_service import KorapayService
 import datetime
 import uuid
 
@@ -877,7 +878,147 @@ def squad_webhook():
     return jsonify({'status': 'ok', 'result': res}), 200
 
 
+# =============================================================================
+# KORAPAY PAYMENT GATEWAY APIS (Dedicated Virtual Accounts)
+# =============================================================================
 
+@api_bp.route('/payments/korapay/virtual-account', methods=['GET'])
+def get_korapay_virtual_account():
+    """Returns the user's dedicated Korapay virtual account details."""
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in.'}), 401
+
+    account = DBService.get_virtual_account(user_id)
+    return jsonify({
+        'success': True,
+        'has_account': bool(account and account.get('account_number')),
+        'account': account
+    })
+
+
+@api_bp.route('/payments/korapay/virtual-account/create', methods=['POST'])
+def create_korapay_virtual_account():
+    """
+    Creates a permanent dedicated virtual account for the user via Korapay.
+    Requires BVN as mandated by CBN/NIBSS.
+    Once created, any bank transfer to this number auto-credits the user's wallet.
+    """
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in to generate a virtual account.'}), 401
+
+    if not KorapayService.is_configured():
+        return jsonify({
+            'success': False,
+            'message': 'Dedicated virtual account gateway is currently being configured.'
+        }), 503
+
+    # Check if account already exists
+    existing = DBService.get_virtual_account(user_id)
+    if existing and existing.get('account_number'):
+        return jsonify({
+            'success': True,
+            'message': 'Your dedicated virtual account is already active.',
+            'account': existing
+        })
+
+    data = request.json or {}
+    bvn = str(data.get('bvn', '')).strip()
+    bank_code = str(data.get('bank_code', '070')).strip()
+
+    if not bvn:
+        return jsonify({
+            'success': False,
+            'message': 'Bank Verification Number (BVN) is required to generate your dedicated bank account.'
+        }), 400
+
+    clean_bvn = ''.join(c for c in bvn if c.isdigit())
+    if len(clean_bvn) != 11:
+        return jsonify({
+            'success': False,
+            'message': 'Please enter a valid 11-digit BVN.'
+        }), 400
+
+    user_data = session.get('user', {})
+    full_name = data.get('full_name') or user_data.get('full_name') or user_data.get('username') or 'Tgsims User'
+    email = user_data.get('email', '')
+
+    result = KorapayService.create_virtual_account(
+        user_id=user_id,
+        full_name=full_name,
+        email=email,
+        bvn=clean_bvn,
+        bank_code=bank_code
+    )
+
+    if not result.get('success'):
+        return jsonify({
+            'success': False,
+            'code': result.get('code'),
+            'message': result.get('message', 'Failed to create dedicated virtual account.')
+        }), 400
+
+    acc_data = result.get('data', {})
+    account_number = acc_data.get('account_number')
+    account_name = acc_data.get('account_name')
+    bank_name = acc_data.get('bank_name')
+    account_ref = acc_data.get('account_reference')
+
+    # Save to database
+    DBService.save_virtual_account(
+        user_id=user_id,
+        customer_identifier=account_ref,
+        account_number=account_number,
+        account_name=account_name,
+        bank_name=bank_name,
+        bank_code=bank_code,
+        bvn=clean_bvn,
+        provider='korapay',
+        raw_response=acc_data.get('raw')
+    )
+
+    account_info = {
+        'account_number': account_number,
+        'account_name': account_name,
+        'bank_name': bank_name,
+        'bank_code': bank_code
+    }
+
+    try:
+        DBService.create_user_notification(
+            user_id=user_id,
+            title="Dedicated Account Ready!",
+            message=f"Your permanent wallet account {account_number} ({bank_name}) is active. Transfer funds anytime for instant wallet top-up!",
+            type="deposit",
+            link="/wallet"
+        )
+    except Exception:
+        pass
+
+    return jsonify({
+        'success': True,
+        'message': 'Dedicated virtual account created successfully!',
+        'account': account_info
+    })
+
+
+@api_bp.route('/payments/korapay/webhook', methods=['POST'])
+def korapay_webhook():
+    """
+    Public webhook receiver for Korapay payment notifications.
+    Processes charge.success events for dedicated virtual bank accounts.
+    """
+    raw_body = request.get_data()
+    signature = request.headers.get('x-korapay-signature', '')
+
+    payload = request.get_json(force=True, silent=True) or {}
+    if not payload:
+        return jsonify({'error': 'Invalid JSON body'}), 400
+
+    print(f"[Korapay Webhook] Event received: {payload.get('event')}, ref: {payload.get('data', {}).get('reference')}")
+    res = KorapayService.process_webhook(payload, raw_body=raw_body, signature=signature)
+    return jsonify({'status': 'ok', 'result': res}), 200
 
 
 @api_bp.route('/reactivate-order/<order_id>', methods=['POST'])

@@ -26,6 +26,7 @@
   var cryptoMinWarning  = document.getElementById("crypto-min-warning");
   var cryptoCurrEntered = document.getElementById("crypto-curr-entered");
   var orderSummaryBlock = document.getElementById("order-summary-block");
+  var amountSection     = document.getElementById("amount-input-section");
 
   // Crypto Modal elements
   var cryptoModal       = document.getElementById("crypto-payment-modal");
@@ -258,6 +259,17 @@
     if (dedicatedFields) dedicatedFields.style.display = (methodId === "dedicated") ? "" : "none";
     if (cryptoFields)    cryptoFields.style.display    = (methodId === "crypto")    ? "" : "none";
     if (cardBankFields)  cardBankFields.style.display  = (methodId === "card")      ? "" : "none";
+
+    // For dedicated virtual account creation, hide amount entry & order summary
+    if (methodId === "dedicated") {
+      if (amountSection) amountSection.style.display = "none";
+      if (orderSummaryBlock) orderSummaryBlock.style.display = "none";
+      if (submitBtn) submitBtn.style.display = "none";
+    } else {
+      if (amountSection) amountSection.style.display = "";
+      if (orderSummaryBlock) orderSummaryBlock.style.display = "";
+      if (submitBtn) submitBtn.style.display = "";
+    }
 
     syncSymbol();
     renderPresets();
@@ -562,6 +574,130 @@
             if (window.toast) window.toast("Network error. Please try again.", "error");
           });
       }
+    });
+  }
+
+  // =========================================================================
+  // DEDICATED VIRTUAL ACCOUNT GENERATION (Korapay)
+  // =========================================================================
+  var btnGenVa = document.getElementById("btn-generate-korapay-va");
+  if (btnGenVa) {
+    btnGenVa.addEventListener("click", function () {
+      var fullNameInput = document.getElementById("va-full-name");
+      var bvnInput      = document.getElementById("va-bvn");
+      var bankSelect    = document.getElementById("va-bank-select");
+      var errAlert      = document.getElementById("va-error-alert");
+      var successCard   = document.getElementById("va-success-card");
+      var btnLabel      = document.getElementById("btn-va-label");
+
+      if (errAlert) {
+        errAlert.style.display = "none";
+        errAlert.textContent = "";
+      }
+
+      var fullName = fullNameInput ? fullNameInput.value.trim() : "";
+      var bvn      = bvnInput ? bvnInput.value.trim() : "";
+      var bankCode = bankSelect ? bankSelect.value : "070";
+
+      if (!bvn) {
+        if (errAlert) {
+          errAlert.textContent = "Please enter your 11-digit Bank Verification Number (BVN).";
+          errAlert.style.display = "";
+        }
+        if (bvnInput) bvnInput.focus();
+        return;
+      }
+
+      var cleanBvn = bvn.replace(/\D/g, "");
+      if (cleanBvn.length !== 11) {
+        if (errAlert) {
+          errAlert.textContent = "BVN must be exactly 11 digits.";
+          errAlert.style.display = "";
+        }
+        if (bvnInput) bvnInput.focus();
+        return;
+      }
+
+      btnGenVa.disabled = true;
+      var origLabel = btnLabel ? btnLabel.innerHTML : "Generate";
+      if (btnLabel) btnLabel.innerHTML = '<span class="crypto-pulse-dot" style="margin-right:8px;"></span> Generating Account with Korapay…';
+
+      fetch("/api/payments/korapay/virtual-account/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: fullName,
+          bvn: cleanBvn,
+          bank_code: bankCode
+        })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          btnGenVa.disabled = false;
+          if (btnLabel) btnLabel.innerHTML = origLabel;
+
+          if (!data.success) {
+            var msg = data.message || "Failed to generate dedicated virtual account.";
+            if (errAlert) {
+              errAlert.textContent = msg;
+              errAlert.style.display = "";
+            }
+            if (window.toast) window.toast(msg, "error", 7000);
+            return;
+          }
+
+          // SUCCESS
+          var acc = data.account || {};
+          btnGenVa.style.display = "none";
+          if (bvnInput && bvnInput.closest("div")) bvnInput.closest("div").style.display = "none";
+          if (fullNameInput && fullNameInput.closest("div")) fullNameInput.closest("div").style.display = "none";
+          if (bankSelect && bankSelect.closest("div")) bankSelect.closest("div").style.display = "none";
+
+          if (successCard) {
+            successCard.innerHTML =
+              '<div style="background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(99,102,241,0.08) 100%); border: 1px solid rgba(16,185,129,0.3); border-radius: var(--r-md); padding: 1.25rem 1.4rem; margin-top: 0.5rem; text-align: left;">' +
+                '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 0.75rem;">' +
+                  '<div style="display:flex; align-items:center; gap:0.5rem;">' +
+                    '<span style="width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block;"></span>' +
+                    '<span style="font-weight:700; color:var(--text); font-size:1.05rem;">Your Dedicated Account is Ready!</span>' +
+                  '</div>' +
+                  '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; font-weight:700;">Active</span>' +
+                '</div>' +
+                '<div style="background:var(--surface); border-radius:var(--r-sm); padding:0.75rem 1rem; border:1px solid var(--border); margin-bottom:0.6rem;">' +
+                  '<div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Bank</div>' +
+                  '<div style="font-size:1.05rem; font-weight:700; color:var(--text);">' + (acc.bank_name || "Fidelity Bank") + '</div>' +
+                '</div>' +
+                '<div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface); border-radius:var(--r-sm); padding:0.75rem 1rem; border:1px solid var(--border); margin-bottom:0.6rem;">' +
+                  '<div>' +
+                    '<div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Account Number</div>' +
+                    '<div style="font-size:1.35rem; font-weight:800; font-family:var(--font-mono); color:var(--text);">' + (acc.account_number || "") + '</div>' +
+                  '</div>' +
+                  '<button type="button" class="btn btn-primary btn-sm" onclick="copyToClipboard(\'' + (acc.account_number || "") + '\', this)" style="padding:0.4rem 0.9rem;">Copy</button>' +
+                '</div>' +
+                '<div style="background:var(--surface); border-radius:var(--r-sm); padding:0.75rem 1rem; border:1px solid var(--border); margin-bottom:0.85rem;">' +
+                  '<div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Account Name</div>' +
+                  '<div style="font-size:0.95rem; font-weight:600; color:var(--text);">' + (acc.account_name || fullName) + '</div>' +
+                '</div>' +
+                '<p style="font-size:0.82rem; color:var(--text-dim); margin-bottom:1rem; line-height:1.45;">' +
+                  'This account is permanently assigned to you. Transfer any amount to it anytime from your bank app — your wallet will be credited automatically.' +
+                '</p>' +
+                '<a href="/wallet" class="btn btn-primary btn-block" style="font-weight:700; text-align:center;">' +
+                  'Go to Wallet Overview &rarr;' +
+                '</a>' +
+              '</div>';
+            successCard.style.display = "";
+          }
+
+          if (window.toast) window.toast("Dedicated virtual account created successfully!", "success", 6000);
+        })
+        .catch(function (err) {
+          btnGenVa.disabled = false;
+          if (btnLabel) btnLabel.innerHTML = origLabel;
+          if (errAlert) {
+            errAlert.textContent = "Network error. Please try again.";
+            errAlert.style.display = "";
+          }
+        });
     });
   }
 

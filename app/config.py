@@ -33,4 +33,9 @@ class Config:
     SQUAD_SECRET_KEY = (os.getenv('SQUAD_SECRET_KEY') or '').strip()
     SQUAD_PUBLIC_KEY = (os.getenv('SQUAD_PUBLIC_KEY') or '').strip()
 
+    # Korapay (Dedicated Virtual Accounts)
+    KORAPAY_SECRET_KEY = (os.getenv('KORAPAY_SECRET_KEY') or '').strip()
+    KORAPAY_PUBLIC_KEY = (os.getenv('KORAPAY_PUBLIC_KEY') or '').strip()
+    KORAPAY_ENCRYPTION_KEY = (os.getenv('KORAPAY_ENCRYPTION_KEY') or '').strip()
+
     SITE_LOCK_ENABLED = os.getenv('SITE_LOCK_ENABLED', 'false').lower() in ('true', '1', 'yes')
