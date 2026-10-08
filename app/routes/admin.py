@@ -391,7 +391,7 @@ def pricing():
 @admin_bp.route('/deposits')
 def deposits():
     """List deposit transactions with filtering by status."""
-    status_filter = request.args.get('status', 'pending')
+    status_filter = request.args.get('status', 'all')
     all_deposits = DBService.get_all_deposits_admin(status_filter=status_filter, limit=100)
     settings = SettingsService.get_settings()
 
@@ -406,7 +406,7 @@ def deposits():
 
 @admin_bp.route('/deposits/<tx_id>/verify', methods=['POST'])
 def verify_deposit(tx_id):
-    """Admin manually approves and credits a pending deposit."""
+    """Admin manually approves and credits a pending or failed deposit."""
     admin_user = session.get('user', {})
     if admin_user.get('role') != 'admin':
         flash('Permission denied. Only administrators can verify and credit deposits.', 'error')
@@ -433,7 +433,7 @@ def verify_deposit(tx_id):
     else:
         flash(res.get('message', 'Failed to verify deposit.'), 'error')
 
-    return redirect(url_for('admin.deposits', status=request.form.get('return_status', 'pending')))
+    return redirect(url_for('admin.deposits', status=request.form.get('return_status', 'all')))
 
 
 @admin_bp.route('/deposits/<tx_id>/reject', methods=['POST'])
@@ -453,7 +453,7 @@ def reject_deposit(tx_id):
     else:
         flash(res.get('message', 'Failed to reject deposit.'), 'error')
 
-    return redirect(url_for('admin.deposits', status=request.form.get('return_status', 'pending')))
+    return redirect(url_for('admin.deposits', status=request.form.get('return_status', 'all')))
 
 
 # =============================================================================

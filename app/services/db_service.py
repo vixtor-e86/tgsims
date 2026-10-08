@@ -878,7 +878,10 @@ class DBService:
         if not admin:
             deposits = [t for t in mock_db.transactions if t.get('type') == 'deposit']
             if status_filter and status_filter != 'all':
-                deposits = [t for t in deposits if t.get('status') == status_filter]
+                if status_filter == 'failed':
+                    deposits = [t for t in deposits if t.get('status') in ['failed', 'rejected']]
+                else:
+                    deposits = [t for t in deposits if t.get('status') == status_filter]
             return deposits[:limit]
 
         try:
@@ -886,13 +889,19 @@ class DBService:
                 # Try explicit foreign key for user_id
                 q = admin.table('wallet_transactions').select('*, profiles!wallet_transactions_user_id_fkey(email, full_name, username)').eq('type', 'deposit')
                 if status_filter and status_filter != 'all':
-                    q = q.eq('status', status_filter)
+                    if status_filter == 'failed':
+                        q = q.in_('status', ['failed', 'rejected'])
+                    else:
+                        q = q.eq('status', status_filter)
                 res = q.order('created_at', desc=True).limit(limit).execute()
             except Exception:
                 # Fallback to direct select without join
                 q = admin.table('wallet_transactions').select('*').eq('type', 'deposit')
                 if status_filter and status_filter != 'all':
-                    q = q.eq('status', status_filter)
+                    if status_filter == 'failed':
+                        q = q.in_('status', ['failed', 'rejected'])
+                    else:
+                        q = q.eq('status', status_filter)
                 res = q.order('created_at', desc=True).limit(limit).execute()
 
             items = res.data or []

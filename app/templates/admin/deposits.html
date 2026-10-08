@@ -18,17 +18,17 @@
 
 {# Filter Tabs #}
 <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; flex-wrap: wrap;">
+  <a href="{{ url_for('admin.deposits', status='all') }}" class="btn btn-sm {% if status_filter == 'all' or not status_filter %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+    All Transactions
+  </a>
   <a href="{{ url_for('admin.deposits', status='pending') }}" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    {{ icon('clock') }} Pending Approval
+    {{ icon('clock') }} Pending
   </a>
   <a href="{{ url_for('admin.deposits', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    {{ icon('check') }} Completed / Credited
+    {{ icon('check') }} Completed
   </a>
   <a href="{{ url_for('admin.deposits', status='failed') }}" class="btn btn-sm {% if status_filter == 'failed' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    {{ icon('x') }} Rejected / Failed
-  </a>
-  <a href="{{ url_for('admin.deposits', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    All Transactions
+    {{ icon('x') }} Failed
   </a>
 </div>
 
@@ -62,9 +62,9 @@
               <td style="padding: 0.75rem 0.5rem;">
                 {% if dep.payment_channel == 'squad' %}
                   <span class="badge badge-brand" style="font-size: 0.75rem;">Squad (Bank/Card)</span>
-                {% elif dep.payment_channel == 'crypto_nowpayments' or dep.payment_channel == 'crypto' %}
-                  <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.75rem;">
-                    Crypto (NOWPayments)
+                {% elif dep.payment_channel in ['crypto_oxapay', 'crypto_nowpayments', 'crypto'] %}
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.75rem;">
+                    Crypto ({{ 'OxaPay' if dep.payment_channel == 'crypto_oxapay' else 'NOWPayments' if dep.payment_channel == 'crypto_nowpayments' else 'Crypto' }})
                   </span>
                   {% if dep.metadata and dep.metadata.pay_currency %}
                     <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; font-weight: 600;">
@@ -72,7 +72,7 @@
                     </div>
                   {% endif %}
                 {% elif dep.payment_channel == 'card' %}
-                  <span class="badge badge-brand" style="font-size: 0.75rem;">Debit Card</span>
+                  <span class="badge badge-brand" style="font-size: 0.75rem;">Debit Card / Transfer</span>
                 {% else %}
                   <span class="badge badge-muted" style="font-size: 0.75rem;">{{ dep.payment_channel|capitalize or 'Direct Transfer' }}</span>
                 {% endif %}
@@ -102,21 +102,21 @@
                 {% endif %}
               </td>
 
-              {# Status #}
+              {# Status (matches wallet overview exactly) #}
               <td style="padding: 0.75rem 0.5rem;">
                 {% if dep.status == 'completed' %}
-                  <span class="badge badge-success" style="font-size: 0.75rem;">Completed</span>
+                  <span class="badge badge-success badge-dot">Completed</span>
                 {% elif dep.status == 'pending' %}
-                  <span class="badge badge-warning" style="font-size: 0.75rem;">Pending Confirmation</span>
+                  <span class="badge badge-warning badge-dot">Pending</span>
                 {% else %}
-                  <span class="badge badge-danger" style="font-size: 0.75rem;">{{ dep.status|capitalize }}</span>
+                  <span class="badge badge-danger badge-dot">Failed</span>
                 {% endif %}
                 {% if dep.metadata and dep.metadata.verified_by_system %}
-                  <div style="font-size: 0.7rem; color: var(--hue-success); margin-top: 0.15rem; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
+                  <div style="font-size: 0.7rem; color: var(--hue-success); margin-top: 0.25rem; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;">
                     {{ icon('check') }} Automated IPN
                   </div>
                 {% elif dep.verified_at %}
-                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
                     Audited: {{ dep.verified_at[:10] }}
                   </div>
                 {% endif %}
@@ -129,9 +129,12 @@
 
               {# Action #}
               <td style="padding: 0.75rem 0.5rem; text-align: right;">
-                {% if dep.status == 'pending' %}
+                {% if dep.status == 'completed' %}
+                  <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Processed</span>
+                {% else %}
+                  {# Both pending and failed/rejected can be manually verified and credited #}
                   {% if current_user and current_user.role == 'admin' %}
-                    <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                    <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
                       {# Verify Button #}
                       <form action="{{ url_for('admin.verify_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Verify and credit ${{ '%.2f'|format(dep.amount) }} (₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}) to {{ dep.user_name or dep.user_email }}?');">
                         <input type="hidden" name="return_status" value="{{ status_filter }}">
@@ -140,20 +143,20 @@
                         </button>
                       </form>
 
-                      {# Reject Button #}
-                      <form action="{{ url_for('admin.reject_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Reject this deposit?');">
-                        <input type="hidden" name="return_status" value="{{ status_filter }}">
-                        <input type="hidden" name="reason" value="Deposit rejected by admin">
-                        <button type="submit" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
-                          {{ icon('x') }} Reject
-                        </button>
-                      </form>
+                      {# Reject Button (for pending deposits) #}
+                      {% if dep.status == 'pending' %}
+                        <form action="{{ url_for('admin.reject_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Reject this deposit?');">
+                          <input type="hidden" name="return_status" value="{{ status_filter }}">
+                          <input type="hidden" name="reason" value="Deposit rejected by admin">
+                          <button type="submit" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
+                            {{ icon('x') }} Reject
+                          </button>
+                        </form>
+                      {% endif %}
                     </div>
                   {% else %}
                     <span class="badge badge-muted" style="font-size: 0.72rem; padding: 0.25rem 0.5rem;">View Only (Admin Required)</span>
                   {% endif %}
-                {% else %}
-                  <span style="font-size: 0.8rem; color: var(--text-muted);">Processed</span>
                 {% endif %}
               </td>
             </tr>
@@ -168,8 +171,12 @@
       <p style="font-size: 0.85rem; margin-top: 0.25rem;">
         {% if status_filter == 'pending' %}
           There are no pending deposits requiring manual verification at this moment.
+        {% elif status_filter == 'failed' %}
+          There are no failed deposits in this view.
+        {% elif status_filter == 'completed' %}
+          There are no completed deposits in this view.
         {% else %}
-          No transactions match the selected filter.
+          No deposit transactions found.
         {% endif %}
       </p>
     </div>
