@@ -2008,7 +2008,7 @@ class SIMProviderService:
             'badge': 'Best Value',
             'badge_class': 'badge-brand',
             'description': 'One dedicated US number that receives OTPs from WhatsApp, Telegram, Google, Banks, PayPal, Apple, and all 2,000+ platforms simultaneously.',
-            'base_pricing': {3: 6.00, 7: 7.00, 14: 8.00, 30: 10.00}
+            'base_pricing': {1: 4.50, 3: 6.00, 7: 7.00, 14: 8.00, 30: 10.00, 90: 28.90, 365: 96.00}
         },
         {
             'code': 'whatsapp',
@@ -2017,7 +2017,7 @@ class SIMProviderService:
             'badge': 'Popular',
             'badge_class': 'badge-success',
             'description': 'Dedicated non-VoIP carrier SIM exclusively reserved for your WhatsApp or WhatsApp Business account for the entire duration.',
-            'base_pricing': {3: 2.40, 7: 3.00, 14: 4.00, 30: 4.80}
+            'base_pricing': {1: 1.90, 3: 2.40, 7: 3.00, 14: 4.00, 30: 4.80, 90: 13.90, 365: 48.00}
         },
         {
             'code': 'telegram',
@@ -2026,7 +2026,7 @@ class SIMProviderService:
             'badge': 'High Demand',
             'badge_class': 'badge-info',
             'description': 'Reserved cellular line dedicated to Telegram account login, re-verifications, and multi-device auth.',
-            'base_pricing': {3: 3.00, 7: 3.50, 14: 5.00, 30: 6.40}
+            'base_pricing': {1: 2.80, 3: 3.00, 7: 3.50, 14: 5.00, 30: 6.40, 90: 18.20, 365: 62.40}
         },
         {
             'code': 'google',
@@ -2035,7 +2035,7 @@ class SIMProviderService:
             'badge': 'Recommended',
             'badge_class': 'badge-warning',
             'description': 'Guaranteed cellular line for Google Account 2FA, workspace recovery, and long-term verification.',
-            'base_pricing': {3: 2.20, 7: 2.40, 14: 3.00, 30: 3.60}
+            'base_pricing': {1: 1.80, 3: 2.20, 7: 2.40, 14: 3.00, 30: 3.60, 90: 10.30, 365: 32.40}
         },
         {
             'code': 'openai',
@@ -2044,7 +2044,7 @@ class SIMProviderService:
             'badge': 'AI Route',
             'badge_class': 'badge-neutral',
             'description': 'Real cellular number reserved for OpenAI, ChatGPT Plus, and API developer account validations.',
-            'base_pricing': {3: 1.90, 7: 2.00, 14: 2.80, 30: 3.60}
+            'base_pricing': {1: 1.70, 3: 1.90, 7: 2.00, 14: 2.80, 30: 3.60, 90: 10.50, 365: 35.00}
         },
         {
             'code': 'paypal',
@@ -2053,7 +2053,7 @@ class SIMProviderService:
             'badge': 'Financial',
             'badge_class': 'badge-neutral',
             'description': 'Dedicated Non-VoIP carrier number matching strict security screening on financial platforms.',
-            'base_pricing': {3: 2.40, 7: 2.90, 14: 3.80, 30: 4.60}
+            'base_pricing': {1: 2.00, 3: 2.40, 7: 2.90, 14: 3.80, 30: 4.60, 90: 13.50, 365: 45.00}
         },
         {
             'code': 'facebook',
@@ -2062,7 +2062,7 @@ class SIMProviderService:
             'badge': 'Social',
             'badge_class': 'badge-neutral',
             'description': 'Dedicated line for Meta platforms, Instagram business logins, and account verification.',
-            'base_pricing': {3: 2.20, 7: 2.60, 14: 3.50, 30: 4.20}
+            'base_pricing': {1: 1.80, 3: 2.20, 7: 2.60, 14: 3.50, 30: 4.20, 90: 15.80, 365: 58.80}
         },
         {
             'code': 'apple',
@@ -2071,7 +2071,7 @@ class SIMProviderService:
             'badge': 'Apple',
             'badge_class': 'badge-neutral',
             'description': 'Real AT&T/Verizon cellular route for Apple ID two-factor authentication and device setup.',
-            'base_pricing': {3: 2.50, 7: 3.00, 14: 4.00, 30: 5.00}
+            'base_pricing': {1: 2.00, 3: 2.50, 7: 3.00, 14: 4.00, 30: 5.00, 90: 15.00, 365: 50.00}
         },
         {
             'code': 'twitter',
@@ -2080,7 +2080,7 @@ class SIMProviderService:
             'badge': 'Social',
             'badge_class': 'badge-neutral',
             'description': 'Dedicated verification line for Twitter / X account creation and premium subscriptions.',
-            'base_pricing': {3: 2.00, 7: 2.50, 14: 3.20, 30: 4.00}
+            'base_pricing': {1: 1.60, 3: 2.00, 7: 2.50, 14: 3.20, 30: 4.00, 90: 12.00, 365: 40.00}
         },
         {
             'code': 'microsoft',
@@ -2089,14 +2089,14 @@ class SIMProviderService:
             'badge': 'Productivity',
             'badge_class': 'badge-neutral',
             'description': 'Reserved phone number for Microsoft Account security verification and Office 365 sign-ins.',
-            'base_pricing': {3: 2.00, 7: 2.40, 14: 3.20, 30: 3.80}
+            'base_pricing': {1: 1.60, 3: 2.00, 7: 2.40, 14: 3.20, 30: 3.80, 90: 11.50, 365: 38.00}
         }
     ]
 
     @classmethod
     def get_rental_catalog(cls) -> list:
-        """Returns the rental catalog with wholesale and retail prices calculated for 3, 7, 14, and 30 days,
-        incorporating live wholesale database costs and admin custom selling price overrides.
+        """Returns the rental catalog with wholesale and retail prices calculated for all duration tiers
+        (1, 3, 7, 14, 30, 90, and 365 days), incorporating live wholesale database costs and admin price overrides.
         """
         from app.services.settings_service import SettingsService
         try:
@@ -2156,7 +2156,7 @@ class SIMProviderService:
         duration_days: int = 3
     ) -> dict:
         """Purchases a dedicated long-term virtual number rental:
-        - Locks carrier line for 3, 7, 14, or 30 days
+        - Locks carrier line for 1, 3, 7, 14, 30, 90, or 365 days
         - Deducts wallet balance atomically
         - Stores in sim_rentals
         """
@@ -2166,14 +2166,17 @@ class SIMProviderService:
         from app.services.settings_service import SettingsService
 
         duration_map = {
+            1: ('ONE_DAY', 1),
             3: ('THREE_DAY', 3),
             7: ('SEVEN_DAY', 7),
             14: ('FOURTEEN_DAY', 14),
-            30: ('THIRTY_DAY', 30)
+            30: ('THIRTY_DAY', 30),
+            90: ('NINETY_DAY', 90),
+            365: ('ONE_YEAR', 365)
         }
         tier_info = duration_map.get(int(duration_days))
         if not tier_info:
-            return {'success': False, 'message': 'Invalid duration. Choose 3, 7, 14, or 30 days.'}
+            return {'success': False, 'message': 'Invalid duration. Choose 1, 3, 7, 14, 30, 90, or 365 days.'}
 
         tier_name, days = tier_info
         catalog = cls.get_rental_catalog()
@@ -2207,10 +2210,12 @@ class SIMProviderService:
         if tv_client:
             try:
                 from textverified import NewRentalRequest, RentalDuration, ReservationCapability, NumberType
+                # For allservices 1-day, TextVerified starts at THREE_DAY; for others ONE_DAY is native
+                tv_tier = RentalDuration.THREE_DAY if (tier_name == 'ONE_DAY' and matched['code'] == 'allservices') else RentalDuration[tier_name]
                 req = NewRentalRequest(
                     allow_back_order_reservations=False,
-                    duration=RentalDuration[tier_name],
-                    is_renewable=False,
+                    duration=tv_tier,
+                    is_renewable=True,
                     number_type=NumberType.MOBILE,
                     service_name=matched['code'],
                     capability=ReservationCapability.SMS
@@ -2294,6 +2299,146 @@ class SIMProviderService:
             'expires_at': ends_at_iso,
             'user_cost': retail_usd,
             'message': f"Dedicated number {phone} rented successfully for {days} days!"
+        }
+
+    @classmethod
+    def renew_rental(
+        cls,
+        user_id: str,
+        rental_id: str,
+        duration_days: int = 3
+    ) -> dict:
+        """Extends / renews an existing dedicated virtual number rental:
+        - Allows user to choose renewal duration (1, 3, 7, 14, 30, 90, or 365 days)
+        - Deducts wallet balance atomically
+        - Calls TextVerified extend_nonrenewable API if configured
+        - Updates expires_at, status='active', duration_days in sim_rentals
+        """
+        import uuid
+        import datetime
+        from app.services.db_service import DBService
+
+        duration_map = {
+            1: ('ONE_DAY', 1),
+            3: ('THREE_DAY', 3),
+            7: ('SEVEN_DAY', 7),
+            14: ('FOURTEEN_DAY', 14),
+            30: ('THIRTY_DAY', 30),
+            90: ('NINETY_DAY', 90),
+            365: ('ONE_YEAR', 365)
+        }
+        tier_info = duration_map.get(int(duration_days))
+        if not tier_info:
+            return {'success': False, 'message': 'Invalid duration. Choose 1, 3, 7, 14, 30, 90, or 365 days.'}
+
+        tier_name, days = tier_info
+
+        # 1. Fetch existing rental
+        rental = DBService.get_rental_by_id(user_id=user_id, rental_id=rental_id)
+        if not rental:
+            return {'success': False, 'message': 'Rental order not found.'}
+
+        svc_code = str(rental.get('service_code') or 'allservices').strip().lower()
+        catalog = cls.get_rental_catalog()
+        matched = next((s for s in catalog if s['code'].lower() == svc_code), catalog[0])
+
+        price_info = matched['pricing'].get(str(days))
+        if not price_info:
+            return {'success': False, 'message': f'Pricing not available for {days} days.'}
+
+        retail_usd = price_info['retail_usd']
+        retail_ngn = price_info['retail_ngn']
+
+        # 2. Check wallet balance
+        wallet = DBService.get_wallet(user_id)
+        cur_bal = float(wallet.get('balance', 0.00))
+        if cur_bal < retail_usd:
+            return {
+                'success': False,
+                'message': f"Insufficient wallet balance (${cur_bal:.2f}). Renewing for {days} days costs ${retail_usd:.2f} (₦{retail_ngn:,.2f}). Please top up your wallet."
+            }
+
+        # 3. Calculate new expiration
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        curr_exp_str = rental.get('expires_at')
+        base_exp = now_utc
+        if curr_exp_str:
+            try:
+                exp_clean = str(curr_exp_str).replace('Z', '+00:00')
+                try:
+                    exp_dt = datetime.datetime.fromisoformat(exp_clean)
+                except ValueError:
+                    exp_dt = datetime.datetime.strptime(exp_clean, '%Y-%m-%d %H:%M:%S')
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=datetime.timezone.utc)
+                if exp_dt > now_utc:
+                    base_exp = exp_dt
+            except Exception:
+                base_exp = now_utc
+
+        new_expires_dt = base_exp + datetime.timedelta(days=days)
+        new_expires_iso = new_expires_dt.isoformat()
+
+        # 4. Attempt TextVerified API extension
+        tv_client = cls.get_textverified_client()
+        prov_res_id = rental.get('provider_reservation_id')
+        if tv_client and prov_res_id and not str(prov_res_id).startswith('DEMO-'):
+            try:
+                from textverified import RentalDuration
+                tv_tier = RentalDuration.THREE_DAY if (tier_name == 'ONE_DAY' and svc_code == 'allservices') else RentalDuration[tier_name]
+                tv_client.reservations.extend_nonrenewable(
+                    rental_id=prov_res_id,
+                    extension_duration=tv_tier
+                )
+            except Exception as e:
+                print(f"[SIMProviderService] TextVerified extend_nonrenewable note: {e}")
+                err_lower = str(e).lower()
+                if 'not renewable' in err_lower or 'cannot be extended' in err_lower or 'cannot extend' in err_lower:
+                    return {'success': False, 'message': 'This carrier line has rotated and can no longer be extended. Please rent a new number.'}
+
+        # 5. Deduct wallet balance
+        order_ref = f"RNW-{uuid.uuid4().hex[:8].upper()}"
+        deduct_res = DBService.deduct_wallet_balance(
+            user_id=user_id,
+            amount=retail_usd,
+            reference=order_ref,
+            description=f"Rental Renewal ({rental.get('phone_number')} - {days} Days)",
+            metadata={'rental_id': str(rental.get('id')), 'days': days, 'service_code': svc_code}
+        )
+        if not deduct_res.get('success'):
+            return {'success': False, 'message': deduct_res.get('message', 'Failed to deduct wallet balance.')}
+
+        # 6. Update database record
+        old_days = int(rental.get('duration_days') or 0)
+        new_duration_days = old_days + days
+        old_cost = float(rental.get('user_cost') or 0.00)
+        new_user_cost = round(old_cost + retail_usd, 2)
+
+        DBService.update_rental(rental.get('id') or rental_id, {
+            'expires_at': new_expires_iso,
+            'duration_days': new_duration_days,
+            'status': 'active',
+            'user_cost': new_user_cost
+        })
+
+        # 7. Notification
+        try:
+            DBService.create_user_notification(
+                user_id=user_id,
+                title="Dedicated Rental Renewed",
+                message=f"Your dedicated number {rental.get('phone_number')} has been extended by {days} days until {new_expires_dt.strftime('%b %d, %Y')}.",
+                type="renewal",
+                link="/sims/rentals"
+            )
+        except Exception:
+            pass
+
+        return {
+            'success': True,
+            'message': f"Dedicated number {rental.get('phone_number')} successfully renewed for {days} days! Active until {new_expires_dt.strftime('%b %d, %Y')}.",
+            'expires_at': new_expires_iso,
+            'duration_days': new_duration_days,
+            'status': 'active'
         }
 
     @classmethod

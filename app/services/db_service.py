@@ -541,6 +541,34 @@ class DBService:
             return rental_data
 
     @staticmethod
+    def update_rental(rental_id: str, updates: dict) -> bool:
+        """Updates an existing rental record in Supabase or mock_db."""
+        admin = get_supabase_admin()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        clean_updates = dict(updates)
+        clean_updates['updated_at'] = now_iso
+
+        # Update in mock_db if present
+        for r in getattr(mock_db, 'sim_rentals', []):
+            if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
+                r.update(clean_updates)
+
+        if not admin:
+            return True
+
+        try:
+            q = admin.table('sim_rentals')
+            if DBService._is_uuid(str(rental_id)):
+                q = q.update(clean_updates).eq('id', str(rental_id))
+            else:
+                q = q.update(clean_updates).eq('rental_reference', str(rental_id))
+            res = q.execute()
+            return bool(res.data)
+        except Exception as e:
+            print(f"[DBService] update_rental error: {e}")
+            return False
+
+    @staticmethod
     def get_rentals(user_id: str, limit: int = 50) -> list:
         """Fetch rental orders for a user."""
         if not user_id or user_id == 'demo-user-id':

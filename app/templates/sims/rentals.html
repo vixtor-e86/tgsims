@@ -1,39 +1,28 @@
 {% extends "layouts/app.html" %}
 {% from "partials/icons.html" import icon %}
 
-{% block title %}Rent a Number | {{ BRAND }}{% endblock %}
+{% block title %}Rent a Dedicated Number | {{ BRAND }}{% endblock %}
 
 {% block page %}
 <div class="page-head">
-  <h1 class="page-title">{{ icon('clock') }} Rent a Number</h1>
-  <p class="page-subtitle">Dedicated US carrier lines reserved exclusively for your account. Receive unlimited verification codes for days or weeks.</p>
-</div>
-
-{# ---- Retention & Feature Banner ---- #}
-<div class="card card-pad" style="margin-bottom:var(--sp-6); background:linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(16,185,129,0.06) 100%); border:1px solid rgba(37,99,235,0.18);">
-  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:var(--sp-4); align-items:center;">
-    <div>
-      <span class="badge badge-brand badge-sm" style="margin-bottom:var(--sp-2);">{{ icon('shield') }} Guaranteed Number Retention</span>
-      <h3 style="font-size:var(--fs-base); font-weight:700; margin:0 0 var(--sp-1) 0; color:var(--text);">Need a number for longer than 2 weeks?</h3>
-      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin:0; line-height:1.5;">
-        Standard activations rotate carrier lines after 2–3 weeks. With <strong>Rentals</strong>, your phone number is 100% locked to your account for 3, 7, 14, or 30 days with <strong>unlimited SMS codes</strong>.
-      </p>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:6px; font-size:var(--fs-xs); color:var(--text-dim);">
-      <div style="display:flex; align-items:center; gap:6px;"><span class="text-success">{{ icon('check') }}</span> <strong>Universal Number:</strong> Receive SMS from any app on 1 number.</div>
-      <div style="display:flex; align-items:center; gap:6px;"><span class="text-success">{{ icon('check') }}</span> <strong>Zero Per-SMS Charges:</strong> Request as many codes as you need.</div>
-      <div style="display:flex; align-items:center; gap:6px;"><span class="text-success">{{ icon('check') }}</span> <strong>AT&amp;T &amp; Verizon Routes:</strong> 100% Non-VoIP real cellular lines.</div>
-    </div>
+  <div>
+    <h1 class="page-title">{{ icon('clock') }} Rent a Dedicated Number</h1>
+    <p class="page-subtitle">Reserve private US cellular carrier lines exclusively for your account with unlimited OTP verification codes.</p>
   </div>
 </div>
 
 {# ---- Active User Rentals (if any) ---- #}
 {% if rentals %}
-<section class="card card-pad" style="margin-bottom:var(--sp-8);">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-4);">
-    <h2 class="card-title" style="margin:0; display:flex; align-items:center; gap:8px;">
-      {{ icon('list') }} Your Active Rentals ({{ rentals|length }})
-    </h2>
+<section class="card card-pad" style="margin-bottom:var(--sp-6); border:1px solid var(--border);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-4); flex-wrap:wrap; gap:var(--sp-2);">
+    <div>
+      <h2 class="card-title" style="margin:0 0 2px 0; display:flex; align-items:center; gap:8px;">
+        {{ icon('list') }} Your Dedicated Number Rentals ({{ rentals|length }})
+      </h2>
+      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin:0;">
+        Active dedicated carrier lines. Click <strong>Mailbox</strong> to view all OTPs or <strong>Renew</strong> to extend your rental.
+      </p>
+    </div>
   </div>
   <div class="table-wrap">
     <table class="table">
@@ -82,7 +71,7 @@
                 </span>
               </div>
             {% else %}
-              <span class="badge badge-neutral badge-sm">Expired</span>
+              <span class="badge badge-neutral badge-sm">Ended</span>
             {% endif %}
           </td>
           <td>
@@ -96,12 +85,24 @@
             {% endif %}
           </td>
           <td class="text-right">
-            <button type="button" class="btn btn-primary btn-sm" data-action="view-rental-sms"
-                    data-id="{{ r.id or r.rental_reference }}"
-                    data-phone="{{ r.phone_number }}"
-                    data-service="{{ r.service_name }}">
-              {{ icon('refresh') }} Check SMS
-            </button>
+            <div style="display:inline-flex; gap:6px; align-items:center; justify-content:flex-end;">
+              <button type="button" class="btn btn-primary btn-sm" data-action="view-rental-mailbox"
+                      data-id="{{ r.id or r.rental_reference }}"
+                      data-phone="{{ r.phone_number }}"
+                      data-service="{{ r.service_name }}"
+                      title="Open full SMS mailbox">
+                {{ icon('mail') }} Mailbox
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="renew-rental-btn"
+                      data-id="{{ r.id or r.rental_reference }}"
+                      data-phone="{{ r.phone_number }}"
+                      data-service="{{ r.service_name }}"
+                      data-service-code="{{ r.service_code|default('allservices') }}"
+                      data-duration="{{ r.duration_days|default(3) }}"
+                      title="Renew/extend rental line">
+                {{ icon('refresh') }} Renew
+              </button>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -111,202 +112,196 @@
 </section>
 {% endif %}
 
-{# ---- Quick Rent Dedicated Number Box (Matching US Number Page Layout) ---- #}
-<div style="max-width: 680px; margin: 0 auto var(--sp-8);">
-  <section class="card card-pad quick-buy us-quick-box" style="border: 1px solid var(--border); box-shadow: var(--shadow-md);">
-    <div class="card-head" style="margin-bottom: var(--sp-4);">
-      <h2 class="card-title">{{ icon('shield') }} Dedicated Number Rental</h2>
-      <span class="badge badge-info">{{ icon('clock') }} Long-Term Retention</span>
-    </div>
+{# ---- 3-List Container (Matching Other Countries Page Layout) ---- #}
+<div class="buy-three-container"
+     data-rental
+     data-catalog='{{ catalog|tojson }}'
+     data-endpoint="{{ url_for('api.api_rent_number') }}"
+     data-mobile-active="service">
 
-    {# 1. Duration Tabs #}
-    <div class="field" style="margin-bottom: var(--sp-4);">
-      <label class="label" style="font-weight: 700; margin-bottom: 6px;">Select Rental Duration</label>
-      <div class="rental-duration-tabs" role="tablist" style="display:flex; background:var(--surface-2); padding:4px; border-radius:var(--r-md); border:1px solid var(--border); gap:6px; flex-wrap:wrap;">
-        <button type="button" class="rental-tab-btn is-active" data-duration="3" role="tab" style="flex:1; min-width:85px;">3 Days</button>
-        <button type="button" class="rental-tab-btn" data-duration="7" role="tab" style="flex:1; min-width:85px;">7 Days (1 Wk)</button>
-        <button type="button" class="rental-tab-btn" data-duration="14" role="tab" style="flex:1; min-width:85px;">14 Days</button>
-        <button type="button" class="rental-tab-btn" data-duration="30" role="tab" style="flex:1; min-width:85px;">30 Days (1 Mo)</button>
+  {# Mobile Stepper Navigation (visible on <= 768px) #}
+  <div class="buy-mobile-stepper" data-mobile-stepper>
+    <button type="button" class="buy-mobile-step-tab is-active" data-mobile-tab="service">
+      <span class="buy-step-pill" data-step-pill="service">1</span>
+      <div class="buy-step-meta">
+        <span class="buy-step-title">Service</span>
+        <span class="buy-step-selected" data-step-selected-service>Universal</span>
       </div>
-    </div>
-
-    {# 2. Search Service (With Dropdown Menu List) #}
-    <div class="field us-search-wrapper" style="position:relative; margin-bottom: var(--sp-4);">
-      <label class="label" for="rental-search" style="font-weight: 700; margin-bottom: 6px;">Search Service</label>
-      <div class="input-group">
-        <span class="input-icon">{{ icon('search') }}</span>
-        <input class="input" type="search" id="rental-search" data-search-input
-               placeholder="Type service name (e.g. WhatsApp, Google, OpenAI, Any Service)..." autocomplete="off">
-        <button type="button" class="search-clear-btn" id="rentalSearchClearBtn" aria-label="Clear search" title="Clear search">&times;</button>
-      </div>
-      <div class="search-dropdown-menu" id="rentalDropdownMenu"></div>
-    </div>
-
-    {# 3. Service Select Dropdown #}
-    <div class="field" style="margin-bottom: var(--sp-4);">
-      <label class="label" for="rental-service-select" style="font-weight: 700; margin-bottom: 6px;">Select Service</label>
-      <select class="select" id="rental-service-select">
-        {% for svc in catalog %}
-        <option value="{{ svc.code }}" data-name="{{ svc.name }}" data-pricing='{{ svc.pricing|tojson }}'>
-          {{ svc.name }}
-        </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    {# 4. Price Box #}
-    <div class="price-box" style="margin: var(--sp-2) 0 var(--sp-5) 0;">
-      <span class="price-box-label">Rental Price (<span id="quickRentDurationLabel">3 Days</span>)</span>
-      <span class="price-box-value" id="quickRentPriceDisplay" data-usd="{{ '%.2f'|format(catalog[0].pricing['3'].retail_usd) }}">
-        {{ catalog[0].pricing['3'].formatted_ngn }}
-      </span>
-    </div>
-
-    <button class="btn btn-primary btn-block btn-lg" id="btnQuickRentSubmit" type="button" style="font-weight: 700;">
-      Rent Number Now {{ icon('arrow-right') }}
     </button>
-    <p class="quick-buy-note" style="margin-top: var(--sp-3);">
-      {{ icon('shield') }} <strong>100% Dedicated Cellular Carrier Line</strong> &bull; Unlimited Incoming SMS
-    </p>
-  </section>
+    <button type="button" class="buy-mobile-step-tab" data-mobile-tab="duration">
+      <span class="buy-step-pill" data-step-pill="duration">2</span>
+      <div class="buy-step-meta">
+        <span class="buy-step-title">Duration</span>
+        <span class="buy-step-selected" data-step-selected-duration>3 Days</span>
+      </div>
+    </button>
+    <button type="button" class="buy-mobile-step-tab" data-mobile-tab="checkout">
+      <span class="buy-step-pill" data-step-pill="checkout">3</span>
+      <div class="buy-step-meta">
+        <span class="buy-step-title">Review &amp; Pay</span>
+        <span class="buy-step-selected" data-step-selected-pay>Checkout</span>
+      </div>
+    </button>
+  </div>
+
+  {# ---- List 1: Rental Service List ---- #}
+  <div class="buy-column buy-column-service" data-column="service">
+    <div class="buy-column-head">
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">1</span>
+          <span>Rental Service</span>
+        </h2>
+        <span class="badge badge-brand" data-service-count>{{ catalog|length }}</span>
+      </div>
+      <div class="input-group buy-column-search">
+        <span class="input-icon">{{ icon('search') }}</span>
+        <input class="input" type="search" placeholder="Search rental services..."
+               data-service-search aria-label="Search rental services">
+      </div>
+    </div>
+    <div class="buy-column-list" data-service-list></div>
+  </div>
+
+  {# ---- List 2: Rental Duration List ---- #}
+  <div class="buy-column buy-column-duration" data-column="duration">
+    <div class="buy-column-head">
+      <button type="button" class="buy-mobile-nav-btn" data-mobile-back="service">
+        {{ icon('chevron-left') }} <span>Change Service</span>
+      </button>
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">2</span>
+          <span>Rental Duration</span>
+        </h2>
+        <span class="badge badge-neutral" data-duration-count>7 Tiers</span>
+      </div>
+      <p style="margin:0; font-size:0.75rem; color:var(--text-muted);">
+        Choose how long to lock and hold this dedicated carrier line.
+      </p>
+    </div>
+    <div class="buy-column-list" data-duration-list></div>
+  </div>
+
+  {# ---- List 3: Specs Breakdown & Review Checkout ---- #}
+  <div class="buy-column buy-column-checkout" data-column="checkout">
+    <div class="buy-column-head">
+      <button type="button" class="buy-mobile-nav-btn" data-mobile-back="duration">
+        {{ icon('chevron-left') }} <span>Change Duration</span>
+      </button>
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">3</span>
+          <span>Review &amp; Checkout</span>
+        </h2>
+        <span class="badge badge-success">100% Dedicated</span>
+      </div>
+      <p style="margin:0; font-size:0.75rem; color:var(--text-muted);">
+        Private non-VoIP cellular carrier route allocated instantly.
+      </p>
+    </div>
+
+    {# Specs breakdown #}
+    <div class="buy-column-list" style="padding:0.75rem; gap:0.65rem;">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem;">
+        <div style="font-size:0.82rem; font-weight:700; color:var(--text); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          {{ icon('shield') }} Dedicated Cellular Line Specs
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; font-size:0.76rem; color:var(--text-muted);">
+          <div style="display:flex; justify-content:space-between;">
+            <span>Line Type:</span>
+            <strong style="color:var(--text);">100% US Real Cellular (Non-VoIP)</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Network Pool:</span>
+            <strong style="color:var(--text);">AT&amp;T / Verizon Private Tiers</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>SMS Policy:</span>
+            <strong style="color:var(--hue-success);">Unlimited Incoming Codes</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Line Holding:</span>
+            <strong style="color:var(--text);">Reserved Solely For Your Account</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Extension:</span>
+            <strong style="color:var(--brand);">Renewable At Any Time</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Review Checkout card at bottom of Col 3 #}
+    <div class="buy-checkout-card">
+      <div class="buy-checkout-summary-row">
+        <span class="k">Service</span>
+        <span class="v" data-review-service>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Rental Period</span>
+        <span class="v" data-review-duration>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Line Type</span>
+        <span class="badge badge-brand badge-sm">Dedicated Carrier</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Incoming SMS</span>
+        <span class="badge badge-success badge-sm">Unlimited &bull; Free</span>
+      </div>
+
+      <div class="buy-checkout-total">
+        <span style="font-weight:700; font-size:0.95rem; color:var(--text);">Total Rental Price</span>
+        <span class="buy-checkout-total-val" data-review-price data-usd="0">₦0.00</span>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" data-rental-submit type="button" disabled style="font-weight:700;">
+        {{ icon('bolt') }} Rent Dedicated Number Now
+      </button>
+      <p style="text-align:center; margin:0; font-size:0.72rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center; gap:4px;">
+        {{ icon('refresh') }} Instant cellular allocation &bull; Auto-refund if line unavailable
+      </p>
+    </div>
+  </div>
+
 </div>
 
-{# ---- All Available Rental Services (Clean List Table View, No Cards) ---- #}
-<section class="card card-pad" style="margin-bottom: var(--sp-8);">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--sp-4); margin-bottom:var(--sp-5);">
-    <div>
-      <h2 class="card-title" style="margin:0 0 4px 0; display:flex; align-items:center; gap:8px;">
-        {{ icon('list') }} All Available Rental Services
-      </h2>
-      <p class="td-dim" style="font-size:var(--fs-xs); margin:0;">Real US carrier lines reserved exclusively for your account with unlimited OTP receipts.</p>
+{# ---- Why Choose Renting Section ---- #}
+<section class="buy-why">
+  <hr class="divider">
+  <h2 class="buy-why-title">Why Rent a Dedicated Number on {{ BRAND }}?</h2>
+  <div class="why-grid">
+    {% set why_tint = ['why-teal', 'why-blue', 'why-amber', 'why-dark'] %}
+    {% for w in why %}
+    <div class="why-item">
+      <span class="icon-tile {{ why_tint[loop.index0 % 4] }}">{{ icon(w.icon) }}</span>
+      <div>
+        <div class="why-h">{{ w.title }}</div>
+        <div class="why-t">{{ w.text }}</div>
+      </div>
     </div>
-    <div class="input-group" style="max-width:280px;">
-      <span class="input-icon">{{ icon('search') }}</span>
-      <input class="input input-sm" type="search" id="tableFilterInput" placeholder="Filter list...">
-    </div>
+    {% endfor %}
   </div>
-
-  <div class="table-wrap">
-    <table class="table" id="rentalTable">
-      <thead>
-        <tr>
-          <th>Service</th>
-          <th>Carrier Pool</th>
-          <th>Retention</th>
-          <th>Price</th>
-          <th class="text-right">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for svc in catalog %}
-        <tr data-service-row data-service-name="{{ svc.name|lower }}" data-service-code="{{ svc.code }}">
-          <td>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div style="width:34px; height:34px; border-radius:var(--r-md); background:rgba(37,99,235,0.08); color:var(--brand); display:grid; place-items:center; flex-shrink:0;">
-                {{ icon(svc.icon) }}
-              </div>
-              <div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span class="td-strong" style="font-size:var(--fs-sm);">{{ svc.name }}</span>
-                  {% if svc.badge %}
-                  <span class="badge {{ svc.badge_class }} badge-sm" style="font-size:0.65rem;">{{ svc.badge }}</span>
-                  {% endif %}
-                </div>
-                <span class="td-dim" style="font-size:0.72rem;">{{ svc.description }}</span>
-                <div class="rental-meta-mobile" style="display:none; align-items:center; gap:6px; margin-top:4px;">
-                  <span class="badge badge-brand badge-xs" data-mobile-duration>3 Days</span>
-                  <span class="badge badge-neutral badge-xs">Real Cellular</span>
-                </div>
-              </div>
-            </div>
-          </td>
-          <td>
-            <span class="badge badge-neutral badge-sm">100% Real Cellular</span>
-          </td>
-          <td>
-            <span class="td-strong" data-row-duration>3 Days</span>
-          </td>
-          <td>
-            <div class="td-strong text-brand" data-row-price
-                 data-pricing='{{ svc.pricing|tojson }}'
-                 data-usd="{{ '%.2f'|format(svc.pricing['3'].retail_usd) }}">
-              {{ svc.pricing['3'].formatted_ngn }}
-            </div>
-          </td>
-          <td class="text-right">
-            <button type="button" class="btn btn-primary btn-sm" data-action="rent-number-btn"
-                    data-service-code="{{ svc.code }}"
-                    data-service-name="{{ svc.name }}">
-              Rent {{ icon('arrow-right') }}
-            </button>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <p class="buy-powered">Powered by {{ BRAND }} Carrier Routing</p>
 </section>
 
-{# ---- Purchase Confirmation Modal ---- #}
-<div class="modal" id="rentalModal" aria-hidden="true" role="dialog" aria-labelledby="rentalModalTitle">
-  <div class="modal-box" style="max-width:440px;">
-    <div class="modal-header">
-      <div style="display:flex; align-items:center; gap:var(--sp-3);">
-        <div style="width:36px; height:36px; border-radius:var(--r-full); background:rgba(37, 99, 235, 0.12); color:var(--brand); display:grid; place-items:center;">
-          {{ icon('clock') }}
-        </div>
-        <div>
-          <h3 class="modal-title" id="rentalModalTitle">Rent Dedicated Number</h3>
-          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;">Guaranteed retention &amp; unlimited OTPs</p>
-        </div>
-      </div>
-      <button type="button" class="modal-close" data-modal-rental-close aria-label="Close modal">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:var(--fs-sm); color:var(--text); line-height:1.6; margin:0;">
-        You are about to rent a dedicated US cellular number for <strong id="modalRentSvc">Service</strong>.
-      </p>
-      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-top:var(--sp-4);">
-        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim);">
-          <span>Rental Duration</span>
-          <span class="td-strong" id="modalRentDuration">3 Days</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
-          <span>Carrier Route</span>
-          <span class="badge badge-brand badge-sm">100% Real Cellular SIM</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
-          <span>Total Rental Cost</span>
-          <span class="td-strong text-brand" id="modalRentPrice">₦0.00</span>
-        </div>
-      </div>
-      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
-        {{ icon('info') }} The number is reserved solely for your account. You can request as many OTP codes as needed throughout the rental window.
-      </p>
-    </div>
-    <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
-      <button type="button" class="btn btn-secondary btn-sm" data-modal-rental-close>Cancel</button>
-      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmRental">Confirm &amp; Rent Number</button>
-    </div>
-  </div>
-</div>
-
-{# ---- Rental SMS Viewer Modal ---- #}
+{# ---- Rental Mailbox Modal ---- #}
 <div class="modal" id="rentalSmsModal" aria-hidden="true" role="dialog" aria-labelledby="rentalSmsModalTitle">
-  <div class="modal-box" style="max-width:520px;">
+  <div class="modal-box" style="max-width:540px;">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:var(--sp-3);">
-        <div style="width:36px; height:36px; border-radius:var(--r-full); background:rgba(16, 185, 129, 0.12); color:var(--text-success); display:grid; place-items:center;">
-          {{ icon('chat') }}
+        <div style="width:38px; height:38px; border-radius:var(--r-full); background:rgba(37, 99, 235, 0.12); color:var(--brand); display:grid; place-items:center;">
+          {{ icon('mail') }}
         </div>
         <div>
-          <h3 class="modal-title" id="rentalSmsModalTitle">Incoming SMS Messages</h3>
+          <h3 class="modal-title" id="rentalSmsModalTitle">Rental SMS Mailbox</h3>
           <p class="td-dim" style="font-size:var(--fs-xs); margin:0;" id="smsModalSubtitle">+1 000 000 0000</p>
         </div>
       </div>
       <button type="button" class="modal-close" data-modal-sms-close aria-label="Close modal">&times;</button>
     </div>
-    <div class="modal-body" style="max-height:360px; overflow-y:auto;">
+    <div class="modal-body" style="max-height:420px; overflow-y:auto;">
       <div id="rentalSmsFeed" style="display:flex; flex-direction:column; gap:var(--sp-3);">
         <div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">
           Checking for incoming messages...
@@ -320,650 +315,58 @@
   </div>
 </div>
 
-<style>
-.us-search-wrapper {
-  position: relative;
-}
+{# ---- Rental Renewal Modal ---- #}
+<div class="modal" id="rentalRenewalModal" aria-hidden="true" role="dialog" aria-labelledby="renewalModalTitle">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:38px; height:38px; border-radius:var(--r-full); background:rgba(16, 185, 129, 0.12); color:var(--hue-success); display:grid; place-items:center;">
+          {{ icon('refresh') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="renewalModalTitle">Renew Dedicated Number</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;" id="renewalModalSubtitle">Extend your private carrier line</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-modal-renewal-close aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem 1.5rem;">
+      <p style="font-size:var(--fs-sm); color:var(--text); line-height:1.5; margin:0 0 1rem 0;">
+        Choose the duration you would like to renew this line for. If your line is active, days will be added to your current expiration. If expired, it will be extended from today forward.
+      </p>
 
-.search-clear-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0 10px;
-  display: none;
-  font-size: 1.25rem;
-  line-height: 1;
-  transition: color 0.15s ease;
-}
-.search-clear-btn:hover {
-  color: var(--text-danger, #ef4444);
-}
+      <div style="margin-bottom:1rem;">
+        <label class="form-label" style="font-size:0.8rem; font-weight:700; color:var(--text); margin-bottom:0.4rem; display:block;">
+          Select Renewal Duration:
+        </label>
+        <div id="renewalDurationGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(90px, 1fr)); gap:6px;">
+          {# Injected dynamically via rentals.js #}
+        </div>
+      </div>
 
-.search-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 150;
-  background: var(--surface);
-  border: 1px solid var(--border-strong, var(--border));
-  border-radius: var(--r-md);
-  box-shadow: 0 14px 30px -4px rgba(0, 0, 0, 0.35), 0 8px 12px -4px rgba(0, 0, 0, 0.2);
-  max-height: 250px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 6px;
-  display: none;
-}
-
-.search-dropdown-menu.is-open {
-  display: block;
-  animation: us-drop-anim 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes us-drop-anim {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.search-dropdown-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: var(--r-sm);
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
-  user-select: none;
-  border: 1px solid transparent;
-  margin-bottom: 3px;
-}
-
-.search-dropdown-item:hover,
-.search-dropdown-item.is-highlighted {
-  background: var(--surface-2);
-}
-
-.search-dropdown-item.is-selected {
-  background: rgba(37, 99, 235, 0.12);
-  border-color: rgba(37, 99, 235, 0.3);
-}
-
-.search-dropdown-item-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.search-dropdown-item-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--r-sm);
-  display: grid;
-  place-items: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  flex-shrink: 0;
-  background: var(--surface-2);
-  color: var(--brand);
-}
-
-.search-dropdown-item-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.search-dropdown-item-name {
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.search-dropdown-item-route {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.search-dropdown-item-price {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--brand);
-  background: rgba(37, 99, 235, 0.08);
-  border: 1px solid rgba(37, 99, 235, 0.2);
-  border-radius: var(--r-full);
-  padding: 2px 8px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  margin-left: 8px;
-}
-
-.search-dropdown-empty {
-  padding: 18px 12px;
-  text-align: center;
-  font-size: var(--fs-xs);
-  color: var(--text-muted);
-}
-
-.rental-tab-btn {
-  background: transparent;
-  border: none;
-  padding: 6px 14px;
-  border-radius: var(--r-sm);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.rental-tab-btn:hover {
-  color: var(--text);
-}
-.rental-tab-btn.is-active {
-  background: var(--brand);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-}
-
-/* Icon Sizing: Ensure Clock, Shield, and Header icons are prominent & proportional */
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.page-title svg.tg-ico {
-  width: 26px;
-  height: 26px;
-}
-.card-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.card-title svg.tg-ico {
-  width: 22px;
-  height: 22px;
-}
-.modal-header div[style*="border-radius:var(--r-full)"] svg.tg-ico {
-  width: 22px;
-  height: 22px;
-}
-.quick-buy-note svg.tg-ico {
-  width: 16px;
-  height: 16px;
-}
-.badge svg.tg-ico {
-  width: 14px;
-  height: 14px;
-}
-
-/* Scrollable Tables on Mobile & Small Screens */
-.table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Responsive Mobile View for Rent a Number Page */
-@media (max-width: 680px) {
-  /* Quick Rent Duration Tabs: compact 2-column grid */
-  .rental-duration-tabs {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 6px !important;
-    padding: 4px !important;
-  }
-  .rental-tab-btn {
-    padding: 8px 6px !important;
-    font-size: 0.78rem !important;
-    text-align: center !important;
-    min-height: 38px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-weight: 700 !important;
-  }
-
-  /* Table is cleanly scrollable horizontally with all columns intact */
-  #rentalTable,
-  .table-wrap table {
-    min-width: 560px !important;
-    width: 100% !important;
-    border-collapse: collapse !important;
-  }
-  #rentalTable th,
-  #rentalTable td,
-  .table-wrap th,
-  .table-wrap td {
-    padding: 8px 10px !important;
-    font-size: 0.8rem !important;
-    white-space: nowrap !important;
-  }
-  #rentalTable td:first-child {
-    white-space: normal !important;
-    min-width: 170px !important;
-  }
-  #rentalTable td:first-child .td-strong {
-    font-size: 0.82rem !important;
-  }
-  #rentalTable td:first-child .td-dim {
-    font-size: 0.7rem !important;
-  }
-  #rentalTable .btn,
-  .table-wrap .btn {
-    padding: 5px 12px !important;
-    font-size: 0.78rem !important;
-    min-height: 32px !important;
-    font-weight: 600 !important;
-  }
-  #rentalTable [data-row-price] {
-    font-size: 0.85rem !important;
-  }
-
-  /* Compact spacing for small devices */
-  .card.card-pad {
-    padding: var(--sp-4) !important;
-  }
-  .page-title {
-    font-size: 1.3rem !important;
-  }
-  .page-subtitle {
-    font-size: 0.8rem !important;
-  }
-  .price-box {
-    padding: 10px 12px !important;
-  }
-  .price-box-value {
-    font-size: 1.2rem !important;
-  }
-  .price-box-label {
-    font-size: 0.72rem !important;
-  }
-}
-</style>
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem 1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; color:var(--text-muted);">
+          <span>Renewal Cost:</span>
+          <strong style="color:var(--hue-success); font-size:1.05rem;" id="renewalPriceDisplay">₦0.00 ($0.00)</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+          <span>Incoming SMS:</span>
+          <span class="badge badge-success badge-xs">Unlimited Free</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" data-modal-renewal-close>Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmRenewal" style="font-weight:700;">Confirm &amp; Renew Line</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var catalog = {{ catalog|tojson|safe }};
-  var selectedDuration = 3;
-  var currentRentService = catalog.length > 0 ? catalog[0].code : null;
-  var currentRentName = catalog.length > 0 ? catalog[0].name : null;
-  var activeRentalSmsId = null;
-
-  var rentalModal = document.getElementById('rentalModal');
-  var rentalSmsModal = document.getElementById('rentalSmsModal');
-  var modalRentSvc = document.getElementById('modalRentSvc');
-  var modalRentDuration = document.getElementById('modalRentDuration');
-  var modalRentPrice = document.getElementById('modalRentPrice');
-  var btnConfirmRental = document.getElementById('btnConfirmRental');
-  var rentalSmsFeed = document.getElementById('rentalSmsFeed');
-  var smsModalSubtitle = document.getElementById('smsModalSubtitle');
-  var btnRefreshRentalSms = document.getElementById('btnRefreshRentalSms');
-
-  // Quick Rent Box Elements
-  var rentalSearch = document.getElementById('rental-search');
-  var rentalSearchClear = document.getElementById('rentalSearchClearBtn');
-  var rentalDropdownMenu = document.getElementById('rentalDropdownMenu');
-  var rentalSelect = document.getElementById('rental-service-select');
-  var quickRentPriceDisplay = document.getElementById('quickRentPriceDisplay');
-  var quickRentDurationLabel = document.getElementById('quickRentDurationLabel');
-  var btnQuickRentSubmit = document.getElementById('btnQuickRentSubmit');
-  var tableFilterInput = document.getElementById('tableFilterInput');
-
-  function formatMoney(usd) {
-    if (window.TgCurrency && window.TgCurrency.format) {
-      return window.TgCurrency.format(usd);
-    }
-    var rate = Number(window.TG_NGN_PER_USD) || 1600;
-    return '₦' + (Number(usd) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function getServicePriceUsd(svc, duration) {
-    if (!svc || !svc.pricing) return 0;
-    var tier = svc.pricing[String(duration)];
-    return tier ? tier.retail_usd : 0;
-  }
-
-  function getServicePriceFormatted(svc, duration) {
-    var usd = getServicePriceUsd(svc, duration);
-    return formatMoney(usd);
-  }
-
-  // Update quick rent price display
-  function updateQuickRentPrice() {
-    var svc = catalog.find(function(s) { return s.code === currentRentService; }) || catalog[0];
-    if (!svc) return;
-    var usd = getServicePriceUsd(svc, selectedDuration);
-    if (quickRentPriceDisplay) {
-      quickRentPriceDisplay.setAttribute('data-usd', usd.toFixed(2));
-      quickRentPriceDisplay.textContent = formatMoney(usd);
-    }
-    if (quickRentDurationLabel) {
-      quickRentDurationLabel.textContent = selectedDuration + ' Days';
-    }
-  }
-
-  // Update Table Row Prices & Duration Labels
-  function updateTablePrices() {
-    document.querySelectorAll('[data-row-duration], [data-mobile-duration]').forEach(function(el) {
-      el.textContent = selectedDuration + ' Days';
-    });
-    document.querySelectorAll('[data-row-price]').forEach(function(el) {
-      try {
-        var pricing = JSON.parse(el.dataset.pricing);
-        var tier = pricing[String(selectedDuration)];
-        if (tier) {
-          el.setAttribute('data-usd', tier.retail_usd.toFixed(2));
-          el.textContent = formatMoney(tier.retail_usd);
-        }
-      } catch (e) {}
-    });
-  }
-
-  // Duration Tabs Switching
-  document.querySelectorAll('.rental-tab-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.rental-tab-btn').forEach(function(b) { b.classList.remove('is-active'); });
-      btn.classList.add('is-active');
-      selectedDuration = parseInt(btn.dataset.duration, 10);
-      updateQuickRentPrice();
-      updateTablePrices();
-      renderDropdownItems(getFilteredCatalog(rentalSearch ? rentalSearch.value : ''));
-    });
-  });
-
-  // Searchable Dropdown for Quick Rent Box
-  function getFilteredCatalog(q) {
-    q = (q || '').trim().toLowerCase();
-    if (!q) return catalog;
-    return catalog.filter(function(s) {
-      return (s.name || '').toLowerCase().indexOf(q) !== -1 ||
-             (s.code || '').toLowerCase().indexOf(q) !== -1 ||
-             (s.description || '').toLowerCase().indexOf(q) !== -1;
-    });
-  }
-
-  function renderDropdownItems(items) {
-    if (!rentalDropdownMenu) return;
-    rentalDropdownMenu.innerHTML = '';
-    if (!items || items.length === 0) {
-      var emptyEl = document.createElement('div');
-      emptyEl.className = 'search-dropdown-empty';
-      emptyEl.textContent = 'No rental services match your search';
-      rentalDropdownMenu.appendChild(emptyEl);
-      return;
-    }
-
-    items.forEach(function(s) {
-      var itemEl = document.createElement('div');
-      itemEl.className = 'search-dropdown-item';
-      if (currentRentService === s.code) {
-        itemEl.classList.add('is-selected');
-      }
-
-      var iconLetter = (s.name || 'S').charAt(0).toUpperCase();
-      itemEl.innerHTML =
-        '<div class="search-dropdown-item-left">' +
-          '<span class="search-dropdown-item-icon">' + iconLetter + '</span>' +
-          '<div class="search-dropdown-item-info">' +
-            '<span class="search-dropdown-item-name">' + s.name + '</span>' +
-            '<span class="search-dropdown-item-route">USA &bull; Dedicated Non-VoIP Cellular</span>' +
-          '</div>' +
-        '</div>' +
-        '<span class="search-dropdown-item-price">' + getServicePriceFormatted(s, selectedDuration) + '</span>';
-
-      itemEl.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        selectService(s.code, s.name);
-        closeDropdown();
-      });
-
-      rentalDropdownMenu.appendChild(itemEl);
-    });
-  }
-
-  function openDropdown() {
-    if (!rentalDropdownMenu) return;
-    renderDropdownItems(getFilteredCatalog(rentalSearch ? rentalSearch.value : ''));
-    rentalDropdownMenu.classList.add('is-open');
-    rentalDropdownMenu.style.display = 'block';
-  }
-
-  function closeDropdown() {
-    if (!rentalDropdownMenu) return;
-    rentalDropdownMenu.classList.remove('is-open');
-    rentalDropdownMenu.style.display = 'none';
-  }
-
-  function selectService(code, name) {
-    currentRentService = code;
-    currentRentName = name;
-    if (rentalSelect) {
-      rentalSelect.value = code;
-    }
-    if (rentalSearch) {
-      rentalSearch.value = name;
-      if (rentalSearchClear) rentalSearchClear.style.display = 'inline-block';
-    }
-    updateQuickRentPrice();
-  }
-
-  if (rentalSearch) {
-    rentalSearch.addEventListener('focus', openDropdown);
-    rentalSearch.addEventListener('input', function() {
-      var val = rentalSearch.value.trim();
-      if (rentalSearchClear) {
-        rentalSearchClear.style.display = val ? 'inline-block' : 'none';
-      }
-      openDropdown();
-    });
-    rentalSearch.addEventListener('blur', function() {
-      setTimeout(closeDropdown, 160);
-    });
-  }
-
-  if (rentalSearchClear) {
-    rentalSearchClear.addEventListener('click', function() {
-      if (rentalSearch) rentalSearch.value = '';
-      rentalSearchClear.style.display = 'none';
-      openDropdown();
-    });
-  }
-
-  if (rentalSelect) {
-    rentalSelect.addEventListener('change', function() {
-      var opt = rentalSelect.options[rentalSelect.selectedIndex];
-      selectService(rentalSelect.value, opt.dataset.name || opt.textContent.trim());
-    });
-  }
-
-  // Filter Table List
-  if (tableFilterInput) {
-    tableFilterInput.addEventListener('input', function() {
-      var q = tableFilterInput.value.trim().toLowerCase();
-      document.querySelectorAll('#rentalTable tbody tr[data-service-row]').forEach(function(row) {
-        var name = row.dataset.serviceName || '';
-        var code = row.dataset.serviceCode || '';
-        if (!q || name.indexOf(q) !== -1 || code.indexOf(q) !== -1) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    });
-  }
-
-  // Open Confirmation Modal from Quick Rent button
-  if (btnQuickRentSubmit) {
-    btnQuickRentSubmit.addEventListener('click', function() {
-      var svc = catalog.find(function(s) { return s.code === currentRentService; }) || catalog[0];
-      if (!svc) return;
-      openConfirmationModal(svc.code, svc.name);
-    });
-  }
-
-  // Open Confirmation Modal from Table rows
-  document.addEventListener('click', function(e) {
-    var rentBtn = e.target.closest('[data-action="rent-number-btn"]');
-    if (rentBtn) {
-      var code = rentBtn.dataset.serviceCode;
-      var name = rentBtn.dataset.serviceName;
-      openConfirmationModal(code, name);
-    }
-
-    // View Rental SMS
-    var viewSmsBtn = e.target.closest('[data-action="view-rental-sms"]');
-    if (viewSmsBtn) {
-      activeRentalSmsId = viewSmsBtn.dataset.id;
-      var phone = viewSmsBtn.dataset.phone;
-      var svc = viewSmsBtn.dataset.service;
-      if (smsModalSubtitle) smsModalSubtitle.textContent = svc + ' \u2022 ' + phone;
-      openRentalSmsModal(activeRentalSmsId);
-    }
-  });
-
-  function openConfirmationModal(code, name) {
-    currentRentService = code;
-    currentRentName = name;
-    var svc = catalog.find(function(s) { return s.code === code; }) || catalog[0];
-    var formattedPrice = svc ? getServicePriceFormatted(svc, selectedDuration) : '₦0.00';
-    var usd = svc ? getServicePriceUsd(svc, selectedDuration) : 0;
-
-    if (modalRentSvc) modalRentSvc.textContent = name;
-    if (modalRentDuration) modalRentDuration.textContent = selectedDuration + ' Days';
-    if (modalRentPrice) {
-      modalRentPrice.setAttribute('data-usd', usd.toFixed(2));
-      modalRentPrice.textContent = formattedPrice;
-    }
-
-    rentalModal.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-  }
-
-  // Modal Closers
-  document.querySelectorAll('[data-modal-rental-close]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      rentalModal.classList.remove('is-open');
-      document.body.style.overflow = '';
-    });
-  });
-
-  document.querySelectorAll('[data-modal-sms-close]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      rentalSmsModal.classList.remove('is-open');
-      document.body.style.overflow = '';
-    });
-  });
-
-  // Confirm Purchase
-  if (btnConfirmRental) {
-    btnConfirmRental.addEventListener('click', function() {
-      if (!currentRentService) return;
-      btnConfirmRental.disabled = true;
-      btnConfirmRental.textContent = 'Allocating Dedicated Line...';
-
-      fetch('/api/rent-number', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          service_code: currentRentService,
-          duration_days: selectedDuration
-        })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success) {
-          if (window.toast) window.toast(data.message || 'Dedicated number rented successfully!', 'success');
-          rentalModal.classList.remove('is-open');
-          setTimeout(function() { window.location.reload(); }, 900);
-        } else {
-          if (window.toast) window.toast(data.message || 'Failed to rent number.', 'error');
-          btnConfirmRental.disabled = false;
-          btnConfirmRental.textContent = 'Confirm & Rent Number';
-        }
-      })
-      .catch(function() {
-        if (window.toast) window.toast('Connection error. Please try again.', 'error');
-        btnConfirmRental.disabled = false;
-        btnConfirmRental.textContent = 'Confirm & Rent Number';
-      });
-    });
-  }
-
-  // Open & Fetch Rental SMS Feed
-  function openRentalSmsModal(rentalId) {
-    rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">Checking for incoming SMS...</div>';
-    rentalSmsModal.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-    fetchRentalSms(rentalId);
-  }
-
-  function escapeAndLinkify(text) {
-    if (!text) return '';
-    var div = document.createElement('div');
-    div.textContent = text;
-    var escaped = div.innerHTML;
-    return escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--brand); text-decoration:underline; word-break:break-all;">$1</a>');
-  }
-
-  function fetchRentalSms(rentalId) {
-    if (!rentalId) return;
-    fetch('/api/check-rental-sms/' + encodeURIComponent(rentalId))
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success && data.messages && data.messages.length > 0) {
-          var html = '';
-          data.messages.forEach(function(m) {
-            html += '<div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); text-align:left;">';
-            html += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">';
-            html += '    <span class="td-strong" style="font-size:var(--fs-xs); color:var(--brand);">' + (m.sender || 'Verification') + '</span>';
-            html += '    <span class="td-dim" style="font-size:0.7rem;">' + (m.received_at ? m.received_at.split('T')[0] : '') + '</span>';
-            html += '  </div>';
-            if (m.sms_code) {
-              html += '  <div style="display:flex; align-items:center; gap:8px; margin:6px 0;">';
-              html += '    <span class="code-chip" style="font-size:1.1rem; font-weight:700;">' + m.sms_code + '</span>';
-              html += '    <button class="copy-btn" data-copy="' + m.sms_code + '" type="button" aria-label="Copy code"><svg class="tg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
-              html += '  </div>';
-            }
-            html += '  <p style="font-size:var(--fs-xs); color:var(--text); margin:0; line-height:1.5;">' + escapeAndLinkify(m.full_text || '') + '</p>';
-            html += '</div>';
-          });
-          rentalSmsFeed.innerHTML = html;
-        } else {
-          rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">No SMS codes received yet on this line.<br><span style="font-size:0.75rem; color:var(--text-muted);">Trigger verification code on your app and click Refresh.</span></div>';
-        }
-      })
-      .catch(function() {
-        rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-danger); font-size:var(--fs-sm);">Could not poll SMS feed. Click Refresh to try again.</div>';
-      });
-  }
-
-  if (btnRefreshRentalSms) {
-    btnRefreshRentalSms.addEventListener('click', function() {
-      if (activeRentalSmsId) fetchRentalSms(activeRentalSmsId);
-    });
-  }
-
-  // Currency change listener
-  document.addEventListener('currencychange', function() {
-    updateQuickRentPrice();
-    updateTablePrices();
-    renderDropdownItems(getFilteredCatalog(rentalSearch ? rentalSearch.value : ''));
-  });
-
-  // Initialize
-  updateQuickRentPrice();
-  updateTablePrices();
-});
-</script>
+  {{ super() if super else '' }}
+  <script>
+    window.TG_RENTAL_CATALOG = {{ catalog|tojson|safe }};
+  </script>
+  <script src="{{ url_for('static', filename='js/rentals.js') }}"></script>
 {% endblock %}

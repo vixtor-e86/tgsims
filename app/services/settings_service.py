@@ -362,7 +362,7 @@ class SettingsService:
     @classmethod
     def sync_rental_wholesale_prices(cls) -> tuple[bool, str, int]:
         """Fetches live wholesale rental prices from TextVerified API for all 10 core services
-        across durations (3, 7, 14, 30 days) and persists them directly into the database.
+        across durations (1, 3, 7, 14, 30, 90, 365 days) and persists them directly into the database.
         """
         from app.services.sim_provider import SIMProviderService
         try:
@@ -379,10 +379,13 @@ class SettingsService:
             return False, "Database connection is not available.", 0
 
         durations = {
+            1: RentalDuration.ONE_DAY,
             3: RentalDuration.THREE_DAY,
             7: RentalDuration.SEVEN_DAY,
             14: RentalDuration.FOURTEEN_DAY,
-            30: RentalDuration.THIRTY_DAY
+            30: RentalDuration.THIRTY_DAY,
+            90: RentalDuration.NINETY_DAY,
+            365: RentalDuration.ONE_YEAR
         }
 
         services = SIMProviderService.RENTAL_SERVICES
@@ -394,16 +397,29 @@ class SettingsService:
             sname = svc.get('name', sc.capitalize())
             for days, rd in durations.items():
                 try:
-                    p = tv.reservations.pricing(
-                        service_name=sc,
-                        duration=rd,
-                        number_type=NumberType.MOBILE,
-                        capability=ReservationCapability.SMS,
-                        area_code=False,
-                        always_on=False,
-                        is_renewable=False
-                    )
-                    cost = float(getattr(p, 'price', 0.0) or 0.0)
+                    if sc == 'allservices' and days == 1:
+                        p3 = tv.reservations.pricing(
+                            service_name=sc,
+                            duration=RentalDuration.THREE_DAY,
+                            number_type=NumberType.MOBILE,
+                            capability=ReservationCapability.SMS,
+                            area_code=False,
+                            always_on=False,
+                            is_renewable=False
+                        )
+                        cost = round(float(getattr(p3, 'price', 6.0) or 6.0) * 0.75, 2)
+                    else:
+                        p = tv.reservations.pricing(
+                            service_name=sc,
+                            duration=rd,
+                            number_type=NumberType.MOBILE,
+                            capability=ReservationCapability.SMS,
+                            area_code=False,
+                            always_on=False,
+                            is_renewable=False
+                        )
+                        cost = float(getattr(p, 'price', 0.0) or 0.0)
+
                     if cost > 0:
                         admin.table('rental_service_pricing').upsert({
                             'service_code': sc,
@@ -419,5 +435,5 @@ class SettingsService:
         if updated_count > 0:
             return True, f"Successfully refreshed wholesale prices for {updated_count} rental options directly from TextVerified!", updated_count
         else:
-            return False, "No prices could be updated. Please ensure migration 012 has been run in Supabase SQL editor.", 0
+            return False, "No prices could be updated. Please ensure migration 015 has been run in Supabase SQL editor.", 0
 

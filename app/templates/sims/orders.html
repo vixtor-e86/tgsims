@@ -180,6 +180,14 @@
                         data-service="{{ o.service_name }}">
                   {{ icon('mail') }} Open Mailbox
                 </button>
+                <button type="button" class="btn btn-secondary btn-sm" data-action="renew-rental-btn"
+                        data-id="{{ o.id or o.order_reference }}"
+                        data-phone="{{ o.phone_number }}"
+                        data-service="{{ o.service_name }}"
+                        data-service-code="{{ o.service_code|default('allservices') }}"
+                        data-duration="{{ o.duration_days|default(3) }}">
+                  {{ icon('refresh') }} Renew
+                </button>
               </div>
             {% elif is_active %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
@@ -422,6 +430,53 @@
     <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
       <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshRentalSms">{{ icon('refresh') }} Refresh</button>
       <button type="button" class="btn btn-primary btn-sm" data-modal-sms-close>Done</button>
+    </div>
+  </div>
+</div>
+
+{# ---- Rental Line Renewal Modal ---- #}
+<div class="modal" id="rentalRenewalModal" aria-hidden="true" role="dialog" aria-labelledby="renewalModalTitle">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:38px; height:38px; border-radius:var(--r-full); background:rgba(16, 185, 129, 0.12); color:var(--hue-success); display:grid; place-items:center;">
+          {{ icon('refresh') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="renewalModalTitle">Renew Dedicated Number</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;" id="renewalModalSubtitle">Extend your private carrier line</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-modal-renewal-close aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem 1.5rem;">
+      <p style="font-size:var(--fs-sm); color:var(--text); line-height:1.5; margin:0 0 1rem 0;">
+        Choose the duration you would like to renew this line for. If your line is active, days will be added to your current expiration. If expired, it will be extended from today forward.
+      </p>
+
+      <div style="margin-bottom:1rem;">
+        <label class="form-label" style="font-size:0.8rem; font-weight:700; color:var(--text); margin-bottom:0.4rem; display:block;">
+          Select Renewal Duration:
+        </label>
+        <div id="renewalDurationGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(90px, 1fr)); gap:6px;">
+          {# Injected dynamically via rentals.js #}
+        </div>
+      </div>
+
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem 1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; color:var(--text-muted);">
+          <span>Renewal Cost:</span>
+          <strong style="color:var(--hue-success); font-size:1.05rem;" id="renewalPriceDisplay">₦0.00 ($0.00)</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+          <span>Incoming SMS:</span>
+          <span class="badge badge-success badge-xs">Unlimited Free</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" data-modal-renewal-close>Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmRenewal" style="font-weight:700;">Confirm &amp; Renew Line</button>
     </div>
   </div>
 </div>
@@ -1122,4 +1177,8 @@
   100% { transform: scale(1); opacity: 1; }
 }
 </style>
+<script>
+  window.TG_RENTAL_CATALOG = {{ (rental_catalog|default([]))|tojson|safe }};
+</script>
+<script src="{{ url_for('static', filename='js/rentals.js') }}"></script>
 {% endblock %}

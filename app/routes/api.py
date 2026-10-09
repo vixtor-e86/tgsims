@@ -1558,7 +1558,7 @@ def mark_user_notifications_read():
 
 @api_bp.route('/rent-number', methods=['POST'])
 def api_rent_number():
-    """Purchase a dedicated virtual number rental for 3, 7, 14, or 30 days."""
+    """Purchase a dedicated virtual number rental for 1, 3, 7, 14, 30, 90, or 365 days."""
     user_id = _get_current_user_id()
     if not user_id:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -1579,6 +1579,33 @@ def api_rent_number():
     return jsonify(res), status_code
 
 
+@api_bp.route('/rent-number/renew', methods=['POST'])
+@api_bp.route('/rentals/renew', methods=['POST'])
+def api_renew_rental():
+    """Renew/extend an active or expired dedicated number rental line."""
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please sign in to renew your number.'}), 401
+
+    data = request.json or {}
+    rental_id = data.get('rental_id') or data.get('order_id')
+    if not rental_id:
+        return jsonify({'success': False, 'message': 'Rental ID or reference is required.'}), 400
+
+    try:
+        duration_days = int(data.get('duration_days') or 3)
+    except (ValueError, TypeError):
+        duration_days = 3
+
+    res = SIMProviderService.renew_rental(
+        user_id=user_id,
+        rental_id=rental_id,
+        duration_days=duration_days
+    )
+    status_code = 200 if res.get('success') else 400
+    return jsonify(res), status_code
+
+
 @api_bp.route('/check-rental-sms/<rental_id>', methods=['GET'])
 def api_check_rental_sms(rental_id):
     """Poll SMS messages for an active rental line."""
@@ -1588,6 +1615,7 @@ def api_check_rental_sms(rental_id):
 
     res = SIMProviderService.check_rental_sms(rental_id)
     return jsonify(res)
+
 
 
 

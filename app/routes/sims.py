@@ -200,6 +200,7 @@ def my_sims():
             'id': r.get('id') or r.get('rental_reference'),
             'order_reference': r.get('rental_reference') or f"RNT-{str(r.get('id', ''))[:8].upper()}",
             'service_name': r.get('service_name', 'Dedicated Number'),
+            'service_code': r.get('service_code') or 'allservices',
             'phone_number': r.get('phone_number', ''),
             'country_code': r.get('country_code', 'US'),
             'price': rent_price,
@@ -237,7 +238,8 @@ def my_sims():
     orders.sort(key=_parse_order_date, reverse=True)
 
     react_fee = SettingsService.get_reactivation_fee()
-    return render_template('sims/orders.html', orders=orders, user=user, reactivation_fee_usd=react_fee)
+    rental_catalog = SIMProviderService.get_rental_catalog()
+    return render_template('sims/orders.html', orders=orders, user=user, reactivation_fee_usd=react_fee, rental_catalog=rental_catalog)
 
 
 @sims_bp.route('/rentals', endpoint='rentals')

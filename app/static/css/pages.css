@@ -2729,7 +2729,9 @@
     display: flex;
   }
   .buy-three-container[data-mobile-active="country"] .buy-column-service,
-  .buy-three-container[data-mobile-active="country"] .buy-column-operators {
+  .buy-three-container[data-mobile-active="country"] .buy-column-operators,
+  .buy-three-container[data-mobile-active="country"] .buy-column-duration,
+  .buy-three-container[data-mobile-active="country"] .buy-column-checkout {
     display: none !important;
   }
 
@@ -2737,7 +2739,9 @@
     display: flex;
   }
   .buy-three-container[data-mobile-active="service"] .buy-column-country,
-  .buy-three-container[data-mobile-active="service"] .buy-column-operators {
+  .buy-three-container[data-mobile-active="service"] .buy-column-operators,
+  .buy-three-container[data-mobile-active="service"] .buy-column-duration,
+  .buy-three-container[data-mobile-active="service"] .buy-column-checkout {
     display: none !important;
   }
 
@@ -2745,7 +2749,29 @@
     display: flex;
   }
   .buy-three-container[data-mobile-active="operators"] .buy-column-country,
-  .buy-three-container[data-mobile-active="operators"] .buy-column-service {
+  .buy-three-container[data-mobile-active="operators"] .buy-column-service,
+  .buy-three-container[data-mobile-active="operators"] .buy-column-duration,
+  .buy-three-container[data-mobile-active="operators"] .buy-column-checkout {
+    display: none !important;
+  }
+
+  .buy-three-container[data-mobile-active="duration"] .buy-column-duration {
+    display: flex;
+  }
+  .buy-three-container[data-mobile-active="duration"] .buy-column-country,
+  .buy-three-container[data-mobile-active="duration"] .buy-column-service,
+  .buy-three-container[data-mobile-active="duration"] .buy-column-operators,
+  .buy-three-container[data-mobile-active="duration"] .buy-column-checkout {
+    display: none !important;
+  }
+
+  .buy-three-container[data-mobile-active="checkout"] .buy-column-checkout {
+    display: flex;
+  }
+  .buy-three-container[data-mobile-active="checkout"] .buy-column-country,
+  .buy-three-container[data-mobile-active="checkout"] .buy-column-service,
+  .buy-three-container[data-mobile-active="checkout"] .buy-column-operators,
+  .buy-three-container[data-mobile-active="checkout"] .buy-column-duration {
     display: none !important;
   }
 }

@@ -552,7 +552,7 @@
     <div>
       <h2>{{ icon('phone') }} Dedicated Number Rentals Pricing Control</h2>
       <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
-        Manage wholesale costs and set custom retail prices for all 10 core dedicated line rental services across 3, 7, 14, and 30-day durations. Custom prices override standard dynamic markup.
+        Manage wholesale costs and set custom retail prices for all 10 core dedicated line rental services across 1, 3, 7, 14, 30, 90, and 365-day (1 year) durations. Custom prices override standard dynamic markup.
       </p>
     </div>
     <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
@@ -571,10 +571,13 @@
       <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
         <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-right: 0.35rem; text-transform: uppercase;">Duration:</span>
         <button type="button" class="btn btn-xs btn-primary rental-filter-btn" data-filter="all">All Tiers</button>
+        <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="1">1 Day</button>
         <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="3">3 Days</button>
         <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="7">7 Days</button>
         <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="14">14 Days</button>
         <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="30">30 Days</button>
+        <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="90">90 Days</button>
+        <button type="button" class="btn btn-xs btn-secondary rental-filter-btn" data-filter="365">365 Days (1 Yr)</button>
       </div>
 
       <div style="position: relative; min-width: 240px;">
@@ -599,7 +602,8 @@
           </thead>
           <tbody id="rental-pricing-tbody">
             {% for svc in rental_catalog %}
-              {% for days_str in ['3', '7', '14', '30'] %}
+              {% for days_str in ['1', '3', '7', '14', '30', '90', '365'] %}
+                {% if svc.pricing and days_str in svc.pricing %}
                 {% set p = svc.pricing[days_str] %}
                 <tr class="rental-row"
                     data-duration="{{ days_str }}"
@@ -612,7 +616,9 @@
                     </div>
                   </td>
                   <td style="padding: 0.75rem 0.6rem;">
-                    <span class="badge badge-brand" style="font-size: 0.75rem; font-weight: 700;">{{ days_str }} Days</span>
+                    <span class="badge badge-brand" style="font-size: 0.75rem; font-weight: 700;">
+                      {{ '1 Year' if days_str == '365' else days_str ~ (' Day' if days_str == '1' else ' Days') }}
+                    </span>
                   </td>
                   <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text-muted);">
                     ${{ '%.2f'|format(p.base_cost_usd) }}
@@ -652,6 +658,7 @@
                     </form>
                   </td>
                 </tr>
+                {% endif %}
               {% endfor %}
             {% endfor %}
           </tbody>
