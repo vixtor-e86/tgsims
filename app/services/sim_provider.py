@@ -138,25 +138,39 @@ class SMSCodeClient:
 
     def get_platform_id(self, service_code: str) -> int:
         s_clean = str(service_code or '').strip().lower()
+        if s_clean.isdigit():
+            return int(s_clean)
         core_map = {
             'whatsapp': 1, 'wa': 1, 'wa_biz': 1, 'whatsapp business': 1,
             'telegram': 2, 'tg': 2,
             'google': 5, 'gmail': 5, 'youtube': 5, 'go': 5, 'google-youtube-gmail': 5,
             'instagram': 3, 'ig': 3, 'threads': 3, 'instagram-threads': 3,
-            'twitter': 6, 'tw': 6, 'x': 6,
+            'twitter': 6, 'tw': 6, 'x': 6, 'twitter-x': 6,
             'facebook': 4, 'fb': 4, 'meta': 4,
-            'openai': 20, 'chatgpt': 20, 'dr': 20,
+            'openai': 20, 'chatgpt': 20, 'dr': 20, 'openai-chatgpt': 20,
             'tiktok': 7, 'tiktok-douyin': 7, 'douyin': 7, 'lf': 7,
             'discord': 8, 'ds': 8,
-            'apple': 12, 'icloud': 12, 'wx': 12,
+            'apple': 12, 'icloud': 12, 'wx': 12, 'apple-icloud': 12,
             'paypal': 10, 'netflix': 15, 'uber': 18, 'snapchat': 13,
             'tinder': 9, 'microsoft': 11, 'amazon': 14
         }
         if s_clean in core_map:
             return core_map[s_clean]
         services = self.get_services()
+        # 1. Exact match on code or name
         for s in services:
             if s.get('code', '').lower() == s_clean or s.get('name', '').lower() == s_clean:
+                return s['id']
+        # 2. Match without hyphens or spaces
+        clean_norm = s_clean.replace('-', '').replace(' ', '')
+        for s in services:
+            s_norm = s.get('code', '').lower().replace('-', '').replace(' ', '')
+            n_norm = s.get('name', '').lower().replace('-', '').replace(' ', '')
+            if s_norm == clean_norm or n_norm == clean_norm:
+                return s['id']
+        # 3. Substring match
+        for s in services:
+            if s_clean in s.get('code', '').lower() or s_clean in s.get('name', '').lower():
                 return s['id']
         return 1
 
@@ -619,7 +633,7 @@ class SIMProviderService:
         return cls._cached_telegram_operators.get(lookup_key) or {}
 
     @classmethod
-    def _load_raw_catalog(cls) -> list:
+    def _load_raw_catalog(cls):
         if cls._cached_raw_catalog is not None:
             return cls._cached_raw_catalog
 
@@ -629,7 +643,14 @@ class SIMProviderService:
             try:
                 with open(json_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    if data and isinstance(data, list) and len(data) > 0:
+                    if isinstance(data, dict):
+                        # Filter out US from countries list (handled separately in US page)
+                        raw_countries = data.get('countries', [])
+                        filtered_countries = [c for c in raw_countries if c.get('country_code', '').upper() != 'US']
+                        data['countries'] = filtered_countries
+                        cls._cached_raw_catalog = data
+                        return data
+                    elif isinstance(data, list) and len(data) > 0:
                         filtered_data = [c for c in data if c.get('country_code', '').upper() != 'US']
                         cls._cached_raw_catalog = filtered_data
                         return filtered_data
@@ -637,36 +658,46 @@ class SIMProviderService:
                 print(f"[SIMProviderService] Error reading catalog.json: {e}")
         return []
 
+    _cached_dynamic_catalog = None
+
     @classmethod
-    def get_catalog(cls) -> list:
+    def get_catalog(cls):
         """Returns country and service catalog loaded from app/data/catalog.json.
-        Covers all 153 countries from 5sim with all platforms and dynamic markups and overrides applied.
+        Covers all 242 countries and all 1,236 SMSCode services with dynamic markups and overrides applied.
         """
-        raw_countries = cls._load_raw_catalog()
-        if not raw_countries:
-            return [
-                {
-                    'country_code': 'GB',
-                    'country_name': 'United Kingdom',
-                    'country_slug': 'england',
-                    'flag': '🇬🇧',
-                    'dial': '+44',
-                    'services': [
-                        {'name': 'WhatsApp', 'code': 'whatsapp', 'price': 1.25, 'available': 46790, 'category': 'SMS Verification'},
-                        {'name': 'Telegram', 'code': 'telegram', 'price': 1.10, 'available': 12500, 'category': 'SMS Verification'},
-                        {'name': 'Google / Gmail', 'code': 'google', 'price': 0.95, 'available': 35400, 'category': 'SMS Verification'}
-                    ]
-                }
-            ]
+        if cls._cached_dynamic_catalog is not None:
+            return cls._cached_dynamic_catalog
+
+        raw_data = cls._load_raw_catalog()
+        if not raw_data:
+            return {
+                'countries': [
+                    {
+                        'country_code': 'GB',
+                        'country_name': 'United Kingdom',
+                        'country_slug': 'england',
+                        'flag': '🇬🇧',
+                        'dial': '+44',
+                    }
+                ],
+                'services': [
+                    {'name': 'WhatsApp', 'code': 'whatsapp', 'platform_id': 1, 'is_core': True, 'base_cost': 0.50, 'price': 0.50, 'available': 1000},
+                    {'name': 'Telegram', 'code': 'telegram', 'platform_id': 2, 'is_core': True, 'base_cost': 0.30, 'price': 0.30, 'available': 1000},
+                    {'name': 'Google / Gmail', 'code': 'google', 'platform_id': 5, 'is_core': True, 'base_cost': 0.20, 'price': 0.20, 'available': 1000}
+                ]
+            }
 
         try:
             from app.services.settings_service import SettingsService
-            pct, floor = SettingsService.get_fivesim_markup()
+            try:
+                pct, floor = SettingsService.get_smscode_markup()
+            except Exception:
+                pct, floor = SettingsService.get_fivesim_markup()
             all_overrides = SettingsService.get_price_overrides()
             overrides = {
                 o['service_code'].strip().lower(): float(o['override_price_usd'])
                 for o in all_overrides
-                if o.get('provider_type') in ('5sim', 'virtualsms', 'all') and o.get('is_active', True) and o.get('service_code')
+                if o.get('provider_type') in ('smscode', 'virtualsms', '5sim', 'all') and o.get('is_active', True) and o.get('service_code')
             }
         except Exception:
             pct, floor = 0.0, 0.0
@@ -674,14 +705,38 @@ class SIMProviderService:
 
         mult = 1.0 + (pct / 100.0)
 
+        if isinstance(raw_data, dict):
+            countries = raw_data.get('countries', [])
+            raw_services = raw_data.get('services', [])
+            processed_services = []
+            for s in raw_services:
+                s_copy = dict(s)
+                s_code = (s.get('code') or '').lower().strip()
+                base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.20))
+                s_copy['base_cost'] = base
+
+                if s_code in overrides:
+                    s_copy['price'] = overrides[s_code]
+                    s_copy['is_override'] = True
+                elif pct <= 0.0 and floor <= 0.0:
+                    s_copy['price'] = round(base, 2)
+                else:
+                    s_copy['price'] = round(max(base * mult, base + floor), 2)
+                processed_services.append(s_copy)
+
+            res = {'countries': countries, 'services': processed_services}
+            cls._cached_dynamic_catalog = res
+            return res
+
+        # Legacy list of country dicts
         dynamic_catalog = []
-        for c in raw_countries:
+        for c in raw_data:
             c_copy = dict(c)
             services_list = []
             for s in c.get('services', []):
                 s_copy = dict(s)
                 s_code = (s.get('code') or '').lower().strip()
-                base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.50))
+                base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.20))
                 s_copy['base_cost'] = base
 
                 if s_code in overrides:
@@ -721,7 +776,8 @@ class SIMProviderService:
             country_name = c_meta['name']
         else:
             cat = cls.get_catalog()
-            matched = next((c for c in cat if c.get('country_code', '').upper() == cc_clean or c.get('country_slug', '').lower() == cc_clean.lower()), None)
+            country_list = cat.get('countries', []) if isinstance(cat, dict) else cat
+            matched = next((c for c in country_list if c.get('country_code', '').upper() == cc_clean or c.get('country_slug', '').lower() == cc_clean.lower()), None)
             if matched:
                 country_slug = matched.get('country_slug', cc_clean.lower())
                 country_name = matched.get('country_name', cc_clean)
@@ -1147,8 +1203,11 @@ class SIMProviderService:
     @classmethod
     def get_smscode_us_services(cls, apply_markup: bool = True) -> list:
         """Loads the 10 core USA services from app/data/usa_core_services.json with multiple operators per service,
-        applying dynamic admin markup and price overrides.
+        plus all 1,226 non-core services with 2 server routes, applying dynamic admin markup and price overrides.
         """
+        if apply_markup and cls._cached_smscode_us_services_raw is not None:
+            return cls._cached_smscode_us_services_raw
+
         import json
         data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_core_services.json')
         if not os.path.exists(data_path):
@@ -1324,6 +1383,8 @@ class SIMProviderService:
             except Exception as e:
                 print(f"[SIMProviderService] Error loading usa_other_services.json: {e}")
 
+        if apply_markup:
+            cls._cached_smscode_us_services_raw = services_list
         return services_list
 
     @classmethod

@@ -8,18 +8,32 @@
 (function () {
   "use strict";
 
-  var CORE_SLUGS = [
-    "whatsapp", "wa", "telegram", "tg", "google", "gmail", "youtube",
-    "instagram", "ig", "threads", "twitter", "tw", "x", "facebook", "fb",
-    "openai", "chatgpt", "tiktok", "discord", "apple", "icloud"
+  var CORE_PLATFORM_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 12, 20];
+  var CORE_FULL_SLUGS = [
+    "whatsapp", "telegram", "google", "gmail", "youtube", "google-youtube-gmail",
+    "instagram", "threads", "instagram-threads", "twitter", "twitter-x",
+    "facebook", "openai", "chatgpt", "openai-chatgpt", "tiktok", "tiktok-douyin",
+    "discord", "apple", "apple-icloud", "icloud"
   ];
 
-  function isCoreService(code, name) {
-    var c = (code || "").toLowerCase();
-    var n = (name || "").toLowerCase();
-    for (var i = 0; i < CORE_SLUGS.length; i++) {
-      var s = CORE_SLUGS[i];
-      if (c === s || c.indexOf(s) > -1 || n.indexOf(s) > -1) return true;
+  function isCoreService(s, name) {
+    if (!s) return false;
+    if (typeof s === "object") {
+      if (s.is_core === true) return true;
+      if (s.platform_id && CORE_PLATFORM_IDS.indexOf(Number(s.platform_id)) > -1) return true;
+      var c = (s.code || "").toLowerCase();
+      var n = (s.name || "").toLowerCase();
+      for (var i = 0; i < CORE_FULL_SLUGS.length; i++) {
+        var slug = CORE_FULL_SLUGS[i];
+        if (c === slug || n.indexOf(slug) > -1) return true;
+      }
+      return false;
+    }
+    var codeStr = (s || "").toLowerCase();
+    var nameStr = (name || "").toLowerCase();
+    for (var j = 0; j < CORE_FULL_SLUGS.length; j++) {
+      var slug2 = CORE_FULL_SLUGS[j];
+      if (codeStr === slug2 || nameStr.indexOf(slug2) > -1) return true;
     }
     return false;
   }
@@ -41,7 +55,15 @@
 
     var catalog = [];
     try {
-      catalog = JSON.parse(root.getAttribute("data-catalog") || "[]");
+      var raw = JSON.parse(root.getAttribute("data-catalog") || "[]");
+      if (Array.isArray(raw)) {
+        catalog = raw;
+      } else if (raw && raw.countries && raw.services) {
+        var globalServices = raw.services;
+        catalog = raw.countries.map(function (c) {
+          return Object.assign({}, c, { services: c.services || globalServices });
+        });
+      }
     } catch (e) {
       catalog = [];
     }
@@ -205,7 +227,7 @@
       var coreList = [];
       var otherList = [];
       rawServices.forEach(function (s) {
-        if (isCoreService(s.code, s.name)) {
+        if (isCoreService(s)) {
           coreList.push(s);
         } else {
           otherList.push(s);
@@ -258,7 +280,7 @@
           row.classList.add("is-active");
         }
 
-        var isCore = isCoreService(s.code, s.name);
+        var isCore = isCoreService(s);
         var coreBadge = isCore ? '<span class="buy-list-badge-core">Core</span>' : '';
         var letter = (s.name || "S").charAt(0).toUpperCase();
 
