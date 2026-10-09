@@ -48,12 +48,68 @@ def get_catalog_operators():
     if not client.is_configured:
         return jsonify({'success': True, 'operators': []})
 
+    core_slugs = {
+        'whatsapp', 'wa', 'telegram', 'tg', 'google', 'gmail', 'youtube',
+        'instagram', 'ig', 'threads', 'twitter', 'tw', 'x', 'facebook', 'fb',
+        'openai', 'chatgpt', 'tiktok', 'discord', 'apple', 'icloud'
+    }
     cid = client.get_country_id(country_code)
     pid = client.get_platform_id(service_code)
+    is_core = service_code in core_slugs
 
-    raw_ops = client.get_operators(country_id=cid, platform_id=pid)
-    if not raw_ops:
-        return jsonify({'success': True, 'operators': []})
+    raw_ops = client.get_operators(country_id=cid, platform_id=pid) if is_core else []
+    if not is_core or not raw_ops:
+        products = client.get_products(country_id=cid, platform_id=pid, limit=10)
+        if products:
+            valid_prods = []
+            for p in products:
+                try:
+                    amt = float(p.get('price', {}).get('amount') or 999)
+                    valid_prods.append((amt, p))
+                except Exception:
+                    pass
+            valid_prods.sort(key=lambda x: x[0])
+            if valid_prods:
+                routes = []
+                amt1, p1 = valid_prods[0]
+                retail1, _ = SIMProviderService.calculate_retail_price(
+                    base_cost=amt1,
+                    service_code=service_code,
+                    provider_type='smscode',
+                    country_code=country_code
+                )
+                routes.append({
+                    'operator_id': p1.get('operator_id') or 1,
+                    'operator_code': 'route_1',
+                    'operator_name': 'Server Route 1 (Primary)',
+                    'base_cost_usd': amt1,
+                    'price_usd': retail1,
+                    'price': retail1,
+                    'available': int(p1.get('available_count') or 500),
+                    'catalog_product_id': p1.get('catalog_product_id'),
+                    'cheapest_product_id': p1.get('id')
+                })
+                if len(valid_prods) > 1:
+                    amt2, p2 = valid_prods[1]
+                    retail2, _ = SIMProviderService.calculate_retail_price(
+                        base_cost=amt2,
+                        service_code=service_code,
+                        provider_type='smscode',
+                        country_code=country_code
+                    )
+                    routes.append({
+                        'operator_id': p2.get('operator_id') or 2,
+                        'operator_code': 'route_2',
+                        'operator_name': 'Server Route 2 (Alternative)',
+                        'base_cost_usd': amt2,
+                        'price_usd': retail2,
+                        'price': retail2,
+                        'available': int(p2.get('available_count') or 500),
+                        'catalog_product_id': p2.get('catalog_product_id'),
+                        'cheapest_product_id': p2.get('id')
+                    })
+                return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': routes})
+        return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': []})
 
     # For each operator, get products, pick cheapest, calculate retail price
     operators_list = []
@@ -146,13 +202,18 @@ def purchase_sim():
             'message': f'Insufficient wallet balance. You need ${price:.2f} but have ${cur_balance:.2f}. Please top up your wallet.'
         }), 400
 
+    catalog_product_id = data.get('catalog_product_id')
+    product_id = data.get('product_id')
+
     # 2. Allocate Virtual Number
     sim_result = SIMProviderService.purchase_number(
         country_code,
         service_name,
         operator=operator,
         service_code=service_code,
-        operator_id=operator_id
+        operator_id=operator_id,
+        catalog_product_id=catalog_product_id,
+        product_id=product_id
     )
     if not sim_result or not sim_result.get('success'):
         err_msg = (sim_result or {}).get('message') or 'No numbers currently available for this service. Please select another country or try again shortly.'
@@ -277,6 +338,9 @@ def purchase_us_canada():
             'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price * 1600:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
         }), 400
 
+    catalog_product_id = data.get('catalog_product_id')
+    product_id = data.get('product_id')
+
     # 2. Allocate US number
     alloc_res = SIMProviderService.purchase_us_canada_number(
         country_code=country_code,
@@ -285,7 +349,9 @@ def purchase_us_canada():
         provider_id=provider_id,
         price=price,
         service_code=service_code,
-        operator_id=operator_id
+        operator_id=operator_id,
+        catalog_product_id=catalog_product_id,
+        product_id=product_id
     )
 
     if not alloc_res or not alloc_res.get('success'):

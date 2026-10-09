@@ -697,7 +697,16 @@ class SIMProviderService:
         return dynamic_catalog
 
     @classmethod
-    def purchase_number(cls, country_code: str, service_name: str, operator: str = 'any', service_code: str = None, operator_id: int = None) -> dict:
+    def purchase_number(
+        cls,
+        country_code: str,
+        service_name: str,
+        operator: str = 'any',
+        service_code: str = None,
+        operator_id: int = None,
+        catalog_product_id: int = None,
+        product_id: int = None
+    ) -> dict:
         """Allocates a virtual number using SMSCode.gg API.
         Falls back to local preview mode if API key is not configured.
         """
@@ -746,7 +755,9 @@ class SIMProviderService:
                 country_code=cc_clean,
                 service_code=svc_code_clean,
                 operator_id=operator_id,
-                operator=operator
+                operator=operator,
+                catalog_product_id=catalog_product_id,
+                product_id=product_id
             )
             if not buy_res.get('success'):
                 return buy_res
@@ -1150,8 +1161,8 @@ class SIMProviderService:
             print(f"[SIMProviderService] Error loading usa_core_services.json: {e}")
             return cls.FIVESIM_US_SERVICES_WITH_ROUTES
 
-        pct = 30.0
-        floor = 0.30
+        pct = 0.0
+        floor = 0.0
         overrides = {}
         if apply_markup:
             try:
@@ -1164,7 +1175,7 @@ class SIMProviderService:
                     if o.get('provider_type') in ('smscode', 'virtualsms', '5sim', 'all') and o.get('is_active', True) and o.get('service_code')
                 }
             except Exception:
-                pct, floor = 30.0, 0.30
+                pct, floor = 0.0, 0.0
 
         mult = 1.0 + (pct / 100.0)
 
@@ -1247,14 +1258,71 @@ class SIMProviderService:
                 'service_code': std_code,
                 'catalog_slug': sc,
                 'quality': 'Economy Pool',
+                'is_core': True,
                 'price_usd': default_op.get('price_usd', 1.00),
                 'base_cost_usd': default_op.get('base_cost_usd', 0.50),
                 'operator': default_op.get('operator_name', 'T-Mobile'),
                 'operator_id': default_op.get('operator_id', 125),
+                'catalog_product_id': default_op.get('catalog_product_id'),
+                'cheapest_product_id': default_op.get('cheapest_product_id'),
                 'operators': processed_ops,
                 'available': sum(op.get('available', 0) for op in processed_ops)
             }
             services_list.append(item)
+
+        # Append non-core services from usa_other_services.json
+        other_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_other_services.json')
+        if os.path.exists(other_path):
+            try:
+                with open(other_path, 'r', encoding='utf-8') as f:
+                    other_map = json.load(f)
+
+                sorted_keys = sorted(other_map.keys(), key=lambda k: other_map[k].get('service_name', k).lower())
+                for key in sorted_keys:
+                    entry = other_map[key]
+                    s_code = entry.get('service_code') or key
+                    s_name = entry.get('service_name') or key.title()
+                    raw_ops = entry.get('operators', [])
+
+                    processed_ops = []
+                    for op in raw_ops:
+                        base_cost = float(op.get('base_price_usd', 0.20))
+                        if s_code in overrides:
+                            op_retail = overrides[s_code]
+                        elif not apply_markup or (pct <= 0.0 and floor <= 0.0):
+                            op_retail = round(base_cost, 2)
+                        else:
+                            op_retail = round(max(base_cost * mult, base_cost + floor), 2)
+
+                        clean_op = dict(op)
+                        clean_op['base_cost_usd'] = base_cost
+                        clean_op['price_usd'] = op_retail
+                        clean_op['price'] = op_retail
+                        processed_ops.append(clean_op)
+
+                    if not processed_ops:
+                        continue
+
+                    default_op = processed_ops[0]
+                    services_list.append({
+                        'id': f"{s_code}_basic",
+                        'service_name': s_name,
+                        'name': s_name,
+                        'service_code': s_code,
+                        'catalog_slug': key,
+                        'quality': 'Economy Pool',
+                        'is_core': False,
+                        'price_usd': default_op.get('price_usd', 0.50),
+                        'base_cost_usd': default_op.get('base_cost_usd', 0.20),
+                        'operator': default_op.get('operator_name', 'Server Route 1 (Primary)'),
+                        'operator_id': default_op.get('operator_id', 1),
+                        'catalog_product_id': default_op.get('catalog_product_id'),
+                        'cheapest_product_id': default_op.get('cheapest_product_id'),
+                        'operators': processed_ops,
+                        'available': sum(op.get('available', 0) for op in processed_ops)
+                    })
+            except Exception as e:
+                print(f"[SIMProviderService] Error loading usa_other_services.json: {e}")
 
         return services_list
 
@@ -1334,7 +1402,9 @@ class SIMProviderService:
         provider_id: str = 'any',
         price: float = None,
         service_code: str = None,
-        operator_id: int = None
+        operator_id: int = None,
+        catalog_product_id: int = None,
+        product_id: int = None
     ) -> dict:
         """Purchases a US virtual number:
         - basic_pool: routes through SMSCode with selected operator route (T-Mobile, AT&T, Verizon, etc.)
@@ -1444,6 +1514,19 @@ class SIMProviderService:
                             break
 
                 svc_entry = core_data.get(s_key)
+                if not svc_entry:
+                    other_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_other_services.json')
+                    if os.path.exists(other_path):
+                        with open(other_path, 'r', encoding='utf-8') as f:
+                            other_data = json.load(f)
+                        s_key = service_code
+                        if s_key not in other_data:
+                            for k in other_data:
+                                if k.startswith(s_key) or s_key in k:
+                                    s_key = k
+                                    break
+                        svc_entry = other_data.get(s_key)
+
                 if svc_entry and svc_entry.get('operators'):
                     ops = svc_entry['operators']
                     if resolved_op_id is not None:
@@ -1452,7 +1535,7 @@ class SIMProviderService:
                                 matched_op = op
                                 break
                     if not matched_op:
-                        # Default to T-Mobile (125) or cheapest
+                        # Default to T-Mobile (125) or cheapest route
                         for op in ops:
                             if op.get('operator_id') == 125:
                                 matched_op = op
@@ -1464,9 +1547,14 @@ class SIMProviderService:
                         resolved_op_id = matched_op.get('operator_id')
                         matched_catalog_pid = matched_op.get('catalog_product_id')
                         matched_product_id = matched_op.get('cheapest_product_id')
-                        op_display_name = matched_op.get('operator_name', 'T-Mobile')
+                        op_display_name = matched_op.get('operator_name', 'Server Route 1 (Primary)')
         except Exception as e:
             print(f"[SIMProviderService] Error matching operator tier: {e}")
+
+        if catalog_product_id:
+            matched_catalog_pid = int(catalog_product_id)
+        if product_id:
+            matched_product_id = int(product_id)
 
         charge_price = float(price) if price else 1.25
 

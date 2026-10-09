@@ -1,0 +1,1198 @@
+{
+  "microsoft": {
+    "platform_id": 11,
+    "service_name": "Microsoft",
+    "service_code": "microsoft",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368910982,
+        "catalog_product_id": 12547,
+        "base_price_usd": 0.0145,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368848933,
+        "catalog_product_id": 12547,
+        "base_price_usd": 0.0201,
+        "available": 500
+      }
+    ]
+  },
+  "amazon": {
+    "platform_id": 9,
+    "service_name": "Amazon",
+    "service_code": "amazon",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369941936,
+        "catalog_product_id": 12545,
+        "base_price_usd": 0.0362,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370462041,
+        "catalog_product_id": 12545,
+        "base_price_usd": 0.0375,
+        "available": 500
+      }
+    ]
+  },
+  "netflix": {
+    "platform_id": 16,
+    "service_name": "Netflix",
+    "service_code": "netflix",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 632513801,
+        "catalog_product_id": 12552,
+        "base_price_usd": 0.0826,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 861128987,
+        "catalog_product_id": 12552,
+        "base_price_usd": 0.0869,
+        "available": 500
+      }
+    ]
+  },
+  "spotify": {
+    "platform_id": 207,
+    "service_name": "Spotify",
+    "service_code": "spotify",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369941765,
+        "catalog_product_id": 19468,
+        "base_price_usd": 0.0241,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370512167,
+        "catalog_product_id": 19468,
+        "base_price_usd": 0.0404,
+        "available": 500
+      }
+    ]
+  },
+  "snapchat": {
+    "platform_id": 13,
+    "service_name": "Snapchat",
+    "service_code": "snapchat",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369064284,
+        "catalog_product_id": 12549,
+        "base_price_usd": 0.0241,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369768205,
+        "catalog_product_id": 12549,
+        "base_price_usd": 0.039,
+        "available": 500
+      }
+    ]
+  },
+  "tinder": {
+    "platform_id": 19,
+    "service_name": "Tinder",
+    "service_code": "tinder",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369063920,
+        "catalog_product_id": 12555,
+        "base_price_usd": 0.0723,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370541852,
+        "catalog_product_id": 12555,
+        "base_price_usd": 0.1144,
+        "available": 500
+      }
+    ]
+  },
+  "paypal": {
+    "platform_id": 17,
+    "service_name": "PayPal",
+    "service_code": "paypal",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266332,
+        "catalog_product_id": 12553,
+        "base_price_usd": 0.3366,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369465700,
+        "catalog_product_id": 12553,
+        "base_price_usd": 0.3611,
+        "available": 500
+      }
+    ]
+  },
+  "uber": {
+    "platform_id": 18,
+    "service_name": "Uber",
+    "service_code": "uber",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370464451,
+        "catalog_product_id": 12554,
+        "base_price_usd": 0.0693,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370266320,
+        "catalog_product_id": 12554,
+        "base_price_usd": 0.0826,
+        "available": 500
+      }
+    ]
+  },
+  "linkedin": {
+    "platform_id": 69,
+    "service_name": "LinkedIn",
+    "service_code": "linkedin",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266304,
+        "catalog_product_id": 12590,
+        "base_price_usd": 0.0352,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369639930,
+        "catalog_product_id": 12590,
+        "base_price_usd": 0.1101,
+        "available": 500
+      }
+    ]
+  },
+  "wechat": {
+    "platform_id": 10,
+    "service_name": "WeChat",
+    "service_code": "wechat",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370553194,
+        "catalog_product_id": 12546,
+        "base_price_usd": 0.0859,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 632472412,
+        "catalog_product_id": 12546,
+        "base_price_usd": 0.088,
+        "available": 500
+      }
+    ]
+  },
+  "shopee": {
+    "platform_id": 21,
+    "service_name": "Shopee",
+    "service_code": "shopee",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370349993,
+        "catalog_product_id": 12557,
+        "base_price_usd": 0.044,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370266306,
+        "catalog_product_id": 12557,
+        "base_price_usd": 0.0957,
+        "available": 500
+      }
+    ]
+  },
+  "line": {
+    "platform_id": 15,
+    "service_name": "Line",
+    "service_code": "line",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 632510250,
+        "catalog_product_id": 12551,
+        "base_price_usd": 0.0594,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369266091,
+        "catalog_product_id": 12551,
+        "base_price_usd": 0.066,
+        "available": 500
+      }
+    ]
+  },
+  "viber": {
+    "platform_id": 14,
+    "service_name": "Viber",
+    "service_code": "viber",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 632515529,
+        "catalog_product_id": 12550,
+        "base_price_usd": 0.077,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368953236,
+        "catalog_product_id": 12550,
+        "base_price_usd": 0.0915,
+        "available": 500
+      }
+    ]
+  },
+  "signal": {
+    "platform_id": 72,
+    "service_name": "Signal",
+    "service_code": "signal",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369303129,
+        "catalog_product_id": 12593,
+        "base_price_usd": 0.0551,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369391179,
+        "catalog_product_id": 12593,
+        "base_price_usd": 0.059,
+        "available": 500
+      }
+    ]
+  },
+  "grab": {
+    "platform_id": 56,
+    "service_name": "Grab",
+    "service_code": "grab",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370594659,
+        "catalog_product_id": 12578,
+        "base_price_usd": 0.0165,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370266299,
+        "catalog_product_id": 12578,
+        "base_price_usd": 0.0309,
+        "available": 500
+      }
+    ]
+  },
+  "steam": {
+    "platform_id": 75,
+    "service_name": "Steam",
+    "service_code": "steam",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266391,
+        "catalog_product_id": 12596,
+        "base_price_usd": 0.0309,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368715012,
+        "catalog_product_id": 12596,
+        "base_price_usd": 0.0482,
+        "available": 500
+      }
+    ]
+  },
+  "roblox": {
+    "platform_id": 79,
+    "service_name": "Roblox",
+    "service_code": "roblox",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369994636,
+        "catalog_product_id": 12600,
+        "base_price_usd": 0.0301,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369994637,
+        "catalog_product_id": 12600,
+        "base_price_usd": 0.055,
+        "available": 500
+      }
+    ]
+  },
+  "binance": {
+    "platform_id": 52,
+    "service_name": "Binance",
+    "service_code": "binance",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368712112,
+        "catalog_product_id": 12575,
+        "base_price_usd": 0.6019,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 632543252,
+        "catalog_product_id": 12575,
+        "base_price_usd": 0.7868,
+        "available": 500
+      }
+    ]
+  },
+  "coinbase": {
+    "platform_id": 42,
+    "service_name": "Coinbase",
+    "service_code": "coinbase",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369870145,
+        "catalog_product_id": 12571,
+        "base_price_usd": 0.0723,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370560248,
+        "catalog_product_id": 12571,
+        "base_price_usd": 0.077,
+        "available": 500
+      }
+    ]
+  },
+  "aliexpress": {
+    "platform_id": 24,
+    "service_name": "AliExpress",
+    "service_code": "aliexpress",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368712246,
+        "catalog_product_id": 12558,
+        "base_price_usd": 0.4334,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 632556231,
+        "catalog_product_id": 12558,
+        "base_price_usd": 0.5196,
+        "available": 500
+      }
+    ]
+  },
+  "temu": {
+    "platform_id": 25,
+    "service_name": "Temu",
+    "service_code": "temu",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368712521,
+        "catalog_product_id": 12559,
+        "base_price_usd": 0.0723,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370353730,
+        "catalog_product_id": 12559,
+        "base_price_usd": 0.1004,
+        "available": 500
+      }
+    ]
+  },
+  "airbnb": {
+    "platform_id": 31,
+    "service_name": "Airbnb",
+    "service_code": "airbnb",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368713682,
+        "catalog_product_id": 12563,
+        "base_price_usd": 0.0723,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370266314,
+        "catalog_product_id": 12563,
+        "base_price_usd": 0.1034,
+        "available": 500
+      }
+    ]
+  },
+  "kakaotalk": {
+    "platform_id": 73,
+    "service_name": "KakaoTalk",
+    "service_code": "kakaotalk",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266311,
+        "catalog_product_id": 12594,
+        "base_price_usd": 0.0418,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368713764,
+        "catalog_product_id": 12594,
+        "base_price_usd": 0.0723,
+        "available": 500
+      }
+    ]
+  },
+  "bumble": {
+    "platform_id": 65,
+    "service_name": "Bumble",
+    "service_code": "bumble",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368714410,
+        "catalog_product_id": 12586,
+        "base_price_usd": 0.0241,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370457438,
+        "catalog_product_id": 12586,
+        "base_price_usd": 0.0312,
+        "available": 500
+      }
+    ]
+  },
+  "twitch": {
+    "platform_id": 78,
+    "service_name": "Twitch",
+    "service_code": "twitch",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266374,
+        "catalog_product_id": 12599,
+        "base_price_usd": 0.0826,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 941422959,
+        "catalog_product_id": 12599,
+        "base_price_usd": 0.1078,
+        "available": 500
+      }
+    ]
+  },
+  "blizzard": {
+    "platform_id": 76,
+    "service_name": "Blizzard",
+    "service_code": "blizzard",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369872251,
+        "catalog_product_id": 12597,
+        "base_price_usd": 0.0362,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369872571,
+        "catalog_product_id": 12597,
+        "base_price_usd": 0.0386,
+        "available": 500
+      }
+    ]
+  },
+  "ebay": {
+    "platform_id": 26,
+    "service_name": "eBay",
+    "service_code": "ebay",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 632469025,
+        "catalog_product_id": 12560,
+        "base_price_usd": 0.1034,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370446842,
+        "catalog_product_id": 12560,
+        "base_price_usd": 0.1144,
+        "available": 500
+      }
+    ]
+  },
+  "shein": {
+    "platform_id": 35,
+    "service_name": "Shein",
+    "service_code": "shein",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368714235,
+        "catalog_product_id": 12565,
+        "base_price_usd": 0.0241,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369894382,
+        "catalog_product_id": 12565,
+        "base_price_usd": 0.0253,
+        "available": 500
+      }
+    ]
+  },
+  "revolut": {
+    "platform_id": 39,
+    "service_name": "Revolut",
+    "service_code": "revolut",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368711754,
+        "catalog_product_id": 12568,
+        "base_price_usd": 0.0723,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370560256,
+        "catalog_product_id": 12568,
+        "base_price_usd": 0.077,
+        "available": 500
+      }
+    ]
+  },
+  "wise": {
+    "platform_id": 40,
+    "service_name": "Wise",
+    "service_code": "wise",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369878674,
+        "catalog_product_id": 12569,
+        "base_price_usd": 0.0482,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370560243,
+        "catalog_product_id": 12569,
+        "base_price_usd": 0.077,
+        "available": 500
+      }
+    ]
+  },
+  "payoneer": {
+    "platform_id": 41,
+    "service_name": "Payoneer",
+    "service_code": "payoneer",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368715477,
+        "catalog_product_id": 12570,
+        "base_price_usd": 0.0723,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370560245,
+        "catalog_product_id": 12570,
+        "base_price_usd": 0.077,
+        "available": 500
+      }
+    ]
+  },
+  "crypto-com": {
+    "platform_id": 43,
+    "service_name": "cryptocom",
+    "service_code": "crypto-com",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370602356,
+        "catalog_product_id": 12572,
+        "base_price_usd": 0.2574,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 638313185,
+        "catalog_product_id": 12572,
+        "base_price_usd": 0.264,
+        "available": 500
+      }
+    ]
+  },
+  "bybit": {
+    "platform_id": 51,
+    "service_name": "Bybit",
+    "service_code": "bybit",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369941748,
+        "catalog_product_id": 12574,
+        "base_price_usd": 0.6019,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370418248,
+        "catalog_product_id": 12574,
+        "base_price_usd": 0.7238,
+        "available": 500
+      }
+    ]
+  },
+  "okx": {
+    "platform_id": 53,
+    "service_name": "OKX",
+    "service_code": "okx",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368712557,
+        "catalog_product_id": 12576,
+        "base_price_usd": 0.6019,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 632527426,
+        "catalog_product_id": 12576,
+        "base_price_usd": 1.1146,
+        "available": 500
+      }
+    ]
+  },
+  "vk": {
+    "platform_id": 63,
+    "service_name": "VK",
+    "service_code": "vk",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369930326,
+        "catalog_product_id": 12584,
+        "base_price_usd": 0.0241,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368931942,
+        "catalog_product_id": 12584,
+        "base_price_usd": 0.0353,
+        "available": 500
+      }
+    ]
+  },
+  "doordash": {
+    "platform_id": 60,
+    "service_name": "DoorDash",
+    "service_code": "doordash",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368714660,
+        "catalog_product_id": 12582,
+        "base_price_usd": 0.0723,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370560270,
+        "catalog_product_id": 12582,
+        "base_price_usd": 0.077,
+        "available": 500
+      }
+    ]
+  },
+  "claude": {
+    "platform_id": 113,
+    "service_name": "Claude",
+    "service_code": "claude",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370521069,
+        "catalog_product_id": 12610,
+        "base_price_usd": 0.1429,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370473942,
+        "catalog_product_id": 12610,
+        "base_price_usd": 0.1432,
+        "available": 500
+      }
+    ]
+  },
+  "deliveroo": {
+    "platform_id": 790,
+    "service_name": "Deliveroo",
+    "service_code": "deliveroo",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369526286,
+        "catalog_product_id": 12775,
+        "base_price_usd": 0.0386,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1149815178,
+        "catalog_product_id": 12775,
+        "base_price_usd": 0.0504,
+        "available": 500
+      }
+    ]
+  },
+  "lyft": {
+    "platform_id": 736,
+    "service_name": "Lyft",
+    "service_code": "lyft",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1369064147,
+        "catalog_product_id": 12757,
+        "base_price_usd": 0.0362,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368874106,
+        "catalog_product_id": 12757,
+        "base_price_usd": 0.0553,
+        "available": 500
+      }
+    ]
+  },
+  "protonmail": {
+    "platform_id": 596,
+    "service_name": "ProtonMail",
+    "service_code": "protonmail",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266337,
+        "catalog_product_id": 12716,
+        "base_price_usd": 0.1034,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370211040,
+        "catalog_product_id": 12716,
+        "base_price_usd": 0.1442,
+        "available": 500
+      }
+    ]
+  },
+  "reddit": {
+    "platform_id": 448,
+    "service_name": "Reddit",
+    "service_code": "reddit",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 941375893,
+        "catalog_product_id": 16190,
+        "base_price_usd": 0.1628,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370619985,
+        "catalog_product_id": 16190,
+        "base_price_usd": 0.484,
+        "available": 500
+      }
+    ]
+  },
+  "sideline": {
+    "platform_id": 255,
+    "service_name": "Sideline",
+    "service_code": "sideline",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370225273,
+        "catalog_product_id": 12647,
+        "base_price_usd": 0.1056,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 941414748,
+        "catalog_product_id": 12647,
+        "base_price_usd": 0.1167,
+        "available": 500
+      }
+    ]
+  },
+  "venmo": {
+    "platform_id": 784,
+    "service_name": "Venmo",
+    "service_code": "venmo",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370225284,
+        "catalog_product_id": 12773,
+        "base_price_usd": 0.1298,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368732955,
+        "catalog_product_id": 12773,
+        "base_price_usd": 0.1474,
+        "available": 500
+      }
+    ]
+  },
+  "wolt": {
+    "platform_id": 710,
+    "service_name": "Wolt",
+    "service_code": "wolt",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266289,
+        "catalog_product_id": 12750,
+        "base_price_usd": 0.0342,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1369525804,
+        "catalog_product_id": 12750,
+        "base_price_usd": 0.0362,
+        "available": 500
+      }
+    ]
+  },
+  "yahoo": {
+    "platform_id": 663,
+    "service_name": "Yahoo",
+    "service_code": "yahoo",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1370266290,
+        "catalog_product_id": 12738,
+        "base_price_usd": 0.0418,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1368711647,
+        "catalog_product_id": 12738,
+        "base_price_usd": 0.0482,
+        "available": 500
+      }
+    ]
+  },
+  "yandex-uber": {
+    "platform_id": 774,
+    "service_name": "Yandex / Uber",
+    "service_code": "yandex-uber",
+    "is_core": false,
+    "operators": [
+      {
+        "operator_id": 1,
+        "operator_code": "route_1",
+        "operator_name": "Server Route 1 (Primary)",
+        "cheapest_product_id": 1368711831,
+        "catalog_product_id": 12770,
+        "base_price_usd": 0.0362,
+        "available": 500
+      },
+      {
+        "operator_id": 2,
+        "operator_code": "route_2",
+        "operator_name": "Server Route 2 (Alternative)",
+        "cheapest_product_id": 1370209697,
+        "catalog_product_id": 12770,
+        "base_price_usd": 0.0683,
+        "available": 500
+      }
+    ]
+  }
+}

@@ -15,10 +15,36 @@
      data-buy
      data-catalog='{{ catalog|tojson }}'
      data-operators-endpoint="/api/catalog/operators"
-     data-endpoint="{{ url_for('api.purchase_sim') }}">
+     data-endpoint="{{ url_for('api.purchase_sim') }}"
+     data-mobile-active="country">
+
+  {# Mobile Stepper Navigation (visible on <= 768px) #}
+  <div class="buy-mobile-stepper" data-mobile-stepper>
+    <button type="button" class="buy-mobile-step-tab is-active" data-mobile-tab="country">
+      <span class="buy-step-pill" data-step-pill="country">1</span>
+      <div class="buy-step-meta">
+        <span class="buy-step-title">Country</span>
+        <span class="buy-step-selected" data-step-selected-country>Select</span>
+      </div>
+    </button>
+    <button type="button" class="buy-mobile-step-tab" data-mobile-tab="service">
+      <span class="buy-step-pill" data-step-pill="service">2</span>
+      <div class="buy-step-meta">
+        <span class="buy-step-title">Service</span>
+        <span class="buy-step-selected" data-step-selected-service>Select</span>
+      </div>
+    </button>
+    <button type="button" class="buy-mobile-step-tab" data-mobile-tab="operators">
+      <span class="buy-step-pill" data-step-pill="operators">3</span>
+      <div class="buy-step-meta">
+        <span class="buy-step-title">Carrier &amp; Pay</span>
+        <span class="buy-step-selected" data-step-selected-pay>Checkout</span>
+      </div>
+    </button>
+  </div>
 
   {# ---- List 1: Country List ---- #}
-  <div class="buy-column buy-column-country">
+  <div class="buy-column buy-column-country" data-column="country">
     <div class="buy-column-head">
       <div class="buy-column-title-row">
         <h2 class="buy-column-title">
@@ -37,8 +63,11 @@
   </div>
 
   {# ---- List 2: Service List ---- #}
-  <div class="buy-column buy-column-service">
+  <div class="buy-column buy-column-service" data-column="service">
     <div class="buy-column-head">
+      <button type="button" class="buy-mobile-nav-btn" data-mobile-back="country">
+        {{ icon('chevron-left') }} <span>Change Country</span>
+      </button>
       <div class="buy-column-title-row">
         <h2 class="buy-column-title">
           <span class="step-num">2</span>
@@ -56,8 +85,11 @@
   </div>
 
   {# ---- List 3: Operators & Review / Checkout ---- #}
-  <div class="buy-column buy-column-operators">
+  <div class="buy-column buy-column-operators" data-column="operators">
     <div class="buy-column-head">
+      <button type="button" class="buy-mobile-nav-btn" data-mobile-back="service">
+        {{ icon('chevron-left') }} <span>Back to Services</span>
+      </button>
       <div class="buy-column-title-row">
         <h2 class="buy-column-title">
           <span class="step-num">3</span>

@@ -111,7 +111,10 @@
         operatorSelect.value = selectedOperator.operator_id;
       } else {
         selectedOperator = null;
-        if (operatorField) operatorField.style.display = "none";
+        if (operatorField) {
+          operatorField.style.display = "block";
+          if (operatorSelect) operatorSelect.innerHTML = "<option disabled selected>Standard Route</option>";
+        }
       }
     }
 
@@ -423,6 +426,8 @@
         var chosenPrice = selectedOperator ? selectedOperator.price_usd : selectedItem.price_usd;
         var chosenOperatorName = selectedOperator ? (selectedOperator.operator_name || selectedOperator.operator_id) : (selectedItem.operator || "auto");
         var chosenOperatorId = selectedOperator ? selectedOperator.operator_id : null;
+        var chosenProductId = selectedOperator ? (selectedOperator.cheapest_product_id || selectedOperator.product_id) : (selectedItem.cheapest_product_id || selectedItem.product_id);
+        var chosenCatalogProductId = selectedOperator ? selectedOperator.catalog_product_id : selectedItem.catalog_product_id;
 
         var payload = {
           country_code: "US",
@@ -431,6 +436,8 @@
           service_code: selectedItem.service_code,
           provider_id: chosenOperatorName,
           operator_id: chosenOperatorId,
+          product_id: chosenProductId,
+          catalog_product_id: chosenCatalogProductId,
           price: chosenPrice,
         };
 

@@ -5,12 +5,12 @@ from app.services.supabase_client import get_supabase_admin, reset_supabase_admi
 # Default fallbacks if database table is completely unpopulated
 DEFAULT_SETTINGS = {
     'ngn_per_usd_rate': 1600.00,
-    'smscode_markup_percent': 30.00,
-    'smscode_min_profit_usd': 0.30,
-    'virtualsms_markup_percent': 30.00,
-    'virtualsms_min_profit_usd': 0.30,
-    'fivesim_markup_percent': 30.00,
-    'fivesim_min_profit_usd': 0.30,
+    'smscode_markup_percent': 0.00,
+    'smscode_min_profit_usd': 0.00,
+    'virtualsms_markup_percent': 0.00,
+    'virtualsms_min_profit_usd': 0.00,
+    'fivesim_markup_percent': 0.00,
+    'fivesim_min_profit_usd': 0.00,
     'textverified_markup_percent': 25.00,
     'textverified_min_profit_usd': 0.50,
     'reactivation_fee_usd': 1.00,
@@ -106,8 +106,8 @@ class SettingsService:
             if settings.get('smscode_min_profit_usd') is not None
             else (settings.get('virtualsms_min_profit_usd') if settings.get('virtualsms_min_profit_usd') is not None else settings.get('fivesim_min_profit_usd'))
         )
-        pct = float(raw_pct if raw_pct is not None else 30.0)
-        floor = float(raw_floor if raw_floor is not None else 0.30)
+        pct = float(raw_pct if raw_pct is not None else 0.0)
+        floor = float(raw_floor if raw_floor is not None else 0.0)
         return pct, floor
 
     @classmethod

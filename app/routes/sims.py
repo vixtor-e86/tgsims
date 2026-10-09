@@ -172,6 +172,70 @@ def my_sims():
             except Exception as e:
                 print(f"[my_sims] Auto-refund on page load error: {e}")
 
+    # Fetch and merge user rentals so dedicated numbers show seamlessly in order list
+    rentals_list = DBService.get_rentals(user['id'])
+    for r in rentals_list:
+        status = str(r.get('status', 'active')).lower()
+        exp = r.get('expires_at')
+        rem = 0
+        if exp:
+            try:
+                exp_str = str(exp).replace('Z', '+00:00')
+                try:
+                    exp_dt = datetime.datetime.fromisoformat(exp_str)
+                except ValueError:
+                    exp_dt = datetime.datetime.strptime(exp_str, '%Y-%m-%d %H:%M:%S')
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=datetime.timezone.utc)
+                rem = max(0, int((exp_dt - now_utc).total_seconds()))
+            except Exception:
+                rem = 0
+        is_active_rent = (status == 'active' and rem > 0)
+        try:
+            rent_price = float(r.get('user_cost') or r.get('price') or 0.0)
+        except (ValueError, TypeError):
+            rent_price = 0.0
+
+        rental_order = {
+            'id': r.get('id') or r.get('rental_reference'),
+            'order_reference': r.get('rental_reference') or f"RNT-{str(r.get('id', ''))[:8].upper()}",
+            'service_name': r.get('service_name', 'Dedicated Number'),
+            'phone_number': r.get('phone_number', ''),
+            'country_code': r.get('country_code', 'US'),
+            'price': rent_price,
+            'user_cost': rent_price,
+            'status': 'active' if is_active_rent else 'expired',
+            'is_rental': True,
+            'is_active': is_active_rent,
+            'is_active_sim': False,
+            'has_received_otp': int(r.get('sms_count') or 0) > 0,
+            'duration_days': r.get('duration_days', 3),
+            'remaining_seconds': rem,
+            'sms_count': int(r.get('sms_count') or 0),
+            'last_sms_code': r.get('last_sms_code'),
+            'last_sms_text': r.get('last_sms_text'),
+            'created_at': r.get('created_at') or r.get('starts_at'),
+            'expires_at': exp,
+            'order_type': 'rental'
+        }
+        orders.append(rental_order)
+
+    # Sort unified orders (activations & rentals) by created_at descending
+    def _parse_order_date(item):
+        val = item.get('created_at')
+        if not val:
+            return datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+        try:
+            s = str(val).replace('Z', '+00:00')
+            dt = datetime.datetime.fromisoformat(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            return dt
+        except Exception:
+            return datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+
+    orders.sort(key=_parse_order_date, reverse=True)
+
     react_fee = SettingsService.get_reactivation_fee()
     return render_template('sims/orders.html', orders=orders, user=user, reactivation_fee_usd=react_fee)
 

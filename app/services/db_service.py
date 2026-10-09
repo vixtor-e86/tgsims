@@ -571,14 +571,8 @@ class DBService:
     @staticmethod
     def get_rental_by_id(user_id: str, rental_id: str) -> dict:
         """Fetch a specific rental order by ID or reference."""
-        if not user_id or user_id == 'demo-user-id':
-            for r in getattr(mock_db, 'sim_rentals', []):
-                if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
-                    return r
-            return None
-
         admin = get_supabase_admin()
-        if not admin:
+        if user_id == 'demo-user-id' or not admin:
             for r in getattr(mock_db, 'sim_rentals', []):
                 if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
                     return r
@@ -597,9 +591,17 @@ class DBService:
                 rent = res.data[0]
                 rent['price'] = float(rent.get('user_cost') or 0.00)
                 return rent
+
+            # Fallback to mock_db if not found in Supabase
+            for r in getattr(mock_db, 'sim_rentals', []):
+                if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
+                    return r
             return None
         except Exception as e:
             print(f"[DBService] get_rental_by_id error: {e}")
+            for r in getattr(mock_db, 'sim_rentals', []):
+                if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
+                    return r
             return None
 
     @staticmethod
@@ -610,12 +612,21 @@ class DBService:
         if not admin:
             for r in getattr(mock_db, 'sim_rentals', []):
                 if r.get('id') == rental_id or r.get('rental_reference') == rental_id:
+                    if not hasattr(mock_db, 'rental_sms_messages'):
+                        mock_db.rental_sms_messages = []
+                    is_dup = any(
+                        m.get('rental_id') == r.get('id') and
+                        m.get('sms_code') == sms_code and
+                        m.get('full_text') == full_sms
+                        for m in mock_db.rental_sms_messages
+                    )
+                    if is_dup:
+                        return True
+
                     r['last_sms_code'] = sms_code
                     r['last_sms_text'] = full_sms
                     r['sms_count'] = r.get('sms_count', 0) + 1
                     r['updated_at'] = now_iso
-                    if not hasattr(mock_db, 'rental_sms_messages'):
-                        mock_db.rental_sms_messages = []
                     mock_db.rental_sms_messages.insert(0, {
                         'id': f"sms-{len(mock_db.rental_sms_messages)+1}",
                         'rental_id': r.get('id'),
@@ -639,6 +650,17 @@ class DBService:
                 return False
 
             real_id = r_res.data[0]['id']
+
+            # Deduplication: check if identical SMS was already stored
+            chk_q = admin.table('sim_sms_messages').select('id').eq('rental_id', real_id)
+            if sms_code:
+                chk_q = chk_q.eq('sms_code', sms_code)
+            if full_sms:
+                chk_q = chk_q.eq('full_text', full_sms)
+            dup_chk = chk_q.limit(1).execute()
+            if dup_chk.data and len(dup_chk.data) > 0:
+                return True
+
             cur_count = int(r_res.data[0].get('sms_count') or 0) + 1
 
             admin.table('sim_rentals').update({

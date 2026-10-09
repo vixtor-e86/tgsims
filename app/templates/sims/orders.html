@@ -72,11 +72,17 @@
         {% set cancel_price_usd = ('%.2f'|format(react_fee)) if is_reactivation else '%.2f'|format(ord_price) %}
         {% set cancel_price_formatted = ('₦{:,.2f}'.format(react_fee * ngn_rate)) if is_reactivation else price_formatted %}
         {% set reorder_url = url_for('sims.us_canada') if is_us else url_for('sims.store') %}
-        <tr data-order-row data-order-id="{{ o.id or o.order_reference }}" data-is-active="{{ 'true' if is_active else 'false' }}">
+        {% set is_rental = o.is_rental if o.is_rental is defined else false %}
+        <tr data-order-row data-order-id="{{ o.id or o.order_reference }}" data-is-active="{{ 'true' if (is_rental and o.is_active) or (not is_rental and is_active) else 'false' }}" data-is-rental="{{ 'true' if is_rental else 'false' }}" data-order-type="{{ o.order_type|default('activation') }}">
           <td>
             <div style="display:flex; flex-direction:column; gap:4px;">
               <span class="svc">{{ svc_icon(o.service_name, "svc-sm") }} <span class="td-strong">{{ o.service_name }}</span></span>
-              {% if is_reliable %}
+              {% if is_rental %}
+              <div style="display:inline-flex; gap:4px; flex-wrap:wrap; margin-left:26px;">
+                <span class="badge badge-brand badge-sm" style="font-size:0.65rem; padding:1px 6px;">{{ icon('clock') }} Rental ({{ o.duration_days }} Days)</span>
+                <span class="badge badge-info badge-sm" style="font-size:0.65rem; padding:1px 6px;">{{ icon('shield') }} Dedicated Line</span>
+              </div>
+              {% elif is_reliable %}
               <div style="display:inline-flex; gap:4px; flex-wrap:wrap; margin-left:26px;">
                 <span class="badge badge-brand badge-sm" style="font-size:0.65rem; padding:1px 6px;">{{ icon('shield') }} Reliable Line</span>
                 {% if has_received_otp %}
@@ -90,14 +96,20 @@
           <td>
             <span class="num-cell">
               <span class="flag">{{ o.country_code }}</span>
-              <span class="td-mono {{ 'strike' if (is_timeout or is_refunded) and not is_reliable else 'td-dim' }}">{{ o.phone_number }}</span>
-              {% if not (is_timeout or is_refunded) or is_reliable %}
+              <span class="td-mono {{ 'strike' if (is_timeout or is_refunded) and not is_reliable and not is_rental else 'td-dim' }}">{{ o.phone_number }}</span>
               <button class="copy-btn" data-copy="{{ o.phone_number }}" type="button" aria-label="Copy phone number" title="Copy phone number">{{ icon('copy') }}</button>
-              {% endif %}
             </span>
           </td>
           <td>
-            {% if is_done %}
+            {% if is_rental %}
+              <button type="button" class="btn btn-outline-brand btn-sm" data-action="view-rental-mailbox"
+                      data-id="{{ o.id or o.order_reference }}"
+                      data-phone="{{ o.phone_number }}"
+                      data-service="{{ o.service_name }}"
+                      style="display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:0.78rem; padding:4px 10px; border-radius:var(--r-md); border:1px solid var(--brand); background:rgba(37,99,235,0.06); color:var(--brand); cursor:pointer;">
+                {{ icon('mail') }} <span>Mailbox ({{ o.sms_count|default(0) }} SMS)</span>
+              </button>
+            {% elif is_done %}
               <span class="code-chip">{{ o.sms_code }}
                 <button class="copy-btn" data-copy="{{ o.sms_code }}" type="button" aria-label="Copy code">{{ icon('copy') }}</button>
               </span>
@@ -129,7 +141,25 @@
             {% endif %}
           </td>
           <td>
-            {% if is_done %}
+            {% if is_rental %}
+              {% if o.is_active %}
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                  <span class="badge badge-success badge-dot">Rented (Active)</span>
+                  {% set r_rem = o.remaining_seconds|default(0) %}
+                  <span style="font-size:0.72rem; color:var(--brand); font-family:var(--font-mono, monospace); font-weight:600;">
+                    {% if r_rem >= 86400 %}
+                      {{ (r_rem // 86400) }}d {{ ((r_rem % 86400) // 3600) }}h left
+                    {% elif r_rem >= 3600 %}
+                      {{ (r_rem // 3600) }}h {{ ((r_rem % 3600) // 60) }}m left
+                    {% else %}
+                      {{ (r_rem // 60) }}m {{ (r_rem % 60) }}s left
+                    {% endif %}
+                  </span>
+                </div>
+              {% else %}
+                <span class="badge badge-neutral badge-dot">Rental Ended</span>
+              {% endif %}
+            {% elif is_done %}
               <span class="badge badge-success badge-dot">Received</span>
             {% elif is_active %}
               <span class="badge badge-info badge-dot" data-order-status-badge>Waiting</span>
@@ -140,9 +170,18 @@
             {% endif %}
           </td>
           <td class="td-dim">{{ day }}<span class="stack-sub">{{ hm }}</span></td>
-          <td class="{{ 'strike' if (is_timeout or is_refunded) else 'td-strong' }}" data-usd="{{ '%.2f'|format(ord_price) }}">{{ price_formatted }}</td>
+          <td class="{{ 'strike' if (is_timeout or is_refunded) and not is_rental else 'td-strong' }}" data-usd="{{ '%.2f'|format(ord_price) }}">{{ price_formatted }}</td>
           <td class="text-right">
-            {% if is_active %}
+            {% if is_rental %}
+              <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                <button type="button" class="btn btn-primary btn-sm" data-action="view-rental-mailbox"
+                        data-id="{{ o.id or o.order_reference }}"
+                        data-phone="{{ o.phone_number }}"
+                        data-service="{{ o.service_name }}">
+                  {{ icon('mail') }} Open Mailbox
+                </button>
+              </div>
+            {% elif is_active %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                 <button type="button" class="btn btn-primary btn-sm" data-action="check" data-id="{{ o.id or o.order_reference }}">Check Code</button>
                 {% if is_reactivation %}
@@ -354,6 +393,35 @@
           Cancel / Done
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+{# ---- Rental SMS Mailbox Modal ---- #}
+<div class="modal" id="rentalSmsModal" aria-hidden="true" role="dialog" aria-labelledby="rentalSmsModalTitle">
+  <div class="modal-box" style="max-width:540px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:38px; height:38px; border-radius:var(--r-full); background:rgba(37, 99, 235, 0.12); color:var(--brand); display:grid; place-items:center;">
+          {{ icon('mail') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="rentalSmsModalTitle">Rental Mailbox</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;" id="smsModalSubtitle">+1 000 000 0000</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-modal-sms-close aria-label="Close modal">&times;</button>
+    </div>
+    <div class="modal-body" style="max-height:420px; overflow-y:auto;">
+      <div id="rentalSmsFeed" style="display:flex; flex-direction:column; gap:var(--sp-3);">
+        <div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">
+          Checking for incoming messages...
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" id="btnRefreshRentalSms">{{ icon('refresh') }} Refresh</button>
+      <button type="button" class="btn btn-primary btn-sm" data-modal-sms-close>Done</button>
     </div>
   </div>
 </div>
@@ -580,8 +648,116 @@
     });
   }
 
-  // Handle Check Code, Cancel Order, and Reactivate button clicks
+  // Rental Mailbox Modal elements
+  var rentalSmsModal = document.getElementById('rentalSmsModal');
+  var rentalSmsFeed = document.getElementById('rentalSmsFeed');
+  var smsModalSubtitle = document.getElementById('smsModalSubtitle');
+  var btnRefreshRentalSms = document.getElementById('btnRefreshRentalSms');
+  var activeRentalMailboxId = null;
+
+  function escapeAndLinkify(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    var escaped = div.innerHTML;
+    return escaped.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--brand); text-decoration:underline; word-break:break-all;">$1</a>');
+  }
+
+  function openRentalMailboxModal(rentalId, phone, svc) {
+    activeRentalMailboxId = rentalId;
+    if (smsModalSubtitle) smsModalSubtitle.textContent = (svc || 'Dedicated Line') + ' • ' + (phone || '');
+    if (rentalSmsFeed) {
+      rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">' +
+        '<span class="spinner" style="margin-right:8px;"></span> Checking for incoming messages...' +
+      '</div>';
+    }
+    if (rentalSmsModal) {
+      rentalSmsModal.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    fetchRentalSms(rentalId);
+  }
+
+  function closeRentalMailboxModal() {
+    activeRentalMailboxId = null;
+    if (rentalSmsModal) {
+      rentalSmsModal.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  document.querySelectorAll('[data-modal-sms-close]').forEach(function(el) {
+    el.addEventListener('click', closeRentalMailboxModal);
+  });
+  if (rentalSmsModal) {
+    rentalSmsModal.addEventListener('click', function(e) {
+      if (e.target === rentalSmsModal) closeRentalMailboxModal();
+    });
+  }
+
+  function fetchRentalSms(rentalId) {
+    if (!rentalId || !rentalSmsFeed) return;
+    if (btnRefreshRentalSms) {
+      btnRefreshRentalSms.disabled = true;
+      btnRefreshRentalSms.innerHTML = '<span class="spinner"></span> Checking...';
+    }
+    fetch('/api/check-rental-sms/' + encodeURIComponent(rentalId))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (btnRefreshRentalSms) {
+          btnRefreshRentalSms.disabled = false;
+          btnRefreshRentalSms.innerHTML = '<svg class="tg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> Refresh';
+        }
+        if (data.success && data.messages && data.messages.length > 0) {
+          var html = '';
+          data.messages.forEach(function(m) {
+            html += '<div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); text-align:left;">';
+            html += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">';
+            html += '    <span class="td-strong" style="font-size:var(--fs-xs); color:var(--brand);">' + (m.sender || 'Verification') + '</span>';
+            html += '    <span class="td-dim" style="font-size:0.7rem;">' + (m.received_at ? m.received_at.replace('T', ' ').split('.')[0] : '') + '</span>';
+            html += '  </div>';
+            if (m.sms_code) {
+              html += '  <div style="display:flex; align-items:center; gap:8px; margin:6px 0;">';
+              html += '    <span class="code-chip" style="font-size:1.1rem; font-weight:700;">' + m.sms_code + '</span>';
+              html += '    <button class="copy-btn" data-copy="' + m.sms_code + '" type="button" aria-label="Copy code"><svg class="tg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>';
+              html += '  </div>';
+            }
+            html += '  <p style="font-size:var(--fs-xs); color:var(--text); margin:0; line-height:1.5;">' + escapeAndLinkify(m.full_text || '') + '</p>';
+            html += '</div>';
+          });
+          rentalSmsFeed.innerHTML = html;
+        } else {
+          rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-dim); font-size:var(--fs-sm);">' +
+            'No SMS codes received yet on this line.<br><span style="font-size:0.75rem; color:var(--text-muted);">Trigger verification code on your app and click Refresh.</span>' +
+          '</div>';
+        }
+      })
+      .catch(function() {
+        if (btnRefreshRentalSms) {
+          btnRefreshRentalSms.disabled = false;
+          btnRefreshRentalSms.innerHTML = 'Refresh';
+        }
+        rentalSmsFeed.innerHTML = '<div style="text-align:center; padding:var(--sp-6); color:var(--text-danger); font-size:var(--fs-sm);">Could not poll SMS feed. Click Refresh to try again.</div>';
+      });
+  }
+
+  if (btnRefreshRentalSms) {
+    btnRefreshRentalSms.addEventListener('click', function() {
+      if (activeRentalMailboxId) fetchRentalSms(activeRentalMailboxId);
+    });
+  }
+
+  // Handle Check Code, Cancel Order, Reactivate, and Mailbox button clicks
   document.addEventListener('click', function(e) {
+    var mailboxBtn = e.target.closest('[data-action="view-rental-mailbox"]');
+    if (mailboxBtn) {
+      var rentId = mailboxBtn.dataset.id;
+      var rentPhone = mailboxBtn.dataset.phone;
+      var rentSvc = mailboxBtn.dataset.service;
+      openRentalMailboxModal(rentId, rentPhone, rentSvc);
+      return;
+    }
+
     var checkBtn = e.target.closest('[data-action="check"]');
     var cancelBtn = e.target.closest('[data-action="cancel"]');
     var reactivateBtn = e.target.closest('[data-action="reactivate"]');
@@ -888,6 +1064,46 @@
       btnReactivateFeeText.textContent = reactFeeFormatted;
     }
   }
+
+  // Table search and filter handler
+  var ordersSearchInput = document.querySelector('[data-orders-search]');
+  var ordersFilterSelect = document.querySelector('[data-orders-status-filter]');
+  var orderRows = document.querySelectorAll('tr[data-order-row]');
+
+  function filterOrderRows() {
+    var q = ordersSearchInput ? ordersSearchInput.value.trim().toLowerCase() : '';
+    var st = ordersFilterSelect ? ordersFilterSelect.value : 'all';
+
+    orderRows.forEach(function(row) {
+      var rowText = row.textContent.toLowerCase();
+      var matchesSearch = !q || rowText.indexOf(q) !== -1;
+
+      var isActive = row.dataset.isActive === 'true';
+      var isRental = row.dataset.isRental === 'true';
+      var statusBadge = row.querySelector('.badge-dot');
+      var statusText = statusBadge ? statusBadge.textContent.toLowerCase() : '';
+
+      var matchesStatus = true;
+      if (st === 'active') {
+        matchesStatus = isActive || statusText.indexOf('waiting') !== -1 || statusText.indexOf('active') !== -1;
+      } else if (st === 'completed') {
+        matchesStatus = statusText.indexOf('received') !== -1 || (!isActive && isRental);
+      } else if (st === 'expired') {
+        matchesStatus = statusText.indexOf('expired') !== -1 || statusText.indexOf('ended') !== -1;
+      } else if (st === 'cancelled') {
+        matchesStatus = statusText.indexOf('cancelled') !== -1 || statusText.indexOf('refunded') !== -1;
+      }
+
+      if (matchesSearch && matchesStatus) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  if (ordersSearchInput) ordersSearchInput.addEventListener('input', filterOrderRows);
+  if (ordersFilterSelect) ordersFilterSelect.addEventListener('change', filterOrderRows);
 
   document.addEventListener('currencychange', syncOrdersCurrency);
   // Initial sync to ensure active currency format

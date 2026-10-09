@@ -62,15 +62,76 @@
     var reviewPrice = root.querySelector("[data-review-price]");
     var submit = root.querySelector("[data-buy-submit]");
 
+    var currentMobileStep = "country";
+    var tabCountry = root.querySelector('[data-mobile-tab="country"]');
+    var tabService = root.querySelector('[data-mobile-tab="service"]');
+    var tabOperators = root.querySelector('[data-mobile-tab="operators"]');
+
+    var stepSelCountry = root.querySelector('[data-step-selected-country]');
+    var stepSelService = root.querySelector('[data-step-selected-service]');
+    var stepSelPay = root.querySelector('[data-step-selected-pay]');
+
+    var pillCountry = root.querySelector('[data-step-pill="country"]');
+    var pillService = root.querySelector('[data-step-pill="service"]');
+    var pillOperators = root.querySelector('[data-step-pill="operators"]');
+
     var state = {
       country: null,
       service: null,
       operator: null,
       operators: [],
-      isLoadingOps: false
+      isLoadingOps: false,
+      showAllServices: false
     };
 
     var operatorCache = {};
+
+    function updateMobileStepperUI() {
+      if (stepSelCountry) {
+        stepSelCountry.textContent = state.country ? ((state.country.flag || "") + " " + state.country.country_name) : "Select";
+      }
+      if (stepSelService) {
+        stepSelService.textContent = state.service ? state.service.name : "Select";
+      }
+      if (stepSelPay) {
+        var p = (state.operator && state.operator.price_usd) || (state.service && state.service.price) || 0;
+        stepSelPay.textContent = p ? formatMoney(p) : "Checkout";
+      }
+
+      if (pillCountry) {
+        if (state.country) {
+          pillCountry.textContent = "✓";
+          if (tabCountry) tabCountry.classList.add("is-complete");
+        } else {
+          pillCountry.textContent = "1";
+          if (tabCountry) tabCountry.classList.remove("is-complete");
+        }
+      }
+      if (pillService) {
+        if (state.service) {
+          pillService.textContent = "✓";
+          if (tabService) tabService.classList.add("is-complete");
+        } else {
+          pillService.textContent = "2";
+          if (tabService) tabService.classList.remove("is-complete");
+        }
+      }
+
+      if (tabCountry) tabCountry.classList.toggle("is-active", currentMobileStep === "country");
+      if (tabService) tabService.classList.toggle("is-active", currentMobileStep === "service");
+      if (tabOperators) tabOperators.classList.toggle("is-active", currentMobileStep === "operators");
+    }
+
+    function setMobileStep(step, scroll) {
+      currentMobileStep = step;
+      root.setAttribute("data-mobile-active", step);
+      updateMobileStepperUI();
+      if (scroll && window.innerWidth <= 768) {
+        try {
+          root.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (e) {}
+      }
+    }
 
     function priceRender() {
       if (window.TgCurrency && window.TgCurrency.render) {
@@ -119,7 +180,7 @@
           '</div>';
 
         row.addEventListener("click", function () {
-          selectCountry(c.country_code);
+          selectCountry(c.country_code, true);
         });
 
         countryListEl.appendChild(row);
@@ -140,27 +201,56 @@
       var q = (filter || "").trim().toLowerCase();
       var rawServices = (state.country.services || []).slice();
 
-      // Prioritize 10 core services
-      rawServices.sort(function (a, b) {
-        var aCore = isCoreService(a.code, a.name);
-        var bCore = isCoreService(b.code, b.name);
-        if (aCore && !bCore) return -1;
-        if (!aCore && bCore) return 1;
+      // Separate core vs other services
+      var coreList = [];
+      var otherList = [];
+      rawServices.forEach(function (s) {
+        if (isCoreService(s.code, s.name)) {
+          coreList.push(s);
+        } else {
+          otherList.push(s);
+        }
+      });
+
+      // Sort alphabetically within each group
+      coreList.sort(function (a, b) {
+        return a.name.localeCompare(b.name);
+      });
+      otherList.sort(function (a, b) {
         return a.name.localeCompare(b.name);
       });
 
-      var shown = rawServices.filter(function (s) {
-        return !q || s.name.toLowerCase().indexOf(q) > -1 || (s.code && s.code.toLowerCase().indexOf(q) > -1);
-      });
+      var servicesToDisplay = [];
+      var showViewOtherButton = false;
 
-      if (serviceCount) serviceCount.textContent = shown.length;
+      if (q) {
+        // Universal search: search across ALL services immediately!
+        var allCombined = coreList.concat(otherList);
+        servicesToDisplay = allCombined.filter(function (s) {
+          return s.name.toLowerCase().indexOf(q) > -1 || (s.code && s.code.toLowerCase().indexOf(q) > -1);
+        });
+      } else {
+        // Default view: 10 core services first, with "View other services" button
+        if (state.showAllServices) {
+          servicesToDisplay = coreList.concat(otherList);
+        } else {
+          servicesToDisplay = coreList.slice();
+          if (otherList.length > 0) {
+            showViewOtherButton = true;
+          }
+        }
+      }
 
-      if (!shown.length) {
+      if (serviceCount) {
+        serviceCount.textContent = q ? servicesToDisplay.length : (coreList.length + otherList.length);
+      }
+
+      if (!servicesToDisplay.length) {
         serviceListEl.innerHTML = '<div class="buy-empty-msg">No services match your search</div>';
         return;
       }
 
-      shown.forEach(function (s) {
+      servicesToDisplay.forEach(function (s) {
         var row = document.createElement("button");
         row.type = "button";
         row.className = "buy-list-row";
@@ -177,7 +267,7 @@
             '<span class="badge badge-brand" style="width:24px;height:24px;display:grid;place-items:center;padding:0;font-size:0.75rem;font-weight:700;">' + letter + '</span>' +
             '<div class="buy-list-text">' +
               '<span class="buy-list-primary">' + s.name + '</span>' +
-              '<span class="buy-list-secondary">' + (isCore ? 'Multi-Operator Routes' : 'Standard Carrier') + '</span>' +
+              '<span class="buy-list-secondary">' + (isCore ? 'Multi-Operator Routes' : '2 Server Routes') + '</span>' +
             '</div>' +
           '</div>' +
           '<div class="buy-list-meta">' +
@@ -186,11 +276,36 @@
           '</div>';
 
         row.addEventListener("click", function () {
-          selectService(s);
+          selectService(s, true);
         });
 
         serviceListEl.appendChild(row);
       });
+
+      if (showViewOtherButton) {
+        var viewMoreBtn = document.createElement("button");
+        viewMoreBtn.type = "button";
+        viewMoreBtn.className = "buy-view-more-btn";
+        viewMoreBtn.innerHTML = '<span>View other services (+' + otherList.length + ' more)</span> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+        viewMoreBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+          state.showAllServices = true;
+          renderServices(serviceSearch ? serviceSearch.value : "");
+        });
+        serviceListEl.appendChild(viewMoreBtn);
+      } else if (!q && state.showAllServices && otherList.length > 0) {
+        var collapseBtn = document.createElement("button");
+        collapseBtn.type = "button";
+        collapseBtn.className = "buy-view-more-btn";
+        collapseBtn.style.opacity = "0.75";
+        collapseBtn.innerHTML = '<span>Show 10 core services only</span> <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>';
+        collapseBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+          state.showAllServices = false;
+          renderServices(serviceSearch ? serviceSearch.value : "");
+        });
+        serviceListEl.appendChild(collapseBtn);
+      }
 
       priceRender();
     }
@@ -294,13 +409,15 @@
       }
 
       submit.disabled = !(state.country && state.service && state.operator);
+      updateMobileStepperUI();
       priceRender();
     }
 
-    function selectCountry(code) {
+    function selectCountry(code, isUserClick) {
       var c = catalog.filter(function (x) { return x.country_code === code; })[0];
       if (!c) return;
       state.country = c;
+      state.showAllServices = false;
       state.service = (c.services && c.services.length) ? c.services[0] : null;
       state.operator = null;
       state.operators = [];
@@ -313,9 +430,14 @@
         renderOperators();
         updateReview();
       }
+
+      updateMobileStepperUI();
+      if (isUserClick && window.innerWidth <= 768) {
+        setMobileStep("service", true);
+      }
     }
 
-    function selectService(s) {
+    function selectService(s, isUserClick) {
       if (!state.country || !s) return;
       state.service = s;
       state.operator = null;
@@ -329,6 +451,10 @@
       }
 
       fetchOperatorsForService(state.country, s);
+      updateMobileStepperUI();
+      if (isUserClick && window.innerWidth <= 768) {
+        setMobileStep("operators", true);
+      }
     }
 
     function selectOperator(op) {
@@ -338,7 +464,6 @@
     }
 
     function fetchOperatorsForService(country, service) {
-      var isCore = isCoreService(service.code, service.name);
       var cacheKey = country.country_code + ":" + (service.code || service.name);
 
       if (operatorCache[cacheKey]) {
@@ -346,21 +471,6 @@
         return;
       }
 
-      if (!isCore) {
-        // Non-core service: use standard route immediately without extra API query
-        var singleOp = [{
-          operator_name: "Standard Carrier Route",
-          operator_code: "standard",
-          operator_id: null,
-          price_usd: service.price,
-          available: service.available || 500
-        }];
-        operatorCache[cacheKey] = singleOp;
-        applyOperators(singleOp, service);
-        return;
-      }
-
-      // Query operators API for core services
       state.isLoadingOps = true;
       renderOperators();
       updateReview();
@@ -375,26 +485,44 @@
           state.isLoadingOps = false;
           var ops = (data && data.operators && data.operators.length) ? data.operators : [];
           if (!ops.length) {
-            ops = [{
-              operator_name: "Standard Carrier Route",
-              operator_code: "standard",
-              operator_id: null,
-              price_usd: service.price,
-              available: service.available || 500
-            }];
+            ops = [
+              {
+                operator_name: "Server Route 1 (Primary)",
+                operator_code: "route_1",
+                operator_id: 1,
+                price_usd: service.price,
+                available: service.available || 500
+              },
+              {
+                operator_name: "Server Route 2 (Alternative)",
+                operator_code: "route_2",
+                operator_id: 2,
+                price_usd: service.price,
+                available: service.available || 500
+              }
+            ];
           }
           operatorCache[cacheKey] = ops;
           applyOperators(ops, service);
         })
         .catch(function () {
           state.isLoadingOps = false;
-          var fallback = [{
-            operator_name: "Standard Carrier Route",
-            operator_code: "standard",
-            operator_id: null,
-            price_usd: service.price,
-            available: service.available || 500
-          }];
+          var fallback = [
+            {
+              operator_name: "Server Route 1 (Primary)",
+              operator_code: "route_1",
+              operator_id: 1,
+              price_usd: service.price,
+              available: service.available || 500
+            },
+            {
+              operator_name: "Server Route 2 (Alternative)",
+              operator_code: "route_2",
+              operator_id: 2,
+              price_usd: service.price,
+              available: service.available || 500
+            }
+          ];
           applyOperators(fallback, service);
         });
     }
@@ -437,6 +565,8 @@
         service_code: state.service.code || "",
         operator: state.operator.operator_code || state.operator.operator_name || "any",
         operator_id: state.operator.operator_id || null,
+        catalog_product_id: state.operator.catalog_product_id || null,
+        product_id: state.operator.cheapest_product_id || state.operator.product_id || null,
         price: state.operator.price_usd || state.service.price
       };
 
@@ -474,9 +604,43 @@
       updateReview();
     });
 
+    // Mobile stepper tab click handlers
+    if (tabCountry) {
+      tabCountry.addEventListener("click", function () {
+        setMobileStep("country");
+      });
+    }
+    if (tabService) {
+      tabService.addEventListener("click", function () {
+        if (state.country) {
+          setMobileStep("service");
+        } else if (window.toast) {
+          window.toast("Please select a country first.", "info");
+        }
+      });
+    }
+    if (tabOperators) {
+      tabOperators.addEventListener("click", function () {
+        if (state.service) {
+          setMobileStep("operators");
+        } else if (window.toast) {
+          window.toast("Please select a service first.", "info");
+        }
+      });
+    }
+
+    // Mobile back navigation buttons
+    root.querySelectorAll("[data-mobile-back]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var target = btn.getAttribute("data-mobile-back");
+        if (target) setMobileStep(target);
+      });
+    });
+
     /* ---- Initial paint: preselect first country & service ---- */
     if (catalog.length > 0) {
-      selectCountry(catalog[0].country_code);
+      selectCountry(catalog[0].country_code, false);
+      setMobileStep("country", false);
     }
   }
 
