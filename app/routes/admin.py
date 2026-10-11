@@ -197,15 +197,17 @@ def pricing():
             svc_code = request.form.get('service_code', '').strip().lower()
             svc_name = request.form.get('service_name', '').strip()
             prov_type = request.form.get('provider_type', 'smscode').strip().lower()
-            if prov_type in ('5sim', 'virtualsms'):
-                prov_type = 'smscode'
+            norm_prov = 'textverified' if prov_type == 'textverified' else '5sim'
             try:
                 override_price = float(request.form.get('override_price_usd', 0.00))
                 notes = request.form.get('notes', '').strip()
                 if svc_code and override_price > 0:
-                    SettingsService.set_price_override(svc_code, svc_name or svc_code.capitalize(), prov_type, override_price, notes)
-                    SIMProviderService.clear_all_caches()
-                    flash(f'Price override saved for {svc_name or svc_code} (${override_price:.2f}).', 'success')
+                    ok = SettingsService.set_price_override(svc_code, svc_name or svc_code.capitalize(), norm_prov, override_price, notes)
+                    if ok:
+                        SIMProviderService.clear_all_caches()
+                        flash(f'Price override saved for {svc_name or svc_code} (${override_price:.2f}).', 'success')
+                    else:
+                        flash(f'Failed to save price override for {svc_name or svc_code}. Please check system logs.', 'error')
                 else:
                     flash('Please enter a valid service code and override price.', 'error')
             except Exception as e:

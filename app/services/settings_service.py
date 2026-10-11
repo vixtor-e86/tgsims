@@ -299,10 +299,15 @@ class SettingsService:
         if not admin:
             return True
         try:
+            # Map provider types: 'textverified' -> 'textverified', all others ('smscode', '5sim', 'virtualsms') -> '5sim'
+            # to strictly satisfy PostgreSQL table check constraint: CHECK (provider_type IN ('5sim', 'textverified'))
+            prov_clean = str(provider_type).strip().lower()
+            norm_provider = 'textverified' if prov_clean == 'textverified' else '5sim'
+
             row = {
                 'service_code': service_code.strip().lower(),
                 'service_name': service_name.strip(),
-                'provider_type': provider_type.strip().lower(),
+                'provider_type': norm_provider,
                 'override_price_usd': float(override_price_usd),
                 'notes': notes.strip(),
                 'is_active': True,

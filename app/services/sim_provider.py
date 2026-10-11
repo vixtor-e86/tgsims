@@ -551,13 +551,32 @@ class SIMProviderService:
             if is_us and service_code:
                 sc = service_code.strip().lower()
                 all_overrides = SettingsService.get_price_overrides()
+                if provider_type == 'textverified':
+                    allowed_provs = ('textverified', 'all')
+                else:
+                    allowed_provs = ('smscode', '5sim', 'virtualsms', 'all')
+
                 overrides = {
                     o['service_code'].strip().lower(): float(o['override_price_usd'])
                     for o in all_overrides
-                    if o.get('provider_type') in (provider_type, '5sim', 'virtualsms', 'smscode', 'all') and o.get('is_active', True)
+                    if o.get('provider_type') in allowed_provs and o.get('is_active', True)
                 }
+
+                alias_map = {
+                    'google-youtube-gmail': 'google',
+                    'instagram-threads': 'instagram',
+                    'tiktok-douyin': 'tiktok',
+                    'google': 'google-youtube-gmail',
+                    'instagram': 'instagram-threads',
+                    'tiktok': 'tiktok-douyin'
+                }
+                alias = alias_map.get(sc)
+
                 if sc in overrides:
                     override_p = overrides[sc]
+                    return override_p, round(override_p - base_cost, 4)
+                elif alias and alias in overrides:
+                    override_p = overrides[alias]
                     return override_p, round(override_p - base_cost, 4)
         except Exception:
             pct, floor = 0.0, 0.0
@@ -678,7 +697,7 @@ class SIMProviderService:
             pct, floor = 25.0, 0.25
             overrides = {}
 
-        current_key = (pct, floor, len(overrides))
+        current_key = (pct, floor, tuple(sorted(overrides.items())))
         if cls._cached_dynamic_catalog is not None and cls._cached_dynamic_catalog_key == current_key:
             return cls._cached_dynamic_catalog
 
@@ -1436,6 +1455,8 @@ class SIMProviderService:
                     base_cost = float(op.get('base_price_usd', 0.20))
                     if s_code in overrides:
                         op_retail = overrides[s_code]
+                    elif key in overrides:
+                        op_retail = overrides[key]
                     elif not apply_markup or (pct <= 0.0 and floor <= 0.0):
                         op_retail = round(base_cost, 2)
                     else:
