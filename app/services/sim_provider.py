@@ -874,8 +874,42 @@ class SIMProviderService:
         }
 
     @classmethod
+    def _extract_code_from_text(cls, text: str) -> str:
+        """Extracts OTP/verification code from raw SMS text using pattern matching."""
+        if not text:
+            return None
+        import re
+        # Pattern 1: Look for explicit labels: "code: 123456", "otp is 123456", "code 546-514"
+        m = re.search(r'(?:code|otp|c[oó]digo|pin|passcode|verification|verify)\s*(?:is|:|=|-)?\s*([A-Za-z0-9\-]{4,8})\b', text, re.IGNORECASE)
+        if m:
+            c = m.group(1).strip()
+            if any(ch.isdigit() for ch in c):
+                return c
+
+        # Pattern 2: Split format like "546-514" or "123-456"
+        m_split = re.search(r'\b(\d{3})[- ](\d{3})\b', text)
+        if m_split:
+            return f"{m_split.group(1)}-{m_split.group(2)}"
+
+        # Pattern 3: Standalone 4 to 8 digit numbers
+        matches = re.findall(r'\b\d{4,8}\b', text)
+        if matches:
+            sixes = [x for x in matches if len(x) == 6]
+            if sixes:
+                return sixes[0]
+            fives = [x for x in matches if len(x) == 5]
+            if fives:
+                return fives[0]
+            fours = [x for x in matches if len(x) == 4]
+            if fours:
+                return fours[0]
+            return matches[0]
+
+        return None
+
+    @classmethod
     def check_sms(cls, order_id: str) -> dict:
-        """Polls 5sim for incoming SMS."""
+        """Polls 5sim or TextVerified for incoming SMS."""
         client = cls.get_client()
 
         # Find order in DB to get provider_order_id and created_at
@@ -931,8 +965,31 @@ class SIMProviderService:
             tv_client = cls.get_textverified_client()
             if tv_client:
                 try:
+                    import datetime
                     import dateutil.parser
                     verification = tv_client.verifications.details(tv_id)
+
+                    # If this verification was previously reactivated, TextVerified spawned a newer verification
+                    if 'reactivated' in str(getattr(verification, 'state', '')).lower():
+                        clean_num = ''.join(ch for ch in str(verification.number) if ch.isdigit())
+                        clean_num_10 = clean_num[1:] if len(clean_num) == 11 and clean_num.startswith('1') else clean_num
+                        try:
+                            v_list = list(tv_client.verifications.list())
+                            for v in v_list[:10]:
+                                v_clean = ''.join(ch for ch in str(getattr(v, 'number', '')) if ch.isdigit())
+                                v_st = str(getattr(v, 'state', '')).lower()
+                                if (v_clean == clean_num or v_clean == clean_num_10) and v.id != tv_id and any(s in v_st for s in ['pending', 'active', 'open', 'completed']):
+                                    tv_id = v.id
+                                    verification = tv_client.verifications.details(tv_id)
+                                    if admin and order:
+                                        try:
+                                            admin.table('sim_orders').update({'provider_order_id': f"TXTV-{tv_id}"}).eq('id', order['id']).execute()
+                                        except Exception:
+                                            pass
+                                    break
+                        except Exception as ex_spawn:
+                            print(f"[check_sms] error checking spawned verification: {ex_spawn}")
+
                     sms_list = tv_client.sms.list(data=verification)
                     items = list(sms_list)
                     if items:
@@ -941,42 +998,47 @@ class SIMProviderService:
                             key=lambda s: getattr(s, 'created_at', None) or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
                             reverse=True
                         )
-                        sms = items[0]  # Absolute newest SMS received
 
-                        # Check if order was reactivated and if this SMS arrived during current activation window
-                        order_created = order.get('created_at') if order else None
-                        if order_created and hasattr(sms, 'created_at') and sms.created_at:
-                            try:
-                                if isinstance(order_created, str):
-                                    order_dt = dateutil.parser.parse(order_created)
-                                else:
-                                    order_dt = order_created
-                                if order_dt.tzinfo is None:
-                                    order_dt = order_dt.replace(tzinfo=datetime.timezone.utc)
-                                sms_dt = sms.created_at
-                                if sms_dt.tzinfo is None:
-                                    sms_dt = sms_dt.replace(tzinfo=datetime.timezone.utc)
+                        # Filter out SMS messages that are older than this verification's activation window
+                        v_created = getattr(verification, 'created_at', None)
+                        valid_sms = None
+                        for cand in items:
+                            if v_created and hasattr(cand, 'created_at') and cand.created_at:
+                                c_dt = cand.created_at
+                                if c_dt.tzinfo is None:
+                                    c_dt = c_dt.replace(tzinfo=datetime.timezone.utc)
+                                vc_dt = v_created
+                                if vc_dt.tzinfo is None:
+                                    vc_dt = vc_dt.replace(tzinfo=datetime.timezone.utc)
+                                # Allow 15s leniency for network/server clock skew
+                                if (c_dt - vc_dt).total_seconds() >= -15:
+                                    valid_sms = cand
+                                    break
+                            else:
+                                valid_sms = cand
+                                break
 
-                                # If latest SMS is older than order activation window (with 15s grace), wait for new code!
-                                if (sms_dt - order_dt).total_seconds() < -15:
-                                    return {
-                                        'has_sms': False,
-                                        'sms_code': None,
-                                        'full_sms': None,
-                                        'status': 'PENDING'
-                                    }
-                            except Exception as ex:
-                                print(f"[SIMProviderService] Reactivation date check error: {ex}")
-
-                        code = sms.parsed_code
-                        text = sms.sms_content
-                        sms_id = getattr(sms, 'id', str(len(items)))
-                        return {
-                            'has_sms': True,
-                            'sms_code': code,
-                            'full_sms': text or (f"Your verification code is: {code}" if code else None),
-                            'provider_sms_id': sms_id
-                        }
+                        if valid_sms:
+                            raw_code = getattr(valid_sms, 'parsed_code', None)
+                            raw_text = getattr(valid_sms, 'sms_content', None) or ""
+                            code = raw_code or cls._extract_code_from_text(raw_text)
+                            if not code and raw_text:
+                                code = raw_text.strip()
+                            sms_id = getattr(valid_sms, 'id', str(len(items)))
+                            return {
+                                'has_sms': True,
+                                'sms_code': code,
+                                'full_sms': raw_text or (f"Your verification code is: {code}" if code else "Verification code received."),
+                                'provider_sms_id': sms_id
+                            }
+                        else:
+                            st = verification.state.value if hasattr(verification.state, 'value') else str(verification.state)
+                            return {
+                                'has_sms': False,
+                                'sms_code': None,
+                                'full_sms': None,
+                                'status': st
+                            }
                     else:
                         st = verification.state.value if hasattr(verification.state, 'value') else str(verification.state)
                         return {
@@ -1819,24 +1881,70 @@ class SIMProviderService:
 
             tv_client = cls.get_textverified_client()
             if not tv_client:
-                return {'success': False, 'message': 'Verification service temporarily unavailable.'}
+                return {'success': False, 'message': 'System under maintenance. Please try again later.'}
+
+            clean_phone = ''.join(ch for ch in str(order.get('phone_number', '')) if ch.isdigit())
+            clean_phone_10 = clean_phone[1:] if len(clean_phone) == 11 and clean_phone.startswith('1') else clean_phone
 
             # --- STEP 1: CHECK IF CARRIER LINE IS CURRENTLY ALREADY ACTIVE / WAITING FOR OTP ---
+            v_pending_id = None
             expires_at_iso = None
             try:
                 v_chk = tv_client.verifications.details(tv_id)
                 chk_st = str(getattr(v_chk, 'state', '')).lower()
-                if any(s in chk_st for s in ['pending', 'active', 'open', 'reactivated']):
+                if any(s in chk_st for s in ['pending', 'active', 'open']):
+                    v_pending_id = tv_id
                     if hasattr(v_chk, 'ends_at') and v_chk.ends_at:
                         expires_at_iso = v_chk.ends_at.isoformat() if hasattr(v_chk.ends_at, 'isoformat') else str(v_chk.ends_at)
-                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
-                    return {
-                        'success': True,
-                        'message': 'Number is reactivated and waiting for your new OTP code.',
-                        'order_reference': order.get('order_reference')
-                    }
             except Exception as ex_chk:
                 print(f"[SIMProviderService] TextVerified details check note: {ex_chk}")
+
+            if not v_pending_id and clean_phone:
+                try:
+                    v_list = list(tv_client.verifications.list())
+                    for v in v_list[:12]:
+                        v_num = ''.join(ch for ch in str(getattr(v, 'number', '')) if ch.isdigit())
+                        v_st = str(getattr(v, 'state', '')).lower()
+                        if (v_num == clean_phone or v_num == clean_phone_10) and any(s in v_st for s in ['pending', 'active', 'open']):
+                            v_pending_id = v.id
+                            v_det = tv_client.verifications.details(v.id)
+                            if hasattr(v_det, 'ends_at') and v_det.ends_at:
+                                expires_at_iso = v_det.ends_at.isoformat() if hasattr(v_det.ends_at, 'isoformat') else str(v_det.ends_at)
+                            break
+                except Exception as ex_chk2:
+                    print(f"[SIMProviderService] TextVerified pending search note: {ex_chk2}")
+
+            if v_pending_id:
+                # Carrier line is already open and awaiting SMS (e.g. reactivated via provider)! Do not charge user again.
+                cls._reset_order_for_new_otp(
+                    order.get('id') or order.get('order_reference') or order_id,
+                    admin,
+                    expires_at=expires_at_iso,
+                    new_provider_order_id=f"TXTV-{v_pending_id}"
+                )
+                return {
+                    'success': True,
+                    'message': 'Number is reactivated and waiting for your new OTP code.',
+                    'order_reference': order.get('order_reference')
+                }
+
+            # Find the latest verification ID on TextVerified for this phone number that can be reactivated
+            target_tv_id = tv_id
+            if clean_phone:
+                try:
+                    v_list = list(tv_client.verifications.list())
+                    for v in v_list[:20]:
+                        v_num = ''.join(ch for ch in str(getattr(v, 'number', '')) if ch.isdigit())
+                        if v_num == clean_phone or v_num == clean_phone_10:
+                            try:
+                                v_det = tv_client.verifications.details(v.id)
+                                if getattr(v_det.reactivate, 'can_reactivate', False):
+                                    target_tv_id = v.id
+                                    break
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
 
             # --- STEP 2: DEDUCT REACTIVATION FEE FROM USER WALLET ---
             if user_id:
@@ -1858,56 +1966,55 @@ class SIMProviderService:
 
             # --- STEP 3: EXECUTE REACTIVATION ON TEXTVERIFIED ---
             try:
-                success = tv_client.verifications.reactivate(tv_id)
-                if success:
-                    # Capture exact ends_at duration returned by TextVerified (e.g. 20m, 60m, 120m)
-                    try:
-                        v_details = tv_client.verifications.details(tv_id)
-                        if hasattr(v_details, 'ends_at') and v_details.ends_at:
-                            expires_at_iso = v_details.ends_at.isoformat() if hasattr(v_details.ends_at, 'isoformat') else str(v_details.ends_at)
-                    except Exception as ed:
-                        print(f"[SIMProviderService] Error querying reactivated ends_at: {ed}")
+                import textverified
+                action = textverified.action._Action(method="POST", href=f"/api/pub/v2/verifications/{target_tv_id}/reactivate")
+                resp = tv_client._perform_action(action)
 
-                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
-                    return {
-                        'success': True,
-                        'message': f'Number reactivated successfully (${REACTIVATION_FEE:.2f})! Line is now open for your new OTP code.',
-                        'order_reference': order.get('order_reference')
-                    }
-                else:
-                    if fee_deducted and user_id:
-                        DBService.credit_wallet_balance(
-                            user_id=user_id,
-                            amount=REACTIVATION_FEE,
-                            trans_type='refund',
-                            reference=f"REF-REACT-{uuid.uuid4().hex[:8].upper()}",
-                            description="Refund: Reactivation unavailable",
-                            order_id=order.get('id')
-                        )
-                    cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
-                    return {
-                        'success': False,
-                        'message': 'This number is no longer available for reactivation from carrier. Your wallet has been refunded.',
-                        'reactivation_expired': True
-                    }
+                # Capture newly spawned verification ID
+                new_tv_id = None
+                if hasattr(resp, 'data') and isinstance(resp.data, dict) and resp.data.get('id'):
+                    new_tv_id = resp.data['id']
+                elif hasattr(resp, 'headers') and resp.headers and 'location' in resp.headers:
+                    new_tv_id = resp.headers['location'].rstrip('/').split('/')[-1]
+
+                if not new_tv_id and clean_phone:
+                    try:
+                        v_list = list(tv_client.verifications.list())
+                        for v in v_list[:10]:
+                            v_num = ''.join(ch for ch in str(getattr(v, 'number', '')) if ch.isdigit())
+                            v_st = str(getattr(v, 'state', '')).lower()
+                            if (v_num == clean_phone or v_num == clean_phone_10) and any(s in v_st for s in ['pending', 'active', 'open']):
+                                new_tv_id = v.id
+                                break
+                    except Exception:
+                        pass
+
+                if not new_tv_id:
+                    new_tv_id = target_tv_id
+
+                expires_at_iso = None
+                try:
+                    v_details = tv_client.verifications.details(new_tv_id)
+                    if hasattr(v_details, 'ends_at') and v_details.ends_at:
+                        expires_at_iso = v_details.ends_at.isoformat() if hasattr(v_details.ends_at, 'isoformat') else str(v_details.ends_at)
+                except Exception as ed:
+                    print(f"[SIMProviderService] Error querying reactivated ends_at: {ed}")
+
+                cls._reset_order_for_new_otp(
+                    order.get('id') or order.get('order_reference') or order_id,
+                    admin,
+                    expires_at=expires_at_iso,
+                    new_provider_order_id=f"TXTV-{new_tv_id}"
+                )
+                return {
+                    'success': True,
+                    'message': f'Number reactivated successfully (${REACTIVATION_FEE:.2f})! Line is now open for your new OTP code.',
+                    'order_reference': order.get('order_reference')
+                }
+
             except Exception as e:
                 print(f"[SIMProviderService] TextVerified reactivate error: {e}")
                 err_str = str(e).lower()
-
-                # If carrier line is already active or reactivated, reset order to pending and allow user to receive OTP
-                if 'already' in err_str and any(w in err_str for w in ['active', 'pending', 'open', 'reactivated']):
-                    try:
-                        v_details = tv_client.verifications.details(tv_id)
-                        if hasattr(v_details, 'ends_at') and v_details.ends_at:
-                            expires_at_iso = v_details.ends_at.isoformat() if hasattr(v_details.ends_at, 'isoformat') else str(v_details.ends_at)
-                    except Exception:
-                        pass
-                    cls._reset_order_for_new_otp(order.get('id') or order.get('order_reference') or order_id, admin, expires_at=expires_at_iso)
-                    return {
-                        'success': True,
-                        'message': 'Number is reactivated and waiting for your new OTP code.',
-                        'order_reference': order.get('order_reference')
-                    }
 
                 # Refund the reactivation fee immediately on carrier failure
                 if fee_deducted and user_id:
@@ -1923,49 +2030,29 @@ class SIMProviderService:
                     except Exception as ex:
                         print(f"[SIMProviderService] Error refunding reactivation fee: {ex}")
 
-                if 'insufficient balance' in err_str or 'insufficientbalance' in err_str:
-                    return {'success': False, 'message': 'Carrier service balance is currently low. Please contact support. (Your fee was refunded)'}
+                # Format clean, friendly user-facing error messages - never leak raw API errors
+                if any(w in err_str for w in ['balance', 'credit', 'funds', 'payment', 'insufficient', 'unauthorized', 'forbidden', 'auth']):
+                    user_msg = "System under maintenance. Please try again later."
+                elif any(w in err_str for w in ['no number', 'unavailable', 'cannot be reactivated', 'cannot reactivate', 'expired', 'not found', '400', '404', 'processingerror']):
+                    user_msg = "This number is currently unavailable for reactivation. Please try again later."
+                else:
+                    user_msg = "System under maintenance. Please try again later."
 
-                # Carrier slot unavailable / expired / 404 / 400: mark expired so button goes blank
-                cls._mark_reactivation_expired(order.get('id') or order.get('order_reference') or order_id, admin)
+                # Never mark reactivation expired in DB; button remains active for user to retry anytime
                 return {
                     'success': False,
-                    'message': 'This number cannot be reactivated with the carrier. The fee has been refunded to your wallet.',
-                    'reactivation_expired': True
+                    'message': user_msg
                 }
 
         return {'success': False, 'message': 'Reactivation is only supported on Reliable Package numbers.'}
 
     @classmethod
     def _mark_reactivation_expired(cls, order_id: str, admin=None):
-        """Flags an order so the reactivation button disappears permanently."""
-        if not admin:
-            from app.services.supabase_client import get_supabase_admin
-            admin = get_supabase_admin()
-        if admin:
-            try:
-                import uuid
-                is_uuid = False
-                try:
-                    uuid.UUID(str(order_id))
-                    is_uuid = True
-                except (ValueError, TypeError):
-                    is_uuid = False
-                q = admin.table('sim_orders').update({'reactivation_expired': True})
-                if is_uuid:
-                    q = q.eq('id', order_id)
-                else:
-                    q = q.eq('order_reference', order_id)
-                q.execute()
-            except Exception as e:
-                print(f"[SIMProviderService] _mark_reactivation_expired DB note: {e}")
-        for o in mock_db.sim_orders:
-            if o.get('id') == order_id or o.get('order_reference') == order_id:
-                o['reactivation_expired'] = True
-                break
+        """No-op: Reactivation button remains available for the user to retry anytime."""
+        pass
 
     @classmethod
-    def _reset_order_for_new_otp(cls, db_order_id: str, admin=None, expires_at: str = None):
+    def _reset_order_for_new_otp(cls, db_order_id: str, admin=None, expires_at: str = None, new_provider_order_id: str = None):
         """Resets order status to pending for a fresh OTP while archiving previous code and tracking reactivation."""
         import datetime
         import uuid
@@ -1975,6 +2062,7 @@ class SIMProviderService:
         if not admin:
             admin = get_supabase_admin()
 
+        cur_res = None
         if admin:
             try:
                 is_valid_uuid = False
@@ -2015,11 +2103,14 @@ class SIMProviderService:
             'order_type': cur_order_type,
             'sms_code': None,
             'full_sms_text': 'Line reactivated - waiting for new verification code...',
+            'reactivation_expired': False,
             'created_at': now_iso,
             'updated_at': now_iso
         }
         if expires_at:
             update_payload['expires_at'] = expires_at
+        if new_provider_order_id:
+            update_payload['provider_order_id'] = new_provider_order_id
 
         if admin:
             try:
@@ -2035,10 +2126,13 @@ class SIMProviderService:
                 o['status'] = 'pending'
                 o['sms_code'] = None
                 o['full_sms_text'] = 'Line reactivated - waiting for new verification code...'
+                o['reactivation_expired'] = False
                 o['created_at'] = now_iso
                 o['updated_at'] = now_iso
                 if expires_at:
                     o['expires_at'] = expires_at
+                if new_provider_order_id:
+                    o['provider_order_id'] = new_provider_order_id
                 break
 
     # =========================================================================

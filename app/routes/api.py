@@ -485,8 +485,10 @@ def check_sms(order_id):
     if not order:
         return jsonify({'success': False, 'message': 'Order not found'}), 404
 
-    # If code is already saved in DB, return it immediately
-    if order.get('sms_code'):
+    status = str(order.get('status', '')).lower()
+
+    # If code is already saved in DB and order is not actively awaiting a new SMS, return it immediately
+    if order.get('sms_code') and status not in ('active', 'pending'):
         return jsonify({
             'success': True,
             'sms_code': order['sms_code'],
@@ -494,8 +496,6 @@ def check_sms(order_id):
             'service_name': order.get('service_name', 'Service'),
             'full_sms': order.get('full_sms_text', f"Your code is {order['sms_code']}")
         })
-
-    status = str(order.get('status', '')).lower()
     
     # Dynamic expiration / auto-refund check
     if status in ('active', 'pending'):
@@ -581,8 +581,8 @@ def check_sms(order_id):
 
     # Query provider for incoming SMS
     sms_info = SIMProviderService.check_sms(order_id)
-    if sms_info.get('has_sms') and sms_info.get('sms_code'):
-        code = sms_info['sms_code']
+    if sms_info.get('has_sms') and (sms_info.get('sms_code') or sms_info.get('full_sms')):
+        code = sms_info.get('sms_code') or sms_info.get('full_sms')
         text = sms_info.get('full_sms', f"Your verification code is: {code}")
         DBService.update_order_sms(
             order_id=order_id,

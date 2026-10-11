@@ -151,10 +151,9 @@ def my_sims():
         # Reactivation rule: Reactivations CANNOT be cancelled manually. User must wait until time exhausts or OTP arrives.
         o['can_cancel'] = (not is_react) and (elapsed >= 180)
 
-        # Reactivation availability: Reactivation is available unless carrier rejected reactivation
-        react_closed = bool(o.get('reactivation_expired'))
-        o['reactivation_closed'] = react_closed
-        o['can_reactivate'] = (not react_closed) and has_received_otp
+        # Reactivation availability: Reactivation button remains available for reliable numbers that have received an OTP and are not currently active
+        o['reactivation_closed'] = False
+        o['can_reactivate'] = has_received_otp and (not is_active)
 
         # If active order exceeded time window, trigger automatic refund immediately
         if is_active and remaining <= 0:

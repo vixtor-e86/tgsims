@@ -917,21 +917,10 @@
             if (window.toast) window.toast(data.message || 'Number reactivated! Line is now open for your new OTP.', 'success');
             setTimeout(function() { window.location.reload(); }, 700);
           } else {
-            if (window.toast) window.toast(data.message || 'Could not reactivate number.', 'error');
-            if (data.reactivation_expired) {
-              closeReactivateModal();
-              // Remove Reactivate button so it goes blank
-              var row = document.querySelector('tr[data-order-row][data-order-id="' + targetReactivateId + '"]');
-              if (row) {
-                var rBtn = row.querySelector('button[data-action="reactivate"]');
-                if (rBtn) {
-                  rBtn.remove();
-                }
-              }
-            } else {
-              btnConfirmReactivate.disabled = false;
-              btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
-            }
+            closeReactivateModal();
+            if (window.toast) window.toast(data.message || 'Could not reactivate number. Please try again later.', 'error');
+            btnConfirmReactivate.disabled = false;
+            btnConfirmReactivate.textContent = 'Yes, Reactivate Number';
           }
         })
         .catch(function() {
