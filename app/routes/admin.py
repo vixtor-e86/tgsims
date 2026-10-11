@@ -180,6 +180,7 @@ def pricing():
                     'crypto_enabled': crypto_on,
                     'manual_bank_details': bank_details
                 })
+                SIMProviderService.clear_all_caches()
                 flash('Platform settings and profit margins updated successfully! Changes take effect immediately.', 'success')
             except Exception as e:
                 flash(f'Failed to update settings: {e}', 'error')
@@ -195,6 +196,7 @@ def pricing():
                 notes = request.form.get('notes', '').strip()
                 if svc_code and override_price > 0:
                     SettingsService.set_price_override(svc_code, svc_name or svc_code.capitalize(), prov_type, override_price, notes)
+                    SIMProviderService.clear_all_caches()
                     flash(f'Price override saved for {svc_name or svc_code} (${override_price:.2f}).', 'success')
                 else:
                     flash('Please enter a valid service code and override price.', 'error')
@@ -205,12 +207,14 @@ def pricing():
             override_id = request.form.get('override_id')
             if override_id:
                 SettingsService.delete_price_override(override_id)
+                SIMProviderService.clear_all_caches()
                 flash('Price override removed.', 'info')
 
         elif action in ('sync_smscode_prices', 'sync_5sim_prices', 'sync_virtualsms_prices'):
             try:
                 from scripts.sync_smscode_prices import sync_all
                 ok = sync_all()
+                SIMProviderService.clear_all_caches()
                 if ok:
                     flash('Successfully updated live SMS Code wholesale prices across all countries and services! Prices are now 100% current.', 'success')
                 else:
@@ -379,6 +383,7 @@ def pricing():
             })
 
     services_catalog = {
+        'smscode': f5_catalog,
         'virtualsms': f5_catalog,
         '5sim': f5_catalog,
         'textverified': tv_catalog

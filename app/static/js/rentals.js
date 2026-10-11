@@ -65,23 +65,6 @@
     var reviewPrice = root.querySelector("[data-review-price]");
     var submitBtn = root.querySelector("[data-rental-submit]");
 
-    // Mobile Stepper Tabs & Pills
-    var tabService = root.querySelector('[data-mobile-tab="service"]');
-    var tabDuration = root.querySelector('[data-mobile-tab="duration"]');
-    var tabCheckout = root.querySelector('[data-mobile-tab="checkout"]');
-
-    var stepSelService = root.querySelector("[data-step-selected-service]");
-    var stepSelDuration = root.querySelector("[data-step-selected-duration]");
-    var stepSelPay = root.querySelector("[data-step-selected-pay]");
-
-    var pillService = root.querySelector('[data-step-pill="service"]');
-    var pillDuration = root.querySelector('[data-step-pill="duration"]');
-    var pillCheckout = root.querySelector('[data-step-pill="checkout"]');
-
-    // Mobile Back Buttons
-    var backServiceBtn = root.querySelector('[data-mobile-back="service"]');
-    var backDurationBtn = root.querySelector('[data-mobile-back="duration"]');
-
     // Active state
     var state = {
       selectedService: catalog[0], // Universal by default
@@ -90,37 +73,8 @@
     };
 
     function setMobileStep(step) {
-      state.currentMobileStep = step;
-      root.setAttribute("data-mobile-active", step);
-
-      var tabs = [tabService, tabDuration, tabCheckout];
-      tabs.forEach(function (t) { if (t) t.classList.remove("is-active", "is-complete"); });
-
-      if (step === "service") {
-        if (tabService) tabService.classList.add("is-active");
-      } else if (step === "duration") {
-        if (tabService) tabService.classList.add("is-complete");
-        if (tabDuration) tabDuration.classList.add("is-active");
-      } else if (step === "checkout") {
-        if (tabService) tabService.classList.add("is-complete");
-        if (tabDuration) tabDuration.classList.add("is-complete");
-        if (tabCheckout) tabCheckout.classList.add("is-active");
-      }
-
-      // Scroll container into view smoothly on mobile if needed
-      if (window.innerWidth <= 768) {
-        var offsetTop = root.getBoundingClientRect().top + window.pageYOffset - 80;
-        if (window.pageYOffset > offsetTop) {
-          window.scrollTo({ top: offsetTop, behavior: "smooth" });
-        }
-      }
+      // no-op
     }
-
-    if (tabService) tabService.addEventListener("click", function () { setMobileStep("service"); });
-    if (tabDuration) tabDuration.addEventListener("click", function () { setMobileStep("duration"); });
-    if (tabCheckout) tabCheckout.addEventListener("click", function () { setMobileStep("checkout"); });
-    if (backServiceBtn) backServiceBtn.addEventListener("click", function () { setMobileStep("service"); });
-    if (backDurationBtn) backDurationBtn.addEventListener("click", function () { setMobileStep("duration"); });
 
     function getPriceInfo(svc, days) {
       if (!svc || !svc.pricing) return { retail_usd: 0, formatted: "₦0.00" };
@@ -181,7 +135,6 @@
                 '<span class="buy-list-primary">' + svc.name + "</span>" +
                 badgeHtml +
               "</div>" +
-              '<span class="buy-list-secondary">' + (svc.description || "100% Dedicated Non-VoIP Cellular Line") + "</span>" +
             "</div>" +
           "</div>" +
           '<div class="buy-list-meta">' +
@@ -193,7 +146,10 @@
           renderServices(serviceSearch ? serviceSearch.value : "");
           renderDurations();
           updateCheckout();
-          setMobileStep("duration");
+          if (window.innerWidth <= 768) {
+            var dCol = root.querySelector(".buy-column-duration");
+            if (dCol) dCol.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         });
 
         serviceListEl.appendChild(row);
@@ -230,7 +186,10 @@
           state.selectedDuration = tier.days;
           renderDurations();
           updateCheckout();
-          setMobileStep("checkout");
+          if (window.innerWidth <= 768) {
+            var cCol = root.querySelector(".buy-column-checkout");
+            if (cCol) cCol.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         });
 
         durationListEl.appendChild(card);
@@ -242,6 +201,19 @@
       var days = state.selectedDuration;
       var pInfo = getPriceInfo(svc, days);
 
+      // Selected service details in column 3
+      var detailName = root.querySelector("[data-detail-service-name]");
+      var detailBadge = root.querySelector("[data-detail-service-badge]");
+      var detailDesc = root.querySelector("[data-detail-service-desc]");
+      if (detailName) detailName.textContent = svc.name;
+      if (detailBadge) {
+        detailBadge.textContent = svc.badge || "";
+        detailBadge.style.display = svc.badge ? "inline-block" : "none";
+      }
+      if (detailDesc) {
+        detailDesc.textContent = svc.description || "100% Dedicated Non-VoIP Cellular Line reserved exclusively for your account.";
+      }
+
       if (reviewService) reviewService.textContent = svc.name;
       var durationTierObj = DURATION_TIERS.find(function (t) { return t.days === days; });
       var durationLabel = durationTierObj ? durationTierObj.label : days + " Days";
@@ -252,10 +224,6 @@
         reviewPrice.setAttribute("data-usd", pInfo.retail_usd.toFixed(2));
         reviewPrice.textContent = pInfo.formatted;
       }
-
-      if (stepSelService) stepSelService.textContent = svc.name;
-      if (stepSelDuration) stepSelDuration.textContent = durationLabel;
-      if (stepSelPay) stepSelPay.textContent = pInfo.formatted;
 
       if (submitBtn) {
         submitBtn.disabled = false;

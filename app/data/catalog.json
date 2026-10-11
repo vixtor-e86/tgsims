@@ -6,7 +6,7 @@
       "country_name": "Indonesia",
       "country_slug": "indonesia",
       "flag": "🇮🇩",
-      "dial": "+1"
+      "dial": "+62"
     },
     {
       "country_id": 23,
@@ -14,7 +14,7 @@
       "country_name": "India",
       "country_slug": "india",
       "flag": "🇮🇳",
-      "dial": "+1"
+      "dial": "+91"
     },
     {
       "country_id": 1,
@@ -22,7 +22,7 @@
       "country_name": "Russia",
       "country_slug": "russia",
       "flag": "🇷🇺",
-      "dial": "+1"
+      "dial": "+7"
     },
     {
       "country_id": 188,
@@ -38,7 +38,7 @@
       "country_name": "United Kingdom",
       "country_slug": "united_kingdom",
       "flag": "🇬🇧",
-      "dial": "+1"
+      "dial": "+44"
     },
     {
       "country_id": 5,
@@ -46,7 +46,7 @@
       "country_name": "Philippines",
       "country_slug": "philippines",
       "flag": "🇵🇭",
-      "dial": "+1"
+      "dial": "+63"
     },
     {
       "country_id": 74,
@@ -54,7 +54,7 @@
       "country_name": "Brazil",
       "country_slug": "brazil",
       "flag": "🇧🇷",
-      "dial": "+1"
+      "dial": "+55"
     },
     {
       "country_id": 11,
@@ -62,7 +62,7 @@
       "country_name": "Vietnam",
       "country_slug": "vietnam",
       "flag": "🇻🇳",
-      "dial": "+1"
+      "dial": "+84"
     },
     {
       "country_id": 8,
@@ -70,7 +70,7 @@
       "country_name": "Malaysia",
       "country_slug": "malaysia",
       "flag": "🇲🇾",
-      "dial": "+1"
+      "dial": "+60"
     },
     {
       "country_id": 53,
@@ -78,7 +78,7 @@
       "country_name": "Thailand",
       "country_slug": "thailand",
       "flag": "🇹🇭",
-      "dial": "+1"
+      "dial": "+66"
     },
     {
       "country_id": 4,
@@ -86,7 +86,7 @@
       "country_name": "China",
       "country_slug": "china",
       "flag": "🇨🇳",
-      "dial": "+1"
+      "dial": "+86"
     },
     {
       "country_id": 2,
@@ -94,7 +94,7 @@
       "country_name": "Ukraine",
       "country_slug": "ukraine",
       "flag": "🇺🇦",
-      "dial": "+1"
+      "dial": "+380"
     },
     {
       "country_id": 6,
@@ -102,7 +102,7 @@
       "country_name": "Myanmar",
       "country_slug": "myanmar",
       "flag": "🇲🇲",
-      "dial": "+1"
+      "dial": "+95"
     },
     {
       "country_id": 3,
@@ -110,7 +110,7 @@
       "country_name": "Kazakhstan",
       "country_slug": "kazakhstan",
       "flag": "🇰🇿",
-      "dial": "+1"
+      "dial": "+7"
     },
     {
       "country_id": 20,
@@ -118,7 +118,7 @@
       "country_name": "Nigeria",
       "country_slug": "nigeria",
       "flag": "🇳🇬",
-      "dial": "+1"
+      "dial": "+234"
     },
     {
       "country_id": 61,
@@ -126,7 +126,7 @@
       "country_name": "Bangladesh",
       "country_slug": "bangladesh",
       "flag": "🇧🇩",
-      "dial": "+1"
+      "dial": "+880"
     },
     {
       "country_id": 63,
@@ -134,7 +134,7 @@
       "country_name": "Türkiye",
       "country_slug": "türkiye",
       "flag": "🇹🇷",
-      "dial": "+1"
+      "dial": "+90"
     },
     {
       "country_id": 55,
@@ -142,7 +142,7 @@
       "country_name": "Mexico",
       "country_slug": "mexico",
       "flag": "🇲🇽",
-      "dial": "+1"
+      "dial": "+52"
     },
     {
       "country_id": 22,
@@ -150,7 +150,7 @@
       "country_name": "Egypt",
       "country_slug": "egypt",
       "flag": "🇪🇬",
-      "dial": "+1"
+      "dial": "+20"
     },
     {
       "country_id": 67,
@@ -158,7 +158,7 @@
       "country_name": "Pakistan",
       "country_slug": "pakistan",
       "flag": "🇵🇰",
-      "dial": "+1"
+      "dial": "+92"
     },
     {
       "country_id": 34,
@@ -166,7 +166,7 @@
       "country_name": "Colombia",
       "country_slug": "colombia",
       "flag": "🇨🇴",
-      "dial": "+1"
+      "dial": "+57"
     },
     {
       "country_id": 32,
@@ -174,7 +174,7 @@
       "country_name": "South Africa",
       "country_slug": "south_africa",
       "flag": "🇿🇦",
-      "dial": "+1"
+      "dial": "+27"
     },
     {
       "country_id": 9,
@@ -182,7 +182,7 @@
       "country_name": "Kenya",
       "country_slug": "kenya",
       "flag": "🇰🇪",
-      "dial": "+1"
+      "dial": "+254"
     },
     {
       "country_id": 10,
@@ -190,7 +190,7 @@
       "country_name": "Tanzania",
       "country_slug": "tanzania",
       "flag": "🇹🇿",
-      "dial": "+1"
+      "dial": "+255"
     },
     {
       "country_id": 25,
@@ -198,7 +198,7 @@
       "country_name": "Cambodia",
       "country_slug": "cambodia",
       "flag": "🇰🇭",
-      "dial": "+1"
+      "dial": "+855"
     },
     {
       "country_id": 12,
@@ -206,7 +206,7 @@
       "country_name": "Kyrgyzstan",
       "country_slug": "kyrgyzstan",
       "flag": "🇰🇬",
-      "dial": "+1"
+      "dial": "+996"
     },
     {
       "country_id": 41,
@@ -214,7 +214,7 @@
       "country_name": "Uzbekistan",
       "country_slug": "uzbekistan",
       "flag": "🇺🇿",
-      "dial": "+1"
+      "dial": "+998"
     },
     {
       "country_id": 14,
@@ -222,7 +222,7 @@
       "country_name": "Israel",
       "country_slug": "israel",
       "flag": "🇮🇱",
-      "dial": "+1"
+      "dial": "+972"
     },
     {
       "country_id": 15,
@@ -230,7 +230,7 @@
       "country_name": "Hong Kong",
       "country_slug": "hong_kong",
       "flag": "🇭🇰",
-      "dial": "+1"
+      "dial": "+852"
     },
     {
       "country_id": 16,
@@ -238,7 +238,7 @@
       "country_name": "Poland",
       "country_slug": "poland",
       "flag": "🇵🇱",
-      "dial": "+1"
+      "dial": "+48"
     },
     {
       "country_id": 44,
@@ -246,7 +246,7 @@
       "country_name": "Germany",
       "country_slug": "germany",
       "flag": "🇩🇪",
-      "dial": "+1"
+      "dial": "+49"
     },
     {
       "country_id": 49,
@@ -254,7 +254,7 @@
       "country_name": "Netherlands",
       "country_slug": "netherlands",
       "flag": "🇳🇱",
-      "dial": "+1"
+      "dial": "+31"
     },
     {
       "country_id": 37,
@@ -270,7 +270,7 @@
       "country_name": "Argentina",
       "country_slug": "argentina",
       "flag": "🇦🇷",
-      "dial": "+1"
+      "dial": "+54"
     },
     {
       "country_id": 54,
@@ -278,7 +278,7 @@
       "country_name": "Saudi Arabia",
       "country_slug": "saudi_arabia",
       "flag": "🇸🇦",
-      "dial": "+1"
+      "dial": "+966"
     },
     {
       "country_id": 96,
@@ -286,7 +286,7 @@
       "country_name": "United Arab Emirates",
       "country_slug": "united_arab_emirates",
       "flag": "🇦🇪",
-      "dial": "+1"
+      "dial": "+971"
     },
     {
       "country_id": 33,
@@ -294,7 +294,7 @@
       "country_name": "Romania",
       "country_slug": "romania",
       "flag": "🇷🇴",
-      "dial": "+1"
+      "dial": "+40"
     },
     {
       "country_id": 66,
@@ -302,7 +302,7 @@
       "country_name": "Peru",
       "country_slug": "peru",
       "flag": "🇵🇪",
-      "dial": "+1"
+      "dial": "+51"
     },
     {
       "country_id": 56,
@@ -310,7 +310,7 @@
       "country_name": "Taiwan",
       "country_slug": "taiwan",
       "flag": "🇹🇼",
-      "dial": "+1"
+      "dial": "+886"
     },
     {
       "country_id": 47,
@@ -318,7 +318,7 @@
       "country_name": "Sweden",
       "country_slug": "sweden",
       "flag": "🇸🇪",
-      "dial": "+1"
+      "dial": "+46"
     },
     {
       "country_id": 57,
@@ -326,7 +326,7 @@
       "country_name": "Spain",
       "country_slug": "spain",
       "flag": "🇪🇸",
-      "dial": "+1"
+      "dial": "+34"
     },
     {
       "country_id": 87,
@@ -334,7 +334,7 @@
       "country_name": "Italy",
       "country_slug": "italy",
       "flag": "🇮🇹",
-      "dial": "+1"
+      "dial": "+39"
     },
     {
       "country_id": 79,
@@ -342,7 +342,7 @@
       "country_name": "France",
       "country_slug": "france",
       "flag": "🇫🇷",
-      "dial": "+1"
+      "dial": "+33"
     },
     {
       "country_id": 38,
@@ -350,7 +350,7 @@
       "country_name": "Morocco",
       "country_slug": "morocco",
       "flag": "🇲🇦",
-      "dial": "+1"
+      "dial": "+212"
     },
     {
       "country_id": 39,
@@ -358,7 +358,7 @@
       "country_name": "Ghana",
       "country_slug": "ghana",
       "flag": "🇬🇭",
-      "dial": "+1"
+      "dial": "+233"
     },
     {
       "country_id": 42,
@@ -366,7 +366,7 @@
       "country_name": "Cameroon",
       "country_slug": "cameroon",
       "flag": "🇨🇲",
-      "dial": "+1"
+      "dial": "+237"
     },
     {
       "country_id": 28,
@@ -374,7 +374,7 @@
       "country_name": "Côte d'Ivoire",
       "country_slug": "côte_d'ivoire",
       "flag": "🇨🇮",
-      "dial": "+1"
+      "dial": "+225"
     },
     {
       "country_id": 62,
@@ -382,7 +382,7 @@
       "country_name": "Senegal",
       "country_slug": "senegal",
       "flag": "🇸🇳",
-      "dial": "+1"
+      "dial": "+221"
     },
     {
       "country_id": 58,
@@ -390,7 +390,7 @@
       "country_name": "Iran",
       "country_slug": "iran",
       "flag": "🇮🇷",
-      "dial": "+1"
+      "dial": "+98"
     },
     {
       "country_id": 48,
@@ -398,7 +398,7 @@
       "country_name": "Iraq",
       "country_slug": "iraq",
       "flag": "🇮🇶",
-      "dial": "+1"
+      "dial": "+964"
     },
     {
       "country_id": 59,
@@ -406,7 +406,7 @@
       "country_name": "Algeria",
       "country_slug": "algeria",
       "flag": "🇩🇿",
-      "dial": "+1"
+      "dial": "+213"
     },
     {
       "country_id": 65,
@@ -414,7 +414,7 @@
       "country_name": "Sri Lanka",
       "country_slug": "sri_lanka",
       "flag": "🇱🇰",
-      "dial": "+1"
+      "dial": "+94"
     },
     {
       "country_id": 82,
@@ -422,7 +422,7 @@
       "country_name": "Nepal",
       "country_slug": "nepal",
       "flag": "🇳🇵",
-      "dial": "+1"
+      "dial": "+977"
     },
     {
       "country_id": 26,
@@ -430,7 +430,7 @@
       "country_name": "Laos",
       "country_slug": "laos",
       "flag": "🇱🇦",
-      "dial": "+1"
+      "dial": "+856"
     },
     {
       "country_id": 72,
@@ -438,7 +438,7 @@
       "country_name": "Ethiopia",
       "country_slug": "ethiopia",
       "flag": "🇪🇹",
-      "dial": "+1"
+      "dial": "+251"
     },
     {
       "country_id": 76,
@@ -446,7 +446,7 @@
       "country_name": "Uganda",
       "country_slug": "uganda",
       "flag": "🇺🇬",
-      "dial": "+1"
+      "dial": "+256"
     },
     {
       "country_id": 19,
@@ -454,7 +454,7 @@
       "country_name": "Democratic Republic of the Congo",
       "country_slug": "democratic_republic_of_the_congo",
       "flag": "🇨🇩",
-      "dial": "+1"
+      "dial": "+243"
     },
     {
       "country_id": 18,
@@ -462,7 +462,7 @@
       "country_name": "Madagascar",
       "country_slug": "madagascar",
       "flag": "🇲🇬",
-      "dial": "+1"
+      "dial": "+261"
     },
     {
       "country_id": 21,
@@ -470,7 +470,7 @@
       "country_name": "Macau",
       "country_slug": "macau",
       "flag": "🇲🇴",
-      "dial": "+1"
+      "dial": "+853"
     },
     {
       "country_id": 30,
@@ -478,7 +478,7 @@
       "country_name": "Serbia",
       "country_slug": "serbia",
       "flag": "🇷🇸",
-      "dial": "+1"
+      "dial": "+381"
     },
     {
       "country_id": 52,
@@ -486,7 +486,7 @@
       "country_name": "Belarus",
       "country_slug": "belarus",
       "flag": "🇧🇾",
-      "dial": "+1"
+      "dial": "+375"
     },
     {
       "country_id": 36,
@@ -494,7 +494,7 @@
       "country_name": "Azerbaijan",
       "country_slug": "azerbaijan",
       "flag": "🇦🇿",
-      "dial": "+1"
+      "dial": "+994"
     },
     {
       "country_id": 129,
@@ -502,7 +502,7 @@
       "country_name": "Georgia",
       "country_slug": "georgia",
       "flag": "🇬🇪",
-      "dial": "+1"
+      "dial": "+995"
     },
     {
       "country_id": 64,
@@ -510,7 +510,7 @@
       "country_name": "Czechia",
       "country_slug": "czechia",
       "flag": "🇨🇿",
-      "dial": "+1"
+      "dial": "+420"
     },
     {
       "country_id": 51,
@@ -518,7 +518,7 @@
       "country_name": "Austria",
       "country_slug": "austria",
       "flag": "🇦🇹",
-      "dial": "+1"
+      "dial": "+43"
     },
     {
       "country_id": 46,
@@ -526,7 +526,7 @@
       "country_name": "Croatia",
       "country_slug": "croatia",
       "flag": "🇭🇷",
-      "dial": "+1"
+      "dial": "+385"
     },
     {
       "country_id": 84,
@@ -534,7 +534,7 @@
       "country_name": "Bulgaria",
       "country_slug": "bulgaria",
       "flag": "🇧🇬",
-      "dial": "+1"
+      "dial": "+359"
     },
     {
       "country_id": 85,
@@ -542,7 +542,7 @@
       "country_name": "Hungary",
       "country_slug": "hungary",
       "flag": "🇭🇺",
-      "dial": "+1"
+      "dial": "+36"
     },
     {
       "country_id": 45,
@@ -550,7 +550,7 @@
       "country_name": "Lithuania",
       "country_slug": "lithuania",
       "flag": "🇱🇹",
-      "dial": "+1"
+      "dial": "+370"
     },
     {
       "country_id": 50,
@@ -558,7 +558,7 @@
       "country_name": "Latvia",
       "country_slug": "latvia",
       "flag": "🇱🇻",
-      "dial": "+1"
+      "dial": "+371"
     },
     {
       "country_id": 35,
@@ -566,7 +566,7 @@
       "country_name": "Estonia",
       "country_slug": "estonia",
       "flag": "🇪🇪",
-      "dial": "+1"
+      "dial": "+372"
     },
     {
       "country_id": 60,
@@ -574,7 +574,7 @@
       "country_name": "Slovenia",
       "country_slug": "slovenia",
       "flag": "🇸🇮",
-      "dial": "+1"
+      "dial": "+386"
     },
     {
       "country_id": 142,
@@ -582,7 +582,7 @@
       "country_name": "Slovakia",
       "country_slug": "slovakia",
       "flag": "🇸🇰",
-      "dial": "+1"
+      "dial": "+421"
     },
     {
       "country_id": 152,
@@ -590,7 +590,7 @@
       "country_name": "Chile",
       "country_slug": "chile",
       "flag": "🇨🇱",
-      "dial": "+1"
+      "dial": "+56"
     },
     {
       "country_id": 71,
@@ -598,7 +598,7 @@
       "country_name": "Venezuela",
       "country_slug": "venezuela",
       "flag": "🇻🇪",
-      "dial": "+1"
+      "dial": "+58"
     },
     {
       "country_id": 106,
@@ -606,7 +606,7 @@
       "country_name": "Ecuador",
       "country_slug": "ecuador",
       "flag": "🇪🇨",
-      "dial": "+1"
+      "dial": "+593"
     },
     {
       "country_id": 183,
@@ -614,7 +614,7 @@
       "country_name": "Japan",
       "country_slug": "japan",
       "flag": "🇯🇵",
-      "dial": "+1"
+      "dial": "+81"
     },
     {
       "country_id": 191,
@@ -622,7 +622,7 @@
       "country_name": "South Korea",
       "country_slug": "south_korea",
       "flag": "🇰🇷",
-      "dial": "+1"
+      "dial": "+82"
     },
     {
       "country_id": 197,
@@ -630,7 +630,7 @@
       "country_name": "Singapore",
       "country_slug": "singapore",
       "flag": "🇸🇬",
-      "dial": "+1"
+      "dial": "+65"
     },
     {
       "country_id": 176,
@@ -638,7 +638,7 @@
       "country_name": "Australia",
       "country_slug": "australia",
       "flag": "🇦🇺",
-      "dial": "+1"
+      "dial": "+61"
     },
     {
       "country_id": 68,
@@ -646,7 +646,7 @@
       "country_name": "New Zealand",
       "country_slug": "new_zealand",
       "flag": "🇳🇿",
-      "dial": "+1"
+      "dial": "+64"
     },
     {
       "country_id": 24,
@@ -654,7 +654,7 @@
       "country_name": "Ireland",
       "country_slug": "ireland",
       "flag": "🇮🇪",
-      "dial": "+1"
+      "dial": "+353"
     },
     {
       "country_id": 118,
@@ -662,7 +662,7 @@
       "country_name": "Portugal",
       "country_slug": "portugal",
       "flag": "🇵🇹",
-      "dial": "+1"
+      "dial": "+351"
     },
     {
       "country_id": 83,
@@ -670,7 +670,7 @@
       "country_name": "Belgium",
       "country_slug": "belgium",
       "flag": "🇧🇪",
-      "dial": "+1"
+      "dial": "+32"
     },
     {
       "country_id": 174,
@@ -678,7 +678,7 @@
       "country_name": "Switzerland",
       "country_slug": "switzerland",
       "flag": "🇨🇭",
-      "dial": "+1"
+      "dial": "+41"
     },
     {
       "country_id": 173,
@@ -686,7 +686,7 @@
       "country_name": "Denmark",
       "country_slug": "denmark",
       "flag": "🇩🇰",
-      "dial": "+1"
+      "dial": "+45"
     },
     {
       "country_id": 175,
@@ -694,7 +694,7 @@
       "country_name": "Norway",
       "country_slug": "norway",
       "flag": "🇳🇴",
-      "dial": "+1"
+      "dial": "+47"
     },
     {
       "country_id": 164,
@@ -702,7 +702,7 @@
       "country_name": "Finland",
       "country_slug": "finland",
       "flag": "🇫🇮",
-      "dial": "+1"
+      "dial": "+358"
     },
     {
       "country_id": 130,
@@ -710,7 +710,7 @@
       "country_name": "Greece",
       "country_slug": "greece",
       "flag": "🇬🇷",
-      "dial": "+1"
+      "dial": "+30"
     },
     {
       "country_id": 86,
@@ -718,7 +718,7 @@
       "country_name": "Moldova",
       "country_slug": "moldova",
       "flag": "🇲🇩",
-      "dial": "+1"
+      "dial": "+373"
     },
     {
       "country_id": 149,
@@ -726,7 +726,7 @@
       "country_name": "Armenia",
       "country_slug": "armenia",
       "flag": "🇦🇲",
-      "dial": "+1"
+      "dial": "+374"
     },
     {
       "country_id": 144,
@@ -734,7 +734,7 @@
       "country_name": "Tajikistan",
       "country_slug": "tajikistan",
       "flag": "🇹🇯",
-      "dial": "+1"
+      "dial": "+992"
     },
     {
       "country_id": 162,
@@ -742,7 +742,7 @@
       "country_name": "Turkmenistan",
       "country_slug": "turkmenistan",
       "flag": "🇹🇲",
-      "dial": "+1"
+      "dial": "+993"
     },
     {
       "country_id": 73,
@@ -750,7 +750,7 @@
       "country_name": "Mongolia",
       "country_slug": "mongolia",
       "flag": "🇲🇳",
-      "dial": "+1"
+      "dial": "+976"
     },
     {
       "country_id": 75,
@@ -758,7 +758,7 @@
       "country_name": "Afghanistan",
       "country_slug": "afghanistan",
       "flag": "🇦🇫",
-      "dial": "+1"
+      "dial": "+93"
     },
     {
       "country_id": 77,
@@ -766,7 +766,7 @@
       "country_name": "Angola",
       "country_slug": "angola",
       "flag": "🇦🇴",
-      "dial": "+1"
+      "dial": "+244"
     },
     {
       "country_id": 78,
@@ -774,7 +774,7 @@
       "country_name": "Cyprus",
       "country_slug": "cyprus",
       "flag": "🇨🇾",
-      "dial": "+1"
+      "dial": "+357"
     },
     {
       "country_id": 81,
@@ -782,7 +782,7 @@
       "country_name": "Mozambique",
       "country_slug": "mozambique",
       "flag": "🇲🇿",
-      "dial": "+1"
+      "dial": "+258"
     },
     {
       "country_id": 112,
@@ -790,7 +790,7 @@
       "country_name": "Qatar",
       "country_slug": "qatar",
       "flag": "🇶🇦",
-      "dial": "+1"
+      "dial": "+974"
     },
     {
       "country_id": 101,
@@ -798,7 +798,7 @@
       "country_name": "Kuwait",
       "country_slug": "kuwait",
       "flag": "🇰🇼",
-      "dial": "+1"
+      "dial": "+965"
     },
     {
       "country_id": 108,
@@ -806,7 +806,7 @@
       "country_name": "Oman",
       "country_slug": "oman",
       "flag": "🇴🇲",
-      "dial": "+1"
+      "dial": "+968"
     },
     {
       "country_id": 146,
@@ -814,7 +814,7 @@
       "country_name": "Bahrain",
       "country_slug": "bahrain",
       "flag": "🇧🇭",
-      "dial": "+1"
+      "dial": "+973"
     },
     {
       "country_id": 117,
@@ -822,7 +822,7 @@
       "country_name": "Jordan",
       "country_slug": "jordan",
       "flag": "🇯🇴",
-      "dial": "+1"
+      "dial": "+962"
     },
     {
       "country_id": 154,
@@ -830,7 +830,7 @@
       "country_name": "Lebanon",
       "country_slug": "lebanon",
       "flag": "🇱🇧",
-      "dial": "+1"
+      "dial": "+961"
     },
     {
       "country_id": 90,
@@ -838,7 +838,7 @@
       "country_name": "Tunisia",
       "country_slug": "tunisia",
       "flag": "🇹🇳",
-      "dial": "+1"
+      "dial": "+216"
     },
     {
       "country_id": 103,
@@ -846,7 +846,7 @@
       "country_name": "Libya",
       "country_slug": "libya",
       "flag": "🇱🇾",
-      "dial": "+1"
+      "dial": "+218"
     },
     {
       "country_id": 99,
@@ -854,7 +854,7 @@
       "country_name": "Sudan",
       "country_slug": "sudan",
       "flag": "🇸🇩",
-      "dial": "+1"
+      "dial": "+249"
     },
     {
       "country_id": 31,
@@ -862,7 +862,7 @@
       "country_name": "Yemen",
       "country_slug": "yemen",
       "flag": "🇾🇪",
-      "dial": "+1"
+      "dial": "+967"
     },
     {
       "country_id": 111,
@@ -870,7 +870,7 @@
       "country_name": "Syria",
       "country_slug": "syria",
       "flag": "🇸🇾",
-      "dial": "+1"
+      "dial": "+963"
     },
     {
       "country_id": 189,
@@ -878,7 +878,7 @@
       "country_name": "Palestine",
       "country_slug": "palestine",
       "flag": "🇵🇸",
-      "dial": "+1"
+      "dial": "+970"
     },
     {
       "country_id": 93,
@@ -886,7 +886,7 @@
       "country_name": "Bolivia",
       "country_slug": "bolivia",
       "flag": "🇧🇴",
-      "dial": "+1"
+      "dial": "+591"
     },
     {
       "country_id": 88,
@@ -894,7 +894,7 @@
       "country_name": "Paraguay",
       "country_slug": "paraguay",
       "flag": "🇵🇾",
-      "dial": "+1"
+      "dial": "+595"
     },
     {
       "country_id": 157,
@@ -902,7 +902,7 @@
       "country_name": "Uruguay",
       "country_slug": "uruguay",
       "flag": "🇺🇾",
-      "dial": "+1"
+      "dial": "+598"
     },
     {
       "country_id": 94,
@@ -910,7 +910,7 @@
       "country_name": "Costa Rica",
       "country_slug": "costa_rica",
       "flag": "🇨🇷",
-      "dial": "+1"
+      "dial": "+506"
     },
     {
       "country_id": 113,
@@ -918,7 +918,7 @@
       "country_name": "Panama",
       "country_slug": "panama",
       "flag": "🇵🇦",
-      "dial": "+1"
+      "dial": "+507"
     },
     {
       "country_id": 95,
@@ -926,7 +926,7 @@
       "country_name": "Guatemala",
       "country_slug": "guatemala",
       "flag": "🇬🇹",
-      "dial": "+1"
+      "dial": "+502"
     },
     {
       "country_id": 89,
@@ -934,7 +934,7 @@
       "country_name": "Honduras",
       "country_slug": "honduras",
       "flag": "🇭🇳",
-      "dial": "+1"
+      "dial": "+504"
     },
     {
       "country_id": 91,
@@ -942,7 +942,7 @@
       "country_name": "Nicaragua",
       "country_slug": "nicaragua",
       "flag": "🇳🇮",
-      "dial": "+1"
+      "dial": "+505"
     },
     {
       "country_id": 102,
@@ -950,7 +950,7 @@
       "country_name": "El Salvador",
       "country_slug": "el_salvador",
       "flag": "🇸🇻",
-      "dial": "+1"
+      "dial": "+503"
     },
     {
       "country_id": 110,
@@ -958,7 +958,7 @@
       "country_name": "Dominican Republic",
       "country_slug": "dominican_republic",
       "flag": "🇩🇴",
-      "dial": "+1"
+      "dial": "+1-809"
     },
     {
       "country_id": 114,
@@ -966,7 +966,7 @@
       "country_name": "Cuba",
       "country_slug": "cuba",
       "flag": "🇨🇺",
-      "dial": "+1"
+      "dial": "+53"
     },
     {
       "country_id": 27,
@@ -974,7 +974,7 @@
       "country_name": "Haiti",
       "country_slug": "haiti",
       "flag": "🇭🇹",
-      "dial": "+1"
+      "dial": "+509"
     },
     {
       "country_id": 104,
@@ -982,7 +982,7 @@
       "country_name": "Jamaica",
       "country_slug": "jamaica",
       "flag": "🇯🇲",
-      "dial": "+1"
+      "dial": "+1-876"
     },
     {
       "country_id": 105,
@@ -990,7 +990,7 @@
       "country_name": "Trinidad and Tobago",
       "country_slug": "trinidad_and_tobago",
       "flag": "🇹🇹",
-      "dial": "+1"
+      "dial": "+1-868"
     },
     {
       "country_id": 98,
@@ -998,7 +998,7 @@
       "country_name": "Puerto Rico",
       "country_slug": "puerto_rico",
       "flag": "🇵🇷",
-      "dial": "+1"
+      "dial": "+1-787"
     },
     {
       "country_id": 121,
@@ -1006,7 +1006,7 @@
       "country_name": "Benin",
       "country_slug": "benin",
       "flag": "🇧🇯",
-      "dial": "+1"
+      "dial": "+229"
     },
     {
       "country_id": 153,
@@ -1014,7 +1014,7 @@
       "country_name": "Burkina Faso",
       "country_slug": "burkina_faso",
       "flag": "🇧🇫",
-      "dial": "+1"
+      "dial": "+226"
     },
     {
       "country_id": 120,
@@ -1022,7 +1022,7 @@
       "country_name": "Burundi",
       "country_slug": "burundi",
       "flag": "🇧🇮",
-      "dial": "+1"
+      "dial": "+257"
     },
     {
       "country_id": 43,
@@ -1030,7 +1030,7 @@
       "country_name": "Chad",
       "country_slug": "chad",
       "flag": "🇹🇩",
-      "dial": "+1"
+      "dial": "+235"
     },
     {
       "country_id": 29,
@@ -1038,7 +1038,7 @@
       "country_name": "Gambia",
       "country_slug": "gambia",
       "flag": "🇬🇲",
-      "dial": "+1"
+      "dial": "+220"
     },
     {
       "country_id": 69,
@@ -1046,7 +1046,7 @@
       "country_name": "Guinea",
       "country_slug": "guinea",
       "flag": "🇬🇳",
-      "dial": "+1"
+      "dial": "+224"
     },
     {
       "country_id": 131,
@@ -1054,7 +1054,7 @@
       "country_name": "Guinea-Bissau",
       "country_slug": "guinea-bissau",
       "flag": "🇬🇼",
-      "dial": "+1"
+      "dial": "+245"
     },
     {
       "country_id": 136,
@@ -1062,7 +1062,7 @@
       "country_name": "Liberia",
       "country_slug": "liberia",
       "flag": "🇱🇷",
-      "dial": "+1"
+      "dial": "+231"
     },
     {
       "country_id": 70,
@@ -1070,7 +1070,7 @@
       "country_name": "Mali",
       "country_slug": "mali",
       "flag": "🇲🇱",
-      "dial": "+1"
+      "dial": "+223"
     },
     {
       "country_id": 115,
@@ -1078,7 +1078,7 @@
       "country_name": "Mauritania",
       "country_slug": "mauritania",
       "flag": "🇲🇷",
-      "dial": "+1"
+      "dial": "+222"
     },
     {
       "country_id": 140,
@@ -1086,7 +1086,7 @@
       "country_name": "Niger",
       "country_slug": "niger",
       "flag": "🇳🇪",
-      "dial": "+1"
+      "dial": "+227"
     },
     {
       "country_id": 141,
@@ -1094,7 +1094,7 @@
       "country_name": "Rwanda",
       "country_slug": "rwanda",
       "flag": "🇷🇼",
-      "dial": "+1"
+      "dial": "+250"
     },
     {
       "country_id": 116,
@@ -1102,7 +1102,7 @@
       "country_name": "Sierra Leone",
       "country_slug": "sierra_leone",
       "flag": "🇸🇱",
-      "dial": "+1"
+      "dial": "+232"
     },
     {
       "country_id": 150,
@@ -1110,7 +1110,7 @@
       "country_name": "Somalia",
       "country_slug": "somalia",
       "flag": "🇸🇴",
-      "dial": "+1"
+      "dial": "+252"
     },
     {
       "country_id": 178,
@@ -1118,7 +1118,7 @@
       "country_name": "South Sudan",
       "country_slug": "south_sudan",
       "flag": "🇸🇸",
-      "dial": "+1"
+      "dial": "+211"
     },
     {
       "country_id": 147,
@@ -1126,7 +1126,7 @@
       "country_name": "Réunion",
       "country_slug": "réunion",
       "flag": "🇷🇪",
-      "dial": "+1"
+      "dial": "+262"
     },
     {
       "country_id": 100,
@@ -1134,7 +1134,7 @@
       "country_name": "Togo",
       "country_slug": "togo",
       "flag": "🇹🇬",
-      "dial": "+1"
+      "dial": "+228"
     },
     {
       "country_id": 148,
@@ -1142,7 +1142,7 @@
       "country_name": "Zambia",
       "country_slug": "zambia",
       "flag": "🇿🇲",
-      "dial": "+1"
+      "dial": "+260"
     },
     {
       "country_id": 97,
@@ -1150,7 +1150,7 @@
       "country_name": "Zimbabwe",
       "country_slug": "zimbabwe",
       "flag": "🇿🇼",
-      "dial": "+1"
+      "dial": "+263"
     },
     {
       "country_id": 124,
@@ -1158,7 +1158,7 @@
       "country_name": "Botswana",
       "country_slug": "botswana",
       "flag": "🇧🇼",
-      "dial": "+1"
+      "dial": "+267"
     },
     {
       "country_id": 137,
@@ -1166,7 +1166,7 @@
       "country_name": "Lesotho",
       "country_slug": "lesotho",
       "flag": "🇱🇸",
-      "dial": "+1"
+      "dial": "+266"
     },
     {
       "country_id": 138,
@@ -1174,7 +1174,7 @@
       "country_name": "Malawi",
       "country_slug": "malawi",
       "flag": "🇲🇼",
-      "dial": "+1"
+      "dial": "+265"
     },
     {
       "country_id": 139,
@@ -1182,7 +1182,7 @@
       "country_name": "Namibia",
       "country_slug": "namibia",
       "flag": "🇳🇦",
-      "dial": "+1"
+      "dial": "+264"
     },
     {
       "country_id": 107,
@@ -1190,7 +1190,7 @@
       "country_name": "Eswatini",
       "country_slug": "eswatini",
       "flag": "🇸🇿",
-      "dial": "+1"
+      "dial": "+268"
     },
     {
       "country_id": 155,
@@ -1198,7 +1198,7 @@
       "country_name": "Gabon",
       "country_slug": "gabon",
       "flag": "🇬🇦",
-      "dial": "+1"
+      "dial": "+241"
     },
     {
       "country_id": 151,
@@ -1206,7 +1206,7 @@
       "country_name": "Republic of the Congo",
       "country_slug": "republic_of_the_congo",
       "flag": "🇨🇬",
-      "dial": "+1"
+      "dial": "+242"
     },
     {
       "country_id": 126,
@@ -1214,7 +1214,7 @@
       "country_name": "Central African Republic",
       "country_slug": "central_african_republic",
       "flag": "🇨🇫",
-      "dial": "+1"
+      "dial": "+236"
     },
     {
       "country_id": 168,
@@ -1222,7 +1222,7 @@
       "country_name": "Equatorial Guinea",
       "country_slug": "equatorial_guinea",
       "flag": "🇬🇶",
-      "dial": "+1"
+      "dial": "+240"
     },
     {
       "country_id": 169,
@@ -1230,7 +1230,7 @@
       "country_name": "Djibouti",
       "country_slug": "djibouti",
       "flag": "🇩🇯",
-      "dial": "+1"
+      "dial": "+253"
     },
     {
       "country_id": 177,
@@ -1238,7 +1238,7 @@
       "country_name": "Eritrea",
       "country_slug": "eritrea",
       "flag": "🇪🇷",
-      "dial": "+1"
+      "dial": "+291"
     },
     {
       "country_id": 134,
@@ -1246,7 +1246,7 @@
       "country_name": "Comoros",
       "country_slug": "comoros",
       "flag": "🇰🇲",
-      "dial": "+1"
+      "dial": "+269"
     },
     {
       "country_id": 161,
@@ -1254,7 +1254,7 @@
       "country_name": "Guadeloupe",
       "country_slug": "guadeloupe",
       "flag": "🇬🇵",
-      "dial": "+1"
+      "dial": "+590"
     },
     {
       "country_id": 156,
@@ -1262,7 +1262,7 @@
       "country_name": "Albania",
       "country_slug": "albania",
       "flag": "🇦🇱",
-      "dial": "+1"
+      "dial": "+355"
     },
     {
       "country_id": 109,
@@ -1270,7 +1270,7 @@
       "country_name": "Bosnia and Herzegovina",
       "country_slug": "bosnia_and_herzegovina",
       "flag": "🇧🇦",
-      "dial": "+1"
+      "dial": "+387"
     },
     {
       "country_id": 163,
@@ -1278,7 +1278,7 @@
       "country_name": "French Guiana",
       "country_slug": "french_guiana",
       "flag": "🇬🇫",
-      "dial": "+1"
+      "dial": "+594"
     },
     {
       "country_id": 172,
@@ -1286,7 +1286,7 @@
       "country_name": "Montenegro",
       "country_slug": "montenegro",
       "flag": "🇲🇪",
-      "dial": "+1"
+      "dial": "+382"
     },
     {
       "country_id": 184,
@@ -1294,7 +1294,7 @@
       "country_name": "North Macedonia",
       "country_slug": "north_macedonia",
       "flag": "🇲🇰",
-      "dial": "+1"
+      "dial": "+389"
     },
     {
       "country_id": 204,
@@ -1302,7 +1302,7 @@
       "country_name": "Kosovo",
       "country_slug": "kosovo",
       "flag": "🇽🇰",
-      "dial": "+1"
+      "dial": "+383"
     },
     {
       "country_id": 200,
@@ -1310,7 +1310,7 @@
       "country_name": "Malta",
       "country_slug": "malta",
       "flag": "🇲🇹",
-      "dial": "+1"
+      "dial": "+356"
     },
     {
       "country_id": 166,
@@ -1318,7 +1318,7 @@
       "country_name": "Luxembourg",
       "country_slug": "luxembourg",
       "flag": "🇱🇺",
-      "dial": "+1"
+      "dial": "+352"
     },
     {
       "country_id": 133,
@@ -1326,7 +1326,7 @@
       "country_name": "Iceland",
       "country_slug": "iceland",
       "flag": "🇮🇸",
-      "dial": "+1"
+      "dial": "+354"
     },
     {
       "country_id": 145,
@@ -1334,7 +1334,7 @@
       "country_name": "Monaco",
       "country_slug": "monaco",
       "flag": "🇲🇨",
-      "dial": "+1"
+      "dial": "+377"
     },
     {
       "country_id": 201,
@@ -1342,7 +1342,7 @@
       "country_name": "Liechtenstein",
       "country_slug": "liechtenstein",
       "flag": "🇱🇮",
-      "dial": "+1"
+      "dial": "+423"
     },
     {
       "country_id": 203,
@@ -1350,7 +1350,7 @@
       "country_name": "Faroe Islands",
       "country_slug": "faroe_islands",
       "flag": "🇫🇴",
-      "dial": "+1"
+      "dial": "+298"
     },
     {
       "country_id": 202,
@@ -1358,7 +1358,7 @@
       "country_name": "Gibraltar",
       "country_slug": "gibraltar",
       "flag": "🇬🇮",
-      "dial": "+1"
+      "dial": "+350"
     },
     {
       "country_id": 195,
@@ -1366,7 +1366,7 @@
       "country_name": "Jersey",
       "country_slug": "jersey",
       "flag": "🇯🇪",
-      "dial": "+1"
+      "dial": "+44"
     },
     {
       "country_id": 158,
@@ -1374,7 +1374,7 @@
       "country_name": "Mauritius",
       "country_slug": "mauritius",
       "flag": "🇲🇺",
-      "dial": "+1"
+      "dial": "+230"
     },
     {
       "country_id": 185,
@@ -1382,7 +1382,7 @@
       "country_name": "Seychelles",
       "country_slug": "seychelles",
       "flag": "🇸🇨",
-      "dial": "+1"
+      "dial": "+248"
     },
     {
       "country_id": 187,
@@ -1390,7 +1390,7 @@
       "country_name": "Cape Verde",
       "country_slug": "cape_verde",
       "flag": "🇨🇻",
-      "dial": "+1"
+      "dial": "+238"
     },
     {
       "country_id": 160,
@@ -1398,7 +1398,7 @@
       "country_name": "Maldives",
       "country_slug": "maldives",
       "flag": "🇲🇻",
-      "dial": "+1"
+      "dial": "+960"
     },
     {
       "country_id": 159,
@@ -1406,7 +1406,7 @@
       "country_name": "Bhutan",
       "country_slug": "bhutan",
       "flag": "🇧🇹",
-      "dial": "+1"
+      "dial": "+975"
     },
     {
       "country_id": 179,
@@ -1414,7 +1414,7 @@
       "country_name": "São Tomé and Príncipe",
       "country_slug": "são_tomé_and_príncipe",
       "flag": "🇸🇹",
-      "dial": "+1"
+      "dial": "+239"
     },
     {
       "country_id": 180,
@@ -1422,7 +1422,7 @@
       "country_name": "Aruba",
       "country_slug": "aruba",
       "flag": "🇦🇼",
-      "dial": "+1"
+      "dial": "+297"
     },
     {
       "country_id": 92,
@@ -1430,7 +1430,7 @@
       "country_name": "East Timor",
       "country_slug": "east_timor",
       "flag": "🇹🇱",
-      "dial": "+1"
+      "dial": "+670"
     },
     {
       "country_id": 181,
@@ -1438,7 +1438,7 @@
       "country_name": "Montserrat",
       "country_slug": "montserrat",
       "flag": "🇲🇸",
-      "dial": "+1"
+      "dial": "+1-664"
     },
     {
       "country_id": 80,
@@ -1446,7 +1446,7 @@
       "country_name": "Papua New Guinea",
       "country_slug": "papua_new_guinea",
       "flag": "🇵🇬",
-      "dial": "+1"
+      "dial": "+675"
     },
     {
       "country_id": 182,
@@ -1454,7 +1454,7 @@
       "country_name": "Anguilla",
       "country_slug": "anguilla",
       "flag": "🇦🇮",
-      "dial": "+1"
+      "dial": "+1-264"
     },
     {
       "country_id": 190,
@@ -1462,7 +1462,7 @@
       "country_name": "Fiji",
       "country_slug": "fiji",
       "flag": "🇫🇯",
-      "dial": "+1"
+      "dial": "+679"
     },
     {
       "country_id": 198,
@@ -1470,7 +1470,7 @@
       "country_name": "Tonga",
       "country_slug": "tonga",
       "flag": "🇹🇴",
-      "dial": "+1"
+      "dial": "+676"
     },
     {
       "country_id": 199,
@@ -1478,7 +1478,7 @@
       "country_name": "Samoa",
       "country_slug": "samoa",
       "flag": "🇼🇸",
-      "dial": "+1"
+      "dial": "+685"
     },
     {
       "country_id": 194,
@@ -1486,7 +1486,7 @@
       "country_name": "Solomon Islands",
       "country_slug": "solomon_islands",
       "flag": "🇸🇧",
-      "dial": "+1"
+      "dial": "+677"
     },
     {
       "country_id": 186,
@@ -1494,7 +1494,7 @@
       "country_name": "New Caledonia",
       "country_slug": "new_caledonia",
       "flag": "🇳🇨",
-      "dial": "+1"
+      "dial": "+687"
     },
     {
       "country_id": 205,
@@ -1502,7 +1502,7 @@
       "country_name": "Niue",
       "country_slug": "niue",
       "flag": "🇳🇺",
-      "dial": "+1"
+      "dial": "+683"
     },
     {
       "country_id": 122,
@@ -1510,7 +1510,7 @@
       "country_name": "Brunei",
       "country_slug": "brunei",
       "flag": "🇧🇳",
-      "dial": "+1"
+      "dial": "+673"
     },
     {
       "country_id": 143,
@@ -1518,7 +1518,7 @@
       "country_name": "Suriname",
       "country_slug": "suriname",
       "flag": "🇸🇷",
-      "dial": "+1"
+      "dial": "+597"
     },
     {
       "country_id": 132,
@@ -1526,7 +1526,7 @@
       "country_name": "Guyana",
       "country_slug": "guyana",
       "flag": "🇬🇾",
-      "dial": "+1"
+      "dial": "+592"
     },
     {
       "country_id": 125,
@@ -1534,7 +1534,7 @@
       "country_name": "Belize",
       "country_slug": "belize",
       "flag": "🇧🇿",
-      "dial": "+1"
+      "dial": "+501"
     },
     {
       "country_id": 119,
@@ -1542,7 +1542,7 @@
       "country_name": "Barbados",
       "country_slug": "barbados",
       "flag": "🇧🇧",
-      "dial": "+1"
+      "dial": "+1-246"
     },
     {
       "country_id": 192,
@@ -1550,7 +1550,7 @@
       "country_name": "North Korea",
       "country_slug": "north_korea",
       "flag": "🇰🇵",
-      "dial": "+1"
+      "dial": "+850"
     },
     {
       "country_id": 123,
@@ -1558,7 +1558,7 @@
       "country_name": "Bahamas",
       "country_slug": "bahamas",
       "flag": "🇧🇸",
-      "dial": "+1"
+      "dial": "+1-242"
     },
     {
       "country_id": 127,
@@ -1566,7 +1566,7 @@
       "country_name": "Dominica",
       "country_slug": "dominica",
       "flag": "🇩🇲",
-      "dial": "+1"
+      "dial": "+1-767"
     },
     {
       "country_id": 128,
@@ -1574,7 +1574,7 @@
       "country_name": "Grenada",
       "country_slug": "grenada",
       "flag": "🇬🇩",
-      "dial": "+1"
+      "dial": "+1-473"
     },
     {
       "country_id": 196,
@@ -1582,7 +1582,7 @@
       "country_name": "Bermuda",
       "country_slug": "bermuda",
       "flag": "🇧🇲",
-      "dial": "+1"
+      "dial": "+1-441"
     },
     {
       "country_id": 135,
@@ -1590,7 +1590,7 @@
       "country_name": "Saint Kitts and Nevis",
       "country_slug": "saint_kitts_and_nevis",
       "flag": "🇰🇳",
-      "dial": "+1"
+      "dial": "+1-869"
     },
     {
       "country_id": 165,
@@ -1598,7 +1598,7 @@
       "country_name": "Saint Lucia",
       "country_slug": "saint_lucia",
       "flag": "🇱🇨",
-      "dial": "+1"
+      "dial": "+1-758"
     },
     {
       "country_id": 167,
@@ -1606,7 +1606,7 @@
       "country_name": "Saint Vincent and the Grenadines",
       "country_slug": "saint_vincent_and_the_grenadines",
       "flag": "🇻🇨",
-      "dial": "+1"
+      "dial": "+1-784"
     },
     {
       "country_id": 170,
@@ -1614,7 +1614,7 @@
       "country_name": "Antigua and Barbuda",
       "country_slug": "antigua_and_barbuda",
       "flag": "🇦🇬",
-      "dial": "+1"
+      "dial": "+1-268"
     },
     {
       "country_id": 171,
@@ -1622,7 +1622,7 @@
       "country_name": "Cayman Islands",
       "country_slug": "cayman_islands",
       "flag": "🇰🇾",
-      "dial": "+1"
+      "dial": "+1-345"
     },
     {
       "country_id": 193,
@@ -1630,7 +1630,7 @@
       "country_name": "Western Sahara",
       "country_slug": "western_sahara",
       "flag": "🇪🇭",
-      "dial": "+1"
+      "dial": "+212"
     },
     {
       "country_id": 13,
@@ -1646,7 +1646,7 @@
       "country_name": "Andorra",
       "country_slug": "andorra",
       "flag": "🇦🇩",
-      "dial": "+1"
+      "dial": "+376"
     },
     {
       "country_id": 207,
@@ -1654,7 +1654,7 @@
       "country_name": "Kiribati",
       "country_slug": "kiribati",
       "flag": "🇰🇮",
-      "dial": "+1"
+      "dial": "+686"
     },
     {
       "country_id": 208,
@@ -1662,7 +1662,7 @@
       "country_name": "Marshall Islands",
       "country_slug": "marshall_islands",
       "flag": "🇲🇭",
-      "dial": "+1"
+      "dial": "+692"
     },
     {
       "country_id": 209,
@@ -1670,7 +1670,7 @@
       "country_name": "Micronesia",
       "country_slug": "micronesia",
       "flag": "🇫🇲",
-      "dial": "+1"
+      "dial": "+691"
     },
     {
       "country_id": 210,
@@ -1678,7 +1678,7 @@
       "country_name": "Nauru",
       "country_slug": "nauru",
       "flag": "🇳🇷",
-      "dial": "+1"
+      "dial": "+674"
     },
     {
       "country_id": 211,
@@ -1686,7 +1686,7 @@
       "country_name": "Palau",
       "country_slug": "palau",
       "flag": "🇵🇼",
-      "dial": "+1"
+      "dial": "+680"
     },
     {
       "country_id": 212,
@@ -1694,7 +1694,7 @@
       "country_name": "San Marino",
       "country_slug": "san_marino",
       "flag": "🇸🇲",
-      "dial": "+1"
+      "dial": "+378"
     },
     {
       "country_id": 213,
@@ -1702,7 +1702,7 @@
       "country_name": "Tuvalu",
       "country_slug": "tuvalu",
       "flag": "🇹🇻",
-      "dial": "+1"
+      "dial": "+688"
     },
     {
       "country_id": 215,
@@ -1710,7 +1710,7 @@
       "country_name": "Vanuatu",
       "country_slug": "vanuatu",
       "flag": "🇻🇺",
-      "dial": "+1"
+      "dial": "+678"
     },
     {
       "country_id": 214,
@@ -1718,7 +1718,7 @@
       "country_name": "Vatican City",
       "country_slug": "vatican_city",
       "flag": "🇻🇦",
-      "dial": "+1"
+      "dial": "+379"
     },
     {
       "country_id": 216,
@@ -1726,7 +1726,7 @@
       "country_name": "American Samoa",
       "country_slug": "american_samoa",
       "flag": "🇦🇸",
-      "dial": "+1"
+      "dial": "+1-684"
     },
     {
       "country_id": 231,
@@ -1734,7 +1734,7 @@
       "country_name": "Bonaire",
       "country_slug": "bonaire",
       "flag": "🇧🇶",
-      "dial": "+1"
+      "dial": "+599"
     },
     {
       "country_id": 217,
@@ -1742,7 +1742,7 @@
       "country_name": "British Virgin Islands",
       "country_slug": "british_virgin_islands",
       "flag": "🇻🇬",
-      "dial": "+1"
+      "dial": "+1-284"
     },
     {
       "country_id": 235,
@@ -1750,7 +1750,7 @@
       "country_name": "Christmas Island",
       "country_slug": "christmas_island",
       "flag": "🇨🇽",
-      "dial": "+1"
+      "dial": "+61"
     },
     {
       "country_id": 236,
@@ -1758,7 +1758,7 @@
       "country_name": "Cocos Islands",
       "country_slug": "cocos_islands",
       "flag": "🇨🇨",
-      "dial": "+1"
+      "dial": "+61"
     },
     {
       "country_id": 218,
@@ -1766,7 +1766,7 @@
       "country_name": "Cook Islands",
       "country_slug": "cook_islands",
       "flag": "🇨🇰",
-      "dial": "+1"
+      "dial": "+682"
     },
     {
       "country_id": 219,
@@ -1774,7 +1774,7 @@
       "country_name": "Curaçao",
       "country_slug": "curaçao",
       "flag": "🇨🇼",
-      "dial": "+1"
+      "dial": "+599"
     },
     {
       "country_id": 240,
@@ -1782,7 +1782,7 @@
       "country_name": "Falkland Islands",
       "country_slug": "falkland_islands",
       "flag": "🇫🇰",
-      "dial": "+1"
+      "dial": "+500"
     },
     {
       "country_id": 229,
@@ -1790,7 +1790,7 @@
       "country_name": "French Polynesia",
       "country_slug": "french_polynesia",
       "flag": "🇵🇫",
-      "dial": "+1"
+      "dial": "+689"
     },
     {
       "country_id": 220,
@@ -1798,7 +1798,7 @@
       "country_name": "Greenland",
       "country_slug": "greenland",
       "flag": "🇬🇱",
-      "dial": "+1"
+      "dial": "+299"
     },
     {
       "country_id": 221,
@@ -1806,7 +1806,7 @@
       "country_name": "Guam",
       "country_slug": "guam",
       "flag": "🇬🇺",
-      "dial": "+1"
+      "dial": "+1-671"
     },
     {
       "country_id": 222,
@@ -1814,7 +1814,7 @@
       "country_name": "Martinique",
       "country_slug": "martinique",
       "flag": "🇲🇶",
-      "dial": "+1"
+      "dial": "+596"
     },
     {
       "country_id": 223,
@@ -1822,7 +1822,7 @@
       "country_name": "Mayotte",
       "country_slug": "mayotte",
       "flag": "🇾🇹",
-      "dial": "+1"
+      "dial": "+262"
     },
     {
       "country_id": 234,
@@ -1830,7 +1830,7 @@
       "country_name": "Norfolk Island",
       "country_slug": "norfolk_island",
       "flag": "🇳🇫",
-      "dial": "+1"
+      "dial": "+672"
     },
     {
       "country_id": 224,
@@ -1838,7 +1838,7 @@
       "country_name": "Northern Mariana Islands",
       "country_slug": "northern_mariana_islands",
       "flag": "🇲🇵",
-      "dial": "+1"
+      "dial": "+1-670"
     },
     {
       "country_id": 242,
@@ -1846,7 +1846,7 @@
       "country_name": "Pitcairn Islands",
       "country_slug": "pitcairn_islands",
       "flag": "🇵🇳",
-      "dial": "+1"
+      "dial": "+64"
     },
     {
       "country_id": 232,
@@ -1854,7 +1854,7 @@
       "country_name": "Saint Barthélemy",
       "country_slug": "saint_barthélemy",
       "flag": "🇧🇱",
-      "dial": "+1"
+      "dial": "+590"
     },
     {
       "country_id": 233,
@@ -1862,7 +1862,7 @@
       "country_name": "Saint Martin",
       "country_slug": "saint_martin",
       "flag": "🇲🇫",
-      "dial": "+1"
+      "dial": "+590"
     },
     {
       "country_id": 230,
@@ -1870,7 +1870,7 @@
       "country_name": "Saint Pierre and Miquelon",
       "country_slug": "saint_pierre_and_miquelon",
       "flag": "🇵🇲",
-      "dial": "+1"
+      "dial": "+508"
     },
     {
       "country_id": 225,
@@ -1878,7 +1878,7 @@
       "country_name": "Sint Maarten",
       "country_slug": "sint_maarten",
       "flag": "🇸🇽",
-      "dial": "+1"
+      "dial": "+1-721"
     },
     {
       "country_id": 241,
@@ -1886,7 +1886,7 @@
       "country_name": "South Georgia",
       "country_slug": "south_georgia",
       "flag": "🇬🇸",
-      "dial": "+1"
+      "dial": "+500"
     },
     {
       "country_id": 238,
@@ -1894,7 +1894,7 @@
       "country_name": "Svalbard and Jan Mayen",
       "country_slug": "svalbard_and_jan_mayen",
       "flag": "🇸🇯",
-      "dial": "+1"
+      "dial": "+47"
     },
     {
       "country_id": 237,
@@ -1902,7 +1902,7 @@
       "country_name": "Tokelau",
       "country_slug": "tokelau",
       "flag": "🇹🇰",
-      "dial": "+1"
+      "dial": "+690"
     },
     {
       "country_id": 226,
@@ -1910,7 +1910,7 @@
       "country_name": "Turks and Caicos Islands",
       "country_slug": "turks_and_caicos_islands",
       "flag": "🇹🇨",
-      "dial": "+1"
+      "dial": "+1-649"
     },
     {
       "country_id": 227,
@@ -1918,7 +1918,7 @@
       "country_name": "U.S. Virgin Islands",
       "country_slug": "u.s._virgin_islands",
       "flag": "🇻🇮",
-      "dial": "+1"
+      "dial": "+1-340"
     },
     {
       "country_id": 228,
@@ -1926,7 +1926,7 @@
       "country_name": "Wallis and Futuna",
       "country_slug": "wallis_and_futuna",
       "flag": "🇼🇫",
-      "dial": "+1"
+      "dial": "+681"
     },
     {
       "country_id": 239,
@@ -1934,7 +1934,7 @@
       "country_name": "Åland Islands",
       "country_slug": "åland_islands",
       "flag": "🇦🇽",
-      "dial": "+1"
+      "dial": "+358"
     }
   ],
   "services": [

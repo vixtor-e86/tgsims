@@ -116,33 +116,7 @@
 <div class="buy-three-container"
      data-rental
      data-catalog='{{ catalog|tojson }}'
-     data-endpoint="{{ url_for('api.api_rent_number') }}"
-     data-mobile-active="service">
-
-  {# Mobile Stepper Navigation (visible on <= 768px) #}
-  <div class="buy-mobile-stepper" data-mobile-stepper>
-    <button type="button" class="buy-mobile-step-tab is-active" data-mobile-tab="service">
-      <span class="buy-step-pill" data-step-pill="service">1</span>
-      <div class="buy-step-meta">
-        <span class="buy-step-title">Service</span>
-        <span class="buy-step-selected" data-step-selected-service>Universal</span>
-      </div>
-    </button>
-    <button type="button" class="buy-mobile-step-tab" data-mobile-tab="duration">
-      <span class="buy-step-pill" data-step-pill="duration">2</span>
-      <div class="buy-step-meta">
-        <span class="buy-step-title">Duration</span>
-        <span class="buy-step-selected" data-step-selected-duration>3 Days</span>
-      </div>
-    </button>
-    <button type="button" class="buy-mobile-step-tab" data-mobile-tab="checkout">
-      <span class="buy-step-pill" data-step-pill="checkout">3</span>
-      <div class="buy-step-meta">
-        <span class="buy-step-title">Review &amp; Pay</span>
-        <span class="buy-step-selected" data-step-selected-pay>Checkout</span>
-      </div>
-    </button>
-  </div>
+     data-endpoint="{{ url_for('api.api_rent_number') }}">
 
   {# ---- List 1: Rental Service List ---- #}
   <div class="buy-column buy-column-service" data-column="service">
@@ -166,9 +140,6 @@
   {# ---- List 2: Rental Duration List ---- #}
   <div class="buy-column buy-column-duration" data-column="duration">
     <div class="buy-column-head">
-      <button type="button" class="buy-mobile-nav-btn" data-mobile-back="service">
-        {{ icon('chevron-left') }} <span>Change Service</span>
-      </button>
       <div class="buy-column-title-row">
         <h2 class="buy-column-title">
           <span class="step-num">2</span>
@@ -186,9 +157,6 @@
   {# ---- List 3: Specs Breakdown & Review Checkout ---- #}
   <div class="buy-column buy-column-checkout" data-column="checkout">
     <div class="buy-column-head">
-      <button type="button" class="buy-mobile-nav-btn" data-mobile-back="duration">
-        {{ icon('chevron-left') }} <span>Change Duration</span>
-      </button>
       <div class="buy-column-title-row">
         <h2 class="buy-column-title">
           <span class="step-num">3</span>
@@ -201,8 +169,25 @@
       </p>
     </div>
 
-    {# Specs breakdown #}
+    {# Selected Service Details & Specs breakdown #}
     <div class="buy-column-list" style="padding:0.75rem; gap:0.65rem;">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem;" data-selected-service-card>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <strong style="font-size:0.88rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+            {{ icon('shield') }} <span data-detail-service-name>Universal Number</span>
+          </strong>
+          <span class="badge badge-brand badge-xs" data-detail-service-badge>Best Value</span>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.45; margin:0 0 6px 0;" data-detail-service-desc>
+          One dedicated US number that receives OTPs from WhatsApp, Telegram, Google, Banks, PayPal, Apple, and all 2,000+ platforms simultaneously.
+        </p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge badge-success badge-xs">Dedicated Private Line</span>
+          <span class="badge badge-info badge-xs">Unlimited OTPs</span>
+          <span class="badge badge-neutral badge-xs">Renewable Anytime</span>
+        </div>
+      </div>
+
       <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem;">
         <div style="font-size:0.82rem; font-weight:700; color:var(--text); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
           {{ icon('shield') }} Dedicated Cellular Line Specs

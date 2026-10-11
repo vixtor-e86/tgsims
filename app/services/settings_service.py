@@ -209,6 +209,13 @@ class SettingsService:
 
                 # Refresh in-memory cache from freshly updated DB
                 cls.get_settings(force_refresh=True)
+                cls._overrides_cache = None
+                cls._overrides_cache_time = 0
+                try:
+                    from app.services.sim_provider import SIMProviderService
+                    SIMProviderService.clear_all_caches()
+                except Exception:
+                    pass
                 return True
             except Exception as e:
                 err_str = str(e).lower()
@@ -220,9 +227,16 @@ class SettingsService:
                 return True
         return True
 
+    _overrides_cache = None
+    _overrides_cache_time = 0
+
     @classmethod
-    def get_price_overrides(cls) -> List[Dict[str, Any]]:
+    def get_price_overrides(cls, force_refresh: bool = False) -> List[Dict[str, Any]]:
         """Fetch all manual service price overrides."""
+        now = time.time()
+        if not force_refresh and cls._overrides_cache is not None and (now - cls._overrides_cache_time) < 60:
+            return cls._overrides_cache
+
         admin = get_supabase_admin()
         if not admin:
             return []
@@ -231,14 +245,24 @@ class SettingsService:
                 .select('*')\
                 .order('service_name', desc=False)\
                 .execute()
-            return res.data or []
+            cls._overrides_cache = res.data or []
+            cls._overrides_cache_time = now
+            return cls._overrides_cache
         except Exception as e:
             print(f"[SettingsService] Error loading price overrides: {e}")
-            return []
+            return cls._overrides_cache or []
 
     @classmethod
     def set_price_override(cls, service_code: str, service_name: str, provider_type: str, override_price_usd: float, notes: str = '') -> bool:
         """Upsert a manual service price override."""
+        cls._overrides_cache = None
+        cls._overrides_cache_time = 0
+        try:
+            from app.services.sim_provider import SIMProviderService
+            SIMProviderService.clear_all_caches()
+        except Exception:
+            pass
+
         admin = get_supabase_admin()
         if not admin:
             return True
@@ -263,6 +287,14 @@ class SettingsService:
     @classmethod
     def delete_price_override(cls, override_id: str) -> bool:
         """Remove a service price override."""
+        cls._overrides_cache = None
+        cls._overrides_cache_time = 0
+        try:
+            from app.services.sim_provider import SIMProviderService
+            SIMProviderService.clear_all_caches()
+        except Exception:
+            pass
+
         admin = get_supabase_admin()
         if not admin:
             return True

@@ -1199,26 +1199,41 @@ class SIMProviderService:
         return cls._cached_5sim_us_services_raw
 
     _cached_smscode_us_services_raw = None
+    _cached_raw_usa_core = None
+    _cached_raw_usa_other = None
+
+    @classmethod
+    def clear_all_caches(cls):
+        """Clears all in-memory static caches so updated settings, price overrides, and catalog reflect immediately."""
+        cls._cached_dynamic_catalog = None
+        cls._cached_raw_catalog = None
+        cls._cached_raw_usa_core = None
+        cls._cached_raw_usa_other = None
+        cls._cached_smscode_us_services_raw = None
+        cls._cached_5sim_us_services = None
+        cls._cached_textverified_us_services = None
+        cls._cached_textverified_us_services_raw = None
+        cls._cached_whatsapp_operators = None
+        cls._cached_telegram_operators = None
 
     @classmethod
     def get_smscode_us_services(cls, apply_markup: bool = True) -> list:
         """Loads the 10 core USA services from app/data/usa_core_services.json with multiple operators per service,
         plus all 1,226 non-core services with 2 server routes, applying dynamic admin markup and price overrides.
         """
-        if apply_markup and cls._cached_smscode_us_services_raw is not None:
-            return cls._cached_smscode_us_services_raw
-
         import json
-        data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_core_services.json')
-        if not os.path.exists(data_path):
-            return cls.FIVESIM_US_SERVICES_WITH_ROUTES
+        if cls._cached_raw_usa_core is None:
+            data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_core_services.json')
+            if not os.path.exists(data_path):
+                return cls.FIVESIM_US_SERVICES_WITH_ROUTES
+            try:
+                with open(data_path, 'r', encoding='utf-8') as f:
+                    cls._cached_raw_usa_core = json.load(f)
+            except Exception as e:
+                print(f"[SIMProviderService] Error loading usa_core_services.json: {e}")
+                return cls.FIVESIM_US_SERVICES_WITH_ROUTES
 
-        try:
-            with open(data_path, 'r', encoding='utf-8') as f:
-                raw_map = json.load(f)
-        except Exception as e:
-            print(f"[SIMProviderService] Error loading usa_core_services.json: {e}")
-            return cls.FIVESIM_US_SERVICES_WITH_ROUTES
+        raw_map = cls._cached_raw_usa_core
 
         pct = 0.0
         floor = 0.0
@@ -1330,61 +1345,65 @@ class SIMProviderService:
             services_list.append(item)
 
         # Append non-core services from usa_other_services.json
-        other_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_other_services.json')
-        if os.path.exists(other_path):
-            try:
-                with open(other_path, 'r', encoding='utf-8') as f:
-                    other_map = json.load(f)
+        if cls._cached_raw_usa_other is None:
+            other_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_other_services.json')
+            if os.path.exists(other_path):
+                try:
+                    with open(other_path, 'r', encoding='utf-8') as f:
+                        cls._cached_raw_usa_other = json.load(f)
+                except Exception as e:
+                    print(f"[SIMProviderService] Error loading usa_other_services.json: {e}")
+                    cls._cached_raw_usa_other = {}
+            else:
+                cls._cached_raw_usa_other = {}
 
-                sorted_keys = sorted(other_map.keys(), key=lambda k: other_map[k].get('service_name', k).lower())
-                for key in sorted_keys:
-                    entry = other_map[key]
-                    s_code = entry.get('service_code') or key
-                    s_name = entry.get('service_name') or key.title()
-                    raw_ops = entry.get('operators', [])
+        other_map = cls._cached_raw_usa_other
+        if other_map:
+            sorted_keys = sorted(other_map.keys(), key=lambda k: other_map[k].get('service_name', k).lower())
+            for key in sorted_keys:
+                entry = other_map[key]
+                s_code = entry.get('service_code') or key
+                s_name = entry.get('service_name') or key.title()
+                raw_ops = entry.get('operators', [])
 
-                    processed_ops = []
-                    for op in raw_ops:
-                        base_cost = float(op.get('base_price_usd', 0.20))
-                        if s_code in overrides:
-                            op_retail = overrides[s_code]
-                        elif not apply_markup or (pct <= 0.0 and floor <= 0.0):
-                            op_retail = round(base_cost, 2)
-                        else:
-                            op_retail = round(max(base_cost * mult, base_cost + floor), 2)
+                processed_ops = []
+                for op in raw_ops:
+                    base_cost = float(op.get('base_price_usd', 0.20))
+                    if s_code in overrides:
+                        op_retail = overrides[s_code]
+                    elif not apply_markup or (pct <= 0.0 and floor <= 0.0):
+                        op_retail = round(base_cost, 2)
+                    else:
+                        op_retail = round(max(base_cost * mult, base_cost + floor), 2)
 
-                        clean_op = dict(op)
-                        clean_op['base_cost_usd'] = base_cost
-                        clean_op['price_usd'] = op_retail
-                        clean_op['price'] = op_retail
-                        processed_ops.append(clean_op)
+                    clean_op = dict(op)
+                    clean_op['base_cost_usd'] = base_cost
+                    clean_op['price_usd'] = op_retail
+                    clean_op['price'] = op_retail
+                    processed_ops.append(clean_op)
 
-                    if not processed_ops:
-                        continue
+                if not processed_ops:
+                    continue
 
-                    default_op = processed_ops[0]
-                    services_list.append({
-                        'id': f"{s_code}_basic",
-                        'service_name': s_name,
-                        'name': s_name,
-                        'service_code': s_code,
-                        'catalog_slug': key,
-                        'quality': 'Economy Pool',
-                        'is_core': False,
-                        'price_usd': default_op.get('price_usd', 0.50),
-                        'base_cost_usd': default_op.get('base_cost_usd', 0.20),
-                        'operator': default_op.get('operator_name', 'Server Route 1 (Primary)'),
-                        'operator_id': default_op.get('operator_id', 1),
-                        'catalog_product_id': default_op.get('catalog_product_id'),
-                        'cheapest_product_id': default_op.get('cheapest_product_id'),
-                        'operators': processed_ops,
-                        'available': sum(op.get('available', 0) for op in processed_ops)
-                    })
-            except Exception as e:
-                print(f"[SIMProviderService] Error loading usa_other_services.json: {e}")
+                default_op = processed_ops[0]
+                services_list.append({
+                    'id': f"{s_code}_basic",
+                    'service_name': s_name,
+                    'name': s_name,
+                    'service_code': s_code,
+                    'catalog_slug': key,
+                    'quality': 'Economy Pool',
+                    'is_core': False,
+                    'price_usd': default_op.get('price_usd', 0.50),
+                    'base_cost_usd': default_op.get('base_cost_usd', 0.20),
+                    'operator': default_op.get('operator_name', 'Server Route 1 (Primary)'),
+                    'operator_id': default_op.get('operator_id', 1),
+                    'catalog_product_id': default_op.get('catalog_product_id'),
+                    'cheapest_product_id': default_op.get('cheapest_product_id'),
+                    'operators': processed_ops,
+                    'available': sum(op.get('available', 0) for op in processed_ops)
+                })
 
-        if apply_markup:
-            cls._cached_smscode_us_services_raw = services_list
         return services_list
 
     @classmethod
@@ -1447,11 +1466,36 @@ class SIMProviderService:
 
     @classmethod
     def get_us_canada_config(cls) -> dict:
-        """Returns the packages and service offerings for the US page."""
+        """Returns the packages and service offerings for the US page with dynamic price ranges."""
+        basic_services = cls.get_smscode_us_services()
+        premium_services = cls.get_textverified_us_services()
+
+        from app.services.settings_service import SettingsService
+        try:
+            rate = SettingsService.get_usd_ngn_rate()
+        except Exception:
+            rate = 1600.00
+
+        basic_prices = [s['price_usd'] for s in basic_services if s.get('price_usd')]
+        prem_prices = [s['price_usd'] for s in premium_services if s.get('price_usd')]
+
+        packages = []
+        for p in cls.US_CANADA_PACKAGES:
+            p_copy = dict(p)
+            if p['id'] == 'basic_pool' and basic_prices:
+                min_p, max_p = min(basic_prices), max(basic_prices)
+                p_copy['price_range_usd'] = f"${min_p:.2f} – ${max_p:.2f}"
+                p_copy['price_range_label'] = f"₦{int(min_p * rate):,} – ₦{int(max_p * rate):,}"
+            elif p['id'] == 'reliable_non_voip' and prem_prices:
+                min_p, max_p = min(prem_prices), max(prem_prices)
+                p_copy['price_range_usd'] = f"${min_p:.2f} – ${max_p:.2f}"
+                p_copy['price_range_label'] = f"₦{int(min_p * rate):,} – ₦{int(max_p * rate):,}"
+            packages.append(p_copy)
+
         return {
-            'packages': cls.US_CANADA_PACKAGES,
-            'basic_services': cls.get_smscode_us_services(),
-            'premium_services': cls.get_textverified_us_services(),
+            'packages': packages,
+            'basic_services': basic_services,
+            'premium_services': premium_services,
         }
 
     @classmethod

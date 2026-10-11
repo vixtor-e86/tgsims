@@ -84,19 +84,6 @@
     var reviewPrice = root.querySelector("[data-review-price]");
     var submit = root.querySelector("[data-buy-submit]");
 
-    var currentMobileStep = "country";
-    var tabCountry = root.querySelector('[data-mobile-tab="country"]');
-    var tabService = root.querySelector('[data-mobile-tab="service"]');
-    var tabOperators = root.querySelector('[data-mobile-tab="operators"]');
-
-    var stepSelCountry = root.querySelector('[data-step-selected-country]');
-    var stepSelService = root.querySelector('[data-step-selected-service]');
-    var stepSelPay = root.querySelector('[data-step-selected-pay]');
-
-    var pillCountry = root.querySelector('[data-step-pill="country"]');
-    var pillService = root.querySelector('[data-step-pill="service"]');
-    var pillOperators = root.querySelector('[data-step-pill="operators"]');
-
     var state = {
       country: null,
       service: null,
@@ -107,53 +94,6 @@
     };
 
     var operatorCache = {};
-
-    function updateMobileStepperUI() {
-      if (stepSelCountry) {
-        stepSelCountry.textContent = state.country ? ((state.country.flag || "") + " " + state.country.country_name) : "Select";
-      }
-      if (stepSelService) {
-        stepSelService.textContent = state.service ? state.service.name : "Select";
-      }
-      if (stepSelPay) {
-        var p = (state.operator && state.operator.price_usd) || (state.service && state.service.price) || 0;
-        stepSelPay.textContent = p ? formatMoney(p) : "Checkout";
-      }
-
-      if (pillCountry) {
-        if (state.country) {
-          pillCountry.textContent = "✓";
-          if (tabCountry) tabCountry.classList.add("is-complete");
-        } else {
-          pillCountry.textContent = "1";
-          if (tabCountry) tabCountry.classList.remove("is-complete");
-        }
-      }
-      if (pillService) {
-        if (state.service) {
-          pillService.textContent = "✓";
-          if (tabService) tabService.classList.add("is-complete");
-        } else {
-          pillService.textContent = "2";
-          if (tabService) tabService.classList.remove("is-complete");
-        }
-      }
-
-      if (tabCountry) tabCountry.classList.toggle("is-active", currentMobileStep === "country");
-      if (tabService) tabService.classList.toggle("is-active", currentMobileStep === "service");
-      if (tabOperators) tabOperators.classList.toggle("is-active", currentMobileStep === "operators");
-    }
-
-    function setMobileStep(step, scroll) {
-      currentMobileStep = step;
-      root.setAttribute("data-mobile-active", step);
-      updateMobileStepperUI();
-      if (scroll && window.innerWidth <= 768) {
-        try {
-          root.scrollIntoView({ behavior: "smooth", block: "start" });
-        } catch (e) {}
-      }
-    }
 
     function priceRender() {
       if (window.TgCurrency && window.TgCurrency.render) {
@@ -294,7 +234,6 @@
           '</div>' +
           '<div class="buy-list-meta">' +
             coreBadge +
-            '<span class="buy-list-price" data-usd="' + s.price + '">' + formatMoney(s.price) + '</span>' +
           '</div>';
 
         row.addEventListener("click", function () {
@@ -417,13 +356,13 @@
 
       if (state.operator) {
         reviewCarrier.textContent = state.operator.operator_name;
-        var p = state.operator.price_usd || state.service.price;
+        var p = state.operator.price_usd;
         reviewPrice.setAttribute("data-usd", String(p));
         reviewPrice.textContent = formatMoney(p);
       } else if (state.service) {
-        reviewCarrier.textContent = "Standard Route";
-        reviewPrice.setAttribute("data-usd", String(state.service.price));
-        reviewPrice.textContent = formatMoney(state.service.price);
+        reviewCarrier.textContent = "Selecting carrier route...";
+        reviewPrice.setAttribute("data-usd", "0");
+        reviewPrice.textContent = "...";
       } else {
         reviewCarrier.textContent = "-";
         reviewPrice.setAttribute("data-usd", "0");
@@ -431,7 +370,6 @@
       }
 
       submit.disabled = !(state.country && state.service && state.operator);
-      updateMobileStepperUI();
       priceRender();
     }
 
@@ -453,9 +391,11 @@
         updateReview();
       }
 
-      updateMobileStepperUI();
       if (isUserClick && window.innerWidth <= 768) {
-        setMobileStep("service", true);
+        var sCol = root.querySelector(".buy-column-service");
+        if (sCol) {
+          sCol.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       }
     }
 
@@ -473,9 +413,11 @@
       }
 
       fetchOperatorsForService(state.country, s);
-      updateMobileStepperUI();
       if (isUserClick && window.innerWidth <= 768) {
-        setMobileStep("operators", true);
+        var opCol = root.querySelector(".buy-column-operators");
+        if (opCol) {
+          opCol.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       }
     }
 
@@ -626,43 +568,9 @@
       updateReview();
     });
 
-    // Mobile stepper tab click handlers
-    if (tabCountry) {
-      tabCountry.addEventListener("click", function () {
-        setMobileStep("country");
-      });
-    }
-    if (tabService) {
-      tabService.addEventListener("click", function () {
-        if (state.country) {
-          setMobileStep("service");
-        } else if (window.toast) {
-          window.toast("Please select a country first.", "info");
-        }
-      });
-    }
-    if (tabOperators) {
-      tabOperators.addEventListener("click", function () {
-        if (state.service) {
-          setMobileStep("operators");
-        } else if (window.toast) {
-          window.toast("Please select a service first.", "info");
-        }
-      });
-    }
-
-    // Mobile back navigation buttons
-    root.querySelectorAll("[data-mobile-back]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var target = btn.getAttribute("data-mobile-back");
-        if (target) setMobileStep(target);
-      });
-    });
-
     /* ---- Initial paint: preselect first country & service ---- */
     if (catalog.length > 0) {
       selectCountry(catalog[0].country_code, false);
-      setMobileStep("country", false);
     }
   }
 
