@@ -566,9 +566,8 @@ class SIMProviderService:
             retail_price = round(base_cost, 2)
             profit_margin = 0.0
         else:
-            mult = 1.0 + (pct / 100.0)
-            markup = max(base_cost * mult, base_cost + floor)
-            retail_price = round(markup, 2)
+            profit = max(base_cost * (pct / 100.0), floor)
+            retail_price = round(base_cost + profit, 2)
             profit_margin = round(retail_price - base_cost, 4)
         return retail_price, profit_margin
 
@@ -659,13 +658,28 @@ class SIMProviderService:
         return []
 
     _cached_dynamic_catalog = None
+    _cached_dynamic_catalog_key = None
 
     @classmethod
     def get_catalog(cls):
         """Returns country and service catalog loaded from app/data/catalog.json.
         Covers all 242 countries and all 1,236 SMSCode services with dynamic markups and overrides applied.
         """
-        if cls._cached_dynamic_catalog is not None:
+        try:
+            from app.services.settings_service import SettingsService
+            pct, floor = SettingsService.get_smscode_markup()
+            all_overrides = SettingsService.get_price_overrides()
+            overrides = {
+                o['service_code'].strip().lower(): float(o['override_price_usd'])
+                for o in all_overrides
+                if o.get('provider_type') in ('smscode', 'virtualsms', '5sim', 'all') and o.get('is_active', True) and o.get('service_code')
+            }
+        except Exception:
+            pct, floor = 25.0, 0.25
+            overrides = {}
+
+        current_key = (pct, floor, len(overrides))
+        if cls._cached_dynamic_catalog is not None and cls._cached_dynamic_catalog_key == current_key:
             return cls._cached_dynamic_catalog
 
         raw_data = cls._load_raw_catalog()
@@ -687,24 +701,6 @@ class SIMProviderService:
                 ]
             }
 
-        try:
-            from app.services.settings_service import SettingsService
-            try:
-                pct, floor = SettingsService.get_smscode_markup()
-            except Exception:
-                pct, floor = SettingsService.get_fivesim_markup()
-            all_overrides = SettingsService.get_price_overrides()
-            overrides = {
-                o['service_code'].strip().lower(): float(o['override_price_usd'])
-                for o in all_overrides
-                if o.get('provider_type') in ('smscode', 'virtualsms', '5sim', 'all') and o.get('is_active', True) and o.get('service_code')
-            }
-        except Exception:
-            pct, floor = 0.0, 0.0
-            overrides = {}
-
-        mult = 1.0 + (pct / 100.0)
-
         if isinstance(raw_data, dict):
             countries = raw_data.get('countries', [])
             raw_services = raw_data.get('services', [])
@@ -721,11 +717,13 @@ class SIMProviderService:
                 elif pct <= 0.0 and floor <= 0.0:
                     s_copy['price'] = round(base, 2)
                 else:
-                    s_copy['price'] = round(max(base * mult, base + floor), 2)
+                    profit = max(base * (pct / 100.0), floor)
+                    s_copy['price'] = round(base + profit, 2)
                 processed_services.append(s_copy)
 
             res = {'countries': countries, 'services': processed_services}
             cls._cached_dynamic_catalog = res
+            cls._cached_dynamic_catalog_key = current_key
             return res
 
         # Legacy list of country dicts
@@ -745,10 +743,13 @@ class SIMProviderService:
                 elif pct <= 0.0 and floor <= 0.0:
                     s_copy['price'] = round(base, 2)
                 else:
-                    s_copy['price'] = round(max(base * mult, base + floor), 2)
+                    profit = max(base * (pct / 100.0), floor)
+                    s_copy['price'] = round(base + profit, 2)
                 services_list.append(s_copy)
             c_copy['services'] = services_list
             dynamic_catalog.append(c_copy)
+        cls._cached_dynamic_catalog = dynamic_catalog
+        cls._cached_dynamic_catalog_key = current_key
         return dynamic_catalog
 
     @classmethod
@@ -1268,6 +1269,7 @@ class SIMProviderService:
     def clear_all_caches(cls):
         """Clears all in-memory static caches so updated settings, price overrides, and catalog reflect immediately."""
         cls._cached_dynamic_catalog = None
+        cls._cached_dynamic_catalog_key = None
         cls._cached_raw_catalog = None
         cls._cached_raw_usa_core = None
         cls._cached_raw_usa_other = None
@@ -1356,7 +1358,8 @@ class SIMProviderService:
                 elif pct <= 0.0 and floor <= 0.0:
                     op_retail = round(base_cost, 2)
                 else:
-                    op_retail = round(max(base_cost * mult, base_cost + floor), 2)
+                    profit = max(base_cost * (pct / 100.0), floor)
+                    op_retail = round(base_cost + profit, 2)
 
                 clean_op = dict(op)
                 clean_op['base_cost_usd'] = base_cost
@@ -1436,7 +1439,8 @@ class SIMProviderService:
                     elif not apply_markup or (pct <= 0.0 and floor <= 0.0):
                         op_retail = round(base_cost, 2)
                     else:
-                        op_retail = round(max(base_cost * mult, base_cost + floor), 2)
+                        profit = max(base_cost * (pct / 100.0), floor)
+                        op_retail = round(base_cost + profit, 2)
 
                     clean_op = dict(op)
                     clean_op['base_cost_usd'] = base_cost
@@ -1521,8 +1525,11 @@ class SIMProviderService:
             if sc in overrides:
                 item['price_usd'] = overrides[sc]
                 item['is_override'] = True
+            elif pct <= 0.0 and floor <= 0.0:
+                item['price_usd'] = round(base, 2)
             else:
-                item['price_usd'] = round(max(base * mult, base + floor), 2)
+                profit = max(base * (pct / 100.0), floor)
+                item['price_usd'] = round(base + profit, 2)
             marked.append(item)
         return marked
 
@@ -1599,7 +1606,11 @@ class SIMProviderService:
 
         # 1. Reliable Non-VoIP / Dedicated Cellular line
         if package_id == 'reliable_non_voip':
-            charge_price = float(price) if price else 2.50
+            charge_price = float(price) if price else None
+            if charge_price is None:
+                tv_services = cls.get_textverified_us_services()
+                matched_tv = next((s for s in tv_services if s.get('service_code') == service_code), None)
+                charge_price = float(matched_tv.get('price_usd', 1.50)) if matched_tv else 1.50
             tv_client = cls.get_textverified_client()
             if tv_client:
                 try:

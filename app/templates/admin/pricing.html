@@ -272,7 +272,7 @@
             <div class="provider-box-title">
               {{ icon('server') }} SMS Code API Markup (US Basic & Global SMS)
             </div>
-            <span class="badge badge-success">+{{ settings.smscode_markup_percent or settings.fivesim_markup_percent }}%</span>
+            <span class="badge badge-success">+{{ settings.smscode_markup_percent }}% (Floor ${{ '%.2f'|format(settings.smscode_min_profit_usd) }})</span>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
@@ -281,7 +281,7 @@
                 Profit Margin (%)
               </label>
               <div class="affix-input-group">
-                <input type="number" step="0.5" min="0" max="500" name="smscode_markup_percent" value="{{ settings.smscode_markup_percent or settings.fivesim_markup_percent }}" class="affix-field has-suffix" required>
+                <input type="number" step="0.5" min="0" max="500" name="smscode_markup_percent" value="{{ settings.smscode_markup_percent if settings.smscode_markup_percent is not none else 25.0 }}" class="affix-field has-suffix" required>
                 <span class="affix-addon suffix">%</span>
               </div>
             </div>
@@ -292,7 +292,7 @@
               </label>
               <div class="affix-input-group">
                 <span class="affix-addon prefix">$</span>
-                <input type="number" step="0.05" min="0" max="20" name="smscode_min_profit_usd" value="{{ '%.2f'|format(settings.smscode_min_profit_usd or settings.fivesim_min_profit_usd) }}" class="affix-field has-prefix" required>
+                <input type="number" step="0.05" min="0" max="20" name="smscode_min_profit_usd" value="{{ '%.2f'|format(settings.smscode_min_profit_usd if settings.smscode_min_profit_usd is not none else 0.25) }}" class="affix-field has-prefix" required>
               </div>
             </div>
           </div>
@@ -307,7 +307,7 @@
             <div class="provider-box-title">
               {{ icon('shield') }} TextVerified (US Physical Non-VoIP)
             </div>
-            <span class="badge badge-brand">+{{ settings.textverified_markup_percent }}%</span>
+            <span class="badge badge-brand">+{{ settings.textverified_markup_percent }}% (Floor ${{ '%.2f'|format(settings.textverified_min_profit_usd) }})</span>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
@@ -316,7 +316,7 @@
                 Profit Margin (%)
               </label>
               <div class="affix-input-group">
-                <input type="number" step="0.5" min="0" max="500" name="textverified_markup_percent" value="{{ settings.textverified_markup_percent }}" class="affix-field has-suffix" required>
+                <input type="number" step="0.5" min="0" max="500" name="textverified_markup_percent" value="{{ settings.textverified_markup_percent if settings.textverified_markup_percent is not none else 25.0 }}" class="affix-field has-suffix" required>
                 <span class="affix-addon suffix">%</span>
               </div>
             </div>
@@ -327,7 +327,7 @@
               </label>
               <div class="affix-input-group">
                 <span class="affix-addon prefix">$</span>
-                <input type="number" step="0.05" min="0" max="20" name="textverified_min_profit_usd" value="{{ '%.2f'|format(settings.textverified_min_profit_usd if settings.textverified_min_profit_usd is defined else 0.50) }}" class="affix-field has-prefix" required>
+                <input type="number" step="0.05" min="0" max="20" name="textverified_min_profit_usd" value="{{ '%.2f'|format(settings.textverified_min_profit_usd if settings.textverified_min_profit_usd is not none else 0.50) }}" class="affix-field has-prefix" required>
               </div>
             </div>
           </div>

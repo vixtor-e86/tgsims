@@ -145,20 +145,28 @@ def pricing():
 
         if action == 'update_settings':
             try:
-                ngn_rate = float(request.form.get('ngn_per_usd_rate', 1600.00))
-                smscode_pct = float(
-                    request.form.get('smscode_markup_percent')
-                    or request.form.get('virtualsms_markup_percent')
-                    or request.form.get('fivesim_markup_percent', 30.00)
-                )
-                smscode_floor = float(
-                    request.form.get('smscode_min_profit_usd')
-                    or request.form.get('virtualsms_min_profit_usd')
-                    or request.form.get('fivesim_min_profit_usd', 0.30)
-                )
-                tv_pct = float(request.form.get('textverified_markup_percent', 25.00))
-                tv_floor = float(request.form.get('textverified_min_profit_usd', 0.50))
-                react_fee = float(request.form.get('reactivation_fee_usd', 1.00))
+                def _safe_float(val, default):
+                    if val is None or str(val).strip() == '':
+                        return default
+                    try:
+                        return float(val)
+                    except (ValueError, TypeError):
+                        return default
+
+                ngn_rate = _safe_float(request.form.get('ngn_per_usd_rate'), 1600.00)
+                smscode_val = request.form.get('smscode_markup_percent')
+                if smscode_val is None or str(smscode_val).strip() == '':
+                    smscode_val = request.form.get('fivesim_markup_percent')
+                smscode_pct = _safe_float(smscode_val, 25.00)
+
+                smscode_floor_val = request.form.get('smscode_min_profit_usd')
+                if smscode_floor_val is None or str(smscode_floor_val).strip() == '':
+                    smscode_floor_val = request.form.get('fivesim_min_profit_usd')
+                smscode_floor = _safe_float(smscode_floor_val, 0.25)
+
+                tv_pct = _safe_float(request.form.get('textverified_markup_percent'), 25.00)
+                tv_floor = _safe_float(request.form.get('textverified_min_profit_usd'), 0.50)
+                react_fee = _safe_float(request.form.get('reactivation_fee_usd'), 1.00)
                 crypto_addr = request.form.get('crypto_deposit_address', '').strip()
                 squad_on = 'squad_enabled' in request.form
                 crypto_on = 'crypto_enabled' in request.form
@@ -333,23 +341,25 @@ def pricing():
     overrides = SettingsService.get_price_overrides()
 
     # Precalculated examples for admin visualization
-    rate = float(settings.get('ngn_per_usd_rate', 1600.00))
-    f5_pct = float(settings.get('fivesim_markup_percent', 30.00))
-    f5_floor = float(settings.get('fivesim_min_profit_usd', 0.30))
-    tv_pct = float(settings.get('textverified_markup_percent', 25.00))
-    react_fee = float(settings.get('reactivation_fee_usd', 1.00))
+    rate = SettingsService.get_usd_ngn_rate()
+    f5_pct, f5_floor = SettingsService.get_smscode_markup()
+    tv_pct, tv_floor = SettingsService.get_textverified_markup()
+    react_fee = SettingsService.get_reactivation_fee()
 
-    # Example 5sim cost: $0.50 -> retail price calculation
+    # Example SMSCode cost: $0.50 -> retail price calculation
     f5_ex_cost = 0.50
-    f5_ex_price = round(max(f5_ex_cost * (1 + f5_pct / 100), f5_ex_cost + f5_floor), 2)
+    f5_profit = max(f5_ex_cost * (f5_pct / 100.0), f5_floor) if (f5_pct > 0 or f5_floor > 0) else 0.0
+    f5_ex_price = round(f5_ex_cost + f5_profit, 2)
     f5_ex_profit = round(f5_ex_price - f5_ex_cost, 2)
 
-    # Example TextVerified cost: $2.00 -> retail price calculation
-    tv_ex_cost = 2.00
-    tv_ex_price = round(tv_ex_cost * (1 + tv_pct / 100), 2)
+    # Example TextVerified cost: $1.50 (e.g. WhatsApp) -> retail price calculation
+    tv_ex_cost = 1.50
+    tv_profit = max(tv_ex_cost * (tv_pct / 100.0), tv_floor) if (tv_pct > 0 or tv_floor > 0) else 0.0
+    tv_ex_price = round(tv_ex_cost + tv_profit, 2)
     tv_ex_profit = round(tv_ex_price - tv_ex_cost, 2)
 
     examples = {
+        'smscode': {'cost': f5_ex_cost, 'price': f5_ex_price, 'profit': f5_ex_profit, 'ngn': round(f5_ex_price * rate, 2)},
         'virtualsms': {'cost': f5_ex_cost, 'price': f5_ex_price, 'profit': f5_ex_profit, 'ngn': round(f5_ex_price * rate, 2)},
         'fivesim': {'cost': f5_ex_cost, 'price': f5_ex_price, 'profit': f5_ex_profit, 'ngn': round(f5_ex_price * rate, 2)},
         'textverified': {'cost': tv_ex_cost, 'price': tv_ex_price, 'profit': tv_ex_profit, 'ngn': round(tv_ex_price * rate, 2)},

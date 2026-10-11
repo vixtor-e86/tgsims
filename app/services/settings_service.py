@@ -5,12 +5,12 @@ from app.services.supabase_client import get_supabase_admin, reset_supabase_admi
 # Default fallbacks if database table is completely unpopulated
 DEFAULT_SETTINGS = {
     'ngn_per_usd_rate': 1600.00,
-    'smscode_markup_percent': 0.00,
-    'smscode_min_profit_usd': 0.00,
-    'virtualsms_markup_percent': 0.00,
-    'virtualsms_min_profit_usd': 0.00,
-    'fivesim_markup_percent': 0.00,
-    'fivesim_min_profit_usd': 0.00,
+    'smscode_markup_percent': 25.00,
+    'smscode_min_profit_usd': 0.25,
+    'virtualsms_markup_percent': 25.00,
+    'virtualsms_min_profit_usd': 0.25,
+    'fivesim_markup_percent': 25.00,
+    'fivesim_min_profit_usd': 0.25,
     'textverified_markup_percent': 25.00,
     'textverified_min_profit_usd': 0.50,
     'reactivation_fee_usd': 1.00,
@@ -60,11 +60,37 @@ class SettingsService:
                         elif cls._cache and k in cls._cache and cls._cache[k] is not None:
                             base[k] = cls._cache[k]
 
-                    # Handle legacy column names if present
-                    if 'default_markup_percent' in row and row['default_markup_percent'] is not None and 'fivesim_markup_percent' not in row:
-                        base['fivesim_markup_percent'] = float(row['default_markup_percent'])
-                    if 'min_profit_usd' in row and row['min_profit_usd'] is not None and 'fivesim_min_profit_usd' not in row:
-                        base['fivesim_min_profit_usd'] = float(row['min_profit_usd'])
+                    # Synchronize SMSCode / 5sim markup percentage and floor consistently from DB columns
+                    active_smscode_pct = None
+                    for col in ('smscode_markup_percent', 'virtualsms_markup_percent', 'fivesim_markup_percent', 'default_markup_percent'):
+                        if col in row and row[col] is not None:
+                            try:
+                                active_smscode_pct = float(row[col])
+                                break
+                            except (ValueError, TypeError):
+                                pass
+                    if active_smscode_pct is not None:
+                        base['smscode_markup_percent'] = active_smscode_pct
+                        base['virtualsms_markup_percent'] = active_smscode_pct
+                        base['fivesim_markup_percent'] = active_smscode_pct
+
+                    active_smscode_floor = None
+                    for col in ('smscode_min_profit_usd', 'virtualsms_min_profit_usd', 'fivesim_min_profit_usd', 'min_profit_usd'):
+                        if col in row and row[col] is not None:
+                            try:
+                                active_smscode_floor = float(row[col])
+                                break
+                            except (ValueError, TypeError):
+                                pass
+                    if active_smscode_floor is not None:
+                        base['smscode_min_profit_usd'] = active_smscode_floor
+                        base['virtualsms_min_profit_usd'] = active_smscode_floor
+                        base['fivesim_min_profit_usd'] = active_smscode_floor
+
+                    if 'textverified_markup_percent' in row and row['textverified_markup_percent'] is not None:
+                        base['textverified_markup_percent'] = float(row['textverified_markup_percent'])
+                    if 'textverified_min_profit_usd' in row and row['textverified_min_profit_usd'] is not None:
+                        base['textverified_min_profit_usd'] = float(row['textverified_min_profit_usd'])
 
                     base['id'] = row.get('id')
                     base['updated_at'] = row.get('updated_at')
@@ -96,18 +122,16 @@ class SettingsService:
     def get_smscode_markup(cls) -> tuple[float, float]:
         """Returns (smscode_markup_percent, smscode_min_profit_usd)."""
         settings = cls.get_settings()
-        raw_pct = (
+        pct = float(
             settings.get('smscode_markup_percent')
             if settings.get('smscode_markup_percent') is not None
-            else (settings.get('virtualsms_markup_percent') if settings.get('virtualsms_markup_percent') is not None else settings.get('fivesim_markup_percent'))
+            else settings.get('fivesim_markup_percent', 25.0)
         )
-        raw_floor = (
+        floor = float(
             settings.get('smscode_min_profit_usd')
             if settings.get('smscode_min_profit_usd') is not None
-            else (settings.get('virtualsms_min_profit_usd') if settings.get('virtualsms_min_profit_usd') is not None else settings.get('fivesim_min_profit_usd'))
+            else settings.get('fivesim_min_profit_usd', 0.25)
         )
-        pct = float(raw_pct if raw_pct is not None else 0.0)
-        floor = float(raw_floor if raw_floor is not None else 0.0)
         return pct, floor
 
     @classmethod
@@ -143,21 +167,29 @@ class SettingsService:
         if 'ngn_per_usd_rate' in updates:
             clean_data['ngn_per_usd_rate'] = float(updates['ngn_per_usd_rate'])
 
-        # Support smscode, virtualsms, and fivesim keys interchangeably
-        sc_pct = updates.get('smscode_markup_percent') or updates.get('virtualsms_markup_percent') or updates.get('fivesim_markup_percent')
+        # Support smscode, virtualsms, and fivesim keys interchangeably with proper zero handling
+        sc_pct = None
+        for k in ('smscode_markup_percent', 'virtualsms_markup_percent', 'fivesim_markup_percent'):
+            if updates.get(k) is not None:
+                sc_pct = updates[k]
+                break
         if sc_pct is not None:
             clean_data['smscode_markup_percent'] = float(sc_pct)
             clean_data['virtualsms_markup_percent'] = float(sc_pct)
             clean_data['fivesim_markup_percent'] = float(sc_pct)
 
-        sc_floor = updates.get('smscode_min_profit_usd') or updates.get('virtualsms_min_profit_usd') or updates.get('fivesim_min_profit_usd')
+        sc_floor = None
+        for k in ('smscode_min_profit_usd', 'virtualsms_min_profit_usd', 'fivesim_min_profit_usd'):
+            if updates.get(k) is not None:
+                sc_floor = updates[k]
+                break
         if sc_floor is not None:
             clean_data['smscode_min_profit_usd'] = float(sc_floor)
             clean_data['virtualsms_min_profit_usd'] = float(sc_floor)
             clean_data['fivesim_min_profit_usd'] = float(sc_floor)
-        if 'textverified_markup_percent' in updates:
+        if 'textverified_markup_percent' in updates and updates['textverified_markup_percent'] is not None:
             clean_data['textverified_markup_percent'] = float(updates['textverified_markup_percent'])
-        if 'textverified_min_profit_usd' in updates:
+        if 'textverified_min_profit_usd' in updates and updates['textverified_min_profit_usd'] is not None:
             clean_data['textverified_min_profit_usd'] = float(updates['textverified_min_profit_usd'])
         if 'reactivation_fee_usd' in updates:
             clean_data['reactivation_fee_usd'] = float(updates['reactivation_fee_usd'])
