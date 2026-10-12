@@ -711,14 +711,15 @@
   // Instant AJAX Save / Reset for Rental Pricing without page reloads or scrolling
   document.querySelectorAll('.rental-price-form').forEach(function(form) {
     var row = form.closest('.rental-row');
-    var priceCell = row.querySelector('.rental-selling-price-cell');
-    var modeCell = row.querySelector('.rental-pricing-mode-cell');
+    var priceCell = row ? row.querySelector('.rental-selling-price-cell') : null;
+    var modeCell = row ? row.querySelector('.rental-pricing-mode-cell') : null;
     var input = form.querySelector('.rental-custom-input');
     var saveBtn = form.querySelector('.btn-save-rental');
     var resetBtn = form.querySelector('.btn-reset-rental');
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
+      if (!saveBtn) return;
       var origText = saveBtn.textContent;
       saveBtn.disabled = true;
       saveBtn.textContent = '...';
@@ -726,82 +727,125 @@
       var fd = new FormData(form);
       fd.set('action', 'update_rental_price');
 
-      fetch(form.action, {
+      var targetUrl = form.getAttribute('action') || window.location.pathname;
+
+      fetch(targetUrl, {
         method: 'POST',
         body: fd,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
       })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        return r.json().catch(function() {
+          return { success: false, message: 'Server returned response ' + r.status + ' (' + r.statusText + ')' };
+        });
+      })
       .then(function(data) {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Saved';
         setTimeout(function() { saveBtn.textContent = origText; }, 1200);
 
         if (data && data.success) {
-          priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
-
-          if (data.is_custom) {
-            modeCell.innerHTML = '<span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 700;">Custom Fixed</span>';
-            resetBtn.style.display = 'inline-flex';
-          } else {
-            modeCell.innerHTML = '<span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>';
-            resetBtn.style.display = 'none';
+          if (priceCell) {
+            priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
           }
 
-          row.style.backgroundColor = 'rgba(16, 185, 129, 0.18)';
-          setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
+          if (modeCell) {
+            if (data.is_custom) {
+              modeCell.innerHTML = '<span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 700;">Custom Fixed</span>';
+            } else {
+              modeCell.innerHTML = '<span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>';
+            }
+          }
+          if (resetBtn) {
+            resetBtn.style.display = data.is_custom ? 'inline-flex' : 'none';
+          }
+
+          if (row) {
+            row.style.backgroundColor = 'rgba(16, 185, 129, 0.18)';
+            setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
+          }
 
           if (window.toast) {
-            window.toast(data.message, 'success');
+            window.toast(data.message || 'Price updated successfully', 'success');
           }
         } else {
-          if (window.toast) window.toast((data && data.message) || 'Failed to update price', 'error');
+          var errMsg = (data && data.message) ? data.message : 'Failed to update price';
+          if (window.toast) window.toast(errMsg, 'error');
         }
       })
       .catch(function(err) {
         saveBtn.disabled = false;
         saveBtn.textContent = origText;
-        if (window.toast) window.toast('Network error updating price', 'error');
+        console.error('Error updating rental price:', err);
+        var msg = (err && err.message) ? ('Error: ' + err.message) : 'Network error updating price';
+        if (window.toast) window.toast(msg, 'error');
       });
     });
 
-    resetBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      resetBtn.disabled = true;
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        resetBtn.disabled = true;
 
-      var fd = new FormData(form);
-      fd.set('action', 'reset_rental_price');
+        var fd = new FormData(form);
+        fd.set('action', 'reset_rental_price');
 
-      fetch(form.action, {
-        method: 'POST',
-        body: fd,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        resetBtn.disabled = false;
-        if (data && data.success) {
-          input.value = '';
-          input.placeholder = data.retail_usd.toFixed(2);
-          priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
-          modeCell.innerHTML = '<span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>';
-          resetBtn.style.display = 'none';
+        var targetUrl = form.getAttribute('action') || window.location.pathname;
 
-          row.style.backgroundColor = 'rgba(59, 130, 246, 0.14)';
-          setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
-
-          if (window.toast) {
-            window.toast(data.message, 'info');
+        fetch(targetUrl, {
+          method: 'POST',
+          body: fd,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
           }
-        } else {
-          if (window.toast) window.toast((data && data.message) || 'Failed to reset price', 'error');
-        }
-      })
-      .catch(function(err) {
-        resetBtn.disabled = false;
-        if (window.toast) window.toast('Network error resetting price', 'error');
+        })
+        .then(function(r) {
+          return r.json().catch(function() {
+            return { success: false, message: 'Server returned response ' + r.status + ' (' + r.statusText + ')' };
+          });
+        })
+        .then(function(data) {
+          resetBtn.disabled = false;
+          if (data && data.success) {
+            if (input) {
+              input.value = '';
+              if (data.retail_usd !== undefined) {
+                input.placeholder = Number(data.retail_usd).toFixed(2);
+              }
+            }
+            if (priceCell) {
+              priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
+            }
+            if (modeCell) {
+              modeCell.innerHTML = '<span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>';
+            }
+            resetBtn.style.display = 'none';
+
+            if (row) {
+              row.style.backgroundColor = 'rgba(59, 130, 246, 0.14)';
+              setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
+            }
+
+            if (window.toast) {
+              window.toast(data.message || 'Price reset to auto-markup', 'info');
+            }
+          } else {
+            var errMsg = (data && data.message) ? data.message : 'Failed to reset price';
+            if (window.toast) window.toast(errMsg, 'error');
+          }
+        })
+        .catch(function(err) {
+          resetBtn.disabled = false;
+          console.error('Error resetting rental price:', err);
+          var msg = (err && err.message) ? ('Error: ' + err.message) : 'Network error resetting price';
+          if (window.toast) window.toast(msg, 'error');
+        });
       });
-    });
+    }
   });
 })();
 </script>

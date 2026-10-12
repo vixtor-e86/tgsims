@@ -394,19 +394,26 @@ class SettingsService:
         sc = service_code.strip().lower()
         days = int(duration_days)
         now_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        try:
-            row = {
-                'service_code': sc,
-                'service_name': service_name or sc.capitalize(),
-                'duration_days': days,
-                'custom_price_usd': float(custom_price_usd) if custom_price_usd is not None and custom_price_usd > 0 else None,
-                'updated_at': now_iso
-            }
-            admin.table('rental_service_pricing').upsert(row, on_conflict='service_code,duration_days').execute()
-            return True
-        except Exception as e:
-            print(f"[SettingsService] Error updating rental price: {e}")
-            return False
+        row = {
+            'service_code': sc,
+            'service_name': service_name or sc.capitalize(),
+            'duration_days': days,
+            'custom_price_usd': float(custom_price_usd) if custom_price_usd is not None and custom_price_usd > 0 else None,
+            'updated_at': now_iso
+        }
+        for attempt in range(2):
+            try:
+                admin.table('rental_service_pricing').upsert(row, on_conflict='service_code,duration_days').execute()
+                return True
+            except Exception as e:
+                err_str = str(e).lower()
+                if ('10054' in err_str or 'connection' in err_str or 'closed' in err_str) and attempt == 0:
+                    reset_supabase_admin()
+                    admin = get_supabase_admin(fresh=True)
+                    continue
+                print(f"[SettingsService] Error updating rental price: {e}")
+                return False
+        return False
 
     @classmethod
     def reset_rental_price(cls, service_code: str, duration_days: int) -> bool:
@@ -417,16 +424,23 @@ class SettingsService:
         sc = service_code.strip().lower()
         days = int(duration_days)
         now_iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        try:
-            admin.table('rental_service_pricing')\
-                .update({'custom_price_usd': None, 'updated_at': now_iso})\
-                .eq('service_code', sc)\
-                .eq('duration_days', days)\
-                .execute()
-            return True
-        except Exception as e:
-            print(f"[SettingsService] Error resetting rental price: {e}")
-            return False
+        for attempt in range(2):
+            try:
+                admin.table('rental_service_pricing')\
+                    .update({'custom_price_usd': None, 'updated_at': now_iso})\
+                    .eq('service_code', sc)\
+                    .eq('duration_days', days)\
+                    .execute()
+                return True
+            except Exception as e:
+                err_str = str(e).lower()
+                if ('10054' in err_str or 'connection' in err_str or 'closed' in err_str) and attempt == 0:
+                    reset_supabase_admin()
+                    admin = get_supabase_admin(fresh=True)
+                    continue
+                print(f"[SettingsService] Error resetting rental price: {e}")
+                return False
+        return False
 
     @classmethod
     def sync_rental_wholesale_prices(cls) -> tuple[bool, str, int]:

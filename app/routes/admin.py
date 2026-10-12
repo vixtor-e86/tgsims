@@ -20,13 +20,22 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 @admin_bp.before_request
 def require_admin():
     """Ensure user is logged in and possesses administrator or support privileges."""
+    is_ajax = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+        'application/json' in request.headers.get('Accept', '') or
+        request.is_json
+    )
     user = session.get('user')
     if not user or not isinstance(user, dict):
+        if is_ajax:
+            return jsonify({'success': False, 'message': 'Admin session expired. Please refresh and log in.'}), 401
         flash('Please sign in with administrator credentials.', 'error')
         return redirect(url_for('auth.login', next=request.path))
 
     role = user.get('role')
     if role not in ('admin', 'support'):
+        if is_ajax:
+            return jsonify({'success': False, 'message': 'Access restricted. Administrator privileges required.'}), 403
         flash('Access restricted. Administrator privileges required.', 'error')
         return redirect(url_for('dashboard.index'))
 
@@ -46,6 +55,8 @@ def require_admin():
             'admin.reject_deposit',
         )
         if any(endpoint.startswith(ep) for ep in admin_only_endpoints):
+            if is_ajax:
+                return jsonify({'success': False, 'message': 'Access restricted. Administrator privileges required.'}), 403
             flash('Access restricted. Support staff permissions are limited to Support, Notifications, Orders, and Deposits.', 'error')
             return redirect(url_for('admin.support'))
 
@@ -236,8 +247,14 @@ def pricing():
             service_code = request.form.get('service_code', '').strip().lower()
             service_name = request.form.get('service_name', '').strip()
             duration_days = request.form.get('duration_days', 3)
-            price_val = request.form.get('custom_price_usd', '').strip()
-            is_ajax = (request.headers.get('X-Requested-With') == 'XMLHttpRequest') or (request.args.get('format') == 'json')
+            raw_price = request.form.get('custom_price_usd', '').strip()
+            price_val = raw_price.replace('$', '').replace(',', '').strip() if raw_price else ''
+            is_ajax = (
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                request.args.get('format') == 'json' or
+                'application/json' in request.headers.get('Accept', '') or
+                request.is_json
+            )
             try:
                 custom_price = float(price_val) if price_val else None
                 if service_code and duration_days:
@@ -248,6 +265,7 @@ def pricing():
                         service_name=service_name
                     )
                     if ok:
+                        SIMProviderService.clear_all_caches()
                         # Recalculate latest active pricing for instant UI update
                         ngn_rate = SettingsService.get_usd_ngn_rate()
                         pct, floor = SettingsService.get_textverified_markup()
@@ -280,51 +298,66 @@ def pricing():
                         flash(msg, 'success' if is_custom else 'info')
                     else:
                         if is_ajax:
-                            return jsonify({'success': False, 'message': 'Failed to save rental price to database.'}), 500
-                        flash('Failed to save rental price. Please ensure migration 012 is executed in Supabase.', 'error')
+                            return jsonify({'success': False, 'message': 'Failed to save rental price to database. Please try again.'}), 200
+                        flash('Failed to save rental price. Please ensure database connection is active.', 'error')
                 else:
                     if is_ajax:
-                        return jsonify({'success': False, 'message': 'Missing service code or duration.'}), 400
+                        return jsonify({'success': False, 'message': 'Missing service code or duration.'}), 200
                     flash('Missing service code or duration.', 'error')
             except Exception as e:
                 if is_ajax:
-                    return jsonify({'success': False, 'message': str(e)}), 500
+                    return jsonify({'success': False, 'message': f'Error saving rental price: {e}'}), 200
                 flash(f'Error saving rental price: {e}', 'error')
 
         elif action == 'reset_rental_price':
             service_code = request.form.get('service_code', '').strip().lower()
             duration_days = request.form.get('duration_days', 3)
-            is_ajax = (request.headers.get('X-Requested-With') == 'XMLHttpRequest') or (request.args.get('format') == 'json')
+            is_ajax = (
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                request.args.get('format') == 'json' or
+                'application/json' in request.headers.get('Accept', '') or
+                request.is_json
+            )
             try:
                 if service_code and duration_days:
-                    SettingsService.reset_rental_price(service_code, int(duration_days))
-                    # Recalculate auto markup
-                    ngn_rate = SettingsService.get_usd_ngn_rate()
-                    pct, floor = SettingsService.get_textverified_markup()
-                    mult = 1.0 + (pct / 100.0)
-                    pmap = SettingsService.get_rental_pricing_map()
-                    db_item = pmap.get((service_code, int(duration_days)), {})
-                    base_cost = float(db_item.get('wholesale_price_usd') or 0.0)
-                    retail_usd = round(max(base_cost * mult, base_cost + floor), 2)
-                    retail_ngn = round(retail_usd * ngn_rate, 2)
-                    msg = f'Custom price removed for {service_code} ({duration_days} Days). Standard dynamic markup restored.'
+                    ok = SettingsService.reset_rental_price(service_code, int(duration_days))
+                    if ok:
+                        SIMProviderService.clear_all_caches()
+                        # Recalculate auto markup
+                        ngn_rate = SettingsService.get_usd_ngn_rate()
+                        pct, floor = SettingsService.get_textverified_markup()
+                        mult = 1.0 + (pct / 100.0)
+                        pmap = SettingsService.get_rental_pricing_map()
+                        db_item = pmap.get((service_code, int(duration_days)), {})
+                        base_cost = float(db_item.get('wholesale_price_usd') or 0.0)
+                        retail_usd = round(max(base_cost * mult, base_cost + floor), 2)
+                        retail_ngn = round(retail_usd * ngn_rate, 2)
+                        msg = f'Custom price removed for {service_code} ({duration_days} Days). Standard dynamic markup restored.'
+                        if is_ajax:
+                            return jsonify({
+                                'success': True,
+                                'message': msg,
+                                'service_code': service_code,
+                                'duration_days': int(duration_days),
+                                'retail_usd': retail_usd,
+                                'retail_ngn': retail_ngn,
+                                'retail_usd_str': f"${retail_usd:.2f}",
+                                'retail_ngn_str': f"₦{retail_ngn:,.2f}",
+                                'is_custom': False,
+                                'custom_price_usd': None
+                            })
+                        flash(msg, 'info')
+                    else:
+                        if is_ajax:
+                            return jsonify({'success': False, 'message': 'Failed to reset rental price. Please try again.'}), 200
+                        flash('Failed to reset rental price.', 'error')
+                else:
                     if is_ajax:
-                        return jsonify({
-                            'success': True,
-                            'message': msg,
-                            'service_code': service_code,
-                            'duration_days': int(duration_days),
-                            'retail_usd': retail_usd,
-                            'retail_ngn': retail_ngn,
-                            'retail_usd_str': f"${retail_usd:.2f}",
-                            'retail_ngn_str': f"₦{retail_ngn:,.2f}",
-                            'is_custom': False,
-                            'custom_price_usd': None
-                        })
-                    flash(msg, 'info')
+                        return jsonify({'success': False, 'message': 'Missing service code or duration.'}), 200
+                    flash('Missing service code or duration.', 'error')
             except Exception as e:
                 if is_ajax:
-                    return jsonify({'success': False, 'message': str(e)}), 500
+                    return jsonify({'success': False, 'message': f'Error resetting rental price: {e}'}), 200
                 flash(f'Error resetting rental price: {e}', 'error')
 
         elif action == 'sync_rental_prices':
