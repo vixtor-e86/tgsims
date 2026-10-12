@@ -22,27 +22,18 @@ def index():
     wallet = DBService.get_wallet(user['id'])
     transactions = DBService.get_transactions(user['id'])
 
-    # Fetch user's dedicated virtual account (if exists)
-    virtual_account = DBService.get_virtual_account(user['id'])
-
+    # Dedicated visual accounts hidden until Korapay merchant approval is finalized
     methods = [
         {'id': 'card', 'label': 'Bank Transfer / Card', 'note': 'Instant Bank Transfer & Card', 'icon': 'card'},
         {'id': 'crypto', 'label': 'Cryptocurrency', 'note': 'USDT, BTC, ETH & more', 'icon': 'crypto'},
     ]
-    if not (virtual_account and virtual_account.get('account_number')):
-        methods.append({
-            'id': 'dedicated',
-            'label': 'Dedicated Virtual Account',
-            'note': 'Permanent bank account',
-            'icon': 'bank'
-        })
 
     return render_template('wallet/index.html', wallet=wallet,
                            transactions=transactions, methods=methods,
                            user=user,
-                           virtual_account=virtual_account,
-                           squad_account=virtual_account,
-                           korapay_active=KorapayService.is_configured(),
+                           virtual_account=None,
+                           squad_account=None,
+                           korapay_active=False,
                            squad_active=SquadService.is_configured())
 
 
@@ -56,23 +47,12 @@ def fund():
     wallet = DBService.get_wallet(user['id'])
     presets_ngn = [1000, 5000, 10000, 25000]
 
-    # Fetch dedicated virtual account
-    virtual_account = DBService.get_virtual_account(user['id'])
-    has_virtual_account = bool(virtual_account and virtual_account.get('account_number'))
-
+    # Dedicated visual accounts hidden until Korapay merchant approval is finalized
+    # Users only have access to Bank Transfer / Card (Squad) and Cryptocurrency (OXAPay)
     methods = [
         {'id': 'card', 'label': 'Bank Transfer / Card', 'note': 'Squad Checkout (Instant Bank Transfer, Card & USSD)', 'icon': 'card'},
         {'id': 'crypto', 'label': 'Cryptocurrency', 'note': 'Instant crypto deposit via OXAPay ($1 min)', 'icon': 'crypto'},
     ]
-
-    # Only show Dedicated Virtual Account as 3rd option if user has NOT yet generated one
-    if not has_virtual_account:
-        methods.append({
-            'id': 'dedicated',
-            'label': 'Dedicated Virtual Account',
-            'note': 'Permanent bank account — auto credits wallet',
-            'icon': 'bank'
-        })
 
     fee_rate = 0.015  # 1.5% processing fee for card
     from app.services.settings_service import SettingsService
@@ -87,10 +67,6 @@ def fund():
     squad_active     = SquadService.is_configured()
     squad_public_key = SquadService.get_public_key() if squad_active else ''
 
-    # Korapay info
-    korapay_active   = KorapayService.is_configured()
-    supported_banks  = KorapayService.SUPPORTED_BANKS
-
     return render_template('wallet/fund.html', wallet=wallet,
                            presets_ngn=presets_ngn, methods=methods,
                            fee_rate=fee_rate, user=user,
@@ -100,10 +76,10 @@ def fund():
                            crypto_min=crypto_min,
                            squad_active=squad_active,
                            squad_public_key=squad_public_key,
-                           korapay_active=korapay_active,
-                           supported_banks=supported_banks,
-                           virtual_account=virtual_account,
-                           squad_account=virtual_account,
-                           has_virtual_account=has_virtual_account,
+                           korapay_active=False,
+                           supported_banks=[],
+                           virtual_account=None,
+                           squad_account=None,
+                           has_virtual_account=False,
                            nowpayments_active=crypto_active)
 

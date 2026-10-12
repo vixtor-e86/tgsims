@@ -2,7 +2,7 @@
 import datetime
 import hashlib
 import secrets
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from app.services.supabase_client import (
     is_supabase_configured,
     create_supabase_client,
@@ -23,6 +23,10 @@ def login():
     # If already logged in, send directly to dashboard
     if session.get('user'):
         return redirect(url_for('dashboard.index'))
+
+    unconfirmed_flag = request.args.get('unconfirmed')
+    unconfirmed_email = request.args.get('email', '').strip().lower()
+    show_unconfirmed_modal = bool(unconfirmed_flag and unconfirmed_email)
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -100,16 +104,17 @@ def login():
 
         except Exception as e:
             err = str(e)
-            if 'Invalid login credentials' in err:
+            if 'email not confirmed' in err.lower() or 'email_not_confirmed' in err.lower():
+                # Display the friendly confirmation modal instead of an error flash notification
+                return render_template('auth/login.html', email=email, show_unconfirmed_modal=True, unconfirmed_email=email)
+            elif 'Invalid login credentials' in err:
                 msg = 'Incorrect email or password. Please verify and try again.'
-            elif 'Email not confirmed' in err:
-                msg = 'Your email has not been confirmed yet. Please check your inbox.'
             else:
                 msg = f"Sign in failed: {err}"
             flash(msg, 'error')
             return render_template('auth/login.html', email=email)
 
-    return render_template('auth/login.html')
+    return render_template('auth/login.html', email=unconfirmed_email, show_unconfirmed_modal=show_unconfirmed_modal, unconfirmed_email=unconfirmed_email)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -215,8 +220,7 @@ def register():
                 flash(f'Account created successfully! Welcome to Tgsims, {first_name}.', 'success')
                 return redirect(url_for('dashboard.index'))
             else:
-                flash('Account created! Please check your email to verify your account, then sign in.', 'success')
-                return redirect(url_for('auth.login'))
+                return redirect(url_for('auth.login', unconfirmed=1, email=email))
 
         except Exception as e:
             err = str(e)
@@ -446,3 +450,39 @@ def preview_signup_email():
     html = html.replace('{{ .ConfirmationURL }}', url_for('auth.login', confirmed='true', _external=True))
     html = html.replace('{{ .Token }}', '482910')
     return html
+
+
+@auth_bp.route('/resend-confirmation', methods=['POST'])
+def resend_confirmation():
+    """Resend email verification link for unconfirmed user accounts."""
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        email = data.get('email', '').strip().lower()
+    else:
+        email = request.form.get('email', '').strip().lower()
+
+    if not email:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'Email address is required.'}), 400
+        flash('Please enter your email address.', 'error')
+        return redirect(url_for('auth.login'))
+
+    from app.services.supabase_client import get_supabase
+    client = get_supabase()
+    try:
+        client.auth.resend({'type': 'signup', 'email': email})
+        msg = f'Verification link resent to {email}! Please check your mailbox.'
+        if request.is_json:
+            return jsonify({'success': True, 'message': msg})
+        flash(msg, 'success')
+        return redirect(url_for('auth.login', unconfirmed=1, email=email))
+    except Exception as e:
+        err = str(e)
+        if 'rate limit' in err.lower():
+            msg = 'Too many requests. Please wait a minute before requesting another confirmation email.'
+        else:
+            msg = f'Unable to resend email: {err}'
+        if request.is_json:
+            return jsonify({'success': False, 'message': msg}), 400
+        flash(msg, 'error')
+        return redirect(url_for('auth.login', unconfirmed=1, email=email))

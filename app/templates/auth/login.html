@@ -74,4 +74,154 @@
     <a href="#">Help Center</a>
   </nav>
 </footer>
+
+{# ---- Email Confirmation Guidance Modal ---- #}
+<div class="modal {% if show_unconfirmed_modal %}is-open{% endif %}" id="unconfirmedEmailModal" tabindex="-1" role="dialog" aria-labelledby="unconfirmedModalTitle" aria-modal="true">
+  <div class="modal-box" style="max-width: 480px; text-align: center; border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-xl); border: 1px solid var(--border);">
+    
+    {# Top banner illustration #}
+    <div style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(99, 102, 241, 0.14) 100%); padding: 1.75rem 1.5rem 1.25rem; text-align: center; position: relative; border-bottom: 1px solid var(--border);">
+      <button type="button" class="modal-close" onclick="closeUnconfirmedModal()" aria-label="Close" style="position: absolute; top: 12px; right: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; color: var(--text-dim); transition: all 0.15s ease;">&times;</button>
+      
+      <div style="width: 62px; height: 62px; margin: 0 auto 0.85rem; background: var(--brand); color: #fff; border-radius: 50%; display: grid; place-items: center; font-size: 1.75rem; box-shadow: 0 8px 20px -4px rgba(37, 99, 235, 0.45);">
+        {{ icon("mail") }}
+      </div>
+      <h2 id="unconfirmedModalTitle" style="font-size: 1.25rem; font-weight: 800; color: var(--text); margin: 0 0 0.35rem;">
+        Check Your Mailbox
+      </h2>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0; line-height: 1.45;">
+        A confirmation link has been sent to activate your account.
+      </p>
+    </div>
+
+    <div class="modal-body" style="padding: 1.4rem 1.5rem 1.25rem; text-align: left;">
+      {# Destination email box #}
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 0.75rem 0.95rem; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.15rem;">
+        <span style="color: var(--brand); font-size: 1.1rem; display: flex; align-items: center; flex-shrink: 0;">{{ icon("mail") }}</span>
+        <div style="min-width: 0; flex: 1;">
+          <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-dim); letter-spacing: 0.04em;">Email Sent To</div>
+          <div id="unconfirmedModalEmailDisplay" style="font-weight: 700; font-size: 0.92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {{ unconfirmed_email or email or 'your registered email' }}
+          </div>
+        </div>
+      </div>
+
+      {# Helpful step instructions #}
+      <div style="background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.18); border-radius: var(--r-md); padding: 0.95rem 1.1rem; margin-bottom: 1.15rem;">
+        <div style="font-size: 0.78rem; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+          {{ icon("shield") }} Next Steps
+        </div>
+        <ul style="margin: 0; padding-left: 1.15rem; font-size: 0.83rem; color: var(--text); line-height: 1.55; display: flex; flex-direction: column; gap: 0.35rem;">
+          <li>Open your email app and click the <strong>Confirm Email Address</strong> button.</li>
+          <li>Can't find the email? Check your <strong>Spam</strong>, <strong>Junk</strong>, or <strong>Promotions</strong> folder.</li>
+          <li>Once confirmed, come back here to sign in with your password.</li>
+        </ul>
+      </div>
+
+      {# Status / Alert notification box #}
+      <div id="resendAlert" style="display: none; padding: 0.75rem 0.9rem; border-radius: var(--r-sm); margin-bottom: 1rem; font-size: 0.82rem; line-height: 1.45;"></div>
+
+      {# Action buttons #}
+      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+        <button type="button" class="btn btn-primary btn-block btn-lg" onclick="closeUnconfirmedModal()" style="font-weight: 700;">
+          {{ icon("check") }} I've Confirmed, Let Me Sign In
+        </button>
+
+        <button type="button" class="btn btn-secondary btn-block" id="btnResendConfirmation" onclick="resendConfirmationEmail()" style="font-weight: 600;">
+          {{ icon("refresh") }} <span id="btnResendText">Resend Confirmation Email</span>
+        </button>
+      </div>
+
+      <p style="font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-top: 1rem; margin-bottom: 0;">
+        Wrong email address? <a href="{{ url_for('auth.register') }}" style="color: var(--brand); font-weight: 600;">Sign up again</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() if super else '' }}
+<script>
+function closeUnconfirmedModal() {
+  var modal = document.getElementById('unconfirmedEmailModal');
+  if (modal) {
+    modal.classList.remove('is-open');
+  }
+}
+
+function resendConfirmationEmail() {
+  var btn = document.getElementById('btnResendConfirmation');
+  var btnText = document.getElementById('btnResendText');
+  var alertBox = document.getElementById('resendAlert');
+  var emailInput = document.getElementById('login-email');
+  var email = (emailInput ? emailInput.value.trim() : '') || "{{ unconfirmed_email or email or '' }}";
+
+  if (!email) {
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = 'rgba(239, 68, 68, 0.1)';
+      alertBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      alertBox.style.color = '#ef4444';
+      alertBox.textContent = 'Please enter your email address in the login field first.';
+    }
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Resending...';
+  if (alertBox) alertBox.style.display = 'none';
+
+  fetch("{{ url_for('auth.resend_confirmation') }}", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: JSON.stringify({ email: email })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = 'Resend Confirmation Email';
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      if (data.success) {
+        alertBox.style.background = 'rgba(16, 185, 129, 0.1)';
+        alertBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        alertBox.style.color = '#10b981';
+        alertBox.textContent = data.message || 'Confirmation email resent! Please check your mailbox.';
+      } else {
+        alertBox.style.background = 'rgba(239, 68, 68, 0.1)';
+        alertBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        alertBox.style.color = '#ef4444';
+        alertBox.textContent = data.message || 'Failed to resend confirmation email.';
+      }
+    }
+  })
+  .catch(function(err) {
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = 'Resend Confirmation Email';
+    if (alertBox) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = 'rgba(239, 68, 68, 0.1)';
+      alertBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      alertBox.style.color = '#ef4444';
+      alertBox.textContent = 'Network error. Please try again.';
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeUnconfirmedModal();
+  });
+  var modalEl = document.getElementById('unconfirmedEmailModal');
+  if (modalEl) {
+    modalEl.addEventListener('click', function(e) {
+      if (e.target === modalEl) closeUnconfirmedModal();
+    });
+  }
+});
+</script>
 {% endblock %}

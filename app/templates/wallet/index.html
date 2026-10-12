@@ -28,8 +28,8 @@
         </div>
       </div>
 
-      {# Right: Dedicated Virtual Account (if generated) #}
-      {% if virtual_account and virtual_account.account_number %}
+      {# Dedicated Virtual Account hidden until Korapay visual accounts approval #}
+      {% if false and virtual_account and virtual_account.account_number %}
       <div class="dedicated-va-badge" style="flex: 1; min-width: 270px; max-width: 440px; background: rgba(0, 0, 0, 0.28); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: var(--r-md); padding: 1.25rem 1.35rem; color: #fff;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
