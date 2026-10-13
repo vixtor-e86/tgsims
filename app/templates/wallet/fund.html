@@ -57,8 +57,6 @@
       {% endfor %}
     </div>
 
-    </div>
-
     {# ---- CRYPTOCURRENCY ---- #}
     <div class="crypto-fields" data-crypto-fields style="display: none; margin-top: var(--sp-4);">
       <label class="fund-label" for="crypto-currency-select">Select Cryptocurrency & Network</label>
@@ -232,5 +230,5 @@
       id: "{{ (user.id if user else '') | e }}"
     };
   </script>
-  <script src="{{ url_for('static', filename='js/fund.js') }}?v=4"></script>
+  <script src="{{ url_for('static', filename='js/fund.js') }}?v=5"></script>
 {% endblock %}
