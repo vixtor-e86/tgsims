@@ -238,10 +238,28 @@ def purchase_sim():
         except Exception:
             pass
 
+    # Authoritative server-side price calculation
+    server_price = SIMProviderService.resolve_catalog_service_price(
+        service_code=service_code,
+        service_name=service_name,
+        country_code=country_code
+    )
+
     try:
-        price = float(data.get('price', 2.50))
+        client_price = float(data.get('price', 0))
     except (ValueError, TypeError):
-        price = 2.50
+        client_price = 0.0
+
+    # Ensure price is never <= 0 and never lower than the server-verified retail price
+    price = max(server_price, client_price)
+    if price <= 0:
+        return jsonify({'success': False, 'message': 'Invalid service price.'}), 400
+
+    from app.services.settings_service import SettingsService
+    try:
+        ngn_rate = SettingsService.get_usd_ngn_rate()
+    except Exception:
+        ngn_rate = 1600.00
 
     # 1. Check wallet balance
     wallet = DBService.get_wallet(user_id)
@@ -249,7 +267,7 @@ def purchase_sim():
     if cur_balance < price:
         return jsonify({
             'success': False,
-            'message': f'Insufficient wallet balance. You need ${price:.2f} but have ${cur_balance:.2f}. Please top up your wallet.'
+            'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price * ngn_rate:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
         }), 400
 
     catalog_product_id = data.get('catalog_product_id')
@@ -274,10 +292,24 @@ def purchase_sim():
 
     order_ref = sim_result.get('order_reference') or f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"
 
+    res_price = float(sim_result.get('retail_price') or 0.0)
+    final_price = max(price, res_price)
+    if cur_balance < final_price:
+        prov_id = sim_result.get('provider_order_id')
+        if prov_id and not str(prov_id).startswith('SIM-'):
+            try:
+                SIMProviderService.cancel_order(str(prov_id))
+            except Exception:
+                pass
+        return jsonify({
+            'success': False,
+            'message': f'Insufficient wallet balance for this carrier tier. Required: ${final_price:.2f} (₦{final_price * ngn_rate:,.2f}), balance: ${cur_balance:.2f}. Please top up.'
+        }), 400
+
     # 3. Deduct from wallet atomically in database
     deduct_res = DBService.deduct_wallet_balance(
         user_id=user_id,
-        amount=price,
+        amount=final_price,
         reference=order_ref,
         description=f"{service_name} Virtual Number ({country_name})",
         metadata={
@@ -288,6 +320,12 @@ def purchase_sim():
     )
 
     if not deduct_res.get('success'):
+        prov_id = sim_result.get('provider_order_id')
+        if prov_id and not str(prov_id).startswith('SIM-'):
+            try:
+                SIMProviderService.cancel_order(str(prov_id))
+            except Exception:
+                pass
         return jsonify({
             'success': False,
             'message': deduct_res.get('message', 'Failed to deduct wallet balance.')
@@ -302,8 +340,8 @@ def purchase_sim():
         'country_code': country_code,
         'country_slug': country_name.lower().replace(' ', '_'),
         'phone_number': sim_result.get('phone_number', ''),
-        'user_cost': price,
-        'price': price,
+        'user_cost': final_price,
+        'price': final_price,
         'provider_cost': float(sim_result.get('provider_cost') or 0.00),
         'provider_order_id': sim_result.get('provider_order_id', ''),
         'order_type': 'activation',
@@ -370,14 +408,33 @@ def purchase_us_canada():
         except Exception:
             pass
 
+    # Authoritative server-side price calculation
+    server_price = SIMProviderService.resolve_us_canada_price(
+        service_code=service_code,
+        service_name=service_name,
+        package_id=package_id,
+        operator_id=operator_id
+    )
+
     try:
-        price = float(data.get('price', 1.25))
+        client_price = float(data.get('price', 0))
     except (ValueError, TypeError):
-        price = 1.25
+        client_price = 0.0
+
+    # Ensure price is never <= 0 and never lower than the server-verified retail price
+    price = max(server_price, client_price)
+    if price <= 0:
+        return jsonify({'success': False, 'message': 'Invalid service price.'}), 400
 
     # Look up package for display name
     pkg = next((p for p in SIMProviderService.US_CANADA_PACKAGES if p['id'] == package_id), SIMProviderService.US_CANADA_PACKAGES[0])
     country_name = 'United States'
+
+    from app.services.settings_service import SettingsService
+    try:
+        ngn_rate = SettingsService.get_usd_ngn_rate()
+    except Exception:
+        ngn_rate = 1600.00
 
     # 1. Check wallet balance
     wallet = DBService.get_wallet(user_id)
@@ -385,7 +442,7 @@ def purchase_us_canada():
     if cur_balance < price:
         return jsonify({
             'success': False,
-            'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price * 1600:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
+            'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price * ngn_rate:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
         }), 400
 
     catalog_product_id = data.get('catalog_product_id')
@@ -412,10 +469,24 @@ def purchase_us_canada():
 
     order_ref = alloc_res.get('order_reference') or f"TGS-USCA-{uuid.uuid4().hex[:6].upper()}"
 
+    res_price = float(alloc_res.get('price') or 0.0)
+    final_price = max(price, res_price)
+    if cur_balance < final_price:
+        prov_id = alloc_res.get('provider_order_id')
+        if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+            try:
+                SIMProviderService.cancel_order(str(prov_id))
+            except Exception:
+                pass
+        return jsonify({
+            'success': False,
+            'message': f'Insufficient wallet balance for this carrier tier. Required: ${final_price:.2f} (₦{final_price * ngn_rate:,.2f}), balance: ${cur_balance:.2f}. Please top up.'
+        }), 400
+
     # 3. Deduct wallet atomically in database
     deduct_res = DBService.deduct_wallet_balance(
         user_id=user_id,
-        amount=price,
+        amount=final_price,
         reference=order_ref,
         description=f"{service_name} ({pkg['name']}) - {country_name}",
         metadata={
@@ -428,6 +499,12 @@ def purchase_us_canada():
     )
 
     if not deduct_res.get('success'):
+        prov_id = alloc_res.get('provider_order_id')
+        if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+            try:
+                SIMProviderService.cancel_order(str(prov_id))
+            except Exception:
+                pass
         return jsonify({
             'success': False,
             'message': deduct_res.get('message', 'Failed to deduct wallet balance.')
@@ -442,8 +519,8 @@ def purchase_us_canada():
         'country_code': country_code,
         'country_slug': 'usa',
         'phone_number': alloc_res.get('phone_number', ''),
-        'user_cost': price,
-        'price': price,
+        'user_cost': final_price,
+        'price': final_price,
         'provider_cost': 0.00,
         'provider_order_id': alloc_res.get('provider_order_id', ''),
         'order_type': 'activation',

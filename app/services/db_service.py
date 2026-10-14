@@ -165,6 +165,14 @@ class DBService:
     def deduct_wallet_balance(user_id: str, amount: float, reference: str, description: str, metadata: dict = None, order_id: str = None) -> dict:
         """Deducts balance atomically. Returns dict with success, message, new_balance."""
         metadata = metadata or {}
+        try:
+            amount = round(float(amount), 2)
+        except (ValueError, TypeError):
+            return {'success': False, 'message': 'Invalid transaction amount.'}
+
+        if amount <= 0:
+            return {'success': False, 'message': 'Transaction amount must be greater than zero.'}
+
         if not user_id or user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
             wallet = mock_db.wallets.get(user_id, {'balance': 45.50, 'currency': 'USD'})
             if wallet['balance'] < amount:
@@ -256,6 +264,14 @@ class DBService:
     def credit_wallet_balance(user_id: str, amount: float, trans_type: str, reference: str, description: str, metadata: dict = None, order_id: str = None) -> dict:
         """Credits user wallet. Returns dict with success, message, new_balance."""
         metadata = metadata or {}
+        try:
+            amount = round(float(amount), 2)
+        except (ValueError, TypeError):
+            return {'success': False, 'message': 'Invalid credit amount.'}
+
+        if amount <= 0:
+            return {'success': False, 'message': 'Credit amount must be greater than zero.'}
+
         if not user_id or user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
             wallet = mock_db.wallets.get(user_id)
             if not wallet:
@@ -772,19 +788,24 @@ class DBService:
             ref_tx = f"REF-{uuid.uuid4().hex[:10].upper()}"
             desc = f"Refund for {svc_name} - {reason}"
 
-        # Credit wallet
-        credit_res = DBService.credit_wallet_balance(
-            user_id=user_id,
-            amount=refund_amount,
-            trans_type='refund',
-            reference=ref_tx,
-            description=desc,
-            metadata={'order_reference': order.get('order_reference'), 'reason': reason, 'is_reactivation': is_reactivation},
-            order_id=order.get('id')
-        )
-
-        if not credit_res.get('success'):
-            return {'success': False, 'message': 'Failed to credit refund to wallet.'}
+        # Credit wallet if refund amount is positive
+        new_balance = None
+        if refund_amount > 0:
+            credit_res = DBService.credit_wallet_balance(
+                user_id=user_id,
+                amount=refund_amount,
+                trans_type='refund',
+                reference=ref_tx,
+                description=desc,
+                metadata={'order_reference': order.get('order_reference'), 'reason': reason, 'is_reactivation': is_reactivation},
+                order_id=order.get('id')
+            )
+            if not credit_res.get('success'):
+                return {'success': False, 'message': 'Failed to credit refund to wallet.'}
+            new_balance = credit_res.get('new_balance')
+        else:
+            w = DBService.get_wallet(user_id)
+            new_balance = float(w.get('balance', 0.00))
 
         admin = get_supabase_admin()
 
@@ -826,7 +847,7 @@ class DBService:
             return {
                 'success': True,
                 'message': f'Reactivation cancelled. ${refund_amount:.2f} refunded to your wallet.',
-                'new_balance': credit_res.get('new_balance')
+                'new_balance': new_balance
             }
 
         # Standard initial order refund:
@@ -858,7 +879,7 @@ class DBService:
         return {
             'success': True,
             'message': f'Order refunded. ${refund_amount:.2f} credited to your wallet.',
-            'new_balance': credit_res.get('new_balance')
+            'new_balance': new_balance
         }
 
     # =========================================================================

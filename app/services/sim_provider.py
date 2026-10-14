@@ -1589,6 +1589,68 @@ class SIMProviderService:
         }
 
     @classmethod
+    def resolve_us_canada_price(cls, service_code: str = None, service_name: str = None, package_id: str = 'basic_pool', operator_id: int = None) -> float:
+        """Determines the authoritative server-side retail price (in USD) for a US/Canada line."""
+        svc_code_clean = (service_code or '').strip().lower()
+        svc_name_clean = (service_name or '').strip().lower()
+
+        if package_id == 'reliable_non_voip':
+            tv_services = cls.get_textverified_us_services()
+            matched = next(
+                (s for s in tv_services if (
+                    (s.get('service_code') and s.get('service_code').lower() == svc_code_clean) or
+                    (s.get('catalog_slug') and s.get('catalog_slug').lower() == svc_code_clean) or
+                    (s.get('service_name') and s.get('service_name').lower() == svc_name_clean) or
+                    (s.get('name') and s.get('name').lower() == svc_name_clean)
+                )),
+                None
+            )
+            if matched and matched.get('price_usd') and float(matched['price_usd']) > 0:
+                return float(matched['price_usd'])
+            return 1.50
+        else:
+            basic_services = cls.get_smscode_us_services()
+            matched = next(
+                (s for s in basic_services if (
+                    (s.get('service_code') and s.get('service_code').lower() == svc_code_clean) or
+                    (s.get('catalog_slug') and s.get('catalog_slug').lower() == svc_code_clean) or
+                    (s.get('id') and str(s.get('id')).lower() in (f"{svc_code_clean}_basic", svc_code_clean)) or
+                    (s.get('service_name') and s.get('service_name').lower() == svc_name_clean) or
+                    (s.get('name') and s.get('name').lower() == svc_name_clean)
+                )),
+                None
+            )
+            if matched:
+                if operator_id:
+                    for op in matched.get('operators', []):
+                        if str(op.get('operator_id')) == str(operator_id):
+                            op_p = float(op.get('price_usd') or op.get('price') or 0.0)
+                            if op_p > 0:
+                                return op_p
+                item_p = float(matched.get('price_usd') or matched.get('price') or 0.0)
+                if item_p > 0:
+                    return item_p
+            return 1.25
+
+    @classmethod
+    def resolve_catalog_service_price(cls, service_code: str = None, service_name: str = None, country_code: str = 'US') -> float:
+        """Looks up the authoritative catalog price for worldwide activation lines."""
+        cat = cls.get_catalog()
+        services = cat.get('services', []) if isinstance(cat, dict) else []
+        sc = (service_code or '').strip().lower()
+        sn = (service_name or '').strip().lower()
+
+        matched = next((s for s in services if (s.get('code') and s['code'].lower() == sc) or (s.get('name') and s['name'].lower() == sn)), None)
+        if matched and matched.get('price'):
+            try:
+                p = float(matched['price'])
+                if p > 0:
+                    return p
+            except (ValueError, TypeError):
+                pass
+        return 1.50
+
+    @classmethod
     def purchase_us_canada_number(
         cls,
         country_code: str = 'US',
@@ -1627,11 +1689,7 @@ class SIMProviderService:
 
         # 1. Reliable Non-VoIP / Dedicated Cellular line
         if package_id == 'reliable_non_voip':
-            charge_price = float(price) if price else None
-            if charge_price is None:
-                tv_services = cls.get_textverified_us_services()
-                matched_tv = next((s for s in tv_services if s.get('service_code') == service_code), None)
-                charge_price = float(matched_tv.get('price_usd', 1.50)) if matched_tv else 1.50
+            charge_price = float(price) if price and float(price) > 0 else cls.resolve_us_canada_price(service_code=service_code, service_name=svc_clean, package_id='reliable_non_voip')
             tv_client = cls.get_textverified_client()
             if tv_client:
                 try:
@@ -1755,7 +1813,7 @@ class SIMProviderService:
         if product_id:
             matched_product_id = int(product_id)
 
-        charge_price = float(price) if price else 1.25
+        charge_price = float(price) if price and float(price) > 0 else cls.resolve_us_canada_price(service_code=service_code, service_name=svc_clean, package_id='basic_pool', operator_id=resolved_op_id)
 
         if client.is_configured:
             # 1. Try order creation with exact cheapest product tier
