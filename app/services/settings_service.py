@@ -342,6 +342,151 @@ class SettingsService:
             print(f"[SettingsService] Error deleting price override: {e}")
             return False
 
+    @classmethod
+    def delete_price_override_by_code(cls, service_code: str, provider_type: str = '5sim') -> bool:
+        """Remove a service price override by its service_code and provider_type."""
+        cls._overrides_cache = None
+        cls._overrides_cache_time = 0
+        try:
+            from app.services.sim_provider import SIMProviderService
+            SIMProviderService.clear_all_caches()
+        except Exception:
+            pass
+
+        admin = get_supabase_admin()
+        if not admin:
+            return True
+        try:
+            admin.table('service_price_overrides').delete().eq('service_code', service_code.strip().lower()).eq('provider_type', provider_type).execute()
+            return True
+        except Exception as e:
+            print(f"[SettingsService] Error deleting price override by code: {e}")
+            return False
+
+    @classmethod
+    def get_us_whatsapp_operators_pricing(cls) -> List[Dict[str, Any]]:
+        """Fetch US WhatsApp operator list with wholesale costs and current retail prices."""
+        import json
+        import os
+
+        rate = cls.get_usd_ngn_rate()
+        pct, floor = cls.get_smscode_markup()
+
+        all_overrides = cls.get_price_overrides()
+        overrides_map = {
+            o['service_code'].strip().lower(): o
+            for o in all_overrides
+            if o.get('is_active', True) and o.get('service_code')
+        }
+
+        data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'usa_core_services.json')
+        wa_ops = []
+        if os.path.exists(data_path):
+            try:
+                with open(data_path, 'r', encoding='utf-8') as f:
+                    core_data = json.load(f)
+                    wa_ops = core_data.get('whatsapp', {}).get('operators', [])
+            except Exception as e:
+                print(f"[SettingsService] Error loading whatsapp operators: {e}")
+
+        if not wa_ops:
+            wa_ops = [
+                {'operator_id': 0, 'operator_code': 'any', 'operator_name': 'Basic Operator', 'base_price_usd': 0.963},
+                {'operator_id': 125, 'operator_code': 'tmobile', 'operator_name': 'T-Mobile (EE)', 'base_price_usd': 1.9423},
+                {'operator_id': 111, 'operator_code': 'at_t', 'operator_name': 'AT&T', 'base_price_usd': 1.6719},
+                {'operator_id': 119, 'operator_code': 'mint_mobile', 'operator_name': 'Mint Mobile', 'base_price_usd': 1.9423},
+                {'operator_id': 128, 'operator_code': 'verizon', 'operator_name': 'Verizon', 'base_price_usd': 2.14},
+                {'operator_id': 127, 'operator_code': 'us_mobile', 'operator_name': 'US_MOBILE', 'base_price_usd': 3.7765},
+            ]
+
+        res = []
+        for op in wa_ops:
+            op_code = (op.get('operator_code') or '').strip().lower()
+            op_id = op.get('operator_id')
+            op_id_str = str(op_id) if op_id is not None else ''
+            raw_name = op.get('operator_name', op_code.title())
+            base_cost = float(op.get('base_price_usd', 0.963))
+
+            # Normalize display name
+            if op_code in ('any', 'basic') or 'basic' in raw_name.lower():
+                display_name = 'Basic Operator'
+            elif 'tmobile' in op_code or 't-mobile' in raw_name.lower():
+                display_name = 'T-Mobile'
+            elif 'at_t' in op_code or 'at&t' in raw_name.lower():
+                display_name = 'AT&T'
+            elif 'verizon' in op_code or 'verizon' in raw_name.lower():
+                display_name = 'Verizon'
+            elif 'mint' in op_code or 'mint' in raw_name.lower():
+                display_name = 'Mint Mobile'
+            elif 'us_mobile' in op_code or 'us mobile' in raw_name.lower():
+                display_name = 'US Mobile'
+            else:
+                display_name = raw_name
+
+            # Check for operator-specific override
+            ov_key = f"whatsapp:{op_code}"
+            ov_obj = overrides_map.get(ov_key)
+            if not ov_obj and op_id_str:
+                ov_obj = overrides_map.get(f"whatsapp:{op_id_str}")
+
+            is_custom = False
+            custom_price_usd = None
+            override_id = None
+
+            if ov_obj:
+                is_custom = True
+                custom_price_usd = float(ov_obj['override_price_usd'])
+                override_id = ov_obj.get('id')
+                retail_usd = round(custom_price_usd, 2)
+            else:
+                # Calculate auto-markup
+                if pct <= 0.0 and floor <= 0.0:
+                    retail_usd = round(base_cost, 2)
+                else:
+                    profit = max(base_cost * (pct / 100.0), floor)
+                    retail_usd = round(base_cost + profit, 2)
+
+            retail_ngn = round(retail_usd * rate, 2)
+
+            res.append({
+                'operator_id': op_id,
+                'operator_code': op_code,
+                'operator_name': display_name,
+                'base_cost_usd': round(base_cost, 4),
+                'base_cost_display': f"${base_cost:.2f}",
+                'cheapest_product_id': op.get('cheapest_product_id'),
+                'catalog_product_id': op.get('catalog_product_id'),
+                'available': op.get('available', 100),
+                'override_id': override_id,
+                'custom_price_usd': custom_price_usd,
+                'retail_usd': retail_usd,
+                'retail_ngn': retail_ngn,
+                'formatted_usd': f"${retail_usd:.2f}",
+                'formatted_ngn': f"₦{retail_ngn:,.2f}",
+                'is_custom': is_custom,
+            })
+
+        # Ensure Basic Operator is first, then T-Mobile, then remaining by wholesale cost
+        res.sort(key=lambda x: (0 if x['operator_code'] == 'any' else (1 if 'tmobile' in x['operator_code'] else 2), x['base_cost_usd']))
+        return res
+
+    @classmethod
+    def set_us_whatsapp_operator_price(cls, operator_code: str, custom_price_usd: float = None, operator_name: str = '') -> bool:
+        """Sets or resets the retail price override for a specific US WhatsApp operator."""
+        op_code = operator_code.strip().lower()
+        if custom_price_usd is not None and float(custom_price_usd) > 0:
+            svc_code = f"whatsapp:{op_code}"
+            name = f"WhatsApp ({operator_name or op_code.title()})"
+            return cls.set_price_override(
+                service_code=svc_code,
+                service_name=name,
+                provider_type='5sim',
+                override_price_usd=float(custom_price_usd),
+                notes='US WhatsApp operator pricing override'
+            )
+        else:
+            return cls.delete_price_override_by_code(f"whatsapp:{op_code}", provider_type='5sim')
+
     # =========================================================================
     # DEDICATED RENTAL PRICING (DATABASE-DRIVEN)
     # =========================================================================

@@ -243,6 +243,101 @@ def pricing():
             except Exception as e:
                 flash(f'Error syncing SMS Code wholesale prices: {e}', 'error')
 
+        elif action == 'update_us_operator_price':
+            operator_code = request.form.get('operator_code', '').strip().lower()
+            operator_name = request.form.get('operator_name', '').strip()
+            raw_price = request.form.get('custom_price_usd', '').strip()
+            price_val = raw_price.replace('$', '').replace(',', '').strip() if raw_price else ''
+            is_ajax = (
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                request.args.get('format') == 'json' or
+                'application/json' in request.headers.get('Accept', '') or
+                request.is_json
+            )
+            try:
+                custom_price = float(price_val) if price_val else None
+                if operator_code:
+                    ok = SettingsService.set_us_whatsapp_operator_price(
+                        operator_code=operator_code,
+                        custom_price_usd=custom_price,
+                        operator_name=operator_name
+                    )
+                    if ok:
+                        SIMProviderService.clear_all_caches()
+                        rate = SettingsService.get_usd_ngn_rate()
+                        ops = SettingsService.get_us_whatsapp_operators_pricing()
+                        matched = next((o for o in ops if o['operator_code'] == operator_code), None)
+                        retail_usd = matched['retail_usd'] if matched else (custom_price or 0.0)
+                        retail_ngn = matched['retail_ngn'] if matched else round(retail_usd * rate, 2)
+                        is_custom = matched['is_custom'] if matched else (custom_price is not None and custom_price > 0)
+
+                        msg = f'Custom selling price saved for WhatsApp ({operator_name or operator_code}) at ${retail_usd:.2f}.' if is_custom else f'Custom price cleared for WhatsApp ({operator_name or operator_code}). Reverted to auto-markup.'
+                        if is_ajax:
+                            return jsonify({
+                                'success': True,
+                                'message': msg,
+                                'operator_code': operator_code,
+                                'retail_usd': retail_usd,
+                                'retail_ngn': retail_ngn,
+                                'retail_usd_str': f"${retail_usd:.2f}",
+                                'retail_ngn_str': f"₦{retail_ngn:,.2f}",
+                                'is_custom': is_custom,
+                                'custom_price_usd': custom_price
+                            })
+                        flash(msg, 'success' if is_custom else 'info')
+                    else:
+                        if is_ajax:
+                            return jsonify({'success': False, 'message': 'Failed to save operator price. Please check database connection.'}), 200
+                        flash('Failed to save operator price.', 'error')
+                else:
+                    if is_ajax:
+                        return jsonify({'success': False, 'message': 'Missing operator code.'}), 200
+                    flash('Missing operator code.', 'error')
+            except Exception as e:
+                if is_ajax:
+                    return jsonify({'success': False, 'message': f'Error saving operator price: {e}'}), 200
+                flash(f'Error saving operator price: {e}', 'error')
+
+        elif action == 'reset_us_operator_price':
+            operator_code = request.form.get('operator_code', '').strip().lower()
+            is_ajax = (
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                request.args.get('format') == 'json' or
+                'application/json' in request.headers.get('Accept', '') or
+                request.is_json
+            )
+            try:
+                ok = SettingsService.set_us_whatsapp_operator_price(operator_code=operator_code, custom_price_usd=None)
+                if ok:
+                    SIMProviderService.clear_all_caches()
+                    rate = SettingsService.get_usd_ngn_rate()
+                    ops = SettingsService.get_us_whatsapp_operators_pricing()
+                    matched = next((o for o in ops if o['operator_code'] == operator_code), None)
+                    retail_usd = matched['retail_usd'] if matched else 0.0
+                    retail_ngn = matched['retail_ngn'] if matched else round(retail_usd * rate, 2)
+                    msg = f'Operator price reset to auto-markup.'
+                    if is_ajax:
+                        return jsonify({
+                            'success': True,
+                            'message': msg,
+                            'operator_code': operator_code,
+                            'retail_usd': retail_usd,
+                            'retail_ngn': retail_ngn,
+                            'retail_usd_str': f"${retail_usd:.2f}",
+                            'retail_ngn_str': f"₦{retail_ngn:,.2f}",
+                            'is_custom': False,
+                            'custom_price_usd': None
+                        })
+                    flash(msg, 'info')
+                else:
+                    if is_ajax:
+                        return jsonify({'success': False, 'message': 'Failed to reset operator price.'}), 200
+                    flash('Failed to reset operator price.', 'error')
+            except Exception as e:
+                if is_ajax:
+                    return jsonify({'success': False, 'message': str(e)}), 200
+                flash(f'Error resetting operator price: {e}', 'error')
+
         elif action == 'update_rental_price':
             service_code = request.form.get('service_code', '').strip().lower()
             service_name = request.form.get('service_name', '').strip()
@@ -373,7 +468,10 @@ def pricing():
         return redirect(url_for('admin.pricing'))
 
     settings = SettingsService.get_settings(force_refresh=True)
-    overrides = SettingsService.get_price_overrides()
+    all_overrides = SettingsService.get_price_overrides()
+    # Separate operator-specific overrides from general overrides
+    overrides = [ov for ov in all_overrides if not (ov.get('service_code') and ':' in ov['service_code'])]
+    us_whatsapp_operators = SettingsService.get_us_whatsapp_operators_pricing()
 
     # Precalculated examples for admin visualization
     rate = SettingsService.get_usd_ngn_rate()
@@ -441,6 +539,7 @@ def pricing():
         'admin/pricing.html',
         settings=settings,
         overrides=overrides,
+        us_whatsapp_operators=us_whatsapp_operators,
         examples=examples,
         services_catalog=services_catalog,
         rental_catalog=rental_catalog,

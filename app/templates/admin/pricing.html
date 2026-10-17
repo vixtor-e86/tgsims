@@ -545,6 +545,116 @@
 </div>
 
 {# ========================================================================= #}
+{# US WHATSAPP OPERATOR PRICING CONTROL                                     #}
+{# ========================================================================= #}
+<div class="settings-panel" id="us-whatsapp-operator-pricing-section">
+  <div class="settings-panel-header">
+    <div>
+      <h2>{{ icon('bolt') }} US WhatsApp Carrier & Operator Pricing Control</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+        Manage original wholesale provider costs and configure custom retail selling prices for US WhatsApp across individual carrier routes (Basic Operator, T-Mobile, AT&T, Mint Mobile, Verizon, and US Mobile).
+      </p>
+    </div>
+  </div>
+
+  <div class="settings-panel-body" style="gap: 1.25rem;">
+    {% if us_whatsapp_operators %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+              <th style="padding: 0.75rem 0.6rem;">Carrier Operator</th>
+              <th style="padding: 0.75rem 0.6rem;">Route Key</th>
+              <th style="padding: 0.75rem 0.6rem;">Wholesale Cost (USD)</th>
+              <th style="padding: 0.75rem 0.6rem;">Active Selling Price</th>
+              <th style="padding: 0.75rem 0.6rem;">Pricing Mode</th>
+              <th style="padding: 0.75rem 0.6rem; text-align: right;">Custom Selling Price (USD)</th>
+            </tr>
+          </thead>
+          <tbody id="us-wa-operator-tbody">
+            {% for op in us_whatsapp_operators %}
+              <tr class="us-wa-operator-row"
+                  data-operator="{{ op.operator_code }}"
+                  style="border-bottom: 1px solid var(--border); font-size: 0.88rem; transition: background-color 0.4s ease;">
+                <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text);">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>{{ op.operator_name }}</span>
+                    {% if op.operator_code == 'any' %}
+                      <span class="badge badge-brand" style="font-size: 0.72rem; font-weight: 700;">Cheapest Route</span>
+                    {% elif 'tmobile' in op.operator_code %}
+                      <span class="badge badge-success" style="font-size: 0.72rem;">High Stock</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td style="padding: 0.75rem 0.6rem;">
+                  <code style="font-size: 0.75rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs); color: var(--text-muted);">
+                    {{ op.operator_code }}
+                  </code>
+                </td>
+                <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text-muted);">
+                  ${{ '%.2f'|format(op.base_cost_usd) }}
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.2rem;">
+                    (${{ '%.4f'|format(op.base_cost_usd) }})
+                  </span>
+                </td>
+                <td class="us-wa-selling-price-cell" style="padding: 0.75rem 0.6rem; font-weight: 700; color: var(--hue-success);">
+                  ${{ '%.2f'|format(op.retail_usd) }}
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">
+                    ({{ op.formatted_ngn }})
+                  </span>
+                </td>
+                <td class="us-wa-pricing-mode-cell" style="padding: 0.75rem 0.6rem;">
+                  {% if op.is_custom %}
+                    <span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 700;">Custom Fixed</span>
+                  {% else %}
+                    <span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 0.75rem 0.6rem; text-align: right;">
+                  <form class="us-wa-operator-form" action="{{ url_for('admin.pricing') }}" method="POST" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0;">
+                    <input type="hidden" name="action" value="update_us_operator_price">
+                    <input type="hidden" name="operator_code" value="{{ op.operator_code }}">
+                    <input type="hidden" name="operator_name" value="{{ op.operator_name }}">
+
+                    <div style="position: relative; display: inline-flex; align-items: center;">
+                      <span style="position: absolute; left: 0.5rem; font-size: 0.82rem; color: var(--text-muted); pointer-events: none;">$</span>
+                      <input type="number" step="0.01" min="0.10" max="100.00" name="custom_price_usd"
+                             class="affix-field custom-price-input"
+                             placeholder="{{ '%.2f'|format(op.retail_usd) }}"
+                             value="{{ '%.2f'|format(op.custom_price_usd) if op.custom_price_usd else '' }}"
+                             style="width: 85px; padding-left: 1.25rem; height: 30px; font-size: 0.82rem; border-radius: var(--r-xs);"
+                             aria-label="Custom price in USD for {{ op.operator_name }}">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-xs save-btn" title="Save custom selling price">
+                      Save Price
+                    </button>
+
+                    {% if op.is_custom %}
+                      <button type="button" class="btn btn-ghost btn-xs text-danger reset-btn" title="Reset to auto dynamic markup" data-op-code="{{ op.operator_code }}">
+                        Reset
+                      </button>
+                    {% else %}
+                      <button type="button" class="btn btn-ghost btn-xs text-muted reset-btn" title="Already on auto markup" data-op-code="{{ op.operator_code }}" style="opacity: 0.4; pointer-events: none;">
+                        Auto
+                      </button>
+                    {% endif %}
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.9rem;">
+        No operators configured for US WhatsApp.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ========================================================================= #}
 {# DEDICATED NUMBER RENTALS PRICING CONTROL (DATABASE-BACKED)               #}
 {# ========================================================================= #}
 <div class="settings-panel" id="rentals-pricing-section">
@@ -843,6 +953,136 @@
           console.error('Error resetting rental price:', err);
           var msg = (err && err.message) ? ('Error: ' + err.message) : 'Network error resetting price';
           if (window.toast) window.toast(msg, 'error');
+        });
+      });
+    }
+  });
+})();
+
+// US WhatsApp Operator Pricing Control Handler
+(function() {
+  document.querySelectorAll('.us-wa-operator-form').forEach(function(form) {
+    var row = form.closest('.us-wa-operator-row');
+    var input = form.querySelector('.custom-price-input');
+    var saveBtn = form.querySelector('.save-btn');
+    var resetBtn = form.querySelector('.reset-btn');
+    var priceCell = row ? row.querySelector('.us-wa-selling-price-cell') : null;
+    var modeCell = row ? row.querySelector('.us-wa-pricing-mode-cell') : null;
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var rawVal = input ? input.value.trim() : '';
+      if (!rawVal) {
+        if (window.toast) window.toast('Please enter a custom selling price in USD', 'warning');
+        return;
+      }
+      var numVal = parseFloat(rawVal);
+      if (isNaN(numVal) || numVal <= 0) {
+        if (window.toast) window.toast('Please enter a valid price greater than $0', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      var origText = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+
+      var fd = new FormData(form);
+      fetch(form.action || window.location.href, {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+        if (data && data.success) {
+          if (priceCell) {
+            priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
+          }
+          if (modeCell) {
+            modeCell.innerHTML = '<span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 700;">Custom Fixed</span>';
+          }
+          if (resetBtn) {
+            resetBtn.style.display = 'inline-block';
+            resetBtn.style.opacity = '1';
+            resetBtn.style.pointerEvents = 'auto';
+            resetBtn.className = 'btn btn-ghost btn-xs text-danger reset-btn';
+            resetBtn.textContent = 'Reset';
+          }
+          if (row) {
+            row.style.backgroundColor = 'rgba(16, 185, 129, 0.14)';
+            setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
+          }
+          if (window.toast) window.toast(data.message || 'Price saved successfully!', 'success');
+        } else {
+          var errMsg = (data && data.message) ? data.message : 'Failed to save price';
+          if (window.toast) window.toast(errMsg, 'error');
+        }
+      })
+      .catch(function(err) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+        if (window.toast) window.toast('Network error saving price', 'error');
+      });
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var opCode = resetBtn.getAttribute('data-op-code');
+        if (!opCode) return;
+
+        resetBtn.disabled = true;
+        var fd = new FormData();
+        fd.append('action', 'reset_us_operator_price');
+        fd.append('operator_code', opCode);
+
+        fetch(form.action || window.location.href, {
+          method: 'POST',
+          body: fd,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          resetBtn.disabled = false;
+          if (data && data.success) {
+            if (input) {
+              input.value = '';
+              if (data.retail_usd !== undefined) {
+                input.placeholder = Number(data.retail_usd).toFixed(2);
+              }
+            }
+            if (priceCell) {
+              priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
+            }
+            if (modeCell) {
+              modeCell.innerHTML = '<span class="badge badge-neutral" style="font-size: 0.75rem;">Auto-Markup</span>';
+            }
+            resetBtn.style.opacity = '0.4';
+            resetBtn.style.pointerEvents = 'none';
+            resetBtn.className = 'btn btn-ghost btn-xs text-muted reset-btn';
+            resetBtn.textContent = 'Auto';
+
+            if (row) {
+              row.style.backgroundColor = 'rgba(59, 130, 246, 0.14)';
+              setTimeout(function() { row.style.backgroundColor = ''; }, 1500);
+            }
+            if (window.toast) window.toast(data.message || 'Price reset to auto-markup', 'info');
+          } else {
+            var errMsg = (data && data.message) ? data.message : 'Failed to reset price';
+            if (window.toast) window.toast(errMsg, 'error');
+          }
+        })
+        .catch(function(err) {
+          resetBtn.disabled = false;
+          if (window.toast) window.toast('Network error resetting price', 'error');
         });
       });
     }

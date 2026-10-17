@@ -682,22 +682,16 @@ class SIMProviderService:
     @classmethod
     def get_catalog(cls):
         """Returns country and service catalog loaded from app/data/catalog.json.
-        Covers all 242 countries and all 1,236 SMSCode services with dynamic markups and overrides applied.
+        Covers all 242 countries and all 1,236 SMSCode services with dynamic markups applied.
+        Overrides apply strictly to US numbers and are not polluted into global other-country catalog lines.
         """
         try:
             from app.services.settings_service import SettingsService
             pct, floor = SettingsService.get_smscode_markup()
-            all_overrides = SettingsService.get_price_overrides()
-            overrides = {
-                o['service_code'].strip().lower(): float(o['override_price_usd'])
-                for o in all_overrides
-                if o.get('provider_type') in ('smscode', 'virtualsms', '5sim', 'all') and o.get('is_active', True) and o.get('service_code')
-            }
         except Exception:
             pct, floor = 25.0, 0.25
-            overrides = {}
 
-        current_key = (pct, floor, tuple(sorted(overrides.items())))
+        current_key = (pct, floor)
         if cls._cached_dynamic_catalog is not None and cls._cached_dynamic_catalog_key == current_key:
             return cls._cached_dynamic_catalog
 
@@ -726,14 +720,10 @@ class SIMProviderService:
             processed_services = []
             for s in raw_services:
                 s_copy = dict(s)
-                s_code = (s.get('code') or '').lower().strip()
                 base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.20))
                 s_copy['base_cost'] = base
 
-                if s_code in overrides:
-                    s_copy['price'] = overrides[s_code]
-                    s_copy['is_override'] = True
-                elif pct <= 0.0 and floor <= 0.0:
+                if pct <= 0.0 and floor <= 0.0:
                     s_copy['price'] = round(base, 2)
                 else:
                     profit = max(base * (pct / 100.0), floor)
@@ -752,14 +742,10 @@ class SIMProviderService:
             services_list = []
             for s in c.get('services', []):
                 s_copy = dict(s)
-                s_code = (s.get('code') or '').lower().strip()
                 base = float(s.get('base_cost') or s.get('base_price') or s.get('price', 0.20))
                 s_copy['base_cost'] = base
 
-                if s_code in overrides:
-                    s_copy['price'] = overrides[s_code]
-                    s_copy['is_override'] = True
-                elif pct <= 0.0 and floor <= 0.0:
+                if pct <= 0.0 and floor <= 0.0:
                     s_copy['price'] = round(base, 2)
                 else:
                     profit = max(base * (pct / 100.0), floor)
@@ -1368,7 +1354,29 @@ class SIMProviderService:
             processed_ops = []
             for op in raw_ops:
                 base_cost = float(op.get('base_price_usd', 0.50))
-                if std_code in overrides:
+                op_code = (op.get('operator_code') or '').strip().lower()
+                op_id = op.get('operator_id')
+                op_id_str = str(op_id) if op_id is not None else ''
+
+                # Check operator-specific override first (e.g. 'whatsapp:any', 'whatsapp:tmobile', 'whatsapp:125')
+                op_override = None
+                for k in (f"{std_code}:{op_code}", f"{std_code}:{op_id_str}", f"{sc}:{op_code}", f"{sc}:{op_id_str}"):
+                    if k in overrides:
+                        op_override = overrides[k]
+                        break
+
+                if op_override is not None:
+                    op_retail = op_override
+                elif std_code == 'whatsapp':
+                    # WhatsApp uses per-operator pricing; if no operator override set, use operator auto-markup
+                    if not apply_markup:
+                        op_retail = round(base_cost, 2)
+                    elif pct <= 0.0 and floor <= 0.0:
+                        op_retail = round(base_cost, 2)
+                    else:
+                        profit = max(base_cost * (pct / 100.0), floor)
+                        op_retail = round(base_cost + profit, 2)
+                elif std_code in overrides:
                     op_retail = overrides[std_code]
                 elif sc in overrides:
                     op_retail = overrides[sc]
@@ -1386,8 +1394,10 @@ class SIMProviderService:
                 clean_op['price'] = op_retail
 
                 raw_name = op.get('operator_name', '')
-                op_code = op.get('operator_code', '').lower()
-                if 'tmobile' in op_code or 't-mobile' in raw_name.lower():
+                if op_code in ('any', 'basic') or raw_name.lower() in ('basic operator', 'any'):
+                    clean_op['operator_name'] = 'Basic Operator'
+                    clean_op['is_basic'] = True
+                elif 'tmobile' in op_code or 't-mobile' in raw_name.lower():
                     clean_op['is_tmobile'] = True
                     clean_op['operator_name'] = 'T-Mobile'
                 elif 'at_t' in op_code or 'at&t' in raw_name.lower():
@@ -1404,8 +1414,8 @@ class SIMProviderService:
                     clean_op['operator_name'] = 'Physical SIM Route'
                 processed_ops.append(clean_op)
 
-            # Sort operators so T-Mobile is first if present, then sorted by price ascending
-            processed_ops.sort(key=lambda o: (0 if o.get('is_tmobile') else 1, o['price_usd']))
+            # Sort operators: Basic Operator first if available, then T-Mobile, then remaining by price ascending
+            processed_ops.sort(key=lambda o: (0 if o.get('is_basic') else (1 if o.get('is_tmobile') else 2), o['price_usd']))
 
             default_op = processed_ops[0] if processed_ops else {}
 
@@ -1621,9 +1631,9 @@ class SIMProviderService:
                 None
             )
             if matched:
-                if operator_id:
+                if operator_id is not None:
                     for op in matched.get('operators', []):
-                        if str(op.get('operator_id')) == str(operator_id):
+                        if str(op.get('operator_id')) == str(operator_id) or (str(operator_id).lower() in ('0', 'any') and op.get('operator_code') == 'any'):
                             op_p = float(op.get('price_usd') or op.get('price') or 0.0)
                             if op_p > 0:
                                 return op_p
@@ -1641,13 +1651,15 @@ class SIMProviderService:
         sn = (service_name or '').strip().lower()
 
         matched = next((s for s in services if (s.get('code') and s['code'].lower() == sc) or (s.get('name') and s['name'].lower() == sn)), None)
-        if matched and matched.get('price'):
-            try:
-                p = float(matched['price'])
-                if p > 0:
-                    return p
-            except (ValueError, TypeError):
-                pass
+        if matched:
+            base = float(matched.get('base_cost') or matched.get('base_price') or matched.get('price') or 0.20)
+            retail_p, _ = cls.calculate_retail_price(
+                base_cost=base,
+                service_code=sc,
+                provider_type='smscode',
+                country_code=country_code
+            )
+            return retail_p
         return 1.50
 
     @classmethod
@@ -1788,7 +1800,12 @@ class SIMProviderService:
                     ops = svc_entry['operators']
                     if resolved_op_id is not None:
                         for op in ops:
-                            if op.get('operator_id') == resolved_op_id:
+                            if op.get('operator_id') == resolved_op_id or (resolved_op_id == 0 and op.get('operator_code') == 'any'):
+                                matched_op = op
+                                break
+                    if not matched_op and str(provider_id).lower() in ('any', 'basic'):
+                        for op in ops:
+                            if op.get('operator_code') == 'any' or op.get('operator_id') == 0:
                                 matched_op = op
                                 break
                     if not matched_op:
@@ -1815,12 +1832,13 @@ class SIMProviderService:
 
         charge_price = float(price) if price and float(price) > 0 else cls.resolve_us_canada_price(service_code=service_code, service_name=svc_clean, package_id='basic_pool', operator_id=resolved_op_id)
 
+        target_op_id = resolved_op_id if (resolved_op_id and resolved_op_id > 0) else None
         if client.is_configured:
             # 1. Try order creation with exact cheapest product tier
             buy_res = client.create_order(
                 catalog_product_id=matched_catalog_pid,
                 product_id=matched_product_id,
-                operator_id=resolved_op_id,
+                operator_id=target_op_id,
                 policy='cheapest'
             )
             # 2. If exact product is out of stock, fallback to general activation
@@ -1828,7 +1846,7 @@ class SIMProviderService:
                 buy_res = client.buy_activation(
                     country_code=cc_clean,
                     service_code=service_code,
-                    operator_id=resolved_op_id
+                    operator_id=target_op_id
                 )
 
             if buy_res.get('success'):

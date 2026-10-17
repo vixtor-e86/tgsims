@@ -293,7 +293,10 @@ def purchase_sim():
     order_ref = sim_result.get('order_reference') or f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"
 
     res_price = float(sim_result.get('retail_price') or 0.0)
-    final_price = max(price, res_price)
+    if country_code != 'US' and res_price > 0:
+        final_price = res_price
+    else:
+        final_price = max(price, res_price)
     if cur_balance < final_price:
         prov_id = sim_result.get('provider_order_id')
         if prov_id and not str(prov_id).startswith('SIM-'):
