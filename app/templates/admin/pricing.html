@@ -1069,7 +1069,8 @@
       saveBtn.textContent = 'Saving...';
 
       var fd = new FormData(form);
-      fetch(form.action || window.location.href, {
+      var targetUrl = form.getAttribute('action') || window.location.pathname;
+      fetch(targetUrl, {
         method: 'POST',
         body: fd,
         headers: {
@@ -1077,7 +1078,11 @@
           'Accept': 'application/json'
         }
       })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        return r.json().catch(function() {
+          return { success: false, message: 'Server returned response ' + r.status + ' (' + r.statusText + ')' };
+        });
+      })
       .then(function(data) {
         saveBtn.disabled = false;
         saveBtn.textContent = origText;
@@ -1114,7 +1119,9 @@
       .catch(function(err) {
         saveBtn.disabled = false;
         saveBtn.textContent = origText;
-        if (window.toast) window.toast('Network error saving price', 'error');
+        console.error('Error saving operator price:', err);
+        var msg = (err && err.message) ? ('Error: ' + err.message) : 'Network error saving price';
+        if (window.toast) window.toast(msg, 'error');
       });
     });
 
@@ -1129,7 +1136,8 @@
         fd.append('action', 'reset_us_operator_price');
         fd.append('operator_code', opCode);
 
-        fetch(form.action || window.location.href, {
+        var targetUrl = form.getAttribute('action') || window.location.pathname;
+        fetch(targetUrl, {
           method: 'POST',
           body: fd,
           headers: {
@@ -1137,7 +1145,11 @@
             'Accept': 'application/json'
           }
         })
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+          return r.json().catch(function() {
+            return { success: false, message: 'Server returned response ' + r.status + ' (' + r.statusText + ')' };
+          });
+        })
         .then(function(data) {
           resetBtn.disabled = false;
           if (data && data.success) {
