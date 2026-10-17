@@ -548,12 +548,35 @@
 {# US WHATSAPP OPERATOR PRICING CONTROL                                     #}
 {# ========================================================================= #}
 <div class="settings-panel" id="us-whatsapp-operator-pricing-section">
-  <div class="settings-panel-header">
-    <div>
+  <div class="settings-panel-header" style="flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+    <div style="flex: 1; min-width: 280px;">
       <h2>{{ icon('bolt') }} US WhatsApp Carrier & Operator Pricing Control</h2>
       <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
         Manage original wholesale provider costs and configure custom retail selling prices for US WhatsApp across individual carrier routes (Basic Operator, T-Mobile, AT&T, Mint Mobile, Verizon, and US Mobile).
       </p>
+    </div>
+
+    {# Interactive Currency Converter Widget #}
+    <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 0.65rem 0.95rem; display: flex; flex-direction: column; gap: 0.4rem; min-width: 320px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.76rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">
+        <span>{{ icon('refresh') }} Currency Converter</span>
+        <span style="color: var(--brand); font-weight: 600;">1 USD = ₦{{ '{:,.2f}'.format(settings.ngn_per_usd_rate) }}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="position: relative; flex: 1;">
+          <span style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); font-size: 0.82rem; color: var(--text-muted); pointer-events: none;">$</span>
+          <input type="number" id="quick-calc-usd" step="0.01" min="0" placeholder="USD" class="affix-field"
+                 style="width: 100%; padding-left: 1.25rem; height: 30px; font-size: 0.82rem; border-radius: var(--r-xs);"
+                 data-rate="{{ settings.ngn_per_usd_rate }}">
+        </div>
+        <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 700;">⇄</span>
+        <div style="position: relative; flex: 1.25;">
+          <span style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); font-size: 0.82rem; color: var(--text-muted); pointer-events: none;">₦</span>
+          <input type="number" id="quick-calc-ngn" step="1" min="0" placeholder="Naira (NGN)" class="affix-field"
+                 style="width: 100%; padding-left: 1.25rem; height: 30px; font-size: 0.82rem; border-radius: var(--r-xs);"
+                 data-rate="{{ settings.ngn_per_usd_rate }}">
+        </div>
+      </div>
     </div>
   </div>
 
@@ -568,7 +591,7 @@
               <th style="padding: 0.75rem 0.6rem;">Wholesale Cost (USD)</th>
               <th style="padding: 0.75rem 0.6rem;">Active Selling Price</th>
               <th style="padding: 0.75rem 0.6rem;">Pricing Mode</th>
-              <th style="padding: 0.75rem 0.6rem; text-align: right;">Custom Selling Price (USD)</th>
+              <th style="padding: 0.75rem 0.6rem; text-align: right;">Set Custom Price (USD $ or NGN ₦)</th>
             </tr>
           </thead>
           <tbody id="us-wa-operator-tbody">
@@ -594,7 +617,7 @@
                 <td style="padding: 0.75rem 0.6rem; font-weight: 600; color: var(--text-muted);">
                   ${{ '%.2f'|format(op.base_cost_usd) }}
                   <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.2rem;">
-                    (${{ '%.4f'|format(op.base_cost_usd) }})
+                    ({{ op.base_cost_ngn_display }})
                   </span>
                 </td>
                 <td class="us-wa-selling-price-cell" style="padding: 0.75rem 0.6rem; font-weight: 700; color: var(--hue-success);">
@@ -611,19 +634,35 @@
                   {% endif %}
                 </td>
                 <td style="padding: 0.75rem 0.6rem; text-align: right;">
-                  <form class="us-wa-operator-form" action="{{ url_for('admin.pricing') }}" method="POST" style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0;">
+                  <form class="us-wa-operator-form" action="{{ url_for('admin.pricing') }}" method="POST"
+                        style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0;"
+                        data-rate="{{ settings.ngn_per_usd_rate }}">
                     <input type="hidden" name="action" value="update_us_operator_price">
                     <input type="hidden" name="operator_code" value="{{ op.operator_code }}">
                     <input type="hidden" name="operator_name" value="{{ op.operator_name }}">
 
-                    <div style="position: relative; display: inline-flex; align-items: center;">
-                      <span style="position: absolute; left: 0.5rem; font-size: 0.82rem; color: var(--text-muted); pointer-events: none;">$</span>
-                      <input type="number" step="0.01" min="0.10" max="100.00" name="custom_price_usd"
-                             class="affix-field custom-price-input"
-                             placeholder="{{ '%.2f'|format(op.retail_usd) }}"
-                             value="{{ '%.2f'|format(op.custom_price_usd) if op.custom_price_usd else '' }}"
-                             style="width: 85px; padding-left: 1.25rem; height: 30px; font-size: 0.82rem; border-radius: var(--r-xs);"
-                             aria-label="Custom price in USD for {{ op.operator_name }}">
+                    <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                      <div style="position: relative; display: inline-flex; align-items: center;" title="Input price in USD ($)">
+                        <span style="position: absolute; left: 0.45rem; font-size: 0.82rem; color: var(--text-muted); pointer-events: none;">$</span>
+                        <input type="number" step="0.01" min="0.10" max="100.00" name="custom_price_usd"
+                               class="affix-field custom-price-usd-input"
+                               placeholder="{{ '%.2f'|format(op.retail_usd) }}"
+                               value="{{ '%.2f'|format(op.custom_price_usd) if op.custom_price_usd else '' }}"
+                               style="width: 78px; padding-left: 1.15rem; height: 30px; font-size: 0.82rem; border-radius: var(--r-xs);"
+                               aria-label="Custom price in USD for {{ op.operator_name }}">
+                      </div>
+
+                      <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">or</span>
+
+                      <div style="position: relative; display: inline-flex; align-items: center;" title="Input price in NGN (₦)">
+                        <span style="position: absolute; left: 0.45rem; font-size: 0.82rem; color: var(--text-muted); pointer-events: none;">₦</span>
+                        <input type="number" step="1" min="100" max="500000" name="custom_price_ngn"
+                               class="affix-field custom-price-ngn-input"
+                               placeholder="{{ '{:,.0f}'.format(op.retail_ngn) }}"
+                               value="{{ '{:.0f}'.format(op.custom_price_ngn) if op.custom_price_ngn else '' }}"
+                               style="width: 95px; padding-left: 1.25rem; height: 30px; font-size: 0.82rem; border-radius: var(--r-xs);"
+                               aria-label="Custom price in NGN for {{ op.operator_name }}">
+                      </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-xs save-btn" title="Save custom selling price">
@@ -961,24 +1000,67 @@
 
 // US WhatsApp Operator Pricing Control Handler
 (function() {
+  // 1. Quick Header Currency Converter (USD <-> NGN)
+  var calcUsd = document.getElementById('quick-calc-usd');
+  var calcNgn = document.getElementById('quick-calc-ngn');
+  if (calcUsd && calcNgn) {
+    var exRate = parseFloat(calcUsd.getAttribute('data-rate')) || 1600.0;
+    calcUsd.addEventListener('input', function() {
+      var u = parseFloat(calcUsd.value);
+      if (!isNaN(u) && u >= 0) {
+        calcNgn.value = Math.round(u * exRate);
+      } else {
+        calcNgn.value = '';
+      }
+    });
+    calcNgn.addEventListener('input', function() {
+      var n = parseFloat(calcNgn.value);
+      if (!isNaN(n) && n >= 0) {
+        calcUsd.value = (n / exRate).toFixed(2);
+      } else {
+        calcUsd.value = '';
+      }
+    });
+  }
+
+  // 2. Each Operator Row Form Handling
   document.querySelectorAll('.us-wa-operator-form').forEach(function(form) {
     var row = form.closest('.us-wa-operator-row');
-    var input = form.querySelector('.custom-price-input');
+    var usdInput = form.querySelector('.custom-price-usd-input');
+    var ngnInput = form.querySelector('.custom-price-ngn-input');
     var saveBtn = form.querySelector('.save-btn');
     var resetBtn = form.querySelector('.reset-btn');
     var priceCell = row ? row.querySelector('.us-wa-selling-price-cell') : null;
     var modeCell = row ? row.querySelector('.us-wa-pricing-mode-cell') : null;
+    var rowRate = parseFloat(form.getAttribute('data-rate')) || 1600.0;
+
+    // Real-time synchronization between USD and NGN inputs
+    if (usdInput && ngnInput) {
+      usdInput.addEventListener('input', function() {
+        var u = parseFloat(usdInput.value);
+        if (!isNaN(u) && u > 0) {
+          ngnInput.value = Math.round(u * rowRate);
+        } else if (!usdInput.value.trim()) {
+          ngnInput.value = '';
+        }
+      });
+      ngnInput.addEventListener('input', function() {
+        var n = parseFloat(ngnInput.value);
+        if (!isNaN(n) && n > 0) {
+          usdInput.value = (n / rowRate).toFixed(2);
+        } else if (!ngnInput.value.trim()) {
+          usdInput.value = '';
+        }
+      });
+    }
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
-      var rawVal = input ? input.value.trim() : '';
-      if (!rawVal) {
-        if (window.toast) window.toast('Please enter a custom selling price in USD', 'warning');
-        return;
-      }
-      var numVal = parseFloat(rawVal);
-      if (isNaN(numVal) || numVal <= 0) {
-        if (window.toast) window.toast('Please enter a valid price greater than $0', 'error');
+      var usdVal = usdInput ? parseFloat(usdInput.value) : NaN;
+      var ngnVal = ngnInput ? parseFloat(ngnInput.value) : NaN;
+
+      if ((isNaN(usdVal) || usdVal <= 0) && (isNaN(ngnVal) || ngnVal <= 0)) {
+        if (window.toast) window.toast('Please enter a custom selling price in USD ($) or Naira (₦)', 'warning');
         return;
       }
 
@@ -1000,6 +1082,12 @@
         saveBtn.disabled = false;
         saveBtn.textContent = origText;
         if (data && data.success) {
+          if (usdInput && data.custom_price_usd !== undefined) {
+            usdInput.value = data.custom_price_usd ? Number(data.custom_price_usd).toFixed(2) : '';
+          }
+          if (ngnInput && data.custom_price_ngn !== undefined) {
+            ngnInput.value = data.custom_price_ngn ? Math.round(data.custom_price_ngn) : '';
+          }
           if (priceCell) {
             priceCell.innerHTML = data.retail_usd_str + ' <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 0.25rem;">(' + data.retail_ngn_str + ')</span>';
           }
@@ -1053,10 +1141,16 @@
         .then(function(data) {
           resetBtn.disabled = false;
           if (data && data.success) {
-            if (input) {
-              input.value = '';
+            if (usdInput) {
+              usdInput.value = '';
               if (data.retail_usd !== undefined) {
-                input.placeholder = Number(data.retail_usd).toFixed(2);
+                usdInput.placeholder = Number(data.retail_usd).toFixed(2);
+              }
+            }
+            if (ngnInput) {
+              ngnInput.value = '';
+              if (data.retail_ngn !== undefined) {
+                ngnInput.placeholder = Math.round(Number(data.retail_ngn)).toLocaleString();
               }
             }
             if (priceCell) {

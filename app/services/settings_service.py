@@ -285,7 +285,7 @@ class SettingsService:
             return cls._overrides_cache or []
 
     @classmethod
-    def set_price_override(cls, service_code: str, service_name: str, provider_type: str, override_price_usd: float, notes: str = '') -> bool:
+    def set_price_override(cls, service_code: str, service_name: str, provider_type: str, override_price_usd: float, notes: str = '', override_price_ngn: float = None) -> bool:
         """Upsert a manual service price override."""
         cls._overrides_cache = None
         cls._overrides_cache_time = 0
@@ -304,19 +304,34 @@ class SettingsService:
             prov_clean = str(provider_type).strip().lower()
             norm_provider = 'textverified' if prov_clean == 'textverified' else '5sim'
 
+            rate = cls.get_usd_ngn_rate()
+            if override_price_ngn is None:
+                override_price_ngn = round(float(override_price_usd) * rate, 2)
+
             row = {
                 'service_code': service_code.strip().lower(),
                 'service_name': service_name.strip(),
                 'provider_type': norm_provider,
                 'override_price_usd': float(override_price_usd),
+                'override_price_ngn': float(override_price_ngn),
                 'notes': notes.strip(),
                 'is_active': True,
                 'updated_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
             }
-            res = admin.table('service_price_overrides')\
-                .upsert(row, on_conflict='service_code,provider_type')\
-                .execute()
-            return True
+            try:
+                res = admin.table('service_price_overrides')\
+                    .upsert(row, on_conflict='service_code,provider_type')\
+                    .execute()
+                return True
+            except Exception as e_col:
+                # If override_price_ngn column doesn't exist yet in Supabase table, retry without it
+                if 'override_price_ngn' in str(e_col) and 'override_price_ngn' in row:
+                    row.pop('override_price_ngn', None)
+                    res = admin.table('service_price_overrides')\
+                        .upsert(row, on_conflict='service_code,provider_type')\
+                        .execute()
+                    return True
+                raise e_col
         except Exception as e:
             print(f"[SettingsService] Error saving price override: {e}")
             return False
@@ -431,6 +446,7 @@ class SettingsService:
 
             is_custom = False
             custom_price_usd = None
+            custom_price_ngn = None
             override_id = None
 
             if ov_obj:
@@ -438,6 +454,11 @@ class SettingsService:
                 custom_price_usd = float(ov_obj['override_price_usd'])
                 override_id = ov_obj.get('id')
                 retail_usd = round(custom_price_usd, 2)
+                if ov_obj.get('override_price_ngn') is not None and float(ov_obj['override_price_ngn']) > 0:
+                    custom_price_ngn = round(float(ov_obj['override_price_ngn']), 2)
+                else:
+                    custom_price_ngn = round(custom_price_usd * rate, 2)
+                retail_ngn = custom_price_ngn
             else:
                 # Calculate auto-markup
                 if pct <= 0.0 and floor <= 0.0:
@@ -445,8 +466,7 @@ class SettingsService:
                 else:
                     profit = max(base_cost * (pct / 100.0), floor)
                     retail_usd = round(base_cost + profit, 2)
-
-            retail_ngn = round(retail_usd * rate, 2)
+                retail_ngn = round(retail_usd * rate, 2)
 
             res.append({
                 'operator_id': op_id,
@@ -454,11 +474,13 @@ class SettingsService:
                 'operator_name': display_name,
                 'base_cost_usd': round(base_cost, 4),
                 'base_cost_display': f"${base_cost:.2f}",
+                'base_cost_ngn_display': f"₦{round(base_cost * rate, 2):,.2f}",
                 'cheapest_product_id': op.get('cheapest_product_id'),
                 'catalog_product_id': op.get('catalog_product_id'),
                 'available': op.get('available', 100),
                 'override_id': override_id,
                 'custom_price_usd': custom_price_usd,
+                'custom_price_ngn': custom_price_ngn,
                 'retail_usd': retail_usd,
                 'retail_ngn': retail_ngn,
                 'formatted_usd': f"${retail_usd:.2f}",
@@ -471,9 +493,16 @@ class SettingsService:
         return res
 
     @classmethod
-    def set_us_whatsapp_operator_price(cls, operator_code: str, custom_price_usd: float = None, operator_name: str = '') -> bool:
-        """Sets or resets the retail price override for a specific US WhatsApp operator."""
+    def set_us_whatsapp_operator_price(cls, operator_code: str, custom_price_usd: float = None, custom_price_ngn: float = None, operator_name: str = '') -> bool:
+        """Sets or resets the retail price override for a specific US WhatsApp operator using USD or NGN."""
         op_code = operator_code.strip().lower()
+        rate = cls.get_usd_ngn_rate()
+
+        if custom_price_usd is None and custom_price_ngn is not None and float(custom_price_ngn) > 0:
+            custom_price_usd = round(float(custom_price_ngn) / rate, 2)
+        elif custom_price_ngn is None and custom_price_usd is not None and float(custom_price_usd) > 0:
+            custom_price_ngn = round(float(custom_price_usd) * rate, 2)
+
         if custom_price_usd is not None and float(custom_price_usd) > 0:
             svc_code = f"whatsapp:{op_code}"
             name = f"WhatsApp ({operator_name or op_code.title()})"
@@ -482,6 +511,7 @@ class SettingsService:
                 service_name=name,
                 provider_type='5sim',
                 override_price_usd=float(custom_price_usd),
+                override_price_ngn=float(custom_price_ngn) if custom_price_ngn else None,
                 notes='US WhatsApp operator pricing override'
             )
         else:

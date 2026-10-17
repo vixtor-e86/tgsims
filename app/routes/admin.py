@@ -246,8 +246,11 @@ def pricing():
         elif action == 'update_us_operator_price':
             operator_code = request.form.get('operator_code', '').strip().lower()
             operator_name = request.form.get('operator_name', '').strip()
-            raw_price = request.form.get('custom_price_usd', '').strip()
-            price_val = raw_price.replace('$', '').replace(',', '').strip() if raw_price else ''
+            raw_usd = request.form.get('custom_price_usd', '').strip()
+            raw_ngn = request.form.get('custom_price_ngn', '').strip()
+            usd_val = raw_usd.replace('$', '').replace(',', '').strip() if raw_usd else ''
+            ngn_val = raw_ngn.replace('₦', '').replace(',', '').strip() if raw_ngn else ''
+
             is_ajax = (
                 request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
                 request.args.get('format') == 'json' or
@@ -255,23 +258,32 @@ def pricing():
                 request.is_json
             )
             try:
-                custom_price = float(price_val) if price_val else None
+                rate = SettingsService.get_usd_ngn_rate()
+                custom_usd = float(usd_val) if usd_val else None
+                custom_ngn = float(ngn_val) if ngn_val else None
+
+                # Convert if one was supplied and not the other
+                if custom_usd is None and custom_ngn is not None and custom_ngn > 0:
+                    custom_usd = round(custom_ngn / rate, 2)
+                elif custom_ngn is None and custom_usd is not None and custom_usd > 0:
+                    custom_ngn = round(custom_usd * rate, 2)
+
                 if operator_code:
                     ok = SettingsService.set_us_whatsapp_operator_price(
                         operator_code=operator_code,
-                        custom_price_usd=custom_price,
+                        custom_price_usd=custom_usd,
+                        custom_price_ngn=custom_ngn,
                         operator_name=operator_name
                     )
                     if ok:
                         SIMProviderService.clear_all_caches()
-                        rate = SettingsService.get_usd_ngn_rate()
                         ops = SettingsService.get_us_whatsapp_operators_pricing()
                         matched = next((o for o in ops if o['operator_code'] == operator_code), None)
-                        retail_usd = matched['retail_usd'] if matched else (custom_price or 0.0)
+                        retail_usd = matched['retail_usd'] if matched else (custom_usd or 0.0)
                         retail_ngn = matched['retail_ngn'] if matched else round(retail_usd * rate, 2)
-                        is_custom = matched['is_custom'] if matched else (custom_price is not None and custom_price > 0)
+                        is_custom = matched['is_custom'] if matched else (custom_usd is not None and custom_usd > 0)
 
-                        msg = f'Custom selling price saved for WhatsApp ({operator_name or operator_code}) at ${retail_usd:.2f}.' if is_custom else f'Custom price cleared for WhatsApp ({operator_name or operator_code}). Reverted to auto-markup.'
+                        msg = f'Custom selling price saved for WhatsApp ({operator_name or operator_code}) at ${retail_usd:.2f} (₦{retail_ngn:,.2f}).' if is_custom else f'Custom price cleared for WhatsApp ({operator_name or operator_code}). Reverted to auto-markup.'
                         if is_ajax:
                             return jsonify({
                                 'success': True,
@@ -282,7 +294,8 @@ def pricing():
                                 'retail_usd_str': f"${retail_usd:.2f}",
                                 'retail_ngn_str': f"₦{retail_ngn:,.2f}",
                                 'is_custom': is_custom,
-                                'custom_price_usd': custom_price
+                                'custom_price_usd': custom_usd,
+                                'custom_price_ngn': custom_ngn
                             })
                         flash(msg, 'success' if is_custom else 'info')
                     else:
