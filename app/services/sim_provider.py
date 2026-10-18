@@ -1307,16 +1307,20 @@ class SIMProviderService:
         pct = 0.0
         floor = 0.0
         overrides = {}
+        overrides_ngn = {}
+        rate = 1600.00
         if apply_markup:
             try:
                 from app.services.settings_service import SettingsService
                 pct, floor = SettingsService.get_smscode_markup()
+                rate = SettingsService.get_usd_ngn_rate()
                 all_overrides = SettingsService.get_price_overrides()
-                overrides = {
-                    o['service_code'].strip().lower(): float(o['override_price_usd'])
-                    for o in all_overrides
-                    if o.get('provider_type') in ('smscode', 'virtualsms', '5sim', 'all') and o.get('is_active', True) and o.get('service_code')
-                }
+                for o in all_overrides:
+                    if o.get('provider_type') in ('smscode', 'virtualsms', '5sim', 'all') and o.get('is_active', True) and o.get('service_code'):
+                        code = o['service_code'].strip().lower()
+                        overrides[code] = float(o['override_price_usd'])
+                        if o.get('override_price_ngn') is not None and float(o['override_price_ngn']) > 0:
+                            overrides_ngn[code] = float(o['override_price_ngn'])
             except Exception:
                 pct, floor = 0.0, 0.0
 
@@ -1360,13 +1364,19 @@ class SIMProviderService:
 
                 # Check operator-specific override first (e.g. 'whatsapp:any', 'whatsapp:tmobile', 'whatsapp:125')
                 op_override = None
+                op_override_ngn = None
                 for k in (f"{std_code}:{op_code}", f"{std_code}:{op_id_str}", f"{sc}:{op_code}", f"{sc}:{op_id_str}"):
                     if k in overrides:
                         op_override = overrides[k]
+                        op_override_ngn = overrides_ngn.get(k)
                         break
 
                 if op_override is not None:
                     op_retail = op_override
+                    if op_override_ngn is not None:
+                        op_retail_ngn = round(op_override_ngn, 2)
+                    else:
+                        op_retail_ngn = round(op_retail * rate, 2)
                 elif std_code == 'whatsapp':
                     # WhatsApp uses per-operator pricing; if no operator override set, use operator auto-markup
                     if not apply_markup:
@@ -1376,22 +1386,31 @@ class SIMProviderService:
                     else:
                         profit = max(base_cost * (pct / 100.0), floor)
                         op_retail = round(base_cost + profit, 2)
+                    op_retail_ngn = round(op_retail * rate, 2)
                 elif std_code in overrides:
                     op_retail = overrides[std_code]
+                    op_retail_ngn = round(overrides_ngn.get(std_code, op_retail * rate), 2)
                 elif sc in overrides:
                     op_retail = overrides[sc]
+                    op_retail_ngn = round(overrides_ngn.get(sc, op_retail * rate), 2)
                 elif not apply_markup:
                     op_retail = round(base_cost, 2)
+                    op_retail_ngn = round(op_retail * rate, 2)
                 elif pct <= 0.0 and floor <= 0.0:
                     op_retail = round(base_cost, 2)
+                    op_retail_ngn = round(op_retail * rate, 2)
                 else:
                     profit = max(base_cost * (pct / 100.0), floor)
                     op_retail = round(base_cost + profit, 2)
+                    op_retail_ngn = round(op_retail * rate, 2)
 
                 clean_op = dict(op)
                 clean_op['base_cost_usd'] = base_cost
                 clean_op['price_usd'] = op_retail
                 clean_op['price'] = op_retail
+                clean_op['price_ngn'] = op_retail_ngn
+                clean_op['formatted_usd'] = f"${op_retail:.2f}"
+                clean_op['formatted_ngn'] = f"₦{op_retail_ngn:,.2f}"
 
                 raw_name = op.get('operator_name', '')
                 if op_code in ('any', 'basic') or raw_name.lower() in ('basic operator', 'any'):
@@ -1428,6 +1447,7 @@ class SIMProviderService:
                 'quality': 'Economy Pool',
                 'is_core': True,
                 'price_usd': default_op.get('price_usd', 1.00),
+                'price_ngn': default_op.get('price_ngn', round(1.00 * rate, 2)),
                 'base_cost_usd': default_op.get('base_cost_usd', 0.50),
                 'operator': default_op.get('operator_name', 'T-Mobile'),
                 'operator_id': default_op.get('operator_id', 125),
@@ -1477,6 +1497,9 @@ class SIMProviderService:
                     clean_op['base_cost_usd'] = base_cost
                     clean_op['price_usd'] = op_retail
                     clean_op['price'] = op_retail
+                    clean_op['price_ngn'] = round(op_retail * rate, 2)
+                    clean_op['formatted_usd'] = f"${op_retail:.2f}"
+                    clean_op['formatted_ngn'] = f"₦{round(op_retail * rate, 2):,.2f}"
                     processed_ops.append(clean_op)
 
                 if not processed_ops:
@@ -1492,6 +1515,7 @@ class SIMProviderService:
                     'quality': 'Economy Pool',
                     'is_core': False,
                     'price_usd': default_op.get('price_usd', 0.50),
+                    'price_ngn': default_op.get('price_ngn', round(default_op.get('price_usd', 0.50) * rate, 2)),
                     'base_cost_usd': default_op.get('base_cost_usd', 0.20),
                     'operator': default_op.get('operator_name', 'Server Route 1 (Primary)'),
                     'operator_id': default_op.get('operator_id', 1),
@@ -1533,18 +1557,24 @@ class SIMProviderService:
         if not apply_markup:
             return raw_list
 
+        rate = 1600.00
+        overrides = {}
+        overrides_ngn = {}
         try:
             from app.services.settings_service import SettingsService
             pct, floor = SettingsService.get_textverified_markup()
+            rate = SettingsService.get_usd_ngn_rate()
             all_overrides = SettingsService.get_price_overrides()
-            overrides = {
-                o['service_code'].strip().lower(): float(o['override_price_usd'])
-                for o in all_overrides
-                if o.get('provider_type') in ('textverified', 'all') and o.get('is_active', True) and o.get('service_code')
-            }
+            for o in all_overrides:
+                if o.get('provider_type') in ('textverified', 'all') and o.get('is_active', True) and o.get('service_code'):
+                    code = o['service_code'].strip().lower()
+                    overrides[code] = float(o['override_price_usd'])
+                    if o.get('override_price_ngn') is not None and float(o['override_price_ngn']) > 0:
+                        overrides_ngn[code] = float(o['override_price_ngn'])
         except Exception:
             pct, floor = 25.0, 0.50
             overrides = {}
+            overrides_ngn = {}
 
         mult = 1.0 + (pct / 100.0)
         marked = []
@@ -1561,6 +1591,11 @@ class SIMProviderService:
             else:
                 profit = max(base * (pct / 100.0), floor)
                 item['price_usd'] = round(base + profit, 2)
+
+            if sc in overrides_ngn:
+                item['price_ngn'] = overrides_ngn[sc]
+            else:
+                item['price_ngn'] = round(item['price_usd'] * rate, 2)
             marked.append(item)
         return marked
 
@@ -1599,10 +1634,16 @@ class SIMProviderService:
         }
 
     @classmethod
-    def resolve_us_canada_price(cls, service_code: str = None, service_name: str = None, package_id: str = 'basic_pool', operator_id: int = None) -> float:
-        """Determines the authoritative server-side retail price (in USD) for a US/Canada line."""
+    def resolve_us_canada_pricing(cls, service_code: str = None, service_name: str = None, package_id: str = 'basic_pool', operator_id: int = None) -> tuple:
+        """Determines authoritative server-side retail price (price_usd, price_ngn) for a US/Canada line."""
         svc_code_clean = (service_code or '').strip().lower()
         svc_name_clean = (service_name or '').strip().lower()
+
+        from app.services.settings_service import SettingsService
+        try:
+            rate = SettingsService.get_usd_ngn_rate()
+        except Exception:
+            rate = 1600.00
 
         if package_id == 'reliable_non_voip':
             tv_services = cls.get_textverified_us_services()
@@ -1616,8 +1657,10 @@ class SIMProviderService:
                 None
             )
             if matched and matched.get('price_usd') and float(matched['price_usd']) > 0:
-                return float(matched['price_usd'])
-            return 1.50
+                p_usd = float(matched['price_usd'])
+                p_ngn = float(matched.get('price_ngn') or round(p_usd * rate, 2))
+                return p_usd, p_ngn
+            return 1.50, round(1.50 * rate, 2)
         else:
             basic_services = cls.get_smscode_us_services()
             matched = next(
@@ -1636,11 +1679,19 @@ class SIMProviderService:
                         if str(op.get('operator_id')) == str(operator_id) or (str(operator_id).lower() in ('0', 'any') and op.get('operator_code') == 'any'):
                             op_p = float(op.get('price_usd') or op.get('price') or 0.0)
                             if op_p > 0:
-                                return op_p
+                                op_ngn = float(op.get('price_ngn') or round(op_p * rate, 2))
+                                return op_p, op_ngn
                 item_p = float(matched.get('price_usd') or matched.get('price') or 0.0)
                 if item_p > 0:
-                    return item_p
-            return 1.25
+                    item_ngn = float(matched.get('price_ngn') or round(item_p * rate, 2))
+                    return item_p, item_ngn
+            return 1.25, round(1.25 * rate, 2)
+
+    @classmethod
+    def resolve_us_canada_price(cls, service_code: str = None, service_name: str = None, package_id: str = 'basic_pool', operator_id: int = None) -> float:
+        """Determines the authoritative server-side retail price (in USD) for a US/Canada line."""
+        p_usd, _ = cls.resolve_us_canada_pricing(service_code=service_code, service_name=service_name, package_id=package_id, operator_id=operator_id)
+        return p_usd
 
     @classmethod
     def resolve_catalog_service_price(cls, service_code: str = None, service_name: str = None, country_code: str = 'US') -> float:

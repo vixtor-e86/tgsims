@@ -412,7 +412,7 @@ def purchase_us_canada():
             pass
 
     # Authoritative server-side price calculation
-    server_price = SIMProviderService.resolve_us_canada_price(
+    server_price, server_price_ngn = SIMProviderService.resolve_us_canada_pricing(
         service_code=service_code,
         service_name=service_name,
         package_id=package_id,
@@ -424,8 +424,14 @@ def purchase_us_canada():
     except (ValueError, TypeError):
         client_price = 0.0
 
+    try:
+        client_price_ngn = float(data.get('price_ngn', 0))
+    except (ValueError, TypeError):
+        client_price_ngn = 0.0
+
     # Ensure price is never <= 0 and never lower than the server-verified retail price
     price = max(server_price, client_price)
+    price_ngn = max(server_price_ngn, client_price_ngn) if client_price_ngn > 0 else server_price_ngn
     if price <= 0:
         return jsonify({'success': False, 'message': 'Invalid service price.'}), 400
 
@@ -445,7 +451,7 @@ def purchase_us_canada():
     if cur_balance < price:
         return jsonify({
             'success': False,
-            'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price * ngn_rate:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
+            'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price_ngn:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
         }), 400
 
     catalog_product_id = data.get('catalog_product_id')
@@ -474,6 +480,7 @@ def purchase_us_canada():
 
     res_price = float(alloc_res.get('price') or 0.0)
     final_price = max(price, res_price)
+    final_price_ngn = round((final_price / price) * price_ngn, 2) if (final_price != price and price > 0) else price_ngn
     if cur_balance < final_price:
         prov_id = alloc_res.get('provider_order_id')
         if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
@@ -483,7 +490,7 @@ def purchase_us_canada():
                 pass
         return jsonify({
             'success': False,
-            'message': f'Insufficient wallet balance for this carrier tier. Required: ${final_price:.2f} (₦{final_price * ngn_rate:,.2f}), balance: ${cur_balance:.2f}. Please top up.'
+            'message': f'Insufficient wallet balance for this carrier tier. Required: ${final_price:.2f} (₦{final_price_ngn:,.2f}), balance: ${cur_balance:.2f}. Please top up.'
         }), 400
 
     # 3. Deduct wallet atomically in database
@@ -497,6 +504,7 @@ def purchase_us_canada():
             'country_name': country_name,
             'country_code': country_code,
             'package_name': pkg['name'],
+            'price_ngn': final_price_ngn,
             'provider_line': alloc_res.get('provider_line', provider_id)
         }
     )

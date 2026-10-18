@@ -9,9 +9,16 @@
 (function () {
   "use strict";
 
-  function formatMoney(usd) {
+  function formatMoney(usd, ngn) {
     if (window.TgCurrency && window.TgCurrency.format) {
-      return window.TgCurrency.format(usd);
+      return window.TgCurrency.format(usd, { ngn: ngn });
+    }
+    var isUSD = window.TgCurrency && window.TgCurrency.active === "USD";
+    if (isUSD) {
+      return "$" + Number(usd).toFixed(2);
+    }
+    if (ngn != null && !isNaN(Number(ngn)) && Number(ngn) > 0) {
+      return "₦" + Number(ngn).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     var rate = Number(window.TG_NGN_PER_USD) || 1600;
     return "₦" + (Number(usd) * rate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -102,7 +109,7 @@
           var opt = document.createElement("option");
           opt.value = op.operator_id;
           var tag = op.is_tmobile ? " (Recommended)" : "";
-          opt.textContent = op.operator_name + tag + "  —  " + formatMoney(op.price_usd);
+          opt.textContent = op.operator_name + tag + "  —  " + formatMoney(op.price_usd, op.price_ngn);
           operatorSelect.appendChild(opt);
         });
         if (operatorField) operatorField.style.display = "block";
@@ -194,7 +201,7 @@
               '<span class="search-dropdown-item-route">' + routeDesc + '</span>' +
             '</div>' +
           '</div>' +
-          '<span class="search-dropdown-item-price">' + formatMoney(s.price_usd) + '</span>';
+          '<span class="search-dropdown-item-price">' + formatMoney(s.price_usd, s.price_ngn) + '</span>';
 
         itemEl.addEventListener("mousedown", function (e) {
           e.preventDefault(); // prevent input blur
@@ -224,7 +231,7 @@
         if (!opt) {
           opt = document.createElement("option");
           opt.value = s.id;
-          opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
+          opt.textContent = s.name || s.service_name;
           selectEl.prepend(opt);
         }
         selectEl.value = s.id;
@@ -252,6 +259,7 @@
         selectedOperator = null;
         if (priceEl) {
           priceEl.setAttribute("data-usd", "0");
+          priceEl.removeAttribute("data-ngn");
           priceEl.textContent = formatMoney(0);
         }
         if (submitBtn) submitBtn.disabled = true;
@@ -264,7 +272,7 @@
       items.forEach(function (s) {
         var opt = document.createElement("option");
         opt.value = s.id;
-        opt.textContent = (s.name || s.service_name) + "  —  " + formatMoney(s.price_usd);
+        opt.textContent = s.name || s.service_name;
         frag.appendChild(opt);
       });
 
@@ -287,12 +295,18 @@
     function updatePriceDisplay() {
       if (!selectedItem || !priceEl) return;
       var activeUsd = selectedOperator ? selectedOperator.price_usd : selectedItem.price_usd;
+      var activeNgn = selectedOperator ? selectedOperator.price_ngn : selectedItem.price_ngn;
       var usdStr = String(activeUsd);
       priceEl.setAttribute("data-usd", usdStr);
+      if (activeNgn != null && !isNaN(Number(activeNgn)) && Number(activeNgn) > 0) {
+        priceEl.setAttribute("data-ngn", String(activeNgn));
+      } else {
+        priceEl.removeAttribute("data-ngn");
+      }
       if (window.TgCurrency && window.TgCurrency.render) {
         window.TgCurrency.render(priceEl.parentNode);
       } else {
-        priceEl.textContent = formatMoney(usdStr);
+        priceEl.textContent = formatMoney(usdStr, activeNgn);
       }
     }
 
@@ -396,13 +410,6 @@
       }
     });
 
-    // Handle currency flip
-    document.addEventListener("currencychange", function () {
-      var currId = selectedItem ? selectedItem.id : null;
-      renderOptions(currentFiltered, currId);
-      if (isOpen) renderDropdownItems(currentFiltered);
-    });
-
     // Initial render
     renderOptions(currentFiltered);
     if (clearBtn) {
@@ -424,6 +431,7 @@
         submitBtn.innerHTML = '<span class="spinner"></span> <span>Ordering Number...</span>';
 
         var chosenPrice = selectedOperator ? selectedOperator.price_usd : selectedItem.price_usd;
+        var chosenPriceNgn = selectedOperator ? selectedOperator.price_ngn : selectedItem.price_ngn;
         var chosenOperatorName = selectedOperator ? (selectedOperator.operator_name || selectedOperator.operator_id) : (selectedItem.operator || "auto");
         var chosenOperatorId = selectedOperator ? selectedOperator.operator_id : null;
         var chosenProductId = selectedOperator ? (selectedOperator.cheapest_product_id || selectedOperator.product_id) : (selectedItem.cheapest_product_id || selectedItem.product_id);
@@ -439,6 +447,7 @@
           product_id: chosenProductId,
           catalog_product_id: chosenCatalogProductId,
           price: chosenPrice,
+          price_ngn: chosenPriceNgn,
         };
 
         fetch(opts.endpoint, {
@@ -472,6 +481,9 @@
     }
 
     document.addEventListener("currencychange", function () {
+      if (selectedItem) {
+        renderOperatorsForService(selectedItem);
+      }
       updatePriceDisplay();
       renderOptions(currentFiltered, selectedItem ? selectedItem.id : null);
       if (isOpen) {

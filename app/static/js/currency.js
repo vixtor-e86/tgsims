@@ -24,7 +24,12 @@
   function format(usd, opts) {
     opts = opts || {};
     var cfg = CONFIG[active] || CONFIG.NGN;
-    var value = Number(usd) * cfg.rate;
+    var value;
+    if (active === "NGN" && opts.ngn != null && !isNaN(Number(opts.ngn)) && Number(opts.ngn) > 0) {
+      value = Number(opts.ngn);
+    } else {
+      value = Number(usd) * cfg.rate;
+    }
     var decimals = opts.decimals != null ? opts.decimals : 2;
     var abs = Math.abs(value);
 
@@ -47,7 +52,8 @@
       var decimals = el.hasAttribute("data-decimals")
         ? Number(el.getAttribute("data-decimals")) : 2;
       var sign = el.getAttribute("data-sign") || null;
-      var formatted = format(usd, { decimals: decimals, sign: sign });
+      var ngn = el.getAttribute("data-ngn");
+      var formatted = format(usd, { decimals: decimals, sign: sign, ngn: ngn });
       el.textContent = formatted;
 
       var chip = el.closest(".wallet-chip");
