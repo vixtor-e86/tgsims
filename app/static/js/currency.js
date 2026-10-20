@@ -21,12 +21,37 @@
 
   var active = stored() || "NGN";
 
+  /**
+   * Reconciles round-trip conversion distortion from 2-decimal USD storage.
+   * Because 2-decimal USD has a maximum error of +-0.005 * rate (approx +-6.75 NGN at rate 1350),
+   * snapping to the nearest clean multiple of 25 (or integer) when within error margin
+   * perfectly reconstructs the original intended Naira amount across all exchange rates.
+   */
+  function reconcileNgn(rawVal, rate) {
+    if (isNaN(rawVal)) return 0;
+    var nearest25 = Math.round(rawVal / 25.0) * 25.0;
+    var maxErr = rate * 0.0051;
+    if (Math.abs(rawVal - nearest25) <= maxErr) {
+      return nearest25;
+    }
+    var nearest1 = Math.round(rawVal);
+    if (Math.abs(rawVal - nearest1) <= 0.05) {
+      return nearest1;
+    }
+    return rawVal;
+  }
+
   function format(usd, opts) {
     opts = opts || {};
     var cfg = CONFIG[active] || CONFIG.NGN;
     var value;
-    if (active === "NGN" && opts.ngn != null && !isNaN(Number(opts.ngn)) && Number(opts.ngn) > 0) {
-      value = Number(opts.ngn);
+    if (active === "NGN") {
+      if (opts.ngn != null && !isNaN(Number(opts.ngn)) && Number(opts.ngn) > 0) {
+        value = Number(opts.ngn);
+      } else {
+        var raw = Number(usd) * cfg.rate;
+        value = reconcileNgn(raw, cfg.rate);
+      }
     } else {
       value = Number(usd) * cfg.rate;
     }
@@ -99,6 +124,7 @@
     format: format,
     render: render,
     set: set,
+    reconcileNgn: reconcileNgn,
     get active() { return active; },
     get rate() { return CONFIG[active].rate; },
     get symbol() { return CONFIG[active].symbol; },

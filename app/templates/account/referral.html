@@ -39,7 +39,7 @@
         ${{ '%.2f'|format(referral.referral_balance) }}
       </div>
       <div class="ref-wallet-sub">
-        ≈ ₦{{ '{:,.2f}'.format(referral.referral_balance * NGN_PER_USD) }} ready to transfer
+        ≈ {{ referral.referral_balance|format_ngn }} ready to transfer
       </div>
     </div>
 

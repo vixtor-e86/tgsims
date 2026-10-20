@@ -70,7 +70,7 @@
                   ${{ '%.2f'|format(u.wallet_balance or 0) }}
                 </span>
                 <div style="font-size: 0.75rem; color: var(--text-muted);" class="user-sub-balance" data-raw-usd="{{ u.wallet_balance or 0 }}">
-                  ≈ ₦{{ '{:,.2f}'.format((u.wallet_balance or 0) * NGN_PER_USD) }}
+                  ≈ {{ (u.wallet_balance or 0)|format_ngn }}
                 </div>
               </td>
 
@@ -491,17 +491,26 @@ function setModalCurrency(code, updateGlobal) {
     }
   }
 
+  function helperReconcileNgn(rawVal, r) {
+    if (window.TgCurrency && typeof window.TgCurrency.reconcileNgn === 'function') {
+      return window.TgCurrency.reconcileNgn(rawVal, r);
+    }
+    var nearest25 = Math.round(rawVal / 25.0) * 25.0;
+    var maxErr = r * 0.0051;
+    return (Math.abs(rawVal - nearest25) <= maxErr) ? nearest25 : rawVal;
+  }
+
   // Update current balance in modal
   var balEl = document.getElementById('modalCurrentBal');
   var balSubEl = document.getElementById('modalCurrentBalSub');
   if (balEl) {
+    var recBalNgn = helperReconcileNgn(currentSelectedBalUsd * rate, rate);
+    var ngnVal = recBalNgn.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (activeModalCur === 'NGN') {
-      var ngnVal = (currentSelectedBalUsd * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       balEl.textContent = '₦' + ngnVal;
       if (balSubEl) balSubEl.textContent = '(≈ $' + Number(currentSelectedBalUsd).toFixed(2) + ' USD)';
     } else {
       balEl.textContent = '$' + Number(currentSelectedBalUsd).toFixed(2);
-      var ngnVal = (currentSelectedBalUsd * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       if (balSubEl) balSubEl.textContent = '(≈ ₦' + ngnVal + ')';
     }
   }
@@ -537,12 +546,22 @@ function updateModalPreview() {
     return;
   }
 
+  function helperReconcileNgn(rawVal, r) {
+    if (window.TgCurrency && typeof window.TgCurrency.reconcileNgn === 'function') {
+      return window.TgCurrency.reconcileNgn(rawVal, r);
+    }
+    var nearest25 = Math.round(rawVal / 25.0) * 25.0;
+    var maxErr = r * 0.0051;
+    return (Math.abs(rawVal - nearest25) <= maxErr) ? nearest25 : rawVal;
+  }
+
   if (activeModalCur === 'NGN') {
     var inUsd = (val / rate).toFixed(2);
     previewEl.innerHTML = '<strong>≈ $' + inUsd + ' USD</strong> will be ' + verb + " the customer's wallet (Rate: ₦" + rate.toLocaleString() + ' / $1)';
     if (submitBtn) submitBtn.textContent = 'Confirm ' + btnVerb + ' (₦' + val.toLocaleString() + ')';
   } else {
-    var inNgn = (val * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var recNgn = helperReconcileNgn(val * rate, rate);
+    var inNgn = recNgn.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     previewEl.innerHTML = '<strong>≈ ₦' + inNgn + ' NGN</strong> will be ' + verb + " the customer's wallet (Rate: ₦" + rate.toLocaleString() + ' / $1)';
     if (submitBtn) submitBtn.textContent = 'Confirm ' + btnVerb + ' ($' + val.toFixed(2) + ')';
   }
@@ -551,12 +570,23 @@ function updateModalPreview() {
 function updateTableSubBalances() {
   var cur = (window.TgCurrency && window.TgCurrency.active) || localStorage.getItem('tgsims-currency') || 'NGN';
   var rate = Number(window.TG_NGN_PER_USD) || (window.TgCurrency && window.TgCurrency.rate) || 1600;
+
+  function helperReconcileNgn(rawVal, r) {
+    if (window.TgCurrency && typeof window.TgCurrency.reconcileNgn === 'function') {
+      return window.TgCurrency.reconcileNgn(rawVal, r);
+    }
+    var nearest25 = Math.round(rawVal / 25.0) * 25.0;
+    var maxErr = r * 0.0051;
+    return (Math.abs(rawVal - nearest25) <= maxErr) ? nearest25 : rawVal;
+  }
+
   document.querySelectorAll('.user-sub-balance').forEach(function(el) {
     var usd = Number(el.getAttribute('data-raw-usd') || 0);
     if (cur === 'NGN') {
       el.textContent = '≈ $' + usd.toFixed(2) + ' USD';
     } else {
-      var ngn = (usd * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var recNgn = helperReconcileNgn(usd * rate, rate);
+      var ngn = recNgn.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       el.textContent = '≈ ₦' + ngn;
     }
   });

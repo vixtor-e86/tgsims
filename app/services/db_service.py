@@ -94,8 +94,23 @@ class DBService:
     @staticmethod
     def get_orders(user_id: str, limit: int = 50) -> list:
         """Fetch virtual number orders for a user."""
+        from app.services.currency_service import reconcile_ngn_amount
+        from app.services.settings_service import SettingsService
+        try:
+            ngn_rate = SettingsService.get_usd_ngn_rate()
+        except Exception:
+            ngn_rate = 1600.0
+
         if not user_id or user_id == 'demo-user-id':
-            return [o for o in mock_db.sim_orders if o['user_id'] == user_id]
+            demo_orders = [dict(o) for o in mock_db.sim_orders if o['user_id'] == user_id]
+            for o in demo_orders:
+                try:
+                    o['price'] = float(o.get('price') or o.get('user_cost') or 0.00)
+                except (ValueError, TypeError):
+                    o['price'] = 0.00
+                o['price_ngn'] = reconcile_ngn_amount(o['price'], ngn_rate)
+                o['price_formatted'] = f"₦{o['price_ngn']:,.2f}"
+            return demo_orders
 
         admin = get_supabase_admin()
         if not admin:
@@ -109,7 +124,7 @@ class DBService:
                 .limit(limit)\
                 .execute()
             
-            # Map user_cost -> price for template compatibility
+            # Map user_cost -> price for template compatibility and add reconciled NGN display
             orders = res.data or []
             for o in orders:
                 val = o.get('price')
@@ -119,6 +134,8 @@ class DBService:
                     o['price'] = float(val or 0.00)
                 except (ValueError, TypeError):
                     o['price'] = 0.00
+                o['price_ngn'] = reconcile_ngn_amount(o['price'], ngn_rate)
+                o['price_formatted'] = f"₦{o['price_ngn']:,.2f}"
             return orders
         except Exception as e:
             print(f"[DBService] get_orders error: {e}")
@@ -217,7 +234,7 @@ class DBService:
                     'message': f'Insufficient wallet balance. You need ${amount:.2f} but have ${cur_bal:.2f}. Please top up.'
                 }
 
-            new_bal = round(cur_bal - amount, 2)
+            new_bal = round(cur_bal - amount, 4)
             admin.table('wallets').update({
                 'balance': new_bal,
                 'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -265,7 +282,7 @@ class DBService:
         """Credits user wallet. Returns dict with success, message, new_balance."""
         metadata = metadata or {}
         try:
-            amount = round(float(amount), 2)
+            amount = round(float(amount), 4)
         except (ValueError, TypeError):
             return {'success': False, 'message': 'Invalid credit amount.'}
 
@@ -277,7 +294,7 @@ class DBService:
             if not wallet:
                 wallet = {'balance': 0.00, 'currency': 'USD'}
                 mock_db.wallets[user_id] = wallet
-            wallet['balance'] += amount
+            wallet['balance'] = round(wallet['balance'] + amount, 4)
             mock_db.transactions.insert(0, {
                 'id': f"tx-{len(mock_db.transactions) + 1}",
                 'user_id': user_id,
@@ -300,13 +317,13 @@ class DBService:
             w_res = admin.table('wallets').select('id, balance').eq('user_id', user_id).limit(1).execute()
             if w_res.data:
                 cur_bal = float(w_res.data[0].get('balance', 0.00))
-                new_bal = round(cur_bal + amount, 2)
+                new_bal = round(cur_bal + amount, 4)
                 admin.table('wallets').update({
                     'balance': new_bal,
                     'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
                 }).eq('user_id', user_id).execute()
             else:
-                new_bal = round(amount, 2)
+                new_bal = round(amount, 4)
                 admin.table('wallets').insert({
                     'user_id': user_id,
                     'balance': new_bal,
@@ -1079,13 +1096,13 @@ class DBService:
             w_res = admin.table('wallets').select('id, balance').eq('user_id', user_id).limit(1).execute()
             if w_res.data:
                 cur_bal = float(w_res.data[0].get('balance', 0.00))
-                new_bal = round(cur_bal + amount, 2)
+                new_bal = round(cur_bal + amount, 4)
                 admin.table('wallets').update({
                     'balance': new_bal,
                     'updated_at': now_iso
                 }).eq('user_id', user_id).execute()
             else:
-                new_bal = round(amount, 2)
+                new_bal = round(amount, 4)
                 admin.table('wallets').insert({
                     'user_id': user_id,
                     'balance': new_bal,
@@ -1708,11 +1725,25 @@ class DBService:
     @staticmethod
     def get_all_orders_admin(status_filter: str = None, limit: int = 100) -> list:
         """Fetch all user SIM orders across the platform."""
+        from app.services.currency_service import reconcile_ngn_amount
+        from app.services.settings_service import SettingsService
+        try:
+            ngn_rate = SettingsService.get_usd_ngn_rate()
+        except Exception:
+            ngn_rate = 1600.0
+
         admin = get_supabase_admin()
         if not admin:
             orders = list(mock_db.sim_orders)
             if status_filter and status_filter != 'all':
                 orders = [o for o in orders if o.get('status') == status_filter]
+            for o in orders:
+                try:
+                    o['price'] = float(o.get('price') or o.get('user_cost') or 0.00)
+                except (ValueError, TypeError):
+                    o['price'] = 0.00
+                o['price_ngn'] = reconcile_ngn_amount(o['price'], ngn_rate)
+                o['price_formatted'] = f"₦{o['price_ngn']:,.2f}"
             return orders[:limit]
 
         try:
@@ -1728,6 +1759,8 @@ class DBService:
                 o['user_name'] = prof.get('full_name') or prof.get('username') or o['user_email']
                 if 'price' not in o:
                     o['price'] = float(o.get('user_cost', 0.00))
+                o['price_ngn'] = reconcile_ngn_amount(o.get('price', 0.00), ngn_rate)
+                o['price_formatted'] = f"₦{o['price_ngn']:,.2f}"
             return orders
         except Exception as e:
             print(f"[DBService] get_all_orders_admin error: {e}")
@@ -1780,10 +1813,13 @@ class DBService:
             return []
 
     @staticmethod
-    def adjust_user_balance_admin(user_id: str, amount: float, reason: str, admin_user_id: str) -> dict:
+    def adjust_user_balance_admin(user_id: str, amount: float, reason: str, admin_user_id: str, extra_metadata: dict = None) -> dict:
         """Admin manual balance adjustment (positive or negative)."""
         admin = get_supabase_admin()
         ref = f"ADJ-{uuid.uuid4().hex[:8].upper()}"
+        meta = {'adjusted_by': admin_user_id, 'reason': reason}
+        if extra_metadata and isinstance(extra_metadata, dict):
+            meta.update(extra_metadata)
 
         if amount > 0:
             return DBService.credit_wallet_balance(
@@ -1792,7 +1828,7 @@ class DBService:
                 trans_type='adjustment',
                 reference=ref,
                 description=f"Admin Adjustment: {reason}",
-                metadata={'adjusted_by': admin_user_id, 'reason': reason}
+                metadata=meta
             )
         else:
             abs_amt = abs(amount)
@@ -1801,7 +1837,7 @@ class DBService:
                 amount=abs_amt,
                 reference=ref,
                 description=f"Admin Debit: {reason}",
-                metadata={'adjusted_by': admin_user_id, 'reason': reason}
+                metadata=meta
             )
 
     @staticmethod

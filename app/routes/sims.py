@@ -100,6 +100,15 @@ def my_sims():
         except (ValueError, TypeError):
             o['price'] = 0.00
 
+        if 'price_ngn' not in o:
+            from app.services.currency_service import reconcile_ngn_amount
+            try:
+                rate_val = SettingsService.get_usd_ngn_rate()
+            except Exception:
+                rate_val = 1600.0
+            o['price_ngn'] = reconcile_ngn_amount(o['price'], rate_val)
+            o['price_formatted'] = f"₦{o['price_ngn']:,.2f}"
+
         is_react = (o.get('order_type') == 'reactivation') or ('reactivat' in str(o.get('full_sms_text', '')).lower()) or ('reactivat' in str(o.get('notes', '')).lower())
         o['is_react'] = is_react
 

@@ -261,13 +261,15 @@ def purchase_sim():
     except Exception:
         ngn_rate = 1600.00
 
+    from app.services.currency_service import format_ngn
+
     # 1. Check wallet balance
     wallet = DBService.get_wallet(user_id)
     cur_balance = float(wallet.get('balance', 0.00))
     if cur_balance < price:
         return jsonify({
             'success': False,
-            'message': f'Insufficient wallet balance. You need ${price:.2f} (₦{price * ngn_rate:,.2f}) but have ${cur_balance:.2f}. Please top up your wallet.'
+            'message': f'Insufficient wallet balance. You need ${price:.2f} ({format_ngn(price, ngn_rate)}) but have ${cur_balance:.2f} ({format_ngn(cur_balance, ngn_rate)}). Please top up your wallet.'
         }), 400
 
     catalog_product_id = data.get('catalog_product_id')
@@ -306,7 +308,7 @@ def purchase_sim():
                 pass
         return jsonify({
             'success': False,
-            'message': f'Insufficient wallet balance for this carrier tier. Required: ${final_price:.2f} (₦{final_price * ngn_rate:,.2f}), balance: ${cur_balance:.2f}. Please top up.'
+            'message': f'Insufficient wallet balance for this carrier tier. Required: ${final_price:.2f} ({format_ngn(final_price, ngn_rate)}), balance: ${cur_balance:.2f} ({format_ngn(cur_balance, ngn_rate)}). Please top up.'
         }), 400
 
     # 3. Deduct from wallet atomically in database

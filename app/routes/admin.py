@@ -597,11 +597,12 @@ def verify_deposit(tx_id):
         u_id = res.get('user_id')
         amt = float(res.get('amount', 0.00))
         rate = float(SettingsService.get_settings().get('ngn_per_usd_rate', 1600.00))
+        from app.services.currency_service import format_ngn
         if u_id:
             DBService.create_user_notification(
                 user_id=u_id,
                 title="Deposit Verified & Credited",
-                message=f"Your deposit of ${amt:.2f} (≈ ₦{amt * rate:,.2f}) has been verified and added to your wallet balance.",
+                message=f"Your deposit of ${amt:.2f} (≈ {format_ngn(amt, rate)}) has been verified and added to your wallet balance.",
                 type="deposit",
                 link="/wallet"
             )
@@ -727,14 +728,16 @@ def adjust_user_balance(user_id):
         if rate <= 0:
             rate = 1600.00
 
+        from app.services.currency_service import reconcile_ngn_amount, ngn_to_usd
+
         # Convert to canonical USD if input was in NGN
         if currency == 'NGN':
-            amount_usd = max(0.01, round(raw_amount / rate, 2))
+            amount_usd = max(0.01, ngn_to_usd(raw_amount, rate, decimals=4))
             ngn_display = raw_amount
-            usd_display = amount_usd
+            usd_display = round(amount_usd, 2)
         else:
             amount_usd = round(raw_amount, 2)
-            ngn_display = round(raw_amount * rate, 2)
+            ngn_display = reconcile_ngn_amount(raw_amount, rate)
             usd_display = amount_usd
 
         signed_amount_usd = amount_usd if adjustment_type == 'credit' else -amount_usd
@@ -742,12 +745,17 @@ def adjust_user_balance(user_id):
             user_id=user_id,
             amount=signed_amount_usd,
             reason=reason,
-            admin_user_id=admin_id
+            admin_user_id=admin_id,
+            extra_metadata={
+                'adjusted_currency': currency,
+                'amount_ngn': ngn_display,
+                'rate': rate
+            }
         )
 
         if res.get('success'):
             new_bal_usd = float(res.get('new_balance', 0.0))
-            new_bal_ngn = new_bal_usd * rate
+            new_bal_ngn = reconcile_ngn_amount(new_bal_usd, rate)
 
             if adjustment_type == 'credit':
                 if currency == 'NGN':

@@ -22,9 +22,9 @@
   </div>
 
   <div class="topbar-actions">
-    <a class="wallet-chip" href="{{ url_for('wallet.index') }}" aria-label="Wallet balance" title="Wallet balance: ₦{{ '{:,.2f}'.format((wallet_balance_usd or 0) * NGN_PER_USD) }}">
+    <a class="wallet-chip" href="{{ url_for('wallet.index') }}" aria-label="Wallet balance" title="Wallet balance: {{ (wallet_balance_usd or 0)|format_ngn }}">
       {{ icon('wallet') }}
-      <span data-usd="{{ '%.2f'|format(wallet_balance_usd or 0) }}" data-decimals="2">{{ '₦%.2f'|format((wallet_balance_usd or 0) * NGN_PER_USD) }}</span>
+      <span data-usd="{{ '%.2f'|format(wallet_balance_usd or 0) }}" data-decimals="2">{{ (wallet_balance_usd or 0)|format_ngn }}</span>
     </a>
 
     <div class="cur-switch desktop-only" role="group" aria-label="Currency">

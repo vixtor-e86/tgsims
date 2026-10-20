@@ -85,7 +85,7 @@
 
               {# NGN #}
               <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
-                ₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}
+                {{ dep.amount|format_ngn(settings.ngn_per_usd_rate) }}
               </td>
 
               {# Reference #}
@@ -136,7 +136,7 @@
                   {% if current_user and current_user.role == 'admin' %}
                     <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
                       {# Verify Button #}
-                      <form action="{{ url_for('admin.verify_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Verify and credit ${{ '%.2f'|format(dep.amount) }} (₦{{ '{:,.2f}'.format(dep.amount * settings.ngn_per_usd_rate) }}) to {{ dep.user_name or dep.user_email }}?');">
+                      <form action="{{ url_for('admin.verify_deposit', tx_id=dep.id) }}" method="POST" onsubmit="return confirm('Verify and credit ${{ '%.2f'|format(dep.amount) }} ({{ dep.amount|format_ngn(settings.ngn_per_usd_rate) }}) to {{ dep.user_name or dep.user_email }}?');">
                         <input type="hidden" name="return_status" value="{{ status_filter }}">
                         <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;">
                           {{ icon('check') }} Verify & Credit

@@ -13,7 +13,11 @@
       return window.TgCurrency.format(usd);
     }
     var rate = Number(window.TG_NGN_PER_USD) || 1600;
-    return "₦" + (Number(usd) * rate).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var raw = Number(usd) * rate;
+    var nearest25 = Math.round(raw / 25.0) * 25.0;
+    var maxErr = rate * 0.0051;
+    var val = (Math.abs(raw - nearest25) <= maxErr) ? nearest25 : raw;
+    return "₦" + val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   function escapeAndLinkify(text) {

@@ -53,8 +53,11 @@
         {% for o in orders %}
         {% set ord_price = (o.price if (o.price is defined and o.price is not none) else (o.user_cost if (o.user_cost is defined and o.user_cost is not none) else 0.0))|float %}
         {% set ngn_rate = (NGN_PER_USD|float) if (NGN_PER_USD is defined and NGN_PER_USD) else 1600.0 %}
+        {% set ord_price_ngn = (o.price_ngn|float) if (o.price_ngn is defined and o.price_ngn) else (ord_price|clean_ngn(ngn_rate)) %}
+        {% set ord_price_formatted = o.price_formatted if (o.price_formatted is defined and o.price_formatted) else ('₦{:,.2f}'.format(ord_price_ngn)) %}
         {% set react_fee = (reactivation_fee_usd|float) if (reactivation_fee_usd is defined and reactivation_fee_usd) else (REACTIVATION_FEE_USD|float if (REACTIVATION_FEE_USD is defined and REACTIVATION_FEE_USD) else 1.00) %}
-        {% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee * ngn_rate, react_fee) %}
+        {% set react_fee_ngn = react_fee|clean_ngn(ngn_rate) %}
+        {% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee_ngn, react_fee) %}
         {% set raw_dt = (o.created_at|string) if (o.created_at is defined and o.created_at is not none) else '' %}
         {% set dt_clean = raw_dt.replace('T', ' ') %}
         {% set day = dt_clean.split(' ')[0] if dt_clean else '-' %}
@@ -70,7 +73,8 @@
         {% set is_refunded = o.status in ['cancelled', 'refunded', 'banned'] and not is_timeout %}
         {% set is_reliable = (o.provider_order_id and (o.provider_order_id|string).startswith('TXTV-')) or ('Reliable' in (o.service_name or '')) or ('Non-VoIP' in (o.service_name or '')) or ('reliable' in (o.package_id|lower if o.package_id else '')) or ('reliable' in (o.package_name|lower if o.package_name else '')) or (o.order_type == 'reactivation') or ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) %}
         {% set cancel_price_usd = ('%.2f'|format(react_fee)) if is_reactivation else '%.2f'|format(ord_price) %}
-        {% set cancel_price_formatted = ('₦{:,.2f}'.format(react_fee * ngn_rate)) if is_reactivation else price_formatted %}
+        {% set cancel_price_formatted = ('₦{:,.2f}'.format(react_fee_ngn)) if is_reactivation else ord_price_formatted %}
+        {% set cancel_price_ngn = ('%.2f'|format(react_fee_ngn)) if is_reactivation else ('%.2f'|format(ord_price_ngn)) %}
         {% set reorder_url = url_for('sims.us_canada') if is_us else url_for('sims.store') %}
         {% set is_rental = o.is_rental if o.is_rental is defined else false %}
         <tr data-order-row data-order-id="{{ o.id or o.order_reference }}" data-is-active="{{ 'true' if (is_rental and o.is_active) or (not is_rental and is_active) else 'false' }}" data-is-rental="{{ 'true' if is_rental else 'false' }}" data-order-type="{{ o.order_type|default('activation') }}">
@@ -170,7 +174,7 @@
             {% endif %}
           </td>
           <td class="td-dim">{{ day }}<span class="stack-sub">{{ hm }}</span></td>
-          <td class="{{ 'strike' if (is_timeout or is_refunded) and not is_rental else 'td-strong' }}" data-usd="{{ '%.2f'|format(ord_price) }}">{{ price_formatted }}</td>
+          <td class="{{ 'strike' if (is_timeout or is_refunded) and not is_rental else 'td-strong' }}" data-usd="{{ '%.2f'|format(ord_price) }}" data-ngn="{{ '%.2f'|format(ord_price_ngn) }}">{{ ord_price_formatted }}</td>
           <td class="text-right">
             {% if is_rental %}
               <div style="display:inline-flex; gap:var(--sp-2); align-items:center; flex-wrap:wrap; justify-content:flex-end;">
@@ -204,6 +208,7 @@
                           data-ref="{{ o.order_reference }}"
                           data-price-usd="{{ cancel_price_usd }}"
                           data-price="{{ cancel_price_formatted }}"
+                          data-price-ngn="{{ cancel_price_ngn }}"
                           data-is-reactivation="false"
                           style="color:var(--text-danger); {% if not can_cancel %}display:none;{% endif %}"
                           title="Cancel order and refund wallet">
@@ -592,23 +597,30 @@
     });
   }
 
-  function formatCurrencyAmount(usd, fallbackFormatted) {
+  function formatCurrencyAmount(usd, fallbackFormatted, ngn) {
     if (usd !== undefined && usd !== null && usd !== '') {
       if (window.TgCurrency && window.TgCurrency.format) {
-        return window.TgCurrency.format(usd);
+        return window.TgCurrency.format(usd, { ngn: ngn });
       }
-      var isUSD = (localStorage.getItem('tg_currency') === 'USD');
+      var isUSD = ((window.TgCurrency && window.TgCurrency.active === 'USD') || localStorage.getItem('tgsims-currency') === 'USD');
       if (isUSD) {
         return '$' + Number(usd).toFixed(2);
       } else {
+        if (ngn != null && !isNaN(Number(ngn)) && Number(ngn) > 0) {
+          return '₦' + Number(ngn).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
         var rate = Number(window.TG_NGN_PER_USD) || 1600;
-        return '₦' + (Number(usd) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var raw = Number(usd) * rate;
+        var nearest25 = Math.round(raw / 25.0) * 25.0;
+        var maxErr = rate * 0.0051;
+        var val = (Math.abs(raw - nearest25) <= maxErr) ? nearest25 : raw;
+        return '₦' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
     }
     return fallbackFormatted || '';
   }
 
-  function openCancelModal(orderId, svcName, phoneNum, orderRef, priceFormatted, priceUsd, isReact) {
+  function openCancelModal(orderId, svcName, phoneNum, orderRef, priceFormatted, priceUsd, isReact, priceNgn) {
     targetOrderId = orderId;
     var modalTitleEl = document.getElementById('cancelModalTitle');
     var modalSubEl = cancelModal ? cancelModal.querySelector('.modal-header p') : null;
@@ -638,9 +650,14 @@
       }
     }
 
-    var formattedRefund = formatCurrencyAmount(priceUsd, priceFormatted);
+    var formattedRefund = formatCurrencyAmount(priceUsd, priceFormatted, priceNgn);
     if (modalRefundAmount) {
       modalRefundAmount.setAttribute('data-usd', priceUsd || '0');
+      if (priceNgn) {
+        modalRefundAmount.setAttribute('data-ngn', priceNgn);
+      } else {
+        modalRefundAmount.removeAttribute('data-ngn');
+      }
       modalRefundAmount.textContent = formattedRefund;
     }
     cancelModal.classList.add('is-open');
@@ -861,8 +878,9 @@
       var ref = cancelBtn.dataset.ref;
       var price = cancelBtn.dataset.price;
       var priceUsd = cancelBtn.dataset.priceUsd;
+      var priceNgn = cancelBtn.dataset.priceNgn;
       var isReact = cancelBtn.dataset.isReactivation === 'true';
-      openCancelModal(cancelId, svc, phone, ref, price, priceUsd, isReact);
+      openCancelModal(cancelId, svc, phone, ref, price, priceUsd, isReact, priceNgn);
     }
 
     if (reactivateBtn) {
@@ -1091,7 +1109,10 @@
     }
     if (modalRefundAmount && modalRefundAmount.getAttribute('data-usd')) {
       if (window.TgCurrency && window.TgCurrency.format) {
-        modalRefundAmount.textContent = window.TgCurrency.format(modalRefundAmount.getAttribute('data-usd'));
+        modalRefundAmount.textContent = window.TgCurrency.format(
+          modalRefundAmount.getAttribute('data-usd'),
+          { ngn: modalRefundAmount.getAttribute('data-ngn') }
+        );
       }
     }
     var reactFeeUsd = Number(window.TG_REACTIVATION_FEE_USD) || 1.00;

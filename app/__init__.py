@@ -79,6 +79,17 @@ def create_app(config_class=Config):
                 except Exception:
                     pass
 
+    # Universal Currency Reconciliation Filters
+    from app.services.currency_service import reconcile_ngn_amount, format_ngn, clean_ngn
+
+    @app.template_filter('clean_ngn')
+    def filter_clean_ngn(usd, rate=None):
+        return clean_ngn(usd, rate)
+
+    @app.template_filter('format_ngn')
+    def filter_format_ngn(usd, rate=None):
+        return format_ngn(usd, rate)
+
     @app.context_processor
     def inject_globals():
         """Expose shared values to every template (drives the app-shell topbar)."""
@@ -98,6 +109,8 @@ def create_app(config_class=Config):
                 'BRAND': 'Tgsims',
                 'current_user': user if isinstance(user, dict) else None,
                 'wallet_balance_usd': wallet_balance_usd,
+                'clean_ngn': clean_ngn,
+                'format_ngn': format_ngn,
             }
         except Exception:
             return {
@@ -106,6 +119,8 @@ def create_app(config_class=Config):
                 'BRAND': 'Tgsims',
                 'current_user': None,
                 'wallet_balance_usd': 0.00,
+                'clean_ngn': clean_ngn,
+                'format_ngn': format_ngn,
             }
 
     @app.errorhandler(500)

@@ -31,10 +31,10 @@
       <span class="stat-label">Wallet Balance</span>
       <span class="icon-tile"><span>{{ icon('wallet') }}</span></span>
     </div>
-    <div class="stat-value" data-usd="{{ '%.2f'|format(stats.wallet_balance_usd) }}">₦{{ '{:,.2f}'.format(stats.wallet_balance_usd * NGN_PER_USD) }}</div>
+    <div class="stat-value" data-usd="{{ '%.2f'|format(stats.wallet_balance_usd) }}">{{ stats.wallet_balance_usd|format_ngn }}</div>
     <div class="stat-delta is-up">
       {{ icon('trending-up') }}
-      <span><span data-usd="{{ '%.2f'|format(stats.wallet_delta_usd) }}" data-sign="+">+₦{{ '{:,.2f}'.format(stats.wallet_delta_usd * NGN_PER_USD) }}</span> this week</span>
+      <span><span data-usd="{{ '%.2f'|format(stats.wallet_delta_usd) }}" data-sign="+">+{{ stats.wallet_delta_usd|format_ngn }}</span> this week</span>
     </div>
   </div>
 
@@ -43,7 +43,7 @@
       <span class="stat-label">Today's Spending</span>
       <span class="icon-tile"><span>{{ icon('card') }}</span></span>
     </div>
-    <div class="stat-value" data-usd="{{ '%.2f'|format(stats.today_spending_usd) }}">₦{{ '{:,.2f}'.format(stats.today_spending_usd * NGN_PER_USD) }}</div>
+    <div class="stat-value" data-usd="{{ '%.2f'|format(stats.today_spending_usd) }}">{{ stats.today_spending_usd|format_ngn }}</div>
     <div class="stat-delta is-muted">
       {{ icon('clock') }}
       <span>{{ stats.numbers_today }} numbers purchased today</span>
@@ -130,7 +130,7 @@
           <td class="td-mono td-strong"><a href="{{ url_for('sims.my_sims') }}" style="color:inherit; text-decoration:none;">#{{ o.order_reference }}</a></td>
           <td class="td-strong">{{ o.service_name }}</td>
           <td class="td-mono td-dim">{{ o.phone_number }}</td>
-          <td class="td-strong" data-usd="{{ '%.2f'|format(o.price) }}">₦{{ '{:,.2f}'.format(o.price * NGN_PER_USD) }}</td>
+          <td class="td-strong" data-usd="{{ '%.2f'|format(o.price) }}">{{ o.price|format_ngn }}</td>
           <td>
             {% if o.status in ['active', 'pending'] and not o.sms_code %}
               <a href="{{ url_for('sims.my_sims') }}" class="badge badge-warning badge-dot" style="text-decoration:none;">Waiting SMS</a>
