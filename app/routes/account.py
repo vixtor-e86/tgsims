@@ -5,6 +5,13 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 account_bp = Blueprint('account', __name__)
 
 
+@account_bp.before_request
+def require_user():
+    """Ensure user is logged in before accessing account area."""
+    if not session.get('user'):
+        return redirect(url_for('auth.login', next=request.path))
+
+
 def _require_user():
     return session.get('user')
 
@@ -144,7 +151,7 @@ def support():
         return redirect(url_for('auth.login', next=url_for('account.support')))
 
     from app.services.db_service import DBService
-    user_id = user.get('id', 'demo-user-id')
+    user_id = user.get('id')
     tickets = DBService.get_user_tickets(user_id)
 
     faqs = [
@@ -202,7 +209,7 @@ def referral():
         return redirect(url_for('auth.login', next=url_for('account.referral')))
 
     from app.services.db_service import DBService
-    user_id = user.get('id', 'demo-user-id')
+    user_id = user.get('id')
     referral_data = DBService.get_referral_details(user_id, host_url=request.host_url)
     wallet = DBService.get_wallet(user_id)
 
@@ -217,7 +224,9 @@ def redeem_referral():
         return redirect(url_for('auth.login'))
 
     from app.services.db_service import DBService
-    user_id = user.get('id', 'demo-user-id')
+    user_id = user.get('id')
+    if not user_id:
+        return redirect(url_for('auth.login'))
 
     amount_raw = request.form.get('amount', '').strip()
     amount = None

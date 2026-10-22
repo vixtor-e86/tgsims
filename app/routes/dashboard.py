@@ -1,5 +1,5 @@
 """Authenticated dashboard overview."""
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, session, redirect, url_for, request
 from app.services.db_service import DBService
 from app.services.sim_provider import SIMProviderService
 import datetime
@@ -7,23 +7,20 @@ import datetime
 dashboard_bp = Blueprint('dashboard', __name__)
 
 
-def _ensure_demo_user():
-    """Seed a demo session so the dashboard is previewable without a real login."""
-    if 'user' not in session:
-        session['user'] = {
-            'id': 'demo-user-id',
-            'email': 'tunde@tgsims.com',
-            'full_name': 'Tunde Komolafe',
-            'first_name': 'Tunde',
-            'role': 'user',
-            'avatar': None,
-        }
-    return session['user']
+@dashboard_bp.before_request
+def require_login():
+    """Ensure user is authenticated before accessing the dashboard."""
+    user = session.get('user')
+    if not user or not isinstance(user, dict):
+        return redirect(url_for('auth.login', next=request.path))
 
 
 @dashboard_bp.route('/dashboard')
 def index():
-    user = _ensure_demo_user()
+    user = session.get('user')
+    if not user or not isinstance(user, dict):
+        return redirect(url_for('auth.login', next=request.path))
+
     user_id = user['id']
 
     wallet = DBService.get_wallet(user_id)
@@ -34,24 +31,14 @@ def index():
     today_orders = [o for o in orders if str(o.get('created_at', '')).startswith(today_str)]
     today_spending = sum(float(o.get('price', o.get('user_cost', 0.0))) for o in today_orders)
 
-    if user_id == 'demo-user-id' and not orders:
-        stats = {
-            'wallet_balance_usd': wallet.get('balance', 45.50),
-            'today_spending_usd': 0.28,
-            'numbers_today': 3,
-            'total_numbers': 1204,
-            'wallet_delta_usd': 1.56,
-            'total_delta_pct': 12,
-        }
-    else:
-        stats = {
-            'wallet_balance_usd': wallet.get('balance', 0.00),
-            'today_spending_usd': round(today_spending, 2),
-            'numbers_today': len(today_orders),
-            'total_numbers': len(orders),
-            'wallet_delta_usd': round(wallet.get('balance', 0.00), 2),
-            'total_delta_pct': 100 if len(orders) > 0 else 0,
-        }
+    stats = {
+        'wallet_balance_usd': wallet.get('balance', 0.00),
+        'today_spending_usd': round(today_spending, 2),
+        'numbers_today': len(today_orders),
+        'total_numbers': len(orders),
+        'wallet_delta_usd': round(wallet.get('balance', 0.00), 2),
+        'total_delta_pct': 100 if len(orders) > 0 else 0,
+    }
 
     return render_template(
         'dashboard/index.html',

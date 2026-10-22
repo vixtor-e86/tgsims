@@ -1,9 +1,16 @@
 """Virtual number routes: buy a number, view orders, and OTP history."""
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, render_template, session, redirect, url_for, request
 from app.services.sim_provider import SIMProviderService
 from app.services.db_service import DBService
 
 sims_bp = Blueprint('sims', __name__, url_prefix='/sims')
+
+
+@sims_bp.before_request
+def require_user():
+    """Ensure user is logged in before accessing SIM services."""
+    if not session.get('user'):
+        return redirect(url_for('auth.login', next=request.path))
 
 
 def _require_user():

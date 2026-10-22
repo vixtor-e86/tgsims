@@ -1,11 +1,18 @@
 """Wallet & billing routes."""
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, render_template, session, redirect, url_for, request
 from app.services.db_service import DBService
 from app.services.oxapay_service import OXAPayService
 from app.services.squad_service import SquadService
 from app.services.korapay_service import KorapayService
 
 wallet_bp = Blueprint('wallet', __name__, url_prefix='/wallet')
+
+
+@wallet_bp.before_request
+def require_user():
+    """Ensure user is logged in before accessing wallet."""
+    if not session.get('user'):
+        return redirect(url_for('auth.login', next=request.path))
 
 
 def _require_user():
