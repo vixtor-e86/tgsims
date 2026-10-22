@@ -7,7 +7,8 @@
 {% block page %}
 {% set ngn_rate = (NGN_PER_USD|float) if (NGN_PER_USD is defined and NGN_PER_USD) else 1600.0 %}
 {% set react_fee = (reactivation_fee_usd|float) if (reactivation_fee_usd is defined and reactivation_fee_usd) else (REACTIVATION_FEE_USD|float if (REACTIVATION_FEE_USD is defined and REACTIVATION_FEE_USD) else 1.00) %}
-{% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee * ngn_rate, react_fee) %}
+{% set react_fee_ngn = react_fee|clean_ngn(ngn_rate) %}
+{% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee_ngn, react_fee) %}
 <div class="page-head">
   <div>
     <h1 class="page-title">My Orders</h1>

@@ -1375,6 +1375,7 @@ class SIMProviderService:
                     op_retail = op_override
                     if op_override_ngn is not None:
                         op_retail_ngn = round(op_override_ngn, 2)
+                        op_retail = round(op_retail_ngn / rate, 4)
                     else:
                         op_retail_ngn = round(op_retail * rate, 2)
                 elif std_code == 'whatsapp':
@@ -1656,9 +1657,13 @@ class SIMProviderService:
                 )),
                 None
             )
-            if matched and matched.get('price_usd') and float(matched['price_usd']) > 0:
-                p_usd = float(matched['price_usd'])
-                p_ngn = float(matched.get('price_ngn') or round(p_usd * rate, 2))
+            if matched and (matched.get('price_usd') or matched.get('price_ngn')):
+                p_ngn = float(matched.get('price_ngn') or 0.0)
+                p_usd = float(matched.get('price_usd') or 0.0)
+                if p_ngn > 0:
+                    p_usd = round(p_ngn / rate, 4)
+                elif p_usd > 0:
+                    p_ngn = round(p_usd * rate, 2)
                 return p_usd, p_ngn
             return 1.50, round(1.50 * rate, 2)
         else:
@@ -1677,13 +1682,21 @@ class SIMProviderService:
                 if operator_id is not None:
                     for op in matched.get('operators', []):
                         if str(op.get('operator_id')) == str(operator_id) or (str(operator_id).lower() in ('0', 'any') and op.get('operator_code') == 'any'):
+                            op_ngn = float(op.get('price_ngn') or 0.0)
                             op_p = float(op.get('price_usd') or op.get('price') or 0.0)
+                            if op_ngn > 0:
+                                op_p = round(op_ngn / rate, 4)
+                            elif op_p > 0:
+                                op_ngn = round(op_p * rate, 2)
                             if op_p > 0:
-                                op_ngn = float(op.get('price_ngn') or round(op_p * rate, 2))
                                 return op_p, op_ngn
+                item_ngn = float(matched.get('price_ngn') or 0.0)
                 item_p = float(matched.get('price_usd') or matched.get('price') or 0.0)
+                if item_ngn > 0:
+                    item_p = round(item_ngn / rate, 4)
+                elif item_p > 0:
+                    item_ngn = round(item_p * rate, 2)
                 if item_p > 0:
-                    item_ngn = float(matched.get('price_ngn') or round(item_p * rate, 2))
                     return item_p, item_ngn
             return 1.25, round(1.25 * rate, 2)
 

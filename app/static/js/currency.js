@@ -22,23 +22,43 @@
   var active = stored() || "NGN";
 
   /**
-   * Reconciles round-trip conversion distortion from 2-decimal USD storage.
-   * Because 2-decimal USD has a maximum error of +-0.005 * rate (approx +-6.75 NGN at rate 1350),
-   * snapping to the nearest clean multiple of 25 (or integer) when within error margin
-   * perfectly reconstructs the original intended Naira amount across all exchange rates.
+   * Reconciles round-trip conversion distortion from USD storage to exact Naira amounts.
+   * - Clean dollar amounts ($1.00, $2.00, $0.50, $2.50) are exact USD settings or fees.
+   *   For example, Reactivation Fee $2.00 @ rate 1340 is EXACTLY 2,680 NGN (never 2675).
+   * - 4-decimal amounts (e.g. 2.2388 for 3,000 NGN, 3.7313 for 5,000 NGN) round to their exact integer.
+   * - Legacy 2-decimal amounts (e.g. 2.24, 2.25, 1.85) snap to clean multiples of 25.
    */
-  function reconcileNgn(rawVal, rate) {
+  function reconcileNgn(usd, rawVal, rate) {
+    if (rate === undefined) {
+      rate = rawVal;
+      rawVal = usd;
+      usd = null;
+    }
     if (isNaN(rawVal)) return 0;
+    var rateNum = Number(rate) || 1600;
+
+    if (usd != null && !isNaN(Number(usd))) {
+      var usdNum = Number(usd);
+      // 1. Clean dollar amounts (e.g. $1.00, $2.00, $0.50, $2.50) are exact USD settings or fees.
+      // E.g. Reactivation Fee $2.00 @ rate 1340 is EXACTLY 2,680 NGN (never snapped to 2675).
+      if (Math.abs(usdNum * 2 - Math.round(usdNum * 2)) < 1e-4) {
+        return Math.round(rawVal);
+      }
+      // 2. Sub-cent precision (4 decimals, e.g. 2.2388 for 3000 NGN, 3.7313 for 5000 NGN)
+      var usd2 = Math.round(usdNum * 100) / 100;
+      var usd4 = Math.round(usdNum * 10000) / 10000;
+      if (Math.abs(usd2 - usd4) > 1e-5) {
+        return Math.round(rawVal);
+      }
+    }
+
+    // 3. Legacy 2-decimal USD rounding error (+-0.005 * rate):
     var nearest25 = Math.round(rawVal / 25.0) * 25.0;
-    var maxErr = rate * 0.0051;
+    var maxErr = rateNum * 0.0051;
     if (Math.abs(rawVal - nearest25) <= maxErr) {
       return nearest25;
     }
-    var nearest1 = Math.round(rawVal);
-    if (Math.abs(rawVal - nearest1) <= 0.05) {
-      return nearest1;
-    }
-    return rawVal;
+    return Math.round(rawVal);
   }
 
   function format(usd, opts) {
@@ -50,7 +70,7 @@
         value = Number(opts.ngn);
       } else {
         var raw = Number(usd) * cfg.rate;
-        value = reconcileNgn(raw, cfg.rate);
+        value = reconcileNgn(usd, raw, cfg.rate);
       }
     } else {
       value = Number(usd) * cfg.rate;

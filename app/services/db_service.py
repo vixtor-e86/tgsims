@@ -183,7 +183,7 @@ class DBService:
         """Deducts balance atomically. Returns dict with success, message, new_balance."""
         metadata = metadata or {}
         try:
-            amount = round(float(amount), 2)
+            amount = round(float(amount), 4)
         except (ValueError, TypeError):
             return {'success': False, 'message': 'Invalid transaction amount.'}
 
@@ -1046,7 +1046,7 @@ class DBService:
 
             # Credit user wallet
             wallet = mock_db.wallets.get(user_id, {'balance': 0.00, 'currency': 'USD'})
-            wallet['balance'] += amount
+            wallet['balance'] = round(wallet['balance'] + amount, 4)
             mock_db.wallets[user_id] = wallet
 
             return {
@@ -1296,13 +1296,13 @@ class DBService:
                 w_res = admin.table('wallets').select('id, balance').eq('user_id', user_id).limit(1).execute()
                 if w_res.data:
                     cur_bal = float(w_res.data[0].get('balance', 0.00))
-                    new_bal = round(cur_bal + amount_usd, 2)
+                    new_bal = round(cur_bal + amount_usd, 4)
                     admin.table('wallets').update({
                         'balance': new_bal,
                         'updated_at': now_iso
                     }).eq('user_id', user_id).execute()
                 else:
-                    new_bal = round(amount_usd, 2)
+                    new_bal = round(amount_usd, 4)
                     admin.table('wallets').insert({
                         'user_id': user_id,
                         'balance': new_bal,
@@ -1641,7 +1641,7 @@ class DBService:
             # Credit wallet
             w_res = admin.table('wallets').select('balance').eq('user_id', user_id).limit(1).execute()
             cur_bal = float(w_res.data[0].get('balance', 0)) if w_res.data else 0.0
-            new_bal = round(cur_bal + credit_amount, 2)
+            new_bal = round(cur_bal + credit_amount, 4)
             admin.table('wallets').update({
                 'balance': new_bal,
                 'updated_at': now_iso

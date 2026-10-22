@@ -264,7 +264,7 @@ def pricing():
 
                 # Convert if one was supplied and not the other
                 if custom_usd is None and custom_ngn is not None and custom_ngn > 0:
-                    custom_usd = round(custom_ngn / rate, 2)
+                    custom_usd = round(custom_ngn / rate, 4)
                 elif custom_ngn is None and custom_usd is not None and custom_usd > 0:
                     custom_ngn = round(custom_usd * rate, 2)
 

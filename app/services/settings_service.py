@@ -499,7 +499,7 @@ class SettingsService:
         rate = cls.get_usd_ngn_rate()
 
         if custom_price_usd is None and custom_price_ngn is not None and float(custom_price_ngn) > 0:
-            custom_price_usd = round(float(custom_price_ngn) / rate, 2)
+            custom_price_usd = round(float(custom_price_ngn) / rate, 4)
         elif custom_price_ngn is None and custom_price_usd is not None and float(custom_price_usd) > 0:
             custom_price_ngn = round(float(custom_price_usd) * rate, 2)
 

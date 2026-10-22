@@ -265,7 +265,7 @@ class KorapayService:
         rate = float(settings.get('ngn_per_usd_rate', 1600.00))
         if rate <= 0:
             rate = 1600.00
-        amount_usd = round(amount_ngn / rate, 2)
+        amount_usd = round(amount_ngn / rate, 4)
 
         if amount_usd <= 0:
             print(f"[Korapay Webhook] Computed USD amount {amount_usd} is <= 0 for NGN {amount_ngn}.")

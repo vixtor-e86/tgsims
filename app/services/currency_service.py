@@ -17,10 +17,10 @@ def get_default_rate() -> float:
 
 def reconcile_ngn_amount(usd: Optional[float], rate: Optional[float] = None) -> float:
     """
-    Reconciles round-trip conversion distortion from 2-decimal USD storage.
-    Because 2-decimal USD has a maximum error of +-0.005 * rate (approx +-6.75 NGN at rate 1350),
-    snapping to the nearest clean multiple of 25 (or integer) when within error margin
-    perfectly reconstructs the original intended Naira amount across all exchange rates.
+    Reconciles round-trip conversion distortion from USD storage to exact Naira amounts.
+    - Clean dollar amounts ($1.00, $2.00, $0.50) retain their exact mathematical product (e.g. $2 @ 1340 = 2,680).
+    - 4-decimal amounts (e.g. 2.2388 for 3,000 NGN, 3.7313 for 5,000 NGN) round to their exact integer.
+    - Legacy 2-decimal amounts (e.g. 2.24, 2.25, 1.85) snap to clean multiples of 25.
     """
     if usd is None:
         return 0.0
@@ -34,18 +34,26 @@ def reconcile_ngn_amount(usd: Optional[float], rate: Optional[float] = None) -> 
     rate = float(rate) if rate and float(rate) > 0 else 1600.0
 
     raw = usd_f * rate
-    # Snap to nearest multiple of 25 if within maximum 2-decimal USD rounding error margin
+
+    # 1. Exact USD amounts (e.g. $1.00, $2.00, $0.50, $2.50) are direct USD settings or fees.
+    # For example, Reactivation Fee = $2.00 at rate 1340 is EXACTLY 2680.0 NGN (never snapped to 2675).
+    is_clean_usd = abs(usd_f * 2 - round(usd_f * 2)) < 1e-4
+    if is_clean_usd:
+        return float(round(raw))
+
+    # 2. If usd was stored with sub-cent precision (4 decimals):
+    # E.g. 2.2388 for 3000 NGN, 3.7313 for 5000 NGN.
+    is_sub_cent = abs(round(usd_f, 2) - round(usd_f, 4)) > 1e-5
+    if is_sub_cent:
+        return float(round(raw))
+
+    # 3. For legacy 2-decimal USD amounts with +-0.005 rounding error:
     nearest25 = round(raw / 25.0) * 25.0
-    max_err = rate * 0.0051  # +-0.005 * rate plus a tiny float epsilon
+    max_err = rate * 0.0051
     if abs(raw - nearest25) <= max_err:
         return float(nearest25)
 
-    # Snap to nearest whole integer if within sub-penny precision
-    nearest1 = round(raw)
-    if abs(raw - nearest1) <= 0.05:
-        return float(nearest1)
-
-    return raw
+    return float(round(raw))
 
 
 def clean_ngn(usd: Optional[float], rate: Optional[float] = None) -> float:
