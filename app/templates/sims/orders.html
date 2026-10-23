@@ -8,7 +8,7 @@
 {% set ngn_rate = (NGN_PER_USD|float) if (NGN_PER_USD is defined and NGN_PER_USD) else 1600.0 %}
 {% set react_fee = (reactivation_fee_usd|float) if (reactivation_fee_usd is defined and reactivation_fee_usd) else (REACTIVATION_FEE_USD|float if (REACTIVATION_FEE_USD is defined and REACTIVATION_FEE_USD) else 1.00) %}
 {% set react_fee_ngn = react_fee|clean_ngn(ngn_rate) %}
-{% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee_ngn, react_fee) %}
+{% set react_fee_formatted = '₦{:,.2f} ({})'.format(react_fee_ngn, react_fee|format_usd) %}
 <div class="page-head">
   <div>
     <h1 class="page-title">My Orders</h1>
@@ -58,7 +58,7 @@
         {% set ord_price_formatted = o.price_formatted if (o.price_formatted is defined and o.price_formatted) else ('₦{:,.2f}'.format(ord_price_ngn)) %}
         {% set react_fee = (reactivation_fee_usd|float) if (reactivation_fee_usd is defined and reactivation_fee_usd) else (REACTIVATION_FEE_USD|float if (REACTIVATION_FEE_USD is defined and REACTIVATION_FEE_USD) else 1.00) %}
         {% set react_fee_ngn = react_fee|clean_ngn(ngn_rate) %}
-        {% set react_fee_formatted = '₦{:,.2f} (${:.2f})'.format(react_fee_ngn, react_fee) %}
+        {% set react_fee_formatted = '₦{:,.2f} ({})'.format(react_fee_ngn, react_fee|format_usd) %}
         {% set raw_dt = (o.created_at|string) if (o.created_at is defined and o.created_at is not none) else '' %}
         {% set dt_clean = raw_dt.replace('T', ' ') %}
         {% set day = dt_clean.split(' ')[0] if dt_clean else '-' %}
@@ -331,11 +331,11 @@
         </div>
         <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs); color:var(--text-dim); margin-top:var(--sp-2);">
           <span>Reactivation Fee</span>
-          <span class="td-strong text-brand" id="modalReactivateFee" data-usd="{{ '%.2f'|format(react_fee) }}">{{ react_fee_formatted }}</span>
+          <span class="td-strong text-brand" id="modalReactivateFee" data-usd="{{ react_fee|clean_decimal(2, 4) }}">{{ react_fee_formatted }}</span>
         </div>
       </div>
       <p style="font-size:var(--fs-xs); color:var(--text-muted); margin-top:var(--sp-4); line-height:1.5; margin-bottom:0;">
-        This re-opens the carrier line to receive a fresh verification code (<span id="modalReactivateNoticeFee" data-usd="{{ '%.2f'|format(react_fee) }}">${{ '%.2f'|format(react_fee) }}</span> will be deducted from your wallet). Once activated, trigger your SMS and check for the incoming code.
+        This re-opens the carrier line to receive a fresh verification code (<span id="modalReactivateNoticeFee" data-usd="{{ react_fee|clean_decimal(2, 4) }}">{{ react_fee|format_usd }}</span> will be deducted from your wallet). Once activated, trigger your SMS and check for the incoming code.
       </p>
       <div style="background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.25); border-radius:var(--r-md); padding:var(--sp-3) var(--sp-4); margin-top:var(--sp-3); font-size:var(--fs-xs); line-height:1.5; color:var(--text-dim); text-align:left;">
         <strong style="color:var(--text);">Retention Advisory:</strong> Carrier line reactivation is typically available for <strong>2 to 3 weeks</strong> from initial purchase while reserved in carrier banks. If the carrier has rotated this slot, reactivation will fail and your wallet will <strong>not</strong> be charged. For guaranteed long-term number retention, please use <a href="{{ url_for('sims.rentals') }}" style="color:var(--brand); font-weight:600; text-decoration:underline;">Rent a Number</a>.
@@ -343,7 +343,7 @@
     </div>
     <div style="display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-3); padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
       <button type="button" class="btn btn-secondary btn-sm" data-modal-reactivate-close>Cancel</button>
-      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmReactivate">Yes, Reactivate (<span id="btnReactivateFeeText" data-usd="{{ '%.2f'|format(react_fee) }}">${{ '%.2f'|format(react_fee) }}</span>)</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnConfirmReactivate">Yes, Reactivate (<span id="btnReactivateFeeText" data-usd="{{ react_fee|clean_decimal(2, 4) }}">{{ react_fee|format_usd }}</span>)</button>
     </div>
   </div>
 </div>

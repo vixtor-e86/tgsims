@@ -6,6 +6,7 @@ No third-party provider names are ever leaked to the caller or frontend.
 import datetime
 import uuid
 import secrets
+import time
 from app.services.supabase_client import get_supabase_admin, mock_db
 
 
@@ -1911,6 +1912,7 @@ class DBService:
                     except Exception:
                         pass
 
+                    DBService._admin_support_stats_cache = None
                     return ticket
             except Exception as e:
                 print(f"[DBService] create_support_ticket Supabase error: {e}")
@@ -2004,6 +2006,7 @@ class DBService:
                                 ticket['user_phone'] = prof.data[0].get('phone_number') or ''
                         except Exception:
                             pass
+                    DBService._admin_support_stats_cache = None
                     return ticket
             except Exception as e:
                 print(f"[DBService] get_ticket_by_id error: {e}")
@@ -2124,6 +2127,7 @@ class DBService:
                             pass
 
                     admin.table('support_tickets').update(update_fields).eq('id', ticket_id).execute()
+                    DBService._admin_support_stats_cache = None
 
                 return new_msg
             except Exception as e:
@@ -2192,6 +2196,7 @@ class DBService:
                     'status': new_status,
                     'updated_at': now_iso
                 }).eq('id', ticket_id).execute()
+                DBService._admin_support_stats_cache = None
 
                 # Add system audit message in the chat thread
                 status_label = new_status.capitalize()
@@ -2303,13 +2308,19 @@ class DBService:
             results.append(t)
         return results[:limit]
 
-    @staticmethod
-    def get_admin_support_stats() -> dict:
-        """Summary counts for Admin Support Desk."""
+    _admin_support_stats_cache = None
+    _admin_support_stats_time = 0
+
+    @classmethod
+    def get_admin_support_stats(cls, force_refresh: bool = False) -> dict:
+        """Summary counts for Admin Support Desk, cached for up to 10 seconds."""
+        now = time.time()
+        if not force_refresh and cls._admin_support_stats_cache and (now - cls._admin_support_stats_time < 10.0):
+            return dict(cls._admin_support_stats_cache)
+
         admin = get_supabase_admin()
         if admin:
             try:
-                # We can query count of open, pending, resolved
                 all_t = admin.table('support_tickets').select('status, unread_admin_count').execute()
                 rows = all_t.data or []
                 total = len(rows)
@@ -2317,25 +2328,37 @@ class DBService:
                 pending_cnt = sum(1 for r in rows if r.get('status') == 'pending')
                 resolved_cnt = sum(1 for r in rows if r.get('status') == 'resolved')
                 unread_cnt = sum(r.get('unread_admin_count', 0) for r in rows)
-                return {
+                action_required = sum(1 for r in rows if r.get('status') == 'open' or (r.get('unread_admin_count') or 0) > 0)
+                res = {
                     'total': total,
                     'open': open_cnt,
                     'pending': pending_cnt,
                     'resolved': resolved_cnt,
-                    'unread_admin': unread_cnt
+                    'unread_admin': unread_cnt,
+                    'action_required': action_required
                 }
+                cls._admin_support_stats_cache = res
+                cls._admin_support_stats_time = now
+                return res
             except Exception as e:
                 print(f"[DBService] get_admin_support_stats error: {e}")
 
         # Fallback
         rows = mock_db.support_tickets
-        return {
+        open_cnt = sum(1 for r in rows if r.get('status') == 'open')
+        unread_cnt = sum(r.get('unread_admin_count', 0) for r in rows)
+        action_required = sum(1 for r in rows if r.get('status') == 'open' or (r.get('unread_admin_count') or 0) > 0)
+        res = {
             'total': len(rows),
-            'open': sum(1 for r in rows if r.get('status') == 'open'),
+            'open': open_cnt,
             'pending': sum(1 for r in rows if r.get('status') == 'pending'),
             'resolved': sum(1 for r in rows if r.get('status') == 'resolved'),
-            'unread_admin': sum(r.get('unread_admin_count', 0) for r in rows)
+            'unread_admin': unread_cnt,
+            'action_required': action_required
         }
+        cls._admin_support_stats_cache = res
+        cls._admin_support_stats_time = now
+        return res
 
     @staticmethod
     def get_user_support_unread(user_id: str) -> dict:

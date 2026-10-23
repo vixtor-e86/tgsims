@@ -42,7 +42,13 @@
     <a href="{{ url_for('admin.support') if current_user.role == 'support' else url_for('admin.index') }}"
        class="side-link {% if request.endpoint and request.endpoint.startswith('admin.') %}is-active{% endif %}"
        {% if request.endpoint and request.endpoint.startswith('admin.') %}aria-current="page"{% endif %}>
-      {{ icon('headset' if current_user.role == 'support' else 'shield') }} <span>{{ 'Support Desk' if current_user.role == 'support' else 'Admin Panel' }}</span>
+      {{ icon('headset' if current_user.role == 'support' else 'shield') }} 
+      <span>{{ 'Support Desk' if current_user.role == 'support' else 'Admin Panel' }}</span>
+      {% if admin_support_badge and admin_support_badge.action_required > 0 %}
+        <span class="badge" style="margin-left: auto; font-size: 0.65rem; padding: 0.15rem 0.45rem; border-radius: 999px; font-weight: 800; background: #ef4444; color: #fff;">
+          {{ admin_support_badge.action_required }} new
+        </span>
+      {% endif %}
     </a>
     {% endif %}
   </nav>

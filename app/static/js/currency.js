@@ -75,12 +75,13 @@
     } else {
       value = Number(usd) * cfg.rate;
     }
-    var decimals = opts.decimals != null ? opts.decimals : 2;
+    var minDec = opts.decimals != null ? opts.decimals : 2;
+    var maxDec = opts.decimals != null ? opts.decimals : (active === "USD" && Math.abs(Math.round(value * 100) / 100 - Math.round(value * 10000) / 10000) > 1e-5 ? 4 : 2);
     var abs = Math.abs(value);
 
     var num = new Intl.NumberFormat(cfg.locale, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
+      minimumFractionDigits: minDec,
+      maximumFractionDigits: maxDec,
     }).format(abs);
 
     var sign = "";

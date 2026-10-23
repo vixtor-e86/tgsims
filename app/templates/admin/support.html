@@ -226,19 +226,20 @@
         <div style="display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 2px;">
           <a href="{{ url_for('admin.support', status='all', q=search_q) }}" 
              class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'all' %}background: var(--brand); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
-            All
+            All ({{ stats.total }})
           </a>
           <a href="{{ url_for('admin.support', status='open', q=search_q) }}" 
-             class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'open' %}background: var(--hue-danger); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
+             class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; {% if status_filter == 'open' %}background: #ef4444; color: #fff;{% elif stats.open > 0 %}background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4);{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
+            {% if stats.open > 0 %}<span style="width: 6px; height: 6px; background: #ef4444; border-radius: 50%; display: inline-block;"></span>{% endif %}
             Open ({{ stats.open }})
           </a>
           <a href="{{ url_for('admin.support', status='pending', q=search_q) }}" 
              class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'pending' %}background: var(--hue-warning); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
-            Pending
+            Pending ({{ stats.pending }})
           </a>
           <a href="{{ url_for('admin.support', status='resolved', q=search_q) }}" 
              class="badge" style="cursor: pointer; text-decoration: none; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 600; {% if status_filter == 'resolved' %}background: var(--hue-success); color: #fff;{% else %}background: var(--border-light); color: var(--text-muted);{% endif %}">
-            Resolved
+            Resolved ({{ stats.resolved }})
           </a>
         </div>
       </div>
@@ -247,18 +248,29 @@
       <div id="admin-ticket-list" style="flex: 1; overflow-y: auto;">
         {% if tickets %}
           {% for t in tickets %}
+          {% set is_open = (t.status == 'open') or (t.unread_admin_count and t.unread_admin_count > 0) %}
           <a href="{{ url_for('admin.support', ticket_id=t.id, status=status_filter, q=search_q) }}" 
-             class="ticket-list-item" 
-             style="display: block; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); text-decoration: none; color: inherit; transition: background 0.15s ease; {% if selected_ticket and selected_ticket.id == t.id %}background: var(--brand-50); border-left: 4px solid var(--brand);{% endif %}">
+             class="ticket-list-item {% if is_open %}is-open-ticket{% endif %}" 
+             style="display: block; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); text-decoration: none; color: inherit; transition: all 0.15s ease; 
+             {% if selected_ticket and selected_ticket.id == t.id %}
+               background: var(--brand-50); border-left: 4px solid var(--brand);
+             {% elif is_open %}
+               background: rgba(239, 68, 68, 0.04); border-left: 4px solid #ef4444;
+             {% endif %}">
             
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
               <span style="font-weight: 700; font-size: 0.85rem; color: var(--brand); font-family: var(--font-mono);">
                 #{{ t.ticket_number }}
               </span>
               <div style="display: flex; align-items: center; gap: 0.4rem;">
-                {% if t.unread_admin_count and t.unread_admin_count > 0 %}
-                <span class="badge" style="background: var(--hue-danger); color: #fff; font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 999px;">
-                  {{ t.unread_admin_count }} new
+                {% if is_open %}
+                <span class="badge" style="background: #ef4444; color: #fff; font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 999px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;">
+                  <span style="width: 5px; height: 5px; background: #fff; border-radius: 50%; display: inline-block;"></span>
+                  {% if t.unread_admin_count and t.unread_admin_count > 0 %}
+                    {{ t.unread_admin_count }} new
+                  {% else %}
+                    Awaiting Reply
+                  {% endif %}
                 </span>
                 {% endif %}
                 <span class="badge badge-dot {% if t.status == 'open' %}badge-danger{% elif t.status == 'pending' %}badge-warning{% elif t.status == 'resolved' %}badge-success{% else %}badge-secondary{% endif %}" style="font-size: 0.72rem; text-transform: capitalize;">

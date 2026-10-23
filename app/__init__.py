@@ -90,6 +90,23 @@ def create_app(config_class=Config):
     def filter_format_ngn(usd, rate=None):
         return format_ngn(usd, rate)
 
+    @app.template_filter('clean_decimal')
+    def filter_clean_decimal(val, min_decimals=2, max_decimals=4):
+        if val is None:
+            return ""
+        try:
+            f = float(val)
+        except (ValueError, TypeError):
+            return str(val)
+        if abs(round(f, min_decimals) - round(f, max_decimals)) > 1e-5:
+            return f"{f:.{max_decimals}f}".rstrip('0').rstrip('.')
+        return f"{f:.{min_decimals}f}"
+
+    @app.template_filter('format_usd')
+    def filter_format_usd(val, min_decimals=2, max_decimals=4):
+        formatted = filter_clean_decimal(val, min_decimals, max_decimals)
+        return f"${formatted}" if formatted else "$0.00"
+
     @app.context_processor
     def inject_globals():
         """Expose shared values to every template (drives the app-shell topbar)."""
@@ -103,6 +120,13 @@ def create_app(config_class=Config):
                 wallet_balance_usd = float(wallet.get('balance', 0.00))
             ngn_rate = SettingsService.get_usd_ngn_rate()
             react_fee = SettingsService.get_reactivation_fee()
+            admin_support_badge = None
+            if isinstance(user, dict) and user.get('role') in ('admin', 'support'):
+                try:
+                    admin_support_badge = DBService.get_admin_support_stats()
+                except Exception:
+                    admin_support_badge = None
+
             return {
                 'NGN_PER_USD': ngn_rate,
                 'REACTIVATION_FEE_USD': react_fee,
@@ -111,6 +135,9 @@ def create_app(config_class=Config):
                 'wallet_balance_usd': wallet_balance_usd,
                 'clean_ngn': clean_ngn,
                 'format_ngn': format_ngn,
+                'clean_decimal': filter_clean_decimal,
+                'format_usd': filter_format_usd,
+                'admin_support_badge': admin_support_badge,
             }
         except Exception:
             return {
@@ -121,6 +148,8 @@ def create_app(config_class=Config):
                 'wallet_balance_usd': 0.00,
                 'clean_ngn': clean_ngn,
                 'format_ngn': format_ngn,
+                'clean_decimal': filter_clean_decimal,
+                'format_usd': filter_format_usd,
             }
 
     @app.errorhandler(500)

@@ -155,6 +155,35 @@
   [data-theme="dark"] .admin-nav-link:hover {
     background: rgba(255, 255, 255, 0.05);
   }
+  .admin-support-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 999px;
+    line-height: 1.4;
+    margin-left: 4px;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.45);
+    animation: pulseSupportBadge 2s infinite ease-in-out;
+  }
+  .admin-support-indicator.is-hidden {
+    display: none !important;
+  }
+  .admin-support-indicator .indicator-dot {
+    width: 5px;
+    height: 5px;
+    background: #fff;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  @keyframes pulseSupportBadge {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+    50% { transform: scale(1.1); box-shadow: 0 0 14px rgba(239, 68, 68, 0.9); }
+  }
   @media (max-width: 768px) {
     .admin-header {
       padding: 0.35rem 0.65rem;
@@ -221,8 +250,12 @@
         </a>
         {% endif %}
 
-        <a href="{{ url_for('admin.support') }}" class="admin-nav-link {% if request.endpoint == 'admin.support' or active_page == 'support' %}is-active{% endif %}">
+        <a href="{{ url_for('admin.support') }}" class="admin-nav-link {% if request.endpoint == 'admin.support' or active_page == 'support' %}is-active{% endif %}" id="adminNavSupportLink">
           {{ icon('headset') }} <span>Support</span>
+          <span class="admin-support-indicator {% if not admin_support_badge or admin_support_badge.action_required == 0 %}is-hidden{% endif %}" id="adminNavSupportBadge" title="Open tickets awaiting response">
+            <span class="indicator-dot"></span>
+            <span class="indicator-count">{{ admin_support_badge.action_required if admin_support_badge else 0 }}</span>
+          </span>
         </a>
         <a href="{{ url_for('admin.notifications') }}" class="admin-nav-link {% if request.endpoint == 'admin.notifications' or active_page == 'notifications' %}is-active{% endif %}">
           {{ icon('bell') }} <span>Notifications</span>
@@ -282,6 +315,34 @@
       }, 20);
     }
   });
+})();
+
+// Real-time polling for open support tickets indicator
+(function() {
+  var badge = document.getElementById('adminNavSupportBadge');
+  function checkSupportUnread() {
+    fetch('/api/admin/support/unread-count')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.success) return;
+        var cnt = data.action_required || 0;
+        if (!badge) {
+          badge = document.getElementById('adminNavSupportBadge');
+        }
+        if (badge) {
+          var countSpan = badge.querySelector('.indicator-count');
+          if (cnt > 0) {
+            if (countSpan) countSpan.textContent = cnt;
+            badge.classList.remove('is-hidden');
+          } else {
+            badge.classList.add('is-hidden');
+          }
+        }
+      })
+      .catch(function() {});
+  }
+  // Check every 25 seconds
+  setInterval(checkSupportUnread, 25000);
 })();
 </script>
 {% endblock %}

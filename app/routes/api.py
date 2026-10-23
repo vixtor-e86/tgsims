@@ -1707,5 +1707,26 @@ def api_check_rental_sms(rental_id):
     return jsonify(res)
 
 
+@api_bp.route('/admin/support/unread-count', methods=['GET'])
+def api_admin_support_unread_count():
+    """Poll unread and open support ticket counts for Admin notification indicator."""
+    user = _get_current_user()
+    if not user or user.get('role') not in ('admin', 'support'):
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+
+    stats = DBService.get_admin_support_stats()
+    open_cnt = stats.get('open', 0)
+    unread_cnt = stats.get('unread_admin', 0)
+    action_required = stats.get('action_required', 0)
+
+    return jsonify({
+        'success': True,
+        'open_count': open_cnt,
+        'unread_count': unread_cnt,
+        'action_required': action_required,
+        'has_open': action_required > 0
+    })
+
+
 
 

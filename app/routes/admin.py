@@ -173,11 +173,11 @@ def pricing():
                 smscode_floor_val = request.form.get('smscode_min_profit_usd')
                 if smscode_floor_val is None or str(smscode_floor_val).strip() == '':
                     smscode_floor_val = request.form.get('fivesim_min_profit_usd')
-                smscode_floor = _safe_float(smscode_floor_val, 0.25)
+                smscode_floor = round(_safe_float(smscode_floor_val, 0.25), 4)
 
                 tv_pct = _safe_float(request.form.get('textverified_markup_percent'), 25.00)
-                tv_floor = _safe_float(request.form.get('textverified_min_profit_usd'), 0.50)
-                react_fee = _safe_float(request.form.get('reactivation_fee_usd'), 1.00)
+                tv_floor = round(_safe_float(request.form.get('textverified_min_profit_usd'), 0.50), 4)
+                react_fee = round(_safe_float(request.form.get('reactivation_fee_usd'), 1.00), 4)
                 crypto_addr = request.form.get('crypto_deposit_address', '').strip()
                 squad_on = 'squad_enabled' in request.form
                 crypto_on = 'crypto_enabled' in request.form
@@ -210,7 +210,7 @@ def pricing():
             prov_type = request.form.get('provider_type', 'smscode').strip().lower()
             norm_prov = 'textverified' if prov_type == 'textverified' else '5sim'
             try:
-                override_price = float(request.form.get('override_price_usd', 0.00))
+                override_price = round(float(request.form.get('override_price_usd', 0.00)), 4)
                 notes = request.form.get('notes', '').strip()
                 if svc_code and override_price > 0:
                     ok = SettingsService.set_price_override(svc_code, svc_name or svc_code.capitalize(), norm_prov, override_price, notes)
@@ -823,7 +823,7 @@ def support(ticket_id=None):
             messages = DBService.get_ticket_messages(selected_ticket['id'], is_admin=True, mark_read=True)
     elif tickets:
         selected_ticket = tickets[0]
-        messages = DBService.get_ticket_messages(selected_ticket['id'], is_admin=True, mark_read=True)
+        messages = DBService.get_ticket_messages(selected_ticket['id'], is_admin=True, mark_read=False)
 
     return render_template(
         'admin/support.html',

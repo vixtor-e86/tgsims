@@ -51,7 +51,7 @@
   {% endif %}
 
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/currency.js') }}?v=10"></script>
+  <script src="{{ url_for('static', filename='js/currency.js') }}?v=11"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   {% if not (request.endpoint and request.endpoint.startswith('admin.')) %}
     <script src="{{ url_for('static', filename='js/support.js') }}?v=5"></script>

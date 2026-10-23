@@ -184,15 +184,15 @@ class SettingsService:
                 sc_floor = updates[k]
                 break
         if sc_floor is not None:
-            clean_data['smscode_min_profit_usd'] = float(sc_floor)
-            clean_data['virtualsms_min_profit_usd'] = float(sc_floor)
-            clean_data['fivesim_min_profit_usd'] = float(sc_floor)
+            clean_data['smscode_min_profit_usd'] = round(float(sc_floor), 4)
+            clean_data['virtualsms_min_profit_usd'] = round(float(sc_floor), 4)
+            clean_data['fivesim_min_profit_usd'] = round(float(sc_floor), 4)
         if 'textverified_markup_percent' in updates and updates['textverified_markup_percent'] is not None:
             clean_data['textverified_markup_percent'] = float(updates['textverified_markup_percent'])
         if 'textverified_min_profit_usd' in updates and updates['textverified_min_profit_usd'] is not None:
-            clean_data['textverified_min_profit_usd'] = float(updates['textverified_min_profit_usd'])
+            clean_data['textverified_min_profit_usd'] = round(float(updates['textverified_min_profit_usd']), 4)
         if 'reactivation_fee_usd' in updates:
-            clean_data['reactivation_fee_usd'] = float(updates['reactivation_fee_usd'])
+            clean_data['reactivation_fee_usd'] = round(float(updates['reactivation_fee_usd']), 4)
         if 'crypto_deposit_address' in updates:
             clean_data['crypto_deposit_address'] = str(updates['crypto_deposit_address']).strip()
         if 'squad_enabled' in updates:
