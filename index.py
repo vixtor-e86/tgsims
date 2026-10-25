@@ -1,3 +1,4 @@
+from urllib.parse import parse_qs
 from app import create_app
 
 app = create_app()
@@ -6,25 +7,23 @@ app = create_app()
 class VercelPathMiddleware:
     """
     Middleware to normalize PATH_INFO for Vercel serverless function invocations.
-    When Vercel rewrites incoming traffic to /api/index, WSGI can receive /api/index
-    instead of the user's actual URL. This middleware restores the intended path.
+    When Vercel rewrites incoming traffic to /api/index?__path=/$1, this middleware
+    extracts the intended path and restores it in WSGI environ['PATH_INFO'].
     """
 
     def __init__(self, wsgi_app):
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        path = environ.get('PATH_INFO', '')
-        if path in ('/api/index', '/api/index.py', '/api', '/api/'):
-            matched = environ.get('HTTP_X_MATCHED_PATH')
-            if matched and not matched.startswith('/api/index'):
-                environ['PATH_INFO'] = matched
-            else:
-                environ['PATH_INFO'] = '/'
-        elif path.startswith('/api/index/'):
-            environ['PATH_INFO'] = path[len('/api/index'):]
-        elif path.startswith('/api/index.py/'):
-            environ['PATH_INFO'] = path[len('/api/index.py'):]
+        query_string = environ.get('QUERY_STRING', '')
+        params = parse_qs(query_string)
+        if '__path' in params and params['__path']:
+            target_path = params['__path'][0]
+            if not target_path.startswith('/'):
+                target_path = '/' + target_path
+            environ['PATH_INFO'] = target_path
+        elif environ.get('PATH_INFO') in ('/api/index', '/api/index.py', '/api', '/api/'):
+            environ['PATH_INFO'] = '/'
 
         return self.wsgi_app(environ, start_response)
 

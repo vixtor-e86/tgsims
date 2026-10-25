@@ -158,47 +158,15 @@ def create_app(config_class=Config):
                 'format_usd': filter_format_usd,
             }
 
-    @app.route('/debug-headers')
-    def debug_headers():
-        from flask import jsonify
-        return jsonify({
-            'headers': dict(request.headers),
-            'path': request.path,
-            'full_path': request.full_path,
-            'url': request.url,
-            'environ_path_info': request.environ.get('PATH_INFO'),
-            'environ_script_name': request.environ.get('SCRIPT_NAME'),
-            'environ_x_matched': request.environ.get('HTTP_X_MATCHED_PATH'),
-        })
-
-    @app.route('/api/index')
-    def vercel_debug_api():
-        from flask import jsonify
-        return jsonify({
-            'headers': dict(request.headers),
-            'environ_all': {k: str(v) for k, v in request.environ.items() if isinstance(v, (str, int))}
-        })
-
     @app.errorhandler(404)
     def handle_404(e):
-        # Check if request was rewritten to /api/index or similar by Vercel
-        path = request.path
-        if path in ('/api/index', '/api/index.py', '/api', '/api/'):
-            matched = request.headers.get('X-Matched-Path')
-            if matched and matched not in ('/api/index', '/api/index.py', '/api', '/api/'):
-                with app.test_request_context(matched):
-                    try:
-                        return app.full_dispatch_request()
-                    except Exception:
-                        pass
-            from app.routes.public import landing
+        from app.routes.public import landing
+        if request.path in ('/api/index', '/api/index.py', '/api', '/api/'):
             return landing()
-        return e, 404
+        return "<h3>404 Not Found</h3><p>The page you requested does not exist.</p>", 404
 
     @app.errorhandler(500)
     def handle_500(e):
-        import traceback
-        tb = traceback.format_exc()
-        return f"<h3>Internal Server Error</h3><pre>{tb}</pre>", 500
+        return "<h3>500 Internal Server Error</h3><p>An unexpected error occurred. Please try again later.</p>", 500
 
     return app
