@@ -9,7 +9,7 @@ NGN_PER_USD = 1600
 
 def create_app(config_class=Config):
     app = Flask(__name__)
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
     app.config.from_object(config_class)
     app.config['SESSION_PERMANENT'] = False
 
@@ -151,6 +151,22 @@ def create_app(config_class=Config):
                 'clean_decimal': filter_clean_decimal,
                 'format_usd': filter_format_usd,
             }
+
+    @app.errorhandler(404)
+    def handle_404(e):
+        # Check if request was rewritten to /api/index or similar by Vercel
+        path = request.path
+        if path in ('/api/index', '/api/index.py', '/api', '/api/'):
+            matched = request.headers.get('X-Matched-Path')
+            if matched and matched not in ('/api/index', '/api/index.py', '/api', '/api/'):
+                with app.test_request_context(matched):
+                    try:
+                        return app.full_dispatch_request()
+                    except Exception:
+                        pass
+            from app.routes.public import landing
+            return landing()
+        return e, 404
 
     @app.errorhandler(500)
     def handle_500(e):
