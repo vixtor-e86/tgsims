@@ -171,6 +171,14 @@ def create_app(config_class=Config):
             'environ_x_matched': request.environ.get('HTTP_X_MATCHED_PATH'),
         })
 
+    @app.route('/api/index')
+    def vercel_debug_api():
+        from flask import jsonify
+        return jsonify({
+            'headers': dict(request.headers),
+            'environ_all': {k: str(v) for k, v in request.environ.items() if isinstance(v, (str, int))}
+        })
+
     @app.errorhandler(404)
     def handle_404(e):
         # Check if request was rewritten to /api/index or similar by Vercel
