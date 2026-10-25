@@ -1,4 +1,5 @@
 
+import os
 from flask import Flask, session, request, redirect, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import Config
@@ -8,7 +9,12 @@ NGN_PER_USD = 1600
 
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(base_dir, 'templates'),
+        static_folder=os.path.join(base_dir, 'static')
+    )
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
     app.config.from_object(config_class)
     app.config['SESSION_PERMANENT'] = False
