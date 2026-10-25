@@ -170,6 +170,8 @@ def create_app(config_class=Config):
 
     @app.errorhandler(500)
     def handle_500(e):
-        return f"<h3>Internal Server Error</h3><p>{e}</p>", 500
+        import traceback
+        tb = traceback.format_exc()
+        return f"<h3>Internal Server Error</h3><pre>{tb}</pre>", 500
 
     return app
