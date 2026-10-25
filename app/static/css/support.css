@@ -196,6 +196,76 @@
   margin-bottom: 0.85rem;
 }
 
+/* Quick External Channels (WhatsApp & Telegram) */
+.widget-quick-channels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.widget-channel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.widget-channel-btn:hover {
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.widget-channel-ico {
+  flex-shrink: 0;
+}
+
+.widget-channel-wa {
+  background: rgba(37, 211, 102, 0.12);
+  color: #128c7e;
+  border: 1px solid rgba(37, 211, 102, 0.35);
+}
+
+[data-theme="dark"] .widget-channel-wa {
+  background: rgba(37, 211, 102, 0.18);
+  color: #25d366;
+  border-color: rgba(37, 211, 102, 0.45);
+}
+
+.widget-channel-wa:hover {
+  background: #25d366;
+  color: #ffffff;
+  border-color: #25d366;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+}
+
+.widget-channel-tg {
+  background: rgba(34, 158, 217, 0.12);
+  color: #0d83b9;
+  border: 1px solid rgba(34, 158, 217, 0.35);
+}
+
+[data-theme="dark"] .widget-channel-tg {
+  background: rgba(34, 158, 217, 0.18);
+  color: #229ed9;
+  border-color: rgba(34, 158, 217, 0.45);
+}
+
+.widget-channel-tg:hover {
+  background: #229ed9;
+  color: #ffffff;
+  border-color: #229ed9;
+  box-shadow: 0 4px 12px rgba(34, 158, 217, 0.35);
+}
+
 .widget-section-header {
   padding: 0 1rem 0.5rem;
   font-size: 0.75rem;

@@ -2524,35 +2524,63 @@ class SIMProviderService:
                 tv_tier = RentalDuration.THREE_DAY if (tier_name == 'ONE_DAY' and matched['code'] == 'allservices') else RentalDuration[tier_name]
                 req = NewRentalRequest(
                     allow_back_order_reservations=False,
+                    always_on=False,
                     duration=tv_tier,
-                    is_renewable=True,
+                    is_renewable=False,
                     number_type=NumberType.MOBILE,
-                    service_name=matched['code'],
+                    service_name=matched['code'].lower().strip(),
                     capability=ReservationCapability.SMS
                 )
                 sale = tv_client.reservations.create(req)
                 if sale and sale.reservations:
                     res_obj = sale.reservations[0]
-                    prov_res_id = res_obj.id
+                    prov_res_id = getattr(res_obj, 'id', None)
                     try:
-                        details = tv_client.reservations.nonrenewable_details(res_obj.id)
-                        phone = details.number
+                        details = tv_client.reservations.details(prov_res_id)
+                        phone = getattr(details, 'number', None)
                         if hasattr(details, 'ends_at') and details.ends_at:
                             ends_at_iso = details.ends_at.isoformat() if hasattr(details.ends_at, 'isoformat') else str(details.ends_at)
                     except Exception as ed:
                         print(f"[SIMProviderService] rental details fetch note: {ed}")
+                        try:
+                            details = tv_client.reservations.nonrenewable_details(prov_res_id)
+                            phone = getattr(details, 'number', None)
+                            if hasattr(details, 'ends_at') and details.ends_at:
+                                ends_at_iso = details.ends_at.isoformat() if hasattr(details.ends_at, 'isoformat') else str(details.ends_at)
+                        except Exception as ed2:
+                            print(f"[SIMProviderService] rental nonrenewable_details note: {ed2}")
+                    
+                    # Schedule initial wake request so the line is active immediately
+                    try:
+                        tv_client.wake_requests.create(prov_res_id)
+                    except Exception as we:
+                        print(f"[SIMProviderService] initial wake note: {we}")
+                else:
+                    return {'success': False, 'message': 'No dedicated carrier lines are currently available for this service tier. Please select another duration.'}
             except Exception as e:
+                import traceback
                 print(f"[SIMProviderService] TextVerified rental create error: {e}")
+                traceback.print_exc()
                 err_str = str(e).lower()
-                if 'insufficient balance' in err_str:
+                if 'insufficient balance' in err_str or 'balance' in err_str:
                     return {'success': False, 'message': 'Carrier inventory is updating. Please try again shortly or contact support.'}
-                return {'success': False, 'message': 'No dedicated carrier lines are currently available for this service tier. Please select another duration.'}
+                if 'not found' in err_str or 'invalid' in err_str:
+                    return {'success': False, 'message': f'Rental service {matched["name"]} is not currently available for this duration.'}
+                if 'out of stock' in err_str or 'unavailable' in err_str or 'inventory' in err_str or 'no lines' in err_str:
+                    return {'success': False, 'message': 'No dedicated carrier lines are currently available for this service tier. Please select another duration.'}
+                return {'success': False, 'message': f'Carrier allocation error: {e}'}
 
         # Sandbox / Demo fallback if credentials are pending
         if not phone:
-            import random
-            phone = f"+1 (202) {random.randint(200, 899)}-{random.randint(1000, 9999)}"
-            prov_res_id = f"DEMO-RNT-{uuid.uuid4().hex[:8].upper()}"
+            if not tv_client:
+                import random
+                phone = f"+1 (202) {random.randint(200, 899)}-{random.randint(1000, 9999)}"
+                prov_res_id = f"DEMO-RNT-{uuid.uuid4().hex[:8].upper()}"
+            else:
+                return {
+                    'success': False,
+                    'message': 'Failed to retrieve dedicated number from carrier. Please contact support.'
+                }
 
         # 3. Deduct wallet balance
         deduct_res = DBService.deduct_wallet_balance(
@@ -2766,7 +2794,23 @@ class SIMProviderService:
 
         if tv_client and prov_res_id and not prov_res_id.startswith('DEMO-') and phone_number:
             try:
-                sms_list = list(tv_client.sms.list(to_number=phone_number))
+                # Ensure line is woken
+                try:
+                    tv_client.wake_requests.create(prov_res_id)
+                except Exception:
+                    pass
+
+                import re
+                clean_phone = re.sub(r'[^\d+]', '', str(phone_number))
+                sms_list = []
+                try:
+                    sms_list = list(tv_client.sms.list(to_number=clean_phone))
+                except Exception:
+                    try:
+                        sms_list = list(tv_client.sms.list(to_number=phone_number))
+                    except Exception as le:
+                        print(f"[SIMProviderService] sms list fetch error: {le}")
+
                 for s in sms_list:
                     code = getattr(s, 'parsed_code', None)
                     text = getattr(s, 'sms_content', None) or (f"Your verification code is: {code}" if code else "New SMS received")
