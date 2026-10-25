@@ -158,6 +158,19 @@ def create_app(config_class=Config):
                 'format_usd': filter_format_usd,
             }
 
+    @app.route('/debug-headers')
+    def debug_headers():
+        from flask import jsonify
+        return jsonify({
+            'headers': dict(request.headers),
+            'path': request.path,
+            'full_path': request.full_path,
+            'url': request.url,
+            'environ_path_info': request.environ.get('PATH_INFO'),
+            'environ_script_name': request.environ.get('SCRIPT_NAME'),
+            'environ_x_matched': request.environ.get('HTTP_X_MATCHED_PATH'),
+        })
+
     @app.errorhandler(404)
     def handle_404(e):
         # Check if request was rewritten to /api/index or similar by Vercel
