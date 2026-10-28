@@ -391,6 +391,46 @@
     });
   });
 
+  // Dedicated Rental Cancel & Return Button
+  document.querySelectorAll('[data-action="cancel-rental-btn"]').forEach(function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      var id = btn.getAttribute("data-id");
+      var phone = btn.getAttribute("data-phone");
+      var price = btn.getAttribute("data-price") || "0.00";
+
+      if (!confirm("Are you sure you want to return dedicated number " + phone + "? Since no SMS codes have been received, $" + Number(price).toFixed(2) + " will be refunded to your wallet in full.")) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Refunding...";
+
+      fetch("/api/rentals/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rental_id: id })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.success) {
+          if (window.toast) window.toast(data.message || "Rental refunded successfully!", "success");
+          setTimeout(function () { window.location.reload(); }, 900);
+        } else {
+          btn.disabled = false;
+          btn.textContent = "Return & Refund";
+          if (window.toast) window.toast(data.message || "Failed to cancel rental.", "error");
+          else alert(data.message || "Failed to cancel rental.");
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = "Return & Refund";
+        alert("Network error cancelling rental.");
+      });
+    });
+  });
+
   // =========================================================================
   // RENTAL LINE RENEWAL MODAL
   // =========================================================================

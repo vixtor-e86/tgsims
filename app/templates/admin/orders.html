@@ -1,14 +1,24 @@
 {% extends "admin/layout.html" %}
 {% from "partials/icons.html" import icon %}
 
-{% block title %}All Orders | {{ BRAND }} Admin{% endblock %}
+{% block title %}{{ 'Dedicated Number Rentals' if tab == 'rentals' else 'All Orders' }} | {{ BRAND }} Admin{% endblock %}
 
 {% block admin_content %}
-<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
   <div>
-    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text);">Virtual SIM Orders</h1>
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--text);">
+      {% if tab == 'rentals' %}
+        {{ icon('clock') }} Dedicated Number Rentals
+      {% else %}
+        {{ icon('sim') }} Virtual SIM Orders
+      {% endif %}
+    </h1>
     <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.95rem;">
-      Monitor real-time activations across all users and carrier pools, inspect SMS deliveries, or trigger manual refunds.
+      {% if tab == 'rentals' %}
+        Monitor long-term carrier reservations across all users, inspect private SMS mailboxes, or issue manual refunds.
+      {% else %}
+        Monitor real-time activations across all users and carrier pools, inspect SMS deliveries, or trigger manual refunds.
+      {% endif %}
     </p>
   </div>
   <a href="{{ url_for('admin.support') if (current_user and current_user.role == 'support') else url_for('admin.index') }}" class="btn btn-secondary btn-sm">
@@ -16,143 +26,372 @@
   </a>
 </div>
 
-{# Filter Tabs #}
-<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; flex-wrap: wrap;">
-  <a href="{{ url_for('admin.orders', status='all') }}" class="btn btn-sm {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    All Orders
+{# Primary Tab Navigation: One-Time Orders vs Dedicated Rentals #}
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.75rem; flex-wrap: wrap;">
+  <a href="{{ url_for('admin.orders', tab='sims', status='all') }}" class="btn btn-sm {% if tab != 'rentals' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-md); font-weight: 700;">
+    {{ icon('sim') }} Virtual SIM Orders
   </a>
-  <a href="{{ url_for('admin.orders', status='active') }}" class="btn btn-sm {% if status_filter == 'active' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    {{ icon('clock') }} Active / Pending
-  </a>
-  <a href="{{ url_for('admin.orders', status='received') }}" class="btn btn-sm {% if status_filter == 'received' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    {{ icon('check') }} SMS Received
-  </a>
-  <a href="{{ url_for('admin.orders', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    Completed
-  </a>
-  <a href="{{ url_for('admin.orders', status='refunded') }}" class="btn btn-sm {% if status_filter == 'refunded' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
-    Refunded
+  <a href="{{ url_for('admin.orders', tab='rentals', status='all') }}" class="btn btn-sm {% if tab == 'rentals' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-md); font-weight: 700;">
+    {{ icon('clock') }} Dedicated Rentals (Long-Term)
   </a>
 </div>
 
-{# Orders Table #}
-<div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
-  {% if orders and orders|length > 0 %}
-    <div style="overflow-x: auto;">
-      <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
-            <th style="padding: 0.75rem 0.5rem;">Order Ref</th>
-            <th style="padding: 0.75rem 0.5rem;">Customer</th>
-            <th style="padding: 0.75rem 0.5rem;">Service & Country</th>
-            <th style="padding: 0.75rem 0.5rem;">Provider Route</th>
-            <th style="padding: 0.75rem 0.5rem;">Phone</th>
-            <th style="padding: 0.75rem 0.5rem;">Price</th>
-            <th style="padding: 0.75rem 0.5rem;">SMS / Code</th>
-            <th style="padding: 0.75rem 0.5rem;">Status</th>
-            <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ord in orders %}
-            <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
-              {# Ref #}
-              <td style="padding: 0.75rem 0.5rem;">
-                <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ ord.order_reference }}</code>
-                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
-                  {{ ord.created_at[:16] if ord.created_at else '-' }}
-                </div>
-              </td>
-
-              {# Customer #}
-              <td style="padding: 0.75rem 0.5rem;">
-                <div style="font-weight: 600; color: var(--text);">{{ ord.user_name or 'User' }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ord.user_email }}</div>
-              </td>
-
-              {# Service #}
-              <td style="padding: 0.75rem 0.5rem;">
-                <div style="font-weight: 600; color: var(--text);">{{ ord.service_name }}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ord.country_name }} ({{ ord.country_code }})</div>
-              </td>
-
-              {# Provider Route #}
-              <td style="padding: 0.75rem 0.5rem;">
-                {% if ord.provider_order_id and 'TXTV' in (ord.provider_order_id|string) %}
-                  <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified</span>
-                {% else %}
-                  <span class="badge badge-success" style="font-size: 0.75rem;">5sim</span>
-                {% endif %}
-                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
-                  Route: {{ ord.operator or 'any' }}
-                </div>
-              </td>
-
-              {# Phone #}
-              <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-family: var(--font-mono, monospace); font-weight: 600; color: var(--text);">{{ ord.phone_number }}</span>
-              </td>
-
-              {# Price #}
-              <td style="padding: 0.75rem 0.5rem;">
-                <span style="font-weight: 700; color: var(--hue-success);" data-usd="{{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}" data-ngn="{{ '%.2f'|format(ord.price_ngn) if ord.price_ngn is defined else '' }}">{{ ord.price_formatted if ord.price_formatted is defined else ord.price|format_ngn }}</span>
-                {% if ord.provider_cost %}
-                  <div style="font-size: 0.7rem; color: var(--text-muted);">
-                    Cost: ${{ '%.2f'|format((ord.provider_cost or 0)|float) }}
-                  </div>
-                {% endif %}
-              </td>
-
-              {# SMS Code #}
-              <td style="padding: 0.75rem 0.5rem;">
-                {% if ord.sms_code %}
-                  <span class="badge badge-success" style="font-size: 0.85rem; font-family: var(--font-mono, monospace); font-weight: 700;">
-                    {{ ord.sms_code }}
-                  </span>
-                {% else %}
-                  <span style="font-size: 0.8rem; color: var(--text-muted);">Waiting...</span>
-                {% endif %}
-              </td>
-
-              {# Status #}
-              <td style="padding: 0.75rem 0.5rem;">
-                {% if ord.status in ('completed', 'received') %}
-                  <span class="badge badge-success" style="font-size: 0.75rem;">{{ ord.status|capitalize }}</span>
-                {% elif ord.status in ('active', 'pending') %}
-                  <span class="badge badge-warning" style="font-size: 0.75rem;">Active</span>
-                {% elif ord.status == 'refunded' %}
-                  <span class="badge badge-muted" style="font-size: 0.75rem;">Refunded</span>
-                {% else %}
-                  <span class="badge badge-danger" style="font-size: 0.75rem;">{{ ord.status|capitalize }}</span>
-                {% endif %}
-              </td>
-
-              {# Action #}
-              <td style="padding: 0.75rem 0.5rem; text-align: right;">
-                {% if ord.status not in ('refunded', 'cancelled') %}
-                  <button type="button" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;" 
-                          onclick="openRefundModal('{{ ord.id }}', '{{ ord.user_id }}', '{{ ord.order_reference }}', '{{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}')">
-                    {{ icon('refresh') }} Refund
-                  </button>
-                {% else %}
-                  <span style="font-size: 0.75rem; color: var(--text-muted);">Refunded</span>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+{# Secondary Status Sub-Filters #}
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+  {% if tab == 'rentals' %}
+    <a href="{{ url_for('admin.orders', tab='rentals', status='all') }}" class="btn btn-xs {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      All Rentals
+    </a>
+    <a href="{{ url_for('admin.orders', tab='rentals', status='active') }}" class="btn btn-xs {% if status_filter == 'active' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      {{ icon('check') }} Active
+    </a>
+    <a href="{{ url_for('admin.orders', tab='rentals', status='ended') }}" class="btn btn-xs {% if status_filter == 'ended' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      Ended / Expired
+    </a>
+    <a href="{{ url_for('admin.orders', tab='rentals', status='refunded') }}" class="btn btn-xs {% if status_filter == 'refunded' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      Refunded
+    </a>
   {% else %}
-    <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
-      <div style="font-size: 2.2rem; margin-bottom: 0.5rem; display: flex; justify-content: center; color: var(--text-dim);">{{ icon('sim') }}</div>
-      <div style="font-weight: 600; font-size: 1.05rem; color: var(--text);">No Orders Found</div>
-      <p style="font-size: 0.85rem; margin-top: 0.25rem;">No orders match the selected filter.</p>
-    </div>
+    <a href="{{ url_for('admin.orders', tab='sims', status='all') }}" class="btn btn-xs {% if status_filter == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      All Orders
+    </a>
+    <a href="{{ url_for('admin.orders', tab='sims', status='active') }}" class="btn btn-xs {% if status_filter == 'active' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      {{ icon('clock') }} Active / Pending
+    </a>
+    <a href="{{ url_for('admin.orders', tab='sims', status='received') }}" class="btn btn-xs {% if status_filter == 'received' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      {{ icon('check') }} SMS Received
+    </a>
+    <a href="{{ url_for('admin.orders', tab='sims', status='completed') }}" class="btn btn-xs {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      Completed
+    </a>
+    <a href="{{ url_for('admin.orders', tab='sims', status='refunded') }}" class="btn btn-xs {% if status_filter == 'refunded' %}btn-primary{% else %}btn-secondary{% endif %}" style="border-radius: var(--r-sm);">
+      Refunded
+    </a>
   {% endif %}
 </div>
 
-{# Admin Order Refund Confirmation Modal #}
+{% if tab == 'rentals' %}
+  {# =========================================================================
+     DEDICATED RENTALS TABLE (WITH LIVE MAILBOX INSPECTION & PROVIDER REFUND)
+     ========================================================================= #}
+  <div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
+    {% if rentals and rentals|length > 0 %}
+      <div style="overflow-x: auto;">
+        <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
+              <th style="padding: 0.75rem 0.5rem;">Rental Ref</th>
+              <th style="padding: 0.75rem 0.5rem;">Customer</th>
+              <th style="padding: 0.75rem 0.5rem;">Service</th>
+              <th style="padding: 0.75rem 0.5rem;">Dedicated Phone</th>
+              <th style="padding: 0.75rem 0.5rem;">Duration</th>
+              <th style="padding: 0.75rem 0.5rem;">Price</th>
+              <th style="padding: 0.75rem 0.5rem;">OTPs / SMS</th>
+              <th style="padding: 0.75rem 0.5rem;">Status</th>
+              <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rent in rentals %}
+              <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
+                {# Ref #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ rent.rental_reference }}</code>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
+                    {{ rent.created_at[:16] if rent.created_at else '-' }}
+                  </div>
+                </td>
+
+                {# Customer #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <div style="font-weight: 600; color: var(--text);">{{ rent.user_name or 'Customer' }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">{{ rent.user_email }}</div>
+                </td>
+
+                {# Service #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <div style="font-weight: 600; color: var(--text);">{{ rent.service_name }}</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">United States (US) &bull; Carrier Line</div>
+                </td>
+
+                {# Phone #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <span style="font-family: var(--font-mono, monospace); font-weight: 700; color: var(--brand);">{{ rent.phone_number }}</span>
+                </td>
+
+                {# Duration & Expiry #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <span style="font-weight: 600;">{{ rent.duration_days }} Days</span>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">
+                    Exp: {{ rent.expires_at[:10] if rent.expires_at else '-' }}
+                  </div>
+                </td>
+
+                {# Price #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <span style="font-weight: 700; color: var(--hue-success);" data-usd="{{ '%.2f'|format((rent.price or rent.user_cost or 0)|float) }}">
+                    {{ rent.price_formatted if rent.price_formatted is defined else rent.price|format_ngn }}
+                  </span>
+                  {% if rent.provider_cost %}
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                      Cost: ${{ '%.2f'|format((rent.provider_cost or 0)|float) }}
+                    </div>
+                  {% endif %}
+                </td>
+
+                {# SMS Mailbox Count #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <span class="badge badge-info" style="font-size: 0.75rem; font-weight: 700;">
+                    {{ rent.sms_count|default(0) }} SMS
+                  </span>
+                  {% if rent.last_sms_code %}
+                    <div style="font-size: 0.72rem; font-family: var(--font-mono); font-weight: 800; color: var(--brand); margin-top: 2px;">
+                      {{ rent.last_sms_code }}
+                    </div>
+                  {% endif %}
+                </td>
+
+                {# Status #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  {% if rent.status == 'active' %}
+                    <span class="badge badge-success" style="font-size: 0.75rem;">Active</span>
+                  {% elif rent.status == 'refunded' %}
+                    <span class="badge badge-muted" style="font-size: 0.75rem;">Refunded</span>
+                  {% else %}
+                    <span class="badge badge-neutral" style="font-size: 0.75rem;">{{ rent.status|capitalize }}</span>
+                  {% endif %}
+                </td>
+
+                {# Actions #}
+                <td style="padding: 0.75rem 0.5rem; text-align: right;">
+                  <div style="display: inline-flex; gap: 0.4rem; align-items: center; justify-content: flex-end;">
+                    <button type="button" class="btn btn-primary btn-xs"
+                            onclick="openAdminRentalMailbox('{{ rent.id or rent.rental_reference }}', '{{ rent.phone_number }}', '{{ rent.service_name }}')"
+                            title="Inspect live SMS mailbox for this carrier line">
+                      {{ icon('mail') }} Mailbox
+                    </button>
+                    {% if rent.status not in ('refunded', 'cancelled') %}
+                      <button type="button" class="btn btn-ghost btn-xs text-danger" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; color: var(--hue-danger);"
+                              onclick="openRentalRefundModal('{{ rent.id or rent.rental_reference }}', '{{ rent.rental_reference }}', '{{ rent.user_name }}', '{{ rent.phone_number }}', '{{ '%.2f'|format((rent.price or rent.user_cost or 0)|float) }}')"
+                              title="Refund customer wallet and cancel line on TextVerified">
+                        {{ icon('refresh') }} Refund
+                      </button>
+                    {% else %}
+                      <span style="font-size: 0.72rem; color: var(--text-muted);">Refunded</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem; display: flex; justify-content: center; color: var(--text-dim);">{{ icon('clock') }}</div>
+        <div style="font-weight: 600; font-size: 1.05rem; color: var(--text);">No Rentals Found</div>
+        <p style="font-size: 0.85rem; margin-top: 0.25rem;">No dedicated number rentals match the selected filter.</p>
+      </div>
+    {% endif %}
+  </div>
+
+{% else %}
+  {# =========================================================================
+     VIRTUAL SIM ONE-TIME ORDERS TABLE
+     ========================================================================= #}
+  <div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
+    {% if orders and orders|length > 0 %}
+      <div style="overflow-x: auto;">
+        <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
+              <th style="padding: 0.75rem 0.5rem;">Order Ref</th>
+              <th style="padding: 0.75rem 0.5rem;">Customer</th>
+              <th style="padding: 0.75rem 0.5rem;">Service &amp; Country</th>
+              <th style="padding: 0.75rem 0.5rem;">Provider Route</th>
+              <th style="padding: 0.75rem 0.5rem;">Phone</th>
+              <th style="padding: 0.75rem 0.5rem;">Price</th>
+              <th style="padding: 0.75rem 0.5rem;">SMS / Code</th>
+              <th style="padding: 0.75rem 0.5rem;">Status</th>
+              <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ord in orders %}
+              <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
+                {# Ref #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ ord.order_reference }}</code>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
+                    {{ ord.created_at[:16] if ord.created_at else '-' }}
+                  </div>
+                </td>
+
+                {# Customer #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <div style="font-weight: 600; color: var(--text);">{{ ord.user_name or 'User' }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ord.user_email }}</div>
+                </td>
+
+                {# Service #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <div style="font-weight: 600; color: var(--text);">{{ ord.service_name }}</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ord.country_name }} ({{ ord.country_code }})</div>
+                </td>
+
+                {# Provider Route #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  {% if ord.provider_order_id and 'TXTV' in (ord.provider_order_id|string) %}
+                    <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified</span>
+                  {% else %}
+                    <span class="badge badge-success" style="font-size: 0.75rem;">5sim</span>
+                  {% endif %}
+                  <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">
+                    Route: {{ ord.operator or 'any' }}
+                  </div>
+                </td>
+
+                {# Phone #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <span style="font-family: var(--font-mono, monospace); font-weight: 600; color: var(--text);">{{ ord.phone_number }}</span>
+                </td>
+
+                {# Price #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  <span style="font-weight: 700; color: var(--hue-success);" data-usd="{{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}" data-ngn="{{ '%.2f'|format(ord.price_ngn) if ord.price_ngn is defined else '' }}">{{ ord.price_formatted if ord.price_formatted is defined else ord.price|format_ngn }}</span>
+                  {% if ord.provider_cost %}
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                      Cost: ${{ '%.2f'|format((ord.provider_cost or 0)|float) }}
+                    </div>
+                  {% endif %}
+                </td>
+
+                {# SMS Code #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  {% if ord.sms_code %}
+                    <span class="badge badge-success" style="font-size: 0.85rem; font-family: var(--font-mono, monospace); font-weight: 700;">
+                      {{ ord.sms_code }}
+                    </span>
+                  {% else %}
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Waiting...</span>
+                  {% endif %}
+                </td>
+
+                {# Status #}
+                <td style="padding: 0.75rem 0.5rem;">
+                  {% if ord.status in ('completed', 'received') %}
+                    <span class="badge badge-success" style="font-size: 0.75rem;">{{ ord.status|capitalize }}</span>
+                  {% elif ord.status in ('active', 'pending') %}
+                    <span class="badge badge-warning" style="font-size: 0.75rem;">Active</span>
+                  {% elif ord.status == 'refunded' %}
+                    <span class="badge badge-muted" style="font-size: 0.75rem;">Refunded</span>
+                  {% else %}
+                    <span class="badge badge-danger" style="font-size: 0.75rem;">{{ ord.status|capitalize }}</span>
+                  {% endif %}
+                </td>
+
+                {# Action #}
+                <td style="padding: 0.75rem 0.5rem; text-align: right;">
+                  {% if ord.status not in ('refunded', 'cancelled') %}
+                    <button type="button" class="btn btn-ghost btn-sm text-danger" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;" 
+                            onclick="openRefundModal('{{ ord.id }}', '{{ ord.user_id }}', '{{ ord.order_reference }}', '{{ '%.2f'|format((ord.price or ord.user_cost or 0)|float) }}')">
+                      {{ icon('refresh') }} Refund
+                    </button>
+                  {% else %}
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Refunded</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem; display: flex; justify-content: center; color: var(--text-dim);">{{ icon('sim') }}</div>
+        <div style="font-weight: 600; font-size: 1.05rem; color: var(--text);">No Orders Found</div>
+        <p style="font-size: 0.85rem; margin-top: 0.25rem;">No orders match the selected filter.</p>
+      </div>
+    {% endif %}
+  </div>
+{% endif %}
+
+{# =========================================================================
+   MODAL 1: ADMIN RENTAL MAILBOX INSPECTION MODAL
+   ========================================================================= #}
+<div id="adminRentalMailboxModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-box" style="max-width: 520px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <div style="width: 36px; height: 36px; border-radius: var(--r-full); background: rgba(37, 99, 235, 0.12); color: var(--brand); display: grid; place-items: center;">
+          {{ icon('mail') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="adminMailboxTitle" style="margin: 0; font-size: 1.1rem;">Dedicated Mailbox</h3>
+          <p id="adminMailboxSubtitle" style="font-size: 0.78rem; color: var(--text-muted); margin: 0; font-family: var(--font-mono); font-weight: 700;">+1 ...</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeAdminRentalMailbox()" aria-label="Close mailbox modal">&times;</button>
+    </div>
+    <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding: 1.25rem;">
+      <div id="adminMailboxFeed" style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">
+          Checking for incoming messages...
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.25rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
+      <button type="button" class="btn btn-secondary btn-sm" id="btnAdminRefreshSms" onclick="refreshAdminRentalMailbox()">
+        {{ icon('refresh') }} Refresh
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="closeAdminRentalMailbox()">Done</button>
+    </div>
+  </div>
+</div>
+
+{# =========================================================================
+   MODAL 2: ADMIN RENTAL REFUND CONFIRMATION MODAL
+   ========================================================================= #}
+<div id="rentalRefundModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span style="color: var(--text-danger);">{{ icon('refresh') }}</span>
+        <h3 class="modal-title" style="margin: 0; font-size: 1.1rem;">Refund Dedicated Rental</h3>
+      </div>
+      <button type="button" class="modal-close" onclick="closeRentalRefundModal()" aria-label="Close modal">&times;</button>
+    </div>
+    <form id="rentalRefundForm" method="POST">
+      <input type="hidden" name="reason" value="Admin manual rental refund">
+      <div class="modal-body" style="padding: 1.25rem 1.5rem;">
+        <p style="font-size: 0.9rem; color: var(--text); margin: 0 0 1rem 0; line-height: 1.5;">
+          Are you sure you want to issue a full refund for rental <strong id="rentalRefundRef"></strong> (<span id="rentalRefundPhone" style="font-family: var(--font-mono);"></span>)?
+        </p>
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem 1rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">
+            <span>Customer:</span>
+            <strong style="color: var(--text);" id="rentalRefundUser"></strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
+            <span>Refund to Wallet:</span>
+            <strong style="color: var(--hue-success); font-size: 1rem;" id="rentalRefundAmount">$0.00</strong>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.85rem; line-height: 1.4;">
+          The customer's wallet will be credited immediately, and the carrier line will be returned and refunded on TextVerified.
+        </p>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeRentalRefundModal()">Cancel</button>
+        <button type="submit" class="btn btn-danger btn-sm" style="background: #ef4444; border-color: #ef4444; color: #fff;">Confirm &amp; Refund Rental</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# =========================================================================
+   MODAL 3: ADMIN ONE-TIME ORDER REFUND CONFIRMATION MODAL
+   ========================================================================= #}
 <div id="refundModal" class="modal" role="dialog" aria-hidden="true" style="z-index: 9999;">
   <div class="modal-box" style="max-width: 440px;">
     <div class="modal-header">
@@ -164,6 +403,7 @@
     </div>
     <form id="refundForm" method="POST">
       <input type="hidden" name="user_id" id="refundUserId">
+      <input type="hidden" name="tab" value="sims">
       <input type="hidden" name="reason" value="Admin manual refund">
       <div class="modal-body" style="padding: 1.25rem 1.5rem;">
         <p style="font-size: 0.9rem; color: var(--text); margin: 0 0 1rem 0; line-height: 1.5;">
@@ -176,7 +416,7 @@
           </div>
         </div>
         <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.85rem; line-height: 1.4;">
-          The amount will be credited back to the customer's wallet balance immediately and the order marked as refunded.
+          The amount will be credited back to the customer's wallet balance immediately, and the provider line cancelled.
         </p>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background: var(--surface-2); border-top: 1px solid var(--border); border-radius: 0 0 var(--r-xl) var(--r-xl);">
@@ -188,6 +428,7 @@
 </div>
 
 <script>
+// --- One-Time Order Refund Modal ---
 function openRefundModal(orderId, userId, orderRef, amount) {
   var modal = document.getElementById('refundModal');
   var form = document.getElementById('refundForm');
@@ -212,11 +453,122 @@ function closeRefundModal() {
   }
 }
 
-document.addEventListener('click', function(e) {
-  var modal = document.getElementById('refundModal');
-  if (modal && e.target === modal) {
-    closeRefundModal();
+// --- Dedicated Rental Mailbox Modal ---
+var activeRentalMailboxId = null;
+
+function openAdminRentalMailbox(rentalId, phone, service) {
+  activeRentalMailboxId = rentalId;
+  var modal = document.getElementById('adminRentalMailboxModal');
+  var title = document.getElementById('adminMailboxTitle');
+  var subtitle = document.getElementById('adminMailboxSubtitle');
+  var feed = document.getElementById('adminMailboxFeed');
+
+  if (title) title.textContent = (service || 'Dedicated') + ' Mailbox';
+  if (subtitle) subtitle.textContent = phone || rentalId;
+  if (feed) feed.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted); font-size:0.85rem;">Checking for incoming messages...</div>';
+
+  if (modal) {
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
   }
+
+  fetchAdminRentalSms(rentalId);
+}
+
+function closeAdminRentalMailbox() {
+  var modal = document.getElementById('adminRentalMailboxModal');
+  if (modal) {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+}
+
+function refreshAdminRentalMailbox() {
+  if (activeRentalMailboxId) {
+    fetchAdminRentalSms(activeRentalMailboxId);
+  }
+}
+
+function fetchAdminRentalSms(rentalId) {
+  var feed = document.getElementById('adminMailboxFeed');
+  var btn = document.getElementById('btnAdminRefreshSms');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+  }
+
+  fetch('/api/check-rental-sms/' + encodeURIComponent(rentalId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="tg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Refresh';
+      }
+      if (data.success && data.messages && data.messages.length > 0) {
+        var html = '';
+        data.messages.forEach(function(m) {
+          html += '<div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem 1rem; text-align:left; margin-bottom:8px;">';
+          html += '  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">';
+          html += '    <span class="badge badge-brand badge-xs" style="font-size:0.75rem; font-weight:700;">' + (m.sender || 'Verification') + '</span>';
+          html += '    <span style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono, monospace);">' + (m.received_at ? m.received_at.split('.')[0].replace('T', ' ') : 'Recently') + '</span>';
+          html += '  </div>';
+          if (m.sms_code) {
+            html += '  <div style="font-size:1.15rem; font-weight:800; font-family:var(--font-mono, monospace); color:var(--brand); margin-bottom:4px; letter-spacing:0.04em;">' + m.sms_code + '</div>';
+          }
+          html += '  <div style="font-size:0.82rem; color:var(--text); line-height:1.45; word-break:break-word;">' + (m.full_text || 'No text content') + '</div>';
+          html += '</div>';
+        });
+        if (feed) feed.innerHTML = html;
+      } else {
+        if (feed) {
+          feed.innerHTML = '<div style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);"><div style="font-size:1.6rem; margin-bottom:0.4rem;">📬</div><div style="font-weight:600; font-size:0.95rem; color:var(--text);">No SMS Messages Yet</div><p style="font-size:0.8rem; margin-top:0.25rem;">This carrier line has not received any incoming OTP verification codes yet.</p></div>';
+        }
+      }
+    })
+    .catch(function(err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="tg-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Refresh';
+      }
+      if (feed) feed.innerHTML = '<div style="color:var(--text-danger); padding:1rem; text-align:center;">Failed to check SMS messages.</div>';
+    });
+}
+
+// --- Dedicated Rental Refund Modal ---
+function openRentalRefundModal(rentalId, rentalRef, userName, phone, amount) {
+  var modal = document.getElementById('rentalRefundModal');
+  var form = document.getElementById('rentalRefundForm');
+  var refEl = document.getElementById('rentalRefundRef');
+  var userEl = document.getElementById('rentalRefundUser');
+  var phoneEl = document.getElementById('rentalRefundPhone');
+  var amtEl = document.getElementById('rentalRefundAmount');
+
+  form.action = '/admin/rentals/' + encodeURIComponent(rentalId) + '/refund';
+  if (refEl) refEl.textContent = '#' + rentalRef;
+  if (userEl) userEl.textContent = userName || 'Customer';
+  if (phoneEl) phoneEl.textContent = phone || '';
+  if (amtEl) amtEl.textContent = '$' + Number(amount).toFixed(2);
+
+  modal.classList.add('is-open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRentalRefundModal() {
+  var modal = document.getElementById('rentalRefundModal');
+  if (modal) {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+}
+
+// Outside click closing
+document.addEventListener('click', function(e) {
+  var modal1 = document.getElementById('refundModal');
+  var modal2 = document.getElementById('adminRentalMailboxModal');
+  var modal3 = document.getElementById('rentalRefundModal');
+  if (modal1 && e.target === modal1) closeRefundModal();
+  if (modal2 && e.target === modal2) closeAdminRentalMailbox();
+  if (modal3 && e.target === modal3) closeRentalRefundModal();
 });
 </script>
 {% endblock %}

@@ -1077,21 +1077,22 @@ class SIMProviderService:
     @classmethod
     def cancel_order(cls, provider_order_id: str) -> dict:
         """Cancels order with provider."""
-        if provider_order_id and provider_order_id.startswith('TXTV-'):
-            tv_id = provider_order_id[5:]
+        if provider_order_id and str(provider_order_id).startswith('TXTV-'):
+            tv_id = str(provider_order_id)[5:]
+            if tv_id.startswith('DEMO-'):
+                return {'success': True}
             tv_client = cls.get_textverified_client()
             if tv_client:
                 try:
-                    verification = tv_client.verifications.details(tv_id)
-                    verification.cancel()
+                    tv_client.verifications.cancel(tv_id)
                     return {'success': True}
                 except Exception as e:
                     print(f"[SIMProviderService] TextVerified cancel_order error: {e}")
                     return {'success': False, 'message': str(e)}
 
         client = cls.get_client()
-        if client.is_configured and provider_order_id and not provider_order_id.startswith('SIM-') and not provider_order_id.startswith('USCA-'):
-            return client.cancel_order(provider_order_id)
+        if client.is_configured and provider_order_id and not str(provider_order_id).startswith('SIM-') and not str(provider_order_id).startswith('USCA-'):
+            return client.cancel_order(str(provider_order_id))
         return {'success': True}
 
     @classmethod
@@ -2828,5 +2829,83 @@ class SIMProviderService:
             'new_count': new_count,
             'phone_number': phone_number,
             'service_name': rental.get('service_name')
+        }
+
+    @classmethod
+    def cancel_rental(cls, rental_id: str, user_id: str = None, reason: str = "Rental returned before receiving code") -> dict:
+        """Cancels/returns a dedicated number rental, refunds the user wallet, and requests a refund from TextVerified."""
+        from app.services.db_service import DBService
+        import uuid
+
+        rental = DBService.get_rental_by_id(user_id=user_id, rental_id=rental_id)
+        if not rental:
+            return {'success': False, 'message': 'Dedicated rental not found.'}
+
+        status = rental.get('status')
+        if status in ['refunded', 'cancelled']:
+            return {'success': False, 'message': 'This dedicated rental has already been refunded.'}
+
+        # Check if any SMS has been received on this rental line
+        sms_count = int(rental.get('sms_count') or 0)
+        messages = DBService.get_rental_messages(rental.get('id') or rental_id)
+        if sms_count > 0 or (messages and len(messages) > 0) or rental.get('last_sms_code'):
+            return {
+                'success': False,
+                'message': 'Cannot return rental: verification codes have already arrived on this line.'
+            }
+
+        # 1. Attempt TextVerified provider refund
+        tv_client = cls.get_textverified_client()
+        prov_res_id = str(rental.get('provider_reservation_id') or '')
+        if tv_client and prov_res_id and not prov_res_id.startswith('DEMO-'):
+            try:
+                tv_client.reservations.refund_nonrenewable(prov_res_id)
+            except Exception as e:
+                print(f"[SIMProviderService] TextVerified refund_nonrenewable note: {e}")
+                try:
+                    tv_client.reservations.refund_renewable(prov_res_id)
+                except Exception as e2:
+                    print(f"[SIMProviderService] TextVerified refund_renewable note: {e2}")
+
+        # 2. Refund wallet balance
+        refund_amount = float(rental.get('user_cost') or rental.get('price') or 0.00)
+        target_user_id = rental.get('user_id') or user_id
+        if refund_amount > 0 and target_user_id:
+            ref_tx = f"REF-RNT-{uuid.uuid4().hex[:8].upper()}"
+            credit_res = DBService.credit_wallet_balance(
+                user_id=target_user_id,
+                amount=refund_amount,
+                trans_type='refund',
+                reference=ref_tx,
+                description=f"Refund: Returned dedicated rental #{rental.get('rental_reference')} - {reason}",
+                metadata={'rental_id': str(rental.get('id')), 'reference': rental.get('rental_reference')}
+            )
+            if not credit_res.get('success'):
+                return {'success': False, 'message': credit_res.get('message', 'Failed to credit wallet balance.')}
+
+        # 3. Update rental record
+        DBService.update_rental(rental.get('id') or rental_id, {
+            'status': 'refunded',
+            'auto_renew': False,
+            'notes': reason
+        })
+
+        # 4. Notify user
+        try:
+            if target_user_id:
+                DBService.create_user_notification(
+                    user_id=target_user_id,
+                    title="Dedicated Rental Cancelled & Refunded",
+                    message=f"${refund_amount:.2f} has been refunded to your wallet for dedicated number {rental.get('phone_number')}.",
+                    type="refund",
+                    link="/sims/rentals"
+                )
+        except Exception:
+            pass
+
+        return {
+            'success': True,
+            'message': f"Dedicated number {rental.get('phone_number')} successfully returned and ${refund_amount:.2f} refunded to wallet.",
+            'refund_amount': refund_amount
         }
 

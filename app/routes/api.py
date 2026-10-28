@@ -741,7 +741,7 @@ def cancel_sim(order_id):
             'message': 'Reactivations cannot be cancelled manually. Please wait until the verification window is exhausted or your OTP arrives.'
         }), 400
 
-    # Cancellation is only allowed after 3 minutes (180s) for initial orders
+    # Cancellation is only allowed after 2 minutes (120s) for initial orders
     if order.get('created_at'):
         import datetime
         try:
@@ -754,23 +754,36 @@ def cancel_sim(order_id):
                 created_at = created_at.replace(tzinfo=datetime.timezone.utc)
             now = datetime.datetime.now(datetime.timezone.utc)
             elapsed = (now - created_at).total_seconds()
-            if elapsed < 180:
-                wait_sec = int(180 - elapsed)
+            if elapsed < 120:
+                wait_sec = int(120 - elapsed)
                 return jsonify({
                     'success': False,
-                    'message': f'Cancellation and refund become available after 3 minutes. Please wait {wait_sec} more second{"s" if wait_sec != 1 else ""}.'
+                    'message': f'Cancellation and refund become available after 2 minutes. Please wait {wait_sec} more second{"s" if wait_sec != 1 else ""}.'
                 }), 400
         except Exception as e:
             print(f"[cancel_sim] elapsed check error: {e}")
 
     # 2. Cancel order on verification provider (5sim or TextVerified) - ONLY for initial activations!
     prov_id = order.get('provider_order_id')
+    svc_name = str(order.get('service_name', '')).lower()
+    svc_code = str(order.get('service_code', '')).lower()
+    is_txtv = prov_id and str(prov_id).startswith('TXTV-')
+
+    # Carrier policy: WhatsApp numbers on TextVerified cannot be cancelled early and must wait for timer expiration
+    if is_txtv and ('whatsapp' in svc_name or svc_code == 'whatsapp'):
+        return jsonify({
+            'success': False,
+            'message': 'Carrier line policy: WhatsApp numbers cannot be cancelled early. Please wait for the timer to expire for an automatic full refund.'
+        }), 400
+
     if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
         cancel_res = SIMProviderService.cancel_order(str(prov_id))
         if not cancel_res.get('success'):
             raw_err = str(cancel_res.get('message', '')).lower()
             if 'already' in raw_err or 'received' in raw_err or 'finished' in raw_err:
                 return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
+            elif 'whatsapp' in raw_err or 'cannot cancel' in raw_err:
+                return jsonify({'success': False, 'message': 'Carrier policy: this service does not permit early cancellation. Please wait for the order timer to expire.'}), 400
             elif 'not found' in raw_err or 'timed' in raw_err or 'expired' in raw_err:
                 pass
             else:
@@ -1705,6 +1718,28 @@ def api_check_rental_sms(rental_id):
 
     res = SIMProviderService.check_rental_sms(rental_id)
     return jsonify(res)
+
+
+@api_bp.route('/rent-number/cancel', methods=['POST'])
+@api_bp.route('/rentals/cancel', methods=['POST'])
+def api_cancel_rental():
+    """Cancel and return an active dedicated rental before receiving any code."""
+    user_id = _get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.json or {}
+    rental_id = data.get('rental_id') or data.get('id') or data.get('rental_reference')
+    if not rental_id:
+        return jsonify({'success': False, 'message': 'Rental ID or reference is required.'}), 400
+
+    res = SIMProviderService.cancel_rental(
+        rental_id=rental_id,
+        user_id=user_id,
+        reason="Cancelled by user before receiving code"
+    )
+    status_code = 200 if res.get('success') else 400
+    return jsonify(res), status_code
 
 
 @api_bp.route('/admin/support/unread-count', methods=['GET'])

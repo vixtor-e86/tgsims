@@ -66,8 +66,9 @@
         {% set countdown = (o.countdown_seconds|int) if (o.countdown_seconds is defined and o.countdown_seconds is not none) else 300 %}
         {% set elapsed = (o.elapsed_seconds|int) if (o.elapsed_seconds is defined and o.elapsed_seconds is not none) else (300 - countdown) %}
         {% set is_reactivation = ('reactivat' in (o.full_sms_text|lower if o.full_sms_text else '')) or (o.order_type == 'reactivation') or (o.is_react if o.is_react is defined else false) %}
+        {% set is_txtv_whatsapp = (o.provider_order_id and (o.provider_order_id|string).startswith('TXTV-')) and ('whatsapp' in (o.service_name|lower)) %}
         {% set is_active = (o.status in ['active', 'pending']) and not o.sms_code and countdown > 0 %}
-        {% set can_cancel = (not is_reactivation) and (o.can_cancel if o.can_cancel is defined else (elapsed >= 180)) and is_active %}
+        {% set can_cancel = (not is_reactivation) and (not is_txtv_whatsapp) and (o.can_cancel if o.can_cancel is defined else (elapsed >= 120)) and is_active %}
         {% set has_received_otp = o.has_received_otp if (o.has_received_otp is defined and o.has_received_otp is not none) else ((o.sms_code is defined and o.sms_code) or o.status in ['received', 'completed']) %}
         {% set is_done = not is_active and ((o.status in ['completed', 'received']) or (o.sms_code is defined and o.sms_code)) %}
         {% set is_timeout = o.status in ['expired', 'timeout'] or (not is_done and o.status == 'refunded' and ('timeout' in (o.refund_reason|lower if o.refund_reason else '') or 'auto' in (o.refund_reason|lower if o.refund_reason else ''))) %}
@@ -202,6 +203,11 @@
                     {{ icon('refresh') }} Reactivation Active
                   </span>
                 {% else %}
+                {% if is_txtv_whatsapp %}
+                  <span class="badge badge-neutral" style="font-size:0.7rem;" title="Carrier policy: WhatsApp numbers cannot be cancelled early. Full refund is automatic if no code arrives.">
+                    Auto-refund on timer
+                  </span>
+                {% else %}
                   <button type="button" class="btn btn-secondary btn-sm" data-action="cancel" 
                           data-id="{{ o.id or o.order_reference }}"
                           data-service="{{ o.service_name }}"
@@ -216,8 +222,9 @@
                     Cancel &amp; Refund
                   </button>
                   <span class="cancel-unlock-notice" data-cancel-notice data-order-id="{{ o.id or o.order_reference }}" style="font-size:0.7rem; color:var(--text-muted); padding:3px 8px; border-radius:var(--r-sm); background:var(--surface-2); border:1px solid var(--border); {% if can_cancel %}display:none;{% endif %}">
-                    Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((180 - elapsed)//60)|int, ((180 - elapsed)%60)|int) if (180 - elapsed) > 0 else '00:00' }}</span>
+                    Cancel in <span data-cancel-countdown>{{ '%02d:%02d'|format(((120 - elapsed)//60)|int, ((120 - elapsed)%60)|int) if (120 - elapsed) > 0 else '00:00' }}</span>
                   </span>
+                {% endif %}
                 {% endif %}
               </div>
             {% elif is_reliable and has_received_otp %}
@@ -992,19 +999,19 @@
     function updateTimerUI(item) {
       if (!item.display) return;
 
-      // 1. Dynamic cancel unlock after 3 minutes for normal activations; Reactivations CANNOT be cancelled manually
+      // 1. Dynamic cancel unlock after 2 minutes for normal activations; Reactivations CANNOT be cancelled manually
       var isReact = item.cancelBtn && item.cancelBtn.dataset.isReactivation === 'true';
       if (isReact || !item.cancelBtn) {
         if (item.cancelBtn) item.cancelBtn.style.display = 'none';
         if (item.cancelNotice) item.cancelNotice.style.display = 'none';
-      } else if (item.elapsed >= 180 || item.remaining <= 120) {
+      } else if (item.elapsed >= 120 || item.remaining <= 180) {
         if (item.cancelBtn) item.cancelBtn.style.display = 'inline-block';
         if (item.cancelNotice) item.cancelNotice.style.display = 'none';
       } else {
         if (item.cancelBtn) item.cancelBtn.style.display = 'none';
         if (item.cancelNotice) {
           item.cancelNotice.style.display = 'inline-block';
-          var waitLeft = Math.max(0, 180 - item.elapsed);
+          var waitLeft = Math.max(0, 120 - item.elapsed);
           if (item.cancelCountSpan) {
             item.cancelCountSpan.textContent = formatTime(waitLeft);
           }

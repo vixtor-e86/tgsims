@@ -155,15 +155,14 @@ class DBService:
     @staticmethod
     def get_order_by_id(user_id: str, order_id: str) -> dict:
         """Retrieve a specific order by UUID or reference."""
-        if not user_id or user_id == 'demo-user-id':
-            return next((o for o in mock_db.sim_orders if o.get('id') == order_id or o.get('order_reference') == order_id), None)
-
         admin = get_supabase_admin()
-        if not admin:
+        if user_id == 'demo-user-id' or not admin:
             return next((o for o in mock_db.sim_orders if o.get('id') == order_id or o.get('order_reference') == order_id), None)
 
         try:
-            q = admin.table('sim_orders').select('*').eq('user_id', user_id)
+            q = admin.table('sim_orders').select('*')
+            if user_id and DBService._is_uuid(user_id):
+                q = q.eq('user_id', user_id)
             if DBService._is_uuid(order_id):
                 q = q.or_(f"id.eq.{order_id},order_reference.eq.{order_id}")
             else:
@@ -174,7 +173,7 @@ class DBService:
                 if 'price' not in o:
                     o['price'] = float(o.get('user_cost', 0.00))
                 return o
-            return None
+            return next((o for o in mock_db.sim_orders if o.get('id') == order_id or o.get('order_reference') == order_id), None)
         except Exception as e:
             print(f"[DBService] get_order_by_id error: {e}")
             return next((o for o in mock_db.sim_orders if o.get('id') == order_id or o.get('order_reference') == order_id), None)
@@ -784,11 +783,23 @@ class DBService:
         if not order:
             return {'success': False, 'message': 'Order not found.'}
 
+        if not user_id:
+            user_id = order.get('user_id')
+
         if order.get('status') in ['refunded', 'cancelled']:
             return {'success': False, 'message': 'Order has already been refunded.'}
 
         if order.get('status') == 'completed':
             return {'success': False, 'message': 'Completed orders cannot be refunded.'}
+
+        # Cancel order on provider side (TextVerified, SMSCode, etc.)
+        prov_id = order.get('provider_order_id')
+        if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+            try:
+                from app.services.sim_provider import SIMProviderService
+                SIMProviderService.cancel_order(str(prov_id))
+            except Exception as pe:
+                print(f"[refund_order] provider cancel note: {pe}")
 
         is_reactivation = (order.get('order_type') == 'reactivation') or ('reactivat' in str(order.get('full_sms_text', '')).lower())
         svc_name = order.get('service_name', 'Virtual SIM')
@@ -1766,6 +1777,71 @@ class DBService:
         except Exception as e:
             print(f"[DBService] get_all_orders_admin error: {e}")
             return []
+
+    @staticmethod
+    def get_all_rentals_admin(status_filter: str = None, limit: int = 100) -> list:
+        """Fetch all user dedicated SIM rentals across the platform for admin."""
+        from app.services.currency_service import reconcile_ngn_amount
+        from app.services.settings_service import SettingsService
+        try:
+            ngn_rate = SettingsService.get_usd_ngn_rate()
+        except Exception:
+            ngn_rate = 1600.0
+
+        admin = get_supabase_admin()
+        if not admin:
+            rentals = list(getattr(mock_db, 'sim_rentals', []))
+            if status_filter and status_filter != 'all':
+                rentals = [r for r in rentals if r.get('status') == status_filter]
+            for r in rentals:
+                try:
+                    r['price'] = float(r.get('user_cost') or 0.00)
+                except (ValueError, TypeError):
+                    r['price'] = 0.00
+                r['price_ngn'] = reconcile_ngn_amount(r['price'], ngn_rate)
+                r['price_formatted'] = f"₦{r['price_ngn']:,.2f}"
+            return rentals[:limit]
+
+        try:
+            q = admin.table('sim_rentals').select('*, profiles(email, full_name, username)')
+            if status_filter and status_filter != 'all':
+                q = q.eq('status', status_filter)
+            res = q.order('created_at', desc=True).limit(limit).execute()
+
+            rentals = res.data or []
+            for r in rentals:
+                prof = r.get('profiles') or {}
+                r['user_email'] = prof.get('email', 'Unknown')
+                r['user_name'] = prof.get('full_name') or prof.get('username') or r['user_email']
+                try:
+                    r['price'] = float(r.get('user_cost') or 0.00)
+                except (ValueError, TypeError):
+                    r['price'] = 0.00
+                r['price_ngn'] = reconcile_ngn_amount(r['price'], ngn_rate)
+                r['price_formatted'] = f"₦{r['price_ngn']:,.2f}"
+            return rentals
+        except Exception as e:
+            print(f"[DBService] get_all_rentals_admin join note: {e}")
+            try:
+                # Fallback if profiles relation join fails
+                q = admin.table('sim_rentals').select('*')
+                if status_filter and status_filter != 'all':
+                    q = q.eq('status', status_filter)
+                res = q.order('created_at', desc=True).limit(limit).execute()
+                rentals = res.data or []
+                for r in rentals:
+                    try:
+                        r['price'] = float(r.get('user_cost') or 0.00)
+                    except (ValueError, TypeError):
+                        r['price'] = 0.00
+                    r['price_ngn'] = reconcile_ngn_amount(r['price'], ngn_rate)
+                    r['price_formatted'] = f"₦{r['price_ngn']:,.2f}"
+                    r['user_email'] = r.get('user_id', 'Unknown')
+                    r['user_name'] = 'Customer'
+                return rentals
+            except Exception:
+                rentals = list(getattr(mock_db, 'sim_rentals', []))
+                return rentals[:limit]
 
     @staticmethod
     def get_all_users_admin(search: str = None, limit: int = 100) -> list:

@@ -93,6 +93,17 @@
                       title="Open full SMS mailbox">
                 {{ icon('mail') }} Mailbox
               </button>
+              {% if is_active_rent and (r.sms_count|default(0) == 0) %}
+                <button type="button" class="btn btn-ghost btn-sm text-danger" data-action="cancel-rental-btn"
+                        data-id="{{ r.id or r.rental_reference }}"
+                        data-phone="{{ r.phone_number }}"
+                        data-service="{{ r.service_name }}"
+                        data-price="{{ r.user_cost or r.price or 0.00 }}"
+                        style="color:var(--text-danger);"
+                        title="Cancel rental and receive full wallet refund (0 codes received)">
+                  {{ icon('refresh') }} Return &amp; Refund
+                </button>
+              {% endif %}
               <button type="button" class="btn btn-secondary btn-sm" data-action="renew-rental-btn"
                       data-id="{{ r.id or r.rental_reference }}"
                       data-phone="{{ r.phone_number }}"

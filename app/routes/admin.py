@@ -639,31 +639,67 @@ def reject_deposit(tx_id):
 
 @admin_bp.route('/orders')
 def orders():
-    """All user verification orders across the platform."""
+    """All user verification orders & dedicated number rentals across the platform."""
+    tab = request.args.get('tab', 'sims')
     status_filter = request.args.get('status', 'all')
-    all_orders = DBService.get_all_orders_admin(status_filter=status_filter, limit=100)
 
-    return render_template(
-        'admin/orders.html',
-        orders=all_orders,
-        status_filter=status_filter,
-        active_page='orders'
-    )
+    if tab == 'rentals':
+        all_rentals = DBService.get_all_rentals_admin(status_filter=status_filter, limit=100)
+        return render_template(
+            'admin/orders.html',
+            rentals=all_rentals,
+            tab='rentals',
+            status_filter=status_filter,
+            active_page='orders'
+        )
+    else:
+        all_orders = DBService.get_all_orders_admin(status_filter=status_filter, limit=100)
+        return render_template(
+            'admin/orders.html',
+            orders=all_orders,
+            tab='sims',
+            status_filter=status_filter,
+            active_page='orders'
+        )
 
 
 @admin_bp.route('/orders/<order_id>/refund', methods=['POST'])
 def manual_refund_order(order_id):
-    """Admin triggers a manual refund for an order back to the user's wallet."""
+    """Admin triggers a manual refund for an order back to the user's wallet and cancels line on provider."""
     user_id = request.form.get('user_id')
     reason = request.form.get('reason', 'Manual admin refund')
 
+    # Look up order to ensure provider cancellation is called
+    order = DBService.get_order_by_id(user_id=None, order_id=order_id)
+    if order:
+        prov_id = order.get('provider_order_id')
+        if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
+            try:
+                SIMProviderService.cancel_order(str(prov_id))
+            except Exception as pe:
+                print(f"[manual_refund_order] provider cancel note: {pe}")
+
     res = DBService.refund_order(order_id, user_id=user_id, reason=reason)
     if res.get('success'):
-        flash(res.get('message', 'Order refunded and funds credited to user wallet!'), 'success')
+        flash(res.get('message', 'Order refunded and funds credited to user wallet! Provider line cancelled.'), 'success')
     else:
         flash(res.get('message', 'Failed to refund order.'), 'error')
 
-    return redirect(url_for('admin.orders'))
+    tab = request.form.get('tab', 'sims')
+    return redirect(url_for('admin.orders', tab=tab))
+
+
+@admin_bp.route('/rentals/<rental_id>/refund', methods=['POST'])
+def manual_refund_rental(rental_id):
+    """Admin triggers a manual refund for a rental back to the user's wallet and returns the carrier line."""
+    reason = request.form.get('reason', 'Admin manual rental refund')
+    res = SIMProviderService.cancel_rental(rental_id=rental_id, user_id=None, reason=reason)
+    if res.get('success'):
+        flash(res.get('message', 'Dedicated rental refunded and line returned to carrier!'), 'success')
+    else:
+        flash(res.get('message', res.get('message', 'Failed to refund rental.')), 'error')
+
+    return redirect(url_for('admin.orders', tab='rentals'))
 
 
 # =============================================================================
