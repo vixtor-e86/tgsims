@@ -235,14 +235,38 @@ class SMSCodeClient:
                 err_data = r.json()
             except Exception:
                 pass
-            raw_msg = err_data.get('message') or err_data.get('error') or r.text
-            err_lower = str(raw_msg).lower()
-            if 'stock' in err_lower or 'no available' in err_lower or 'not found' in err_lower or r.status_code == 404:
-                msg = 'No numbers currently available on this operator route. Please try another operator or check back shortly.'
-            elif 'balance' in err_lower or r.status_code == 402:
-                msg = 'System inventory temporarily replenishing balance. Please try again shortly.'
+
+            # Extract human-readable error message from nested SMSCode response
+            err_obj = err_data.get('error') or {}
+            if isinstance(err_obj, dict):
+                clean_msg = err_obj.get('message') or err_obj.get('code') or ''
+                raw_msg = err_obj
+            elif isinstance(err_obj, str):
+                clean_msg = err_obj
+                raw_msg = err_obj
+            elif isinstance(err_data.get('message'), str):
+                clean_msg = err_data.get('message')
+                raw_msg = err_data
             else:
-                msg = f"Allocation temporarily unavailable ({raw_msg}). Please try another operator."
+                clean_msg = r.text
+                raw_msg = clean_msg
+
+            err_lower = (str(clean_msg) + " " + str(raw_msg)).lower()
+            if (
+                'provider_unavailable' in err_lower
+                or 'no numbers available' in err_lower
+                or 'no available' in err_lower
+                or 'provider_error' in err_lower
+                or 'out of stock' in err_lower
+                or 'stock' in err_lower
+                or 'not found' in err_lower
+                or r.status_code in (404, 422)
+            ):
+                msg = 'No numbers currently available on this operator route. Please try another operator (such as Any Operator, Verizon, or T-Mobile) or check back shortly.'
+            elif 'insufficient_balance' in err_lower or 'balance' in err_lower or r.status_code == 402:
+                msg = 'System inventory is temporarily replenishing provider balance. Please try again in a few moments.'
+            else:
+                msg = f"Allocation temporarily unavailable: {clean_msg or 'Please try another operator.'}"
 
             return {'success': False, 'message': msg, 'raw_error': raw_msg, 'status_code': r.status_code}
         except Exception as e:
