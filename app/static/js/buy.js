@@ -316,8 +316,9 @@
         var card = document.createElement("div");
         card.className = "buy-op-card";
         var isSelected = state.operator && (
-          (op.operator_id && state.operator.operator_id === op.operator_id) ||
-          (op.operator_name === state.operator.operator_name)
+          state.operator === op ||
+          (op.cheapest_product_id && state.operator.cheapest_product_id ? (op.cheapest_product_id === state.operator.cheapest_product_id) : false) ||
+          (op.operator_code && state.operator.operator_code ? (op.operator_code === state.operator.operator_code) : (op.operator_name === state.operator.operator_name))
         );
         if (isSelected) card.classList.add("is-active");
 

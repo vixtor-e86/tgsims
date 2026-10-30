@@ -130,6 +130,6 @@
 
 {% block scripts %}
   {{ super() if super else '' }}
-  <script src="{{ url_for('static', filename='js/buy.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/buy.js') }}?v=2"></script>
 {% endblock %}
 
