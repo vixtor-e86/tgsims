@@ -42,3 +42,6 @@ class Config:
     KORAPAY_ENCRYPTION_KEY = (os.getenv('KORAPAY_ENCRYPTION_KEY') or '').strip()
 
     SITE_LOCK_ENABLED = os.getenv('SITE_LOCK_ENABLED', 'false').lower() in ('true', '1', 'yes')
+
+    # TikTok Pixel Configuration
+    TIKTOK_PIXEL_ID = (os.getenv('TIKTOK_PIXEL_ID') or '').strip()

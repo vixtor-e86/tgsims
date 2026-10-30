@@ -144,6 +144,7 @@ def create_app(config_class=Config):
                 'clean_decimal': filter_clean_decimal,
                 'format_usd': filter_format_usd,
                 'admin_support_badge': admin_support_badge,
+                'TIKTOK_PIXEL_ID': app.config.get('TIKTOK_PIXEL_ID', ''),
             }
         except Exception:
             return {
@@ -156,6 +157,7 @@ def create_app(config_class=Config):
                 'format_ngn': format_ngn,
                 'clean_decimal': filter_clean_decimal,
                 'format_usd': filter_format_usd,
+                'TIKTOK_PIXEL_ID': app.config.get('TIKTOK_PIXEL_ID', ''),
             }
 
     @app.errorhandler(404)
