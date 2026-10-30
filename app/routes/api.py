@@ -43,6 +43,76 @@ def get_catalog_operators():
         if matched and matched.get('operators'):
             return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': matched['operators']})
 
+    # Special handling for Nigeria WhatsApp:
+    # Remove the unavailable $0.428 route and provide the two reliable routes of $0.512 & $0.578 wholesale cost
+    if country_code in ('NG', 'NGA') and service_code in ('whatsapp', 'wa', 'wa_biz'):
+        client = SIMProviderService.get_client()
+        cost_r1 = 0.5117
+        retail1, _ = SIMProviderService.calculate_retail_price(
+            base_cost=cost_r1,
+            service_code='whatsapp',
+            provider_type='smscode',
+            country_code=country_code
+        )
+
+        cost_r2 = 0.5779
+        retail2, _ = SIMProviderService.calculate_retail_price(
+            base_cost=cost_r2,
+            service_code='whatsapp',
+            provider_type='smscode',
+            country_code=country_code
+        )
+
+        r1_prod_id = 1370810551
+        r1_avail = 220984
+        r2_prod_id = 1368799747
+        r2_avail = 1278
+
+        if client.is_configured:
+            try:
+                all_prods = client.get_products(country_id=20, platform_id=1, limit=50) or []
+                for p in all_prods:
+                    amt = float(p.get('price', {}).get('amount') or 0.0)
+                    if abs(amt - cost_r1) < 0.005:
+                        r1_prod_id = p.get('id') or r1_prod_id
+                        r1_avail = int(p.get('available') or p.get('available_count') or r1_avail)
+                    elif abs(amt - cost_r2) < 0.005:
+                        r2_prod_id = p.get('id') or r2_prod_id
+                        r2_avail = int(p.get('available') or p.get('available_count') or r2_avail)
+            except Exception:
+                pass
+
+        ng_wa_operators = [
+            {
+                'operator_id': 130,
+                'operator_code': 'airtel_route_1',
+                'operator_name': 'AirTel - Route 1 (Primary)',
+                'base_cost_usd': cost_r1,
+                'price_usd': retail1,
+                'price': retail1,
+                'available': r1_avail,
+                'catalog_product_id': 1982,
+                'cheapest_product_id': r1_prod_id
+            },
+            {
+                'operator_id': 130,
+                'operator_code': 'airtel_route_2',
+                'operator_name': 'AirTel - Route 2 (Alternative)',
+                'base_cost_usd': cost_r2,
+                'price_usd': retail2,
+                'price': retail2,
+                'available': r2_avail,
+                'catalog_product_id': 1982,
+                'cheapest_product_id': r2_prod_id
+            }
+        ]
+        return jsonify({
+            'success': True,
+            'country_code': country_code,
+            'service_code': service_code,
+            'operators': ng_wa_operators
+        })
+
     # For other countries:
     client = SIMProviderService.get_client()
     if not client.is_configured:

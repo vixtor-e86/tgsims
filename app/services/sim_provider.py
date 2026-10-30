@@ -286,6 +286,33 @@ class SMSCodeClient:
         if not self.is_configured:
             return {'success': False, 'message': 'Provider client not configured'}
 
+        cc_clean = (country_code or 'US').strip().upper()
+        sc_clean = (service_code or 'whatsapp').strip().lower()
+
+        # Dedicated handling for Nigeria WhatsApp:
+        # Remove the unavailable $0.428 product and use the two reliable routes:
+        # Route 1: $0.512 wholesale (1370810551 / 1369718578)
+        # Route 2: $0.578 wholesale (1368799747)
+        if cc_clean in ('NG', 'NGA') and sc_clean in ('whatsapp', 'wa', 'wa_biz'):
+            candidates = []
+            if product_id:
+                try:
+                    candidates.append(int(product_id))
+                except Exception:
+                    pass
+            for cand in (1370810551, 1369718578, 1368799747):
+                if cand not in candidates:
+                    candidates.append(cand)
+
+            last_err = None
+            for pid_target in candidates:
+                res = self.create_order(product_id=pid_target)
+                if res.get('success'):
+                    return res
+                last_err = res
+
+            return last_err or {'success': False, 'message': 'No numbers currently available on Nigeria WhatsApp carrier routes.'}
+
         cid = self.get_country_id(country_code)
         pid = self.get_platform_id(service_code)
 
@@ -1734,10 +1761,22 @@ class SIMProviderService:
     @classmethod
     def resolve_catalog_service_price(cls, service_code: str = None, service_name: str = None, country_code: str = 'US') -> float:
         """Looks up the authoritative catalog price for worldwide activation lines."""
-        cat = cls.get_catalog()
-        services = cat.get('services', []) if isinstance(cat, dict) else []
         sc = (service_code or '').strip().lower()
         sn = (service_name or '').strip().lower()
+        cc_clean = (country_code or 'US').strip().upper()
+
+        # Nigeria WhatsApp: wholesale cost is $0.512 (0.5117)
+        if cc_clean in ('NG', 'NGA') and (sc in ('whatsapp', 'wa', 'wa_biz') or 'whatsapp' in sn):
+            retail_p, _ = cls.calculate_retail_price(
+                base_cost=0.5117,
+                service_code='whatsapp',
+                provider_type='smscode',
+                country_code='NG'
+            )
+            return retail_p
+
+        cat = cls.get_catalog()
+        services = cat.get('services', []) if isinstance(cat, dict) else []
 
         matched = next((s for s in services if (s.get('code') and s['code'].lower() == sc) or (s.get('name') and s['name'].lower() == sn)), None)
         if matched:
