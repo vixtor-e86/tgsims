@@ -105,7 +105,7 @@
             </span>
           </div>
           <div style="font-size: 0.76rem; color: var(--text-dim); margin-top: 0.6rem;">
-            A standard 1.5% processor fee applies. Your wallet is credited automatically within seconds once payment completes.
+            0% deposit fee — you pay the exact amount you enter. Your wallet is credited automatically within seconds once payment completes.
           </div>
         </div>
       {% else %}
@@ -120,8 +120,8 @@
         <strong data-summary-amount data-usd="0" data-decimals="2">₦0.00</strong>
       </div>
       <div class="summary-row">
-        <span>Processing Fee (1.5%)</span>
-        <strong data-summary-fee data-usd="0" data-decimals="2">₦0.00</strong>
+        <span>Processing Fee</span>
+        <strong data-summary-fee data-usd="0" data-decimals="2">0% (Free)</strong>
       </div>
       <div class="summary-row summary-total">
         <span>Total to Pay</span>
@@ -230,5 +230,5 @@
       id: "{{ (user.id if user else '') | e }}"
     };
   </script>
-  <script src="{{ url_for('static', filename='js/fund.js') }}?v=5"></script>
+  <script src="{{ url_for('static', filename='js/fund.js') }}?v=6"></script>
 {% endblock %}

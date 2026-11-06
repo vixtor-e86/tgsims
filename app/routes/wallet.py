@@ -61,7 +61,7 @@ def fund():
         {'id': 'crypto', 'label': 'Cryptocurrency', 'note': 'Instant crypto deposit via OXAPay ($1 min)', 'icon': 'crypto'},
     ]
 
-    fee_rate = 0.015  # 1.5% processing fee for card
+    fee_rate = 0.0  # Platform absorbs Squad processing fee (user pays exact amount)
     from app.services.settings_service import SettingsService
     settings = SettingsService.get_settings()
 

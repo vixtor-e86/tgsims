@@ -1250,7 +1250,7 @@ def squad_card_callback():
         verify = SquadService.verify_transaction(transaction_ref)
         if verify.get('success'):
             v_data = verify.get('data', {})
-            if v_data.get('transaction_status') == 'success':
+            if (v_data.get('transaction_status') or '').lower() == 'success':
                 DBService.complete_pending_payment(transaction_ref)
 
     from flask import redirect, url_for

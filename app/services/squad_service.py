@@ -259,12 +259,15 @@ class SquadService:
         transaction_ref = (body.get('transaction_ref') or body.get('reference') or
                            body.get('virtual_account_number') or '')
 
+        squad_ref = (body.get('transaction_ref') or body.get('reference') or '').strip()
+        account_number = (body.get('virtual_account_number') or '').strip()
+        is_checkout_tx = squad_ref.startswith('TGS-')
+
         # --- Dedicated Virtual Account Deposit ---
-        if event in ('virtual-account/approve', 'charge.success', 'virtual_account_payment'):
-            amount_ngn = float(body.get('principal_amount') or body.get('amount') or 0) / 100
-            account_number = body.get('virtual_account_number') or ''
+        if not is_checkout_tx and account_number and event in ('virtual-account/approve', 'charge.success', 'virtual_account_payment'):
+            raw_amt = float(body.get('amount') or body.get('principal_amount') or 0)
+            amount_ngn = raw_amt / 100
             sender_name = body.get('sender_name') or 'Bank Transfer'
-            squad_ref = body.get('transaction_ref') or body.get('reference') or ''
 
             if not amount_ngn:
                 return {'success': False, 'message': 'Zero amount payment ignored.'}
@@ -320,16 +323,16 @@ class SquadService:
             return credit_res
 
         # --- Card / Bank Transfer / Squad Checkout Payment Success ---
-        elif event in ('charge.success', 'transaction.success') or (body.get('transaction_ref', '').startswith('TGS-')):
-            squad_ref = body.get('transaction_ref') or body.get('reference') or ''
-            amount_ngn = float(body.get('amount') or 0) / 100
+        elif is_checkout_tx or event in ('charge.success', 'transaction.success'):
+            tx = DBService.get_transaction_by_reference(squad_ref) if squad_ref else None
+            stored_ngn = float((tx or {}).get('metadata', {}).get('amount_ngn') or 0)
+            webhook_ngn = float(body.get('amount') or body.get('principal_amount') or 0) / 100
+            amount_ngn = stored_ngn if stored_ngn > 0 else webhook_ngn
             user_email = body.get('email') or ''
 
             if not amount_ngn:
                 return {'success': False, 'message': 'Zero amount card payment ignored.'}
 
-            # Look up user by transaction reference in DB
-            tx = DBService.get_transaction_by_reference(squad_ref)
             if not tx:
                 print(f"[Squad] Card payment: no transaction found for ref {squad_ref}")
                 return {'success': False, 'message': f'Transaction {squad_ref} not found'}

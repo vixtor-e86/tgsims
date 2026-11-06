@@ -406,8 +406,7 @@ class SettingsService:
 
         if not wa_ops:
             wa_ops = [
-                {'operator_id': 0, 'operator_code': 'any', 'operator_name': 'Basic Operator', 'base_price_usd': 0.963},
-                {'operator_id': 125, 'operator_code': 'tmobile', 'operator_name': 'T-Mobile (EE)', 'base_price_usd': 1.9423},
+                {'operator_id': 125, 'operator_code': 'tmobile', 'operator_name': 'T-Mobile (EE)', 'base_price_usd': 1.5884},
                 {'operator_id': 111, 'operator_code': 'at_t', 'operator_name': 'AT&T', 'base_price_usd': 1.6719},
                 {'operator_id': 119, 'operator_code': 'mint_mobile', 'operator_name': 'Mint Mobile', 'base_price_usd': 1.9423},
                 {'operator_id': 128, 'operator_code': 'verizon', 'operator_name': 'Verizon', 'base_price_usd': 2.14},
@@ -418,9 +417,11 @@ class SettingsService:
         for op in wa_ops:
             op_code = (op.get('operator_code') or '').strip().lower()
             op_id = op.get('operator_id')
+            if op_code in ('any', 'basic') or op_id == 0:
+                continue
             op_id_str = str(op_id) if op_id is not None else ''
             raw_name = op.get('operator_name', op_code.title())
-            base_cost = float(op.get('base_price_usd', 0.963))
+            base_cost = float(op.get('base_price_usd', 1.5884))
 
             # Normalize display name
             if op_code in ('any', 'basic') or 'basic' in raw_name.lower():

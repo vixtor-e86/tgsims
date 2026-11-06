@@ -42,7 +42,8 @@
   var closeBtns         = document.querySelectorAll("[data-close-crypto-modal]");
 
   // Configuration from data attributes
-  var FEE_RATE         = parseFloat(container.getAttribute("data-fee-rate")) || 0.015;
+  var rawFeeRate       = parseFloat(container.getAttribute("data-fee-rate"));
+  var FEE_RATE         = isNaN(rawFeeRate) ? 0.0 : rawFeeRate;
   var squadActive      = container.getAttribute("data-squad-active") === "true";
   var cryptoActive     = container.getAttribute("data-crypto-active") === "true";
   var CRYPTO_MIN       = parseFloat(container.getAttribute("data-crypto-min")) || 1.0;
@@ -157,7 +158,7 @@
     var isCrypto = (methodId === "crypto");
     var usdMode = isUSD() || isCrypto;
 
-    // 0% platform fee on crypto, 1.5% fee on Squad
+    // 0% platform fee on both crypto and Squad (merchant absorbs charges)
     var effectiveFeeRate = isCrypto ? 0.0 : FEE_RATE;
     var feeUSD   = currentUSD * effectiveFeeRate;
     var totalUSD = currentUSD + feeUSD;
@@ -174,12 +175,13 @@
     }
 
     if (summaryFee) {
-      if (isCrypto) {
+      if (effectiveFeeRate <= 0) {
         summaryFee.textContent = "0% (Free)";
       } else {
+        var pctLabel = (effectiveFeeRate * 100).toFixed(1).replace(/\.0$/, "") + "%";
         summaryFee.textContent = usdMode
-          ? "$" + feeUSD.toFixed(2) + " (1.5%)"
-          : "₦" + Math.round(feeNGN).toLocaleString() + " (1.5%)";
+          ? "$" + feeUSD.toFixed(2) + " (" + pctLabel + ")"
+          : "₦" + Math.round(feeNGN).toLocaleString() + " (" + pctLabel + ")";
       }
     }
 
@@ -538,12 +540,16 @@
                   },
                   onSuccess: function (resp) {
                     if (window.toast) window.toast("Payment successful! Your wallet is being credited...", "success", 6000);
-                    setTimeout(function () { window.location.href = "/wallet"; }, 2000);
+                    setTimeout(function () {
+                      window.location.href = "/api/payments/squad/card/callback?transaction_ref=" + encodeURIComponent(data.reference);
+                    }, 1500);
                   },
                   onpayment: function (resp) {
-                    if (resp && (resp.transaction_status === "success" || resp.status === "success")) {
+                    if (resp && (resp.transaction_status === "success" || resp.status === "success" || resp.transaction_status === "Success")) {
                       if (window.toast) window.toast("Payment successful! Your wallet is being credited...", "success", 6000);
-                      setTimeout(function () { window.location.href = "/wallet"; }, 2000);
+                      setTimeout(function () {
+                        window.location.href = "/api/payments/squad/card/callback?transaction_ref=" + encodeURIComponent(data.reference);
+                      }, 1500);
                     }
                   },
                   key: SQUAD_PUBLIC_KEY,
@@ -551,6 +557,7 @@
                   amount: Math.round(totalNGN * 100), // in kobo
                   currency_code: "NGN",
                   transaction_ref: data.reference,
+                  pass_charge: false,
                   payment_channels: ["card", "bank", "ussd", "transfer"]
                 });
                 squadInstance.setup();

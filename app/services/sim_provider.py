@@ -313,6 +313,39 @@ class SMSCodeClient:
 
             return last_err or {'success': False, 'message': 'No numbers currently available on Nigeria WhatsApp carrier routes.'}
 
+        # Dedicated handling for US WhatsApp T-Mobile (operator_id=125):
+        # Use the 2nd cheapest T-Mobile product tier instead of the unreliable 1st cheapest tier.
+        op_str = str(operator or '').strip().lower()
+        if cc_clean in ('US', 'USA') and sc_clean in ('whatsapp', 'wa', 'wa_biz') and (
+            operator_id in (None, 0, 125) or op_str in ('tmobile', 't-mobile', 'any', 'basic', '125')
+        ):
+            tmo_candidates = []
+            try:
+                tmo_prods = self.get_products(country_id=188, platform_id=1, operator_id=125, limit=15) or []
+                tmo_prods.sort(key=lambda p: float(p.get('price', {}).get('amount', 999)))
+                if len(tmo_prods) >= 2:
+                    # 2nd cheapest first, then 3rd cheapest if needed (skip index 0 cheapest)
+                    for tp in tmo_prods[1:3]:
+                        if tp.get('id'):
+                            tmo_candidates.append(int(tp['id']))
+                elif len(tmo_prods) == 1 and tmo_prods[0].get('id'):
+                    tmo_candidates.append(int(tmo_prods[0]['id']))
+            except Exception:
+                pass
+
+            for fallback_pid in (1371409346, 1370457972):
+                if fallback_pid not in tmo_candidates:
+                    tmo_candidates.append(fallback_pid)
+
+            last_err = None
+            for pid_target in tmo_candidates:
+                res = self.create_order(product_id=pid_target)
+                if res.get('success'):
+                    return res
+                last_err = res
+
+            return last_err or {'success': False, 'message': 'No numbers currently available on T-Mobile route. Please try AT&T or Verizon.'}
+
         cid = self.get_country_id(country_code)
         pid = self.get_platform_id(service_code)
 
@@ -1414,6 +1447,10 @@ class SIMProviderService:
                 op_id = op.get('operator_id')
                 op_id_str = str(op_id) if op_id is not None else ''
 
+                # Remove 'any' / 'Basic Operator' under US WhatsApp
+                if std_code == 'whatsapp' and (op_code in ('any', 'basic') or op_id == 0):
+                    continue
+
                 # Check operator-specific override first (e.g. 'whatsapp:any', 'whatsapp:tmobile', 'whatsapp:125')
                 op_override = None
                 op_override_ngn = None
@@ -1962,20 +1999,29 @@ class SIMProviderService:
 
         target_op_id = resolved_op_id if (resolved_op_id and resolved_op_id > 0) else None
         if client.is_configured:
-            # 1. Try order creation with exact cheapest product tier
-            buy_res = client.create_order(
-                catalog_product_id=matched_catalog_pid,
-                product_id=matched_product_id,
-                operator_id=target_op_id,
-                policy='cheapest'
-            )
-            # 2. If exact product is out of stock, fallback to general activation
-            if not buy_res.get('success'):
+            if service_code in ('whatsapp', 'wa', 'wa_biz') and (target_op_id is None or target_op_id == 125):
+                # Force 2nd cheapest T-Mobile tier for US WhatsApp
                 buy_res = client.buy_activation(
                     country_code=cc_clean,
                     service_code=service_code,
-                    operator_id=target_op_id
+                    operator_id=125,
+                    operator='tmobile'
                 )
+            else:
+                # 1. Try order creation with exact cheapest product tier
+                buy_res = client.create_order(
+                    catalog_product_id=matched_catalog_pid,
+                    product_id=matched_product_id,
+                    operator_id=target_op_id,
+                    policy='cheapest'
+                )
+                # 2. If exact product is out of stock, fallback to general activation
+                if not buy_res.get('success'):
+                    buy_res = client.buy_activation(
+                        country_code=cc_clean,
+                        service_code=service_code,
+                        operator_id=target_op_id
+                    )
 
             if buy_res.get('success'):
                 allocated_op = buy_res.get('operator') or op_display_name

@@ -5,23 +5,13 @@
     "service_code": "whatsapp",
     "operators": [
       {
-        "operator_id": 0,
-        "operator_code": "any",
-        "operator_name": "Basic Operator",
-        "cheapest_product_id": 1369918376,
-        "catalog_product_id": 12537,
-        "base_price_usd": 0.963,
-        "available": 5000,
-        "count_providers": 10
-      },
-      {
         "operator_id": 125,
         "operator_code": "tmobile",
         "operator_name": "T-Mobile (EE)",
-        "cheapest_product_id": 1369736780,
+        "cheapest_product_id": 1371409346,
         "catalog_product_id": 12537,
-        "base_price_usd": 1.9423,
-        "available": 1242,
+        "base_price_usd": 1.5884,
+        "available": 611,
         "count_providers": 6
       },
       {
