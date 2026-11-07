@@ -6,6 +6,7 @@
   <meta name="description" content="{% block meta_desc %}Tgsims | Real non-VoIP numbers & eSIMs for SMS verification on 200+ platforms. Instant delivery, Naira pricing.{% endblock %}">
   <title>{% block title %}{{ BRAND }}{% endblock %}</title>
 
+  {% if TIKTOK_PIXEL_ID %}
   <!-- TikTok Pixel Code Start -->
   <script>
   !function (w, d, t) {
@@ -13,12 +14,70 @@
   var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
   ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
 
-
-    ttq.load('{{ TIKTOK_PIXEL_ID|default("DBHHCCBC77U24SKT711G", true) }}');
+    ttq.load('{{ TIKTOK_PIXEL_ID }}');
     ttq.page();
   }(window, document, 'ttq');
+
+  window.tgTrackTikTok = function(eventName, params) {
+    try {
+      var p = params || {};
+      var evId = p.event_id || ('tg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9));
+      var contentId = p.content_id || (window.location.pathname.replace(/\//g, '_') || 'tgsims_home');
+      var contentName = p.content_name || document.title || 'Tgsims Virtual Numbers';
+      var contentType = p.content_type || 'product';
+      var currency = p.currency || 'USD';
+      var val = (typeof p.value === 'number' && !isNaN(p.value)) ? p.value : 1.0;
+
+      if (window.ttq && typeof window.ttq.track === 'function') {
+        var ttqPayload = {
+          contents: [{
+            content_id: contentId,
+            content_type: contentType,
+            content_name: contentName
+          }],
+          content_type: contentType,
+          currency: currency,
+          value: val
+        };
+        if (p.query) ttqPayload.query = p.query;
+        window.ttq.track(eventName, ttqPayload, { event_id: evId });
+      }
+
+      var ttpMatch = document.cookie.match(/(?:^|;\s*)_ttp=([^;]*)/);
+      var ttclidParam = new URLSearchParams(window.location.search).get('ttclid') || '';
+      fetch('/api/analytics/tiktok/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          event: eventName,
+          event_id: evId,
+          value: val,
+          currency: currency,
+          content_id: contentId,
+          content_type: contentType,
+          content_name: contentName,
+          query: p.query || '',
+          url: window.location.href,
+          ttp: ttpMatch ? decodeURIComponent(ttpMatch[1]) : '',
+          ttclid: ttclidParam
+        })
+      }).catch(function(){});
+    } catch (e) {}
+  };
+
+  window.addEventListener('DOMContentLoaded', function() {
+    window.tgTrackTikTok('ViewContent', {
+      content_id: window.location.pathname === '/' ? 'tgsims_home' : window.location.pathname.replace(/^\//, '').replace(/\//g, '_'),
+      content_name: document.title || 'Tgsims Page',
+      content_type: 'product',
+      value: 1.0,
+      currency: 'USD'
+    });
+  });
   </script>
   <!-- TikTok Pixel Code End -->
+  {% endif %}
 
   {# No-FOUC theme boot: set the theme attribute before first paint. #}
   <script>

@@ -202,6 +202,21 @@ def register():
                         print(f"[Register] Link referral notice: {le}")
                 session.pop('referral_code', None)
 
+                # Track CompleteRegistration via TikTok Events API
+                try:
+                    from app.services.tiktok_service import TikTokService
+                    TikTokService.track_event(
+                        event_name='CompleteRegistration',
+                        email=email,
+                        external_id=str(user.id),
+                        content_id='account_registration',
+                        content_name='Tgsims Account Registration',
+                        value=0.0,
+                        currency='USD'
+                    )
+                except Exception:
+                    pass
+
             # If email confirmation is disabled in Supabase, user gets instant session
             if user and auth_session:
                 first_name = username.split(' ')[0]

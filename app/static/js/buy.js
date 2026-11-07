@@ -433,6 +433,14 @@
     }
 
     function fetchOperatorsForService(country, service) {
+      if (window.tgTrackTikTok && country && service) {
+        window.tgTrackTikTok("AddToCart", {
+          content_id: (country.country_code + "_" + (service.code || service.name)).toLowerCase(),
+          content_name: country.country_name + " - " + service.name,
+          value: parseFloat(service.price) || 1.5,
+          currency: "USD"
+        });
+      }
       var cacheKey = country.country_code + ":" + (service.code || service.name);
 
       if (operatorCache[cacheKey]) {
@@ -553,6 +561,14 @@
         })
         .then(function (r) {
           if (!r.ok) throw new Error(r.data.message || "Could not complete purchase.");
+          if (window.tgTrackTikTok) {
+            window.tgTrackTikTok("Purchase", {
+              content_id: (payload.country_code + "_" + (payload.service_code || payload.service_name)).toLowerCase(),
+              content_name: payload.country_name + " - " + payload.service_name,
+              value: parseFloat(payload.price) || 1.5,
+              currency: "USD"
+            });
+          }
           submit.innerHTML = '<span class="spinner"></span> <span>Number Allocated! Redirecting...</span>';
           if (window.toast) window.toast(r.data.message || "Number purchased successfully!", "success");
           setTimeout(function () { window.location.href = "/sims/my-sims"; }, 700);

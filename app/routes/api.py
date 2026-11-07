@@ -454,6 +454,27 @@ def purchase_sim():
     except Exception:
         pass
 
+    try:
+        from app.services.tiktok_service import TikTokService
+        TikTokService.track_event(
+            event_name='PlaceAnOrder',
+            event_id=f"{order_ref}-order",
+            value=price,
+            currency='USD',
+            content_id=f"{country_code}_{service_name}".lower().replace(' ', '_'),
+            content_name=f"{country_name} - {service_name}",
+        )
+        TikTokService.track_event(
+            event_name='Purchase',
+            event_id=f"{order_ref}-purchase",
+            value=price,
+            currency='USD',
+            content_id=f"{country_code}_{service_name}".lower().replace(' ', '_'),
+            content_name=f"{country_name} - {service_name}",
+        )
+    except Exception:
+        pass
+
     return jsonify({
         'success': True,
         'message': 'Virtual number activated successfully!',
@@ -621,6 +642,27 @@ def purchase_us_canada():
             message=f"Your dedicated cellular line ({alloc_res.get('phone_number', '')}) is ready. Waiting for SMS code.",
             type="purchase",
             link="/sims/my-sims"
+        )
+    except Exception:
+        pass
+
+    try:
+        from app.services.tiktok_service import TikTokService
+        TikTokService.track_event(
+            event_name='PlaceAnOrder',
+            event_id=f"{order_ref}-order",
+            value=final_price,
+            currency='USD',
+            content_id=f"us_{service_code or service_name}".lower().replace(' ', '_'),
+            content_name=f"US - {service_name}",
+        )
+        TikTokService.track_event(
+            event_name='Purchase',
+            event_id=f"{order_ref}-purchase",
+            value=final_price,
+            currency='USD',
+            content_id=f"us_{service_code or service_name}".lower().replace(' ', '_'),
+            content_name=f"US - {service_name}",
         )
     except Exception:
         pass
@@ -1230,6 +1272,27 @@ def initiate_squad_card_payment():
         user_email=user_email
     )
 
+    try:
+        from app.services.tiktok_service import TikTokService
+        TikTokService.track_event(
+            event_name='InitiateCheckout',
+            event_id=f"{order_ref}-init",
+            value=amount_ngn,
+            currency='NGN',
+            content_id='wallet_deposit_squad',
+            content_name='Wallet Deposit via Squad (NGN)',
+        )
+        TikTokService.track_event(
+            event_name='AddPaymentInfo',
+            event_id=f"{order_ref}-payinfo",
+            value=amount_ngn,
+            currency='NGN',
+            content_id='wallet_deposit_squad',
+            content_name='Squad Payment Initialized',
+        )
+    except Exception:
+        pass
+
     return jsonify({
         'success': True,
         'reference': order_ref,
@@ -1831,6 +1894,32 @@ def api_admin_support_unread_count():
         'action_required': action_required,
         'has_open': action_required > 0
     })
+
+
+@api_bp.route('/analytics/tiktok/track', methods=['POST'])
+def api_tiktok_track():
+    """Relays client-side TikTok Pixel events to the Server-Side TikTok Events API."""
+    from app.services.tiktok_service import TikTokService
+    data = request.get_json(force=True, silent=True) or {}
+    event_name = (data.get('event') or 'ViewContent').strip()
+    if event_name not in TikTokService.SUPPORTED_EVENTS:
+        return jsonify({'success': False, 'message': 'Unsupported event'}), 400
+
+    res = TikTokService.track_event(
+        event_name=event_name,
+        event_id=data.get('event_id'),
+        value=data.get('value'),
+        currency=data.get('currency') or 'USD',
+        content_id=data.get('content_id') or 'tgsims_virtual_number',
+        content_type=data.get('content_type') or 'product',
+        content_name=data.get('content_name') or 'Tgsims Virtual Number',
+        query=data.get('query'),
+        url=data.get('url') or request.referrer,
+        ttp=data.get('ttp'),
+        ttclid=data.get('ttclid'),
+    )
+    return jsonify({'success': True, 'result': res})
+
 
 
 

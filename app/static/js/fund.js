@@ -513,6 +513,14 @@
         submitBtn.disabled = true;
         var prevSquadLabel = confirmLabel ? confirmLabel.textContent : "Confirm";
         if (confirmLabel) confirmLabel.textContent = "Opening Secure Checkout…";
+        if (window.tgTrackTikTok) {
+          window.tgTrackTikTok("InitiateCheckout", {
+            content_id: "wallet_deposit_squad",
+            content_name: "Wallet Deposit via Squad (NGN)",
+            value: currentNGN,
+            currency: "NGN"
+          });
+        }
 
         fetch("/api/payments/squad/card/initiate", {
           method: "POST",
