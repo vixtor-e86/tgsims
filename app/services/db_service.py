@@ -179,7 +179,7 @@ class DBService:
             return next((o for o in mock_db.sim_orders if o.get('id') == order_id or o.get('order_reference') == order_id), None)
 
     @staticmethod
-    def deduct_wallet_balance(user_id: str, amount: float, reference: str, description: str, metadata: dict = None, order_id: str = None) -> dict:
+    def deduct_wallet_balance(user_id: str, amount: float, reference: str, description: str, metadata: dict = None, order_id: str = None, allow_negative: bool = False) -> dict:
         """Deducts balance atomically. Returns dict with success, message, new_balance."""
         metadata = metadata or {}
         try:
@@ -192,12 +192,12 @@ class DBService:
 
         if not user_id or user_id == 'demo-user-id' or not DBService._is_uuid(user_id):
             wallet = mock_db.wallets.get(user_id, {'balance': 45.50, 'currency': 'USD'})
-            if wallet['balance'] < amount:
+            if not allow_negative and wallet['balance'] < amount:
                 return {
                     'success': False,
                     'message': f'Insufficient wallet balance. You need ${amount:.2f} but have ${wallet["balance"]:.2f}. Please top up.'
                 }
-            wallet['balance'] -= amount
+            wallet['balance'] = round(wallet['balance'] - amount, 4)
             mock_db.transactions.insert(0, {
                 'id': f"tx-{len(mock_db.transactions) + 1}",
                 'user_id': user_id,
@@ -228,7 +228,7 @@ class DBService:
                 return {'success': False, 'message': 'Wallet not found.'}
             
             cur_bal = float(w_res.data[0].get('balance', 0.00))
-            if cur_bal < amount:
+            if not allow_negative and cur_bal < amount:
                 return {
                     'success': False,
                     'message': f'Insufficient wallet balance. You need ${amount:.2f} but have ${cur_bal:.2f}. Please top up.'
@@ -314,21 +314,86 @@ class DBService:
             return {'success': False, 'message': 'Database connection unavailable.'}
 
         try:
+            # Check for any pending recovery debt when receiving a deposit
+            pending_recovery_applied = 0.0
+            amount_to_add_to_wallet = amount
+
+            if trans_type == 'deposit':
+                try:
+                    debts = admin.table('wallet_transactions').select('*') \
+                        .eq('user_id', user_id) \
+                        .eq('type', 'adjustment') \
+                        .eq('status', 'pending') \
+                        .contains('metadata', {'pending_recovery': True}) \
+                        .order('created_at', desc=False) \
+                        .execute()
+
+                    remaining_credit = amount
+                    for debt in (debts.data or []):
+                        d_meta = debt.get('metadata') or {}
+                        rem_debt = float(d_meta.get('remaining_amount_usd', abs(float(debt.get('amount', 0)))))
+                        if rem_debt <= 0:
+                            continue
+
+                        pay_amt = min(remaining_credit, rem_debt)
+                        new_rem_debt = round(rem_debt - pay_amt, 4)
+                        pending_recovery_applied += pay_amt
+                        remaining_credit = round(remaining_credit - pay_amt, 4)
+
+                        d_meta['remaining_amount_usd'] = new_rem_debt
+                        d_meta['recovered_so_far'] = round(float(d_meta.get('recovered_so_far', 0)) + pay_amt, 4)
+
+                        update_payload = {'metadata': d_meta}
+                        if new_rem_debt <= 0.0001:
+                            update_payload['status'] = 'completed'
+                            d_meta['pending_recovery'] = False
+                            d_meta['fully_recovered_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+                        admin.table('wallet_transactions').update(update_payload).eq('id', debt['id']).execute()
+
+                        # User notification about debt offset
+                        try:
+                            from app.services.settings_service import SettingsService
+                            rate = float(SettingsService.get_settings().get('ngn_per_usd_rate', 1600.00))
+                            pay_ngn = round(pay_amt * rate, 2)
+                            DBService.create_user_notification(
+                                user_id=user_id,
+                                title='Deposit Applied to Deficit',
+                                message=f"₦{pay_ngn:,.2f} (${pay_amt:.2f}) from your deposit was automatically applied to settle your pending deficit.",
+                                type='admin_debit',
+                                link='/wallet'
+                            )
+                        except Exception:
+                            pass
+
+                        if remaining_credit <= 0:
+                            break
+
+                    amount_to_add_to_wallet = remaining_credit
+                except Exception as rec_err:
+                    print(f"[DBService] recovery check error: {rec_err}")
+                    amount_to_add_to_wallet = amount
+
             w_res = admin.table('wallets').select('id, balance').eq('user_id', user_id).limit(1).execute()
             if w_res.data:
                 cur_bal = float(w_res.data[0].get('balance', 0.00))
-                new_bal = round(cur_bal + amount, 4)
+                new_bal = round(cur_bal + amount_to_add_to_wallet, 4)
                 admin.table('wallets').update({
                     'balance': new_bal,
                     'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
                 }).eq('user_id', user_id).execute()
             else:
-                new_bal = round(amount, 4)
+                new_bal = round(amount_to_add_to_wallet, 4)
                 admin.table('wallets').insert({
                     'user_id': user_id,
                     'balance': new_bal,
                     'currency': 'USD'
                 }).execute()
+
+            if pending_recovery_applied > 0:
+                metadata['recovery_applied_usd'] = pending_recovery_applied
+                metadata['net_credited_usd'] = amount_to_add_to_wallet
+                description += f" (${pending_recovery_applied:.2f} applied to clear deficit)"
 
             tx_data = {
                 'user_id': user_id,
@@ -792,6 +857,18 @@ class DBService:
         if order.get('status') == 'completed':
             return {'success': False, 'message': 'Completed orders cannot be refunded.'}
 
+        admin = get_supabase_admin()
+        order_ref = order.get('order_reference') or order_id
+
+        # Concurrency guard: Check if a refund has already been recorded in wallet_transactions for this order
+        if admin and user_id != 'demo-user-id' and order_ref:
+            try:
+                existing_tx = admin.table('wallet_transactions').select('id').eq('user_id', user_id).eq('type', 'refund').contains('metadata', {'order_reference': order_ref}).limit(1).execute()
+                if existing_tx.data and len(existing_tx.data) > 0:
+                    return {'success': False, 'message': 'Order has already been refunded.'}
+            except Exception as e:
+                print(f"[refund_order] existing refund check note: {e}")
+
         # Cancel order on provider side (TextVerified, SMSCode, etc.)
         prov_id = order.get('provider_order_id')
         if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
@@ -803,6 +880,59 @@ class DBService:
 
         is_reactivation = (order.get('order_type') == 'reactivation') or ('reactivat' in str(order.get('full_sms_text', '')).lower())
         svc_name = order.get('service_name', 'Virtual SIM')
+
+        # Atomic status update in database BEFORE wallet credit to eliminate race condition duplicate refunds
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        real_id = order.get('id')
+
+        if admin and user_id != 'demo-user-id':
+            if is_reactivation:
+                # Look up previous SMS code
+                prev_code = None
+                prev_full = "Verification completed"
+                try:
+                    q_sms = admin.table('sim_sms_messages').select('*').eq('order_id', str(real_id)).order('received_at', desc=True).limit(1).execute()
+                    if q_sms.data and len(q_sms.data) > 0:
+                        prev_code = q_sms.data[0].get('sms_code')
+                        prev_full = q_sms.data[0].get('full_text')
+                except Exception as ex:
+                    print(f"[DBService] lookup prev sms during reactivate refund note: {ex}")
+
+                restore_payload = {
+                    'status': 'received',
+                    'order_type': 'activation',
+                    'sms_code': prev_code,
+                    'full_sms_text': prev_full or 'Verification completed',
+                    'updated_at': now_iso
+                }
+                q_upd = admin.table('sim_orders').update(restore_payload)
+                if DBService._is_uuid(real_id):
+                    q_upd = q_upd.eq('id', str(real_id))
+                else:
+                    q_upd = q_upd.eq('order_reference', str(order_ref))
+                q_upd = q_upd.eq('status', 'active')
+                upd_res = q_upd.execute()
+                if not upd_res.data:
+                    return {'success': False, 'message': 'Reactivation is not in an active state or already processed.'}
+            else:
+                q_upd = admin.table('sim_orders').update({
+                    'status': 'refunded',
+                    'refunded_at': now_iso,
+                    'refund_reason': reason,
+                    'updated_at': now_iso
+                })
+                if DBService._is_uuid(real_id):
+                    q_upd = q_upd.eq('id', str(real_id))
+                else:
+                    q_upd = q_upd.eq('order_reference', str(order_ref))
+                q_upd = q_upd.in_('status', ['active', 'pending'])
+                upd_res = q_upd.execute()
+                if not upd_res.data:
+                    return {'success': False, 'message': 'Order is not in an active refundable state or already refunded.'}
+        else:
+            if order.get('status') not in ['active', 'pending']:
+                return {'success': False, 'message': 'Order already processed.'}
+            order['status'] = 'refunded'
 
         if is_reactivation:
             try:
@@ -826,7 +956,7 @@ class DBService:
                 trans_type='refund',
                 reference=ref_tx,
                 description=desc,
-                metadata={'order_reference': order.get('order_reference'), 'reason': reason, 'is_reactivation': is_reactivation},
+                metadata={'order_reference': order_ref, 'reason': reason, 'is_reactivation': is_reactivation},
                 order_id=order.get('id')
             )
             if not credit_res.get('success'):
@@ -836,68 +966,12 @@ class DBService:
             w = DBService.get_wallet(user_id)
             new_balance = float(w.get('balance', 0.00))
 
-        admin = get_supabase_admin()
-
         if is_reactivation:
-            # Look up previous SMS code
-            prev_code = None
-            prev_full = "Verification completed"
-            if admin and user_id != 'demo-user-id':
-                try:
-                    q_sms = admin.table('sim_sms_messages').select('*').eq('order_id', str(order.get('id'))).order('received_at', desc=True).limit(1).execute()
-                    if q_sms.data and len(q_sms.data) > 0:
-                        prev_code = q_sms.data[0].get('sms_code')
-                        prev_full = q_sms.data[0].get('full_text')
-                except Exception as ex:
-                    print(f"[DBService] lookup prev sms during reactivate refund note: {ex}")
-
-            restore_payload = {
-                'status': 'received',
-                'order_type': 'activation',
-                'sms_code': prev_code,
-                'full_sms_text': prev_full or 'Verification completed',
-                'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
-            }
-
-            if admin and user_id != 'demo-user-id':
-                try:
-                    real_id = order.get('id')
-                    q = admin.table('sim_orders').update(restore_payload)
-                    if DBService._is_uuid(real_id):
-                        q = q.eq('id', str(real_id))
-                    else:
-                        q = q.eq('order_reference', str(order.get('order_reference') or order_id))
-                    q.execute()
-                except Exception as e:
-                    print(f"[DBService] reactivate refund status update error: {e}")
-            else:
-                order.update(restore_payload)
-
             return {
                 'success': True,
                 'message': f'Reactivation cancelled. ${refund_amount:.2f} refunded to your wallet.',
                 'new_balance': new_balance
             }
-
-        # Standard initial order refund:
-        if admin and user_id != 'demo-user-id':
-            try:
-                real_id = order.get('id')
-                q = admin.table('sim_orders').update({
-                    'status': 'refunded',
-                    'refunded_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    'refund_reason': reason,
-                    'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
-                })
-                if DBService._is_uuid(real_id):
-                    q = q.eq('id', str(real_id))
-                else:
-                    q = q.eq('order_reference', str(order.get('order_reference') or order_id))
-                q.execute()
-            except Exception as e:
-                print(f"[DBService] refund order status update error: {e}")
-        else:
-            order['status'] = 'refunded'
 
         # Reverse 5% referral commission if one was credited for this order
         try:
@@ -1914,8 +1988,104 @@ class DBService:
                 amount=abs_amt,
                 reference=ref,
                 description=f"Admin Debit: {reason}",
-                metadata=meta
+                metadata=meta,
+                allow_negative=True
             )
+
+    @staticmethod
+    def record_user_recovery_debt(user_id: str, amount_usd: float, reason: str, order_reference: str = None, amount_ngn: float = None) -> dict:
+        """Records an account recovery debt for a user, zeroing any positive balance and holding the rest as a pending recovery against future deposits."""
+        admin = get_supabase_admin()
+        if not admin or not DBService._is_uuid(user_id):
+            return {'success': False, 'message': 'Invalid user'}
+
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        amount_usd = round(float(amount_usd), 4)
+
+        # 1. Deduct any existing positive balance
+        w_res = admin.table('wallets').select('id, balance').eq('user_id', user_id).limit(1).execute()
+        cur_bal = float(w_res.data[0].get('balance', 0.00)) if w_res.data else 0.00
+        recovered_now = 0.0
+        if cur_bal > 0:
+            deduct_amt = min(cur_bal, amount_usd)
+            new_bal = round(cur_bal - deduct_amt, 4)
+            admin.table('wallets').update({'balance': new_bal, 'updated_at': now_iso}).eq('user_id', user_id).execute()
+            recovered_now = deduct_amt
+            amount_usd = round(amount_usd - deduct_amt, 4)
+
+            # Record deduction transaction
+            admin.table('wallet_transactions').insert({
+                'user_id': user_id,
+                'amount': -recovered_now,
+                'type': 'adjustment',
+                'status': 'completed',
+                'reference': f"ADJ-REC-{uuid.uuid4().hex[:8].upper()}",
+                'description': f"Recovery Adjustment: {reason}",
+                'metadata': {'reason': reason, 'order_reference': order_reference}
+            }).execute()
+
+        # 2. If there is remaining deficit, log a pending recovery transaction
+        if amount_usd > 0.0001:
+            ref = f"ADJ-DEBT-{uuid.uuid4().hex[:8].upper()}"
+            tx_data = {
+                'user_id': user_id,
+                'amount': -amount_usd,
+                'type': 'adjustment',
+                'status': 'pending',
+                'reference': ref,
+                'description': f"Pending Deficit Recovery: {reason}",
+                'metadata': {
+                    'pending_recovery': True,
+                    'remaining_amount_usd': amount_usd,
+                    'initial_amount_usd': amount_usd + recovered_now,
+                    'amount_ngn': amount_ngn,
+                    'order_reference': order_reference,
+                    'reason': reason,
+                    'created_at': now_iso
+                }
+            }
+            admin.table('wallet_transactions').insert(tx_data).execute()
+
+        # 3. Create notification for the user
+        try:
+            ngn_str = f"₦{amount_ngn:,.2f}" if amount_ngn else f"${(amount_usd + recovered_now):.2f}"
+            DBService.create_user_notification(
+                user_id=user_id,
+                title='Account Deficit Recovery Notice',
+                message=f"An account adjustment of {ngn_str} was applied to correct an accidental duplicate refund on order #{order_reference or 'TGS-USCA-E38B5A'}. Any future deposit will automatically clear this deficit.",
+                type='admin_debit',
+                link='/wallet'
+            )
+        except Exception:
+            pass
+
+        return {
+            'success': True,
+            'recovered_immediately': recovered_now,
+            'pending_recovery_debt': amount_usd,
+            'new_balance': 0.00
+        }
+
+    @staticmethod
+    def get_user_pending_recovery_debt(user_id: str) -> float:
+        """Returns the total pending recovery debt in USD for a user."""
+        admin = get_supabase_admin()
+        if not admin or not DBService._is_uuid(user_id):
+            return 0.0
+        try:
+            res = admin.table('wallet_transactions').select('metadata') \
+                .eq('user_id', user_id) \
+                .eq('type', 'adjustment') \
+                .eq('status', 'pending') \
+                .contains('metadata', {'pending_recovery': True}) \
+                .execute()
+            total = 0.0
+            for r in (res.data or []):
+                m = r.get('metadata') or {}
+                total += float(m.get('remaining_amount_usd', 0.0))
+            return round(total, 4)
+        except Exception:
+            return 0.0
 
     @staticmethod
     def update_user_role_admin(user_id: str, new_role: str) -> bool:

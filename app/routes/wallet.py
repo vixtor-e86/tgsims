@@ -28,6 +28,7 @@ def index():
 
     wallet = DBService.get_wallet(user['id'])
     transactions = DBService.get_transactions(user['id'])
+    pending_debt = DBService.get_user_pending_recovery_debt(user['id'])
 
     # Dedicated visual accounts hidden until Korapay merchant approval is finalized
     methods = [
@@ -38,6 +39,7 @@ def index():
     return render_template('wallet/index.html', wallet=wallet,
                            transactions=transactions, methods=methods,
                            user=user,
+                           pending_debt=pending_debt,
                            virtual_account=None,
                            squad_account=None,
                            korapay_active=False,
@@ -73,11 +75,13 @@ def fund():
     # Squad info
     squad_active     = SquadService.is_configured()
     squad_public_key = SquadService.get_public_key() if squad_active else ''
+    pending_debt     = DBService.get_user_pending_recovery_debt(user['id'])
 
     return render_template('wallet/fund.html', wallet=wallet,
                            presets_ngn=presets_ngn, methods=methods,
                            fee_rate=fee_rate, user=user,
                            settings=settings,
+                           pending_debt=pending_debt,
                            crypto_currencies=crypto_currencies,
                            crypto_active=crypto_active,
                            crypto_min=crypto_min,
