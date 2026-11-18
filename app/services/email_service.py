@@ -112,22 +112,27 @@ class EmailService:
     @staticmethod
     def send_email(to_email, subject, html_content, text_content=None):
         """Send an email using Resend REST API."""
-        api_key = Config.RESEND_API_KEY
-        if not api_key:
-            print("[EmailService] Warning: RESEND_API_KEY is not set in .env. Skipping email dispatch.")
-            return {"success": False, "message": "RESEND_API_KEY is missing."}
-
-        from_email = Config.RESEND_FROM_EMAIL or "Tgsims <noreply@tgsims.com>"
-        payload = {
-            "from": from_email,
-            "to": [to_email] if isinstance(to_email, str) else to_email,
-            "subject": subject,
-            "html": html_content,
-        }
-        if text_content:
-            payload["text"] = text_content
-
         try:
+            api_key = getattr(Config, 'RESEND_API_KEY', None) or os.getenv('RESEND_API_KEY', '')
+            if not api_key:
+                print("[EmailService] Warning: RESEND_API_KEY is not set. Skipping email dispatch.")
+                return {"success": False, "message": "RESEND_API_KEY is missing."}
+
+            from_email = (
+                getattr(Config, 'RESEND_FROM_EMAIL', None)
+                or os.getenv('RESEND_FROM_EMAIL')
+                or "Tgsims <noreply@tgsims.com>"
+            ).strip()
+
+            payload = {
+                "from": from_email,
+                "to": [to_email] if isinstance(to_email, str) else to_email,
+                "subject": subject,
+                "html": html_content,
+            }
+            if text_content:
+                payload["text"] = text_content
+
             response = requests.post(
                 "https://api.resend.com/emails",
                 headers={

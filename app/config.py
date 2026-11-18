@@ -9,6 +9,7 @@ class Config:
     SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '')
     SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
     RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
+    RESEND_FROM_EMAIL = (os.getenv('RESEND_FROM_EMAIL') or 'Tgsims <noreply@tgsims.com>').strip()
     SMSCODE_API_KEY = (os.getenv('SMSCODE_API_KEY') or os.getenv('SIM_PROVIDER_API_KEY', '')).strip()
     SMSCODE_BASE_URL = (os.getenv('SMSCODE_BASE_URL') or os.getenv('SIM_PROVIDER_BASE_URL', 'https://api.smscode.gg/v2')).strip().rstrip('/')
     SIM_PROVIDER_API_KEY = SMSCODE_API_KEY

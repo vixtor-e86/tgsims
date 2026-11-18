@@ -258,58 +258,67 @@ def register():
 def forgot_password():
     """Step 1: User enters email to receive a 6-digit OTP recovery code."""
     if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
+        try:
+            email = request.form.get('email', '').strip().lower()
 
-        if not email:
-            flash('Please enter your email address.', 'error')
-            return render_template('auth/forgot_password.html')
+            if not email:
+                flash('Please enter your email address.', 'error')
+                return render_template('auth/forgot_password.html')
 
-        # Generate a 6-digit OTP code
-        otp_code = f"{secrets.randbelow(900000) + 100000}"
-        otp_hash = _hash_otp(email, otp_code)
-        expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=10)
+            # Generate a 6-digit OTP code
+            otp_code = f"{secrets.randbelow(900000) + 100000}"
+            otp_hash = _hash_otp(email, otp_code)
+            expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=10)
 
-        # 1. Store in Supabase password_resets table if admin client is available
-        admin_client = get_supabase_admin()
-        saved_in_db = False
-        username = 'User'
-        if admin_client:
-            try:
-                prof = admin_client.table('profiles').select('full_name, username').eq('email', email).limit(1).execute()
-                if prof.data:
-                    username = prof.data[0].get('full_name') or prof.data[0].get('username') or 'User'
-            except Exception:
-                pass
+            # 1. Store in Supabase password_resets table if admin client is available
+            admin_client = get_supabase_admin()
+            saved_in_db = False
+            username = 'User'
+            if admin_client:
+                try:
+                    prof = admin_client.table('profiles').select('full_name, username').eq('email', email).limit(1).execute()
+                    if prof.data:
+                        username = prof.data[0].get('full_name') or prof.data[0].get('username') or 'User'
+                except Exception:
+                    pass
 
-            try:
-                admin_client.table('password_resets').insert({
+                try:
+                    admin_client.table('password_resets').insert({
+                        'email': email,
+                        'otp_hash': otp_hash,
+                        'expires_at': expires_at.isoformat(),
+                        'used': False
+                    }).execute()
+                    saved_in_db = True
+                except Exception as dbe:
+                    print(f"[Forgot Password] DB insert note: {dbe}")
+
+            # Fallback store in session if migration not yet applied
+            if not saved_in_db:
+                session['pwd_reset'] = {
                     'email': email,
                     'otp_hash': otp_hash,
-                    'expires_at': expires_at.isoformat(),
-                    'used': False
-                }).execute()
-                saved_in_db = True
-            except Exception as dbe:
-                print(f"[Forgot Password] DB insert note: {dbe}")
+                    'expires_at': expires_at.timestamp()
+                }
 
-        # Fallback store in session if migration not yet applied
-        if not saved_in_db:
-            session['pwd_reset'] = {
-                'email': email,
-                'otp_hash': otp_hash,
-                'expires_at': expires_at.timestamp()
-            }
+            # 2. Dispatch OTP exclusively via Resend email service matching our custom design
+            try:
+                email_result = EmailService.send_password_reset_otp(email, otp_code, username=username)
+            except Exception as mail_err:
+                print(f"[Forgot Password] Email send note: {mail_err}")
+                email_result = {'success': False, 'error': str(mail_err)}
 
-        # 2. Dispatch OTP exclusively via Resend email service matching our custom design
-        email_result = EmailService.send_password_reset_otp(email, otp_code, username=username)
+            if email_result.get('success'):
+                flash('A 6-digit verification code has been sent to your email address.', 'success')
+            else:
+                # If Resend key is missing or email delivery failed, still provide friendly message
+                flash('If an account exists for this email, a 6-digit verification code was generated. Please enter it below.', 'info')
 
-        if email_result.get('success'):
-            flash('A 6-digit verification code has been sent to your email address.', 'success')
-        else:
-            # If Resend key is missing or email delivery failed, still provide friendly message
-            flash('If an account exists for this email, a 6-digit verification code was generated. Please enter it below.', 'info')
-
-        return redirect(url_for('auth.reset_password', email=email))
+            return redirect(url_for('auth.reset_password', email=email))
+        except Exception as e:
+            print(f"[Forgot Password] Unexpected error: {e}")
+            flash('Unable to process password reset at this time. Please try again.', 'error')
+            return render_template('auth/forgot_password.html')
 
     return render_template('auth/forgot_password.html')
 
@@ -397,11 +406,23 @@ def reset_password():
         # Attempt updating via Supabase Admin Client
         if admin_client and getattr(admin_client, 'auth', None) and getattr(admin_client.auth, 'admin', None):
             try:
-                # Find user id by email
-                users_res = admin_client.auth.admin.list_users()
-                target_user = next((u for u in users_res if getattr(u, 'email', '') == email), None)
-                if target_user:
-                    admin_client.auth.admin.update_user_by_id(target_user.id, {'password': password})
+                # Find user id by email (checking list_users and profiles table)
+                target_user_id = None
+                try:
+                    users_res = admin_client.auth.admin.list_users()
+                    target_user = next((u for u in users_res if getattr(u, 'email', '') == email), None)
+                    if target_user:
+                        target_user_id = target_user.id
+                except Exception as lu_err:
+                    print(f"[Reset Password] list_users note: {lu_err}")
+
+                if not target_user_id:
+                    prof_res = admin_client.table('profiles').select('id').eq('email', email).limit(1).execute()
+                    if prof_res.data:
+                        target_user_id = prof_res.data[0]['id']
+
+                if target_user_id:
+                    admin_client.auth.admin.update_user_by_id(target_user_id, {'password': password})
                     password_updated = True
             except Exception as e:
                 print(f"[Reset Password] Admin update user notice: {e}")
