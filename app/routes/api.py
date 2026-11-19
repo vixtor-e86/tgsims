@@ -881,21 +881,14 @@ def cancel_sim(order_id):
     svc_code = str(order.get('service_code', '')).lower()
     is_txtv = prov_id and str(prov_id).startswith('TXTV-')
 
-    # Carrier policy: WhatsApp numbers on TextVerified cannot be cancelled early and must wait for timer expiration
-    if is_txtv and ('whatsapp' in svc_name or svc_code == 'whatsapp'):
-        return jsonify({
-            'success': False,
-            'message': 'Carrier line policy: WhatsApp numbers cannot be cancelled early. Please wait for the timer to expire for an automatic full refund.'
-        }), 400
-
     if prov_id and not str(prov_id).startswith('SIM-') and not str(prov_id).startswith('USCA-'):
         cancel_res = SIMProviderService.cancel_order(str(prov_id))
         if not cancel_res.get('success'):
             raw_err = str(cancel_res.get('message', '')).lower()
             if 'already' in raw_err or 'received' in raw_err or 'finished' in raw_err:
                 return jsonify({'success': False, 'message': 'Cannot cancel order: verification code has already arrived.'}), 400
-            elif 'whatsapp' in raw_err or 'cannot cancel' in raw_err:
-                return jsonify({'success': False, 'message': 'Carrier policy: this service does not permit early cancellation. Please wait for the order timer to expire.'}), 400
+            elif 'cannot cancel' in raw_err:
+                return jsonify({'success': False, 'message': cancel_res.get('message') or 'Carrier policy: early cancellation is not permitted for this order.'}), 400
             elif 'not found' in raw_err or 'timed' in raw_err or 'expired' in raw_err:
                 pass
             else:

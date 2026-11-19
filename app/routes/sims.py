@@ -165,7 +165,7 @@ def my_sims():
         o['countdown_seconds'] = remaining
         o['elapsed_seconds'] = elapsed
         # Reactivation rule: Reactivations CANNOT be cancelled manually. User must wait until time exhausts or OTP arrives.
-        o['can_cancel'] = (not is_react) and (elapsed >= 180)
+        o['can_cancel'] = (not is_react) and (elapsed >= 120)
 
         # Reactivation availability: Reactivation button remains available for reliable numbers that have received an OTP and are not currently active
         o['reactivation_closed'] = False
