@@ -111,7 +111,7 @@ class SMSCodeClient:
             print(f"[SMSCodeClient] get_operators error: {e}")
             return []
 
-    def get_products(self, country_id: int, platform_id: int, operator_id: int = None, limit: int = 50) -> list:
+    def get_products(self, country_id: int, platform_id: int, operator_id: int = None, limit: int = 500) -> list:
         """Fetch available product tiers for a country + service."""
         try:
             url = f"{self.base_url}/catalog/products?country_id={country_id}&platform_id={platform_id}&limit={limit}"
@@ -125,14 +125,110 @@ class SMSCodeClient:
             print(f"[SMSCodeClient] get_products error: {e}")
             return []
 
+    def get_reliable_any_products(
+        self,
+        country_id: int,
+        platform_id: int,
+        max_price_usd: float = 1.50
+    ) -> dict:
+        """Fetches 'any' operator product tiers for a (country_id, platform_id),
+        focusing on the last two most expensive tiers with wholesale price <= max_price_usd ($1.50 max).
+        Returns:
+            {
+                'primary': (amt, product_dict) or None,
+                'secondary': (amt, product_dict) or None,
+                'candidates': [product_dict, ...]  # Ordered by priority for failover
+            }
+        """
+        products = self.get_products(country_id=country_id, platform_id=platform_id, operator_id=None, limit=500) or []
+        if not products:
+            return {'primary': None, 'secondary': None, 'candidates': []}
+
+        # Filter to 'any' operator tiers (operator_id is None on SMSCode for 'any' tiers)
+        any_prods = [
+            p for p in products
+            if p.get('operator_id') is None or str(p.get('operator_code') or '').lower() in ('', 'any')
+        ]
+        pool = any_prods if any_prods else products
+
+        # Prefer active tiers with available stock > 0
+        in_stock = [
+            p for p in pool
+            if p.get('active', True) is not False and int(p.get('available') or p.get('available_count') or 0) > 0
+        ]
+        active_pool = in_stock if in_stock else pool
+
+        valid_prods = []
+        for p in active_pool:
+            try:
+                amt = float(p.get('price', {}).get('amount') or 0.0)
+                if amt > 0:
+                    valid_prods.append((amt, p))
+            except Exception:
+                pass
+
+        if not valid_prods:
+            return {'primary': None, 'secondary': None, 'candidates': []}
+
+        # Sort ascending by wholesale price
+        valid_prods.sort(key=lambda x: x[0])
+
+        # Filter to products with wholesale price <= max_price_usd ($1.50)
+        under_cap = [(amt, p) for amt, p in valid_prods if amt <= max_price_usd]
+        above_cap = [(amt, p) for amt, p in valid_prods if amt > max_price_usd]
+
+        primary = None
+        secondary = None
+        candidates = []
+
+        if len(under_cap) >= 2:
+            # Pick the last two (most expensive ones within the $1.50 max cap)
+            primary = under_cap[-2]
+            secondary = under_cap[-1]
+            # Failover candidates: primary, secondary, then remaining under_cap from most expensive down
+            candidates = [primary[1], secondary[1]] + [p for _, p in reversed(under_cap[:-2])]
+        elif len(under_cap) == 1:
+            primary = under_cap[0]
+            if above_cap:
+                secondary = above_cap[0]
+                candidates = [primary[1], secondary[1]]
+            else:
+                secondary = under_cap[0]
+                candidates = [primary[1]]
+        else:
+            # Fallback if every tier for this country/service is above $1.50
+            primary = valid_prods[0]
+            secondary = valid_prods[1] if len(valid_prods) > 1 else valid_prods[0]
+            candidates = [p for _, p in valid_prods[:3]]
+
+        return {
+            'primary': primary,
+            'secondary': secondary,
+            'candidates': candidates
+        }
+
     def get_country_id(self, code_or_slug: str) -> int:
         c_str = str(code_or_slug or '').strip().upper()
-        common = {'US': 188, 'USA': 188, 'GB': 17, 'UK': 17, 'NG': 20, 'IN': 23, 'ID': 7, 'CA': 1, 'DE': 44, 'FR': 43}
+        common = {'US': 188, 'USA': 188, 'GB': 17, 'UK': 17, 'NG': 20, 'IN': 23, 'ID': 7, 'DE': 44, 'FR': 43}
         if c_str in common:
             return common[c_str]
+        # Check local catalog.json first (instant, zero network overhead, all 242 countries)
+        try:
+            raw_cat = SIMProviderService._load_raw_catalog()
+            cat_countries = raw_cat.get('countries', []) if isinstance(raw_cat, dict) else (raw_cat if isinstance(raw_cat, list) else [])
+            for c in cat_countries:
+                if (
+                    str(c.get('country_code') or '').upper() == c_str
+                    or str(c.get('country_name') or '').lower() == c_str.lower()
+                    or str(c.get('country_slug') or '').lower() == c_str.lower()
+                ):
+                    if c.get('country_id'):
+                        return int(c['country_id'])
+        except Exception:
+            pass
         countries = self.get_countries()
         for c in countries:
-            if c.get('code', '').upper() == c_str or c.get('name', '').lower() == c_str.lower():
+            if (c.get('code') or '').upper() == c_str or (c.get('name') or '').lower() == c_str.lower():
                 return c['id']
         return 188
 
@@ -156,6 +252,24 @@ class SMSCodeClient:
         }
         if s_clean in core_map:
             return core_map[s_clean]
+        # Check local catalog.json first (covers all 1,236 services without extra HTTP call)
+        try:
+            raw_cat = SIMProviderService._load_raw_catalog()
+            cat_services = raw_cat.get('services', []) if isinstance(raw_cat, dict) else []
+            if cat_services:
+                for s in cat_services:
+                    if (s.get('code') or '').lower() == s_clean or (s.get('name') or '').lower() == s_clean:
+                        if s.get('platform_id'):
+                            return int(s['platform_id'])
+                clean_norm = s_clean.replace('-', '').replace(' ', '')
+                for s in cat_services:
+                    s_norm = (s.get('code') or '').lower().replace('-', '').replace(' ', '')
+                    n_norm = (s.get('name') or '').lower().replace('-', '').replace(' ', '')
+                    if s_norm == clean_norm or n_norm == clean_norm:
+                        if s.get('platform_id'):
+                            return int(s['platform_id'])
+        except Exception:
+            pass
         services = self.get_services()
         # 1. Exact match on code or name
         for s in services:
@@ -289,30 +403,6 @@ class SMSCodeClient:
         cc_clean = (country_code or 'US').strip().upper()
         sc_clean = (service_code or 'whatsapp').strip().lower()
 
-        # Dedicated handling for Nigeria WhatsApp:
-        # Remove the unavailable $0.428 product and use the two reliable routes:
-        # Route 1: $0.512 wholesale (1370810551 / 1369718578)
-        # Route 2: $0.578 wholesale (1368799747)
-        if cc_clean in ('NG', 'NGA') and sc_clean in ('whatsapp', 'wa', 'wa_biz'):
-            candidates = []
-            if product_id:
-                try:
-                    candidates.append(int(product_id))
-                except Exception:
-                    pass
-            for cand in (1370810551, 1369718578, 1368799747):
-                if cand not in candidates:
-                    candidates.append(cand)
-
-            last_err = None
-            for pid_target in candidates:
-                res = self.create_order(product_id=pid_target)
-                if res.get('success'):
-                    return res
-                last_err = res
-
-            return last_err or {'success': False, 'message': 'No numbers currently available on Nigeria WhatsApp carrier routes.'}
-
         # Dedicated handling for US WhatsApp T-Mobile (operator_id=125):
         # Use the 2nd cheapest T-Mobile product tier instead of the unreliable 1st cheapest tier.
         op_str = str(operator or '').strip().lower()
@@ -349,7 +439,49 @@ class SMSCodeClient:
         cid = self.get_country_id(country_code)
         pid = self.get_platform_id(service_code)
 
-        # If product_id or catalog_product_id not provided, find cheapest catalog_product_id
+        # For all Other Countries (non-US):
+        # Focus on the last two most expensive 'any' operator product tiers <= $1.50 max (Primary & Secondary)
+        if cc_clean not in ('US', 'USA'):
+            candidates = []
+            if product_id:
+                try:
+                    candidates.append(int(product_id))
+                except Exception:
+                    pass
+
+            reliable_info = self.get_reliable_any_products(country_id=cid, platform_id=pid, max_price_usd=1.50)
+            for cand_prod in reliable_info.get('candidates', []):
+                cpid = cand_prod.get('id')
+                if cpid:
+                    try:
+                        cpid_int = int(cpid)
+                        if cpid_int not in candidates:
+                            candidates.append(cpid_int)
+                    except Exception:
+                        pass
+                if not catalog_product_id and cand_prod.get('catalog_product_id'):
+                    catalog_product_id = cand_prod.get('catalog_product_id')
+
+            last_err = None
+            for pid_target in candidates[:4]:
+                res = self.create_order(product_id=pid_target)
+                if res.get('success'):
+                    return res
+                last_err = res
+
+            if catalog_product_id:
+                res = self.create_order(
+                    catalog_product_id=catalog_product_id,
+                    max_price='1.50',
+                    policy='best_success'
+                )
+                if res.get('success'):
+                    return res
+                last_err = res
+
+            return last_err or {'success': False, 'message': 'No numbers currently available for this service/country.'}
+
+        # US non-WhatsApp fallback: if product_id or catalog_product_id not provided, find cheapest catalog_product_id
         if not product_id and not catalog_product_id:
             products = self.get_products(cid, pid, operator_id=operator_id, limit=10)
             if products:

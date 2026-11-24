@@ -43,249 +43,120 @@ def get_catalog_operators():
         if matched and matched.get('operators'):
             return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': matched['operators']})
 
-    # Special handling for Nigeria WhatsApp:
-    # Remove the unavailable $0.428 route and provide the two reliable routes of $0.512 & $0.578 wholesale cost
-    if country_code in ('NG', 'NGA') and service_code in ('whatsapp', 'wa', 'wa_biz'):
-        client = SIMProviderService.get_client()
-        cost_r1 = 0.5117
-        retail1, _ = SIMProviderService.calculate_retail_price(
-            base_cost=cost_r1,
-            service_code='whatsapp',
-            provider_type='smscode',
-            country_code=country_code
-        )
-
-        cost_r2 = 0.5779
-        retail2, _ = SIMProviderService.calculate_retail_price(
-            base_cost=cost_r2,
-            service_code='whatsapp',
-            provider_type='smscode',
-            country_code=country_code
-        )
-
-        r1_prod_id = 1370810551
-        r1_avail = 220984
-        r2_prod_id = 1368799747
-        r2_avail = 1278
-
-        if client.is_configured:
-            try:
-                all_prods = client.get_products(country_id=20, platform_id=1, limit=50) or []
-                for p in all_prods:
-                    amt = float(p.get('price', {}).get('amount') or 0.0)
-                    if abs(amt - cost_r1) < 0.005:
-                        r1_prod_id = p.get('id') or r1_prod_id
-                        r1_avail = int(p.get('available') or p.get('available_count') or r1_avail)
-                    elif abs(amt - cost_r2) < 0.005:
-                        r2_prod_id = p.get('id') or r2_prod_id
-                        r2_avail = int(p.get('available') or p.get('available_count') or r2_avail)
-            except Exception:
-                pass
-
-        ng_wa_operators = [
-            {
-                'operator_id': 130,
-                'operator_code': 'airtel_route_1',
-                'operator_name': 'AirTel - Route 1 (Primary)',
-                'base_cost_usd': cost_r1,
-                'price_usd': retail1,
-                'price': retail1,
-                'available': r1_avail,
-                'catalog_product_id': 1982,
-                'cheapest_product_id': r1_prod_id
-            },
-            {
-                'operator_id': 130,
-                'operator_code': 'airtel_route_2',
-                'operator_name': 'AirTel - Route 2 (Alternative)',
-                'base_cost_usd': cost_r2,
-                'price_usd': retail2,
-                'price': retail2,
-                'available': r2_avail,
-                'catalog_product_id': 1982,
-                'cheapest_product_id': r2_prod_id
-            }
-        ]
-        return jsonify({
-            'success': True,
-            'country_code': country_code,
-            'service_code': service_code,
-            'operators': ng_wa_operators
-        })
-
-    # For other countries:
+    # For all other countries (SMSCode):
+    # Pick the last two most expensive 'any' operator product tiers with wholesale price <= $1.50 max:
+    # One for Primary and one for Secondary.
     client = SIMProviderService.get_client()
     if not client.is_configured:
         return jsonify({'success': True, 'operators': []})
 
-    core_slugs = {
-        'whatsapp', 'wa', 'telegram', 'tg', 'google', 'gmail', 'youtube',
-        'instagram', 'ig', 'threads', 'twitter', 'tw', 'x', 'facebook', 'fb',
-        'openai', 'chatgpt', 'tiktok', 'discord', 'apple', 'icloud'
-    }
     cid = client.get_country_id(country_code)
     pid = client.get_platform_id(service_code)
-    is_core = (service_code in core_slugs) or (pid in (1, 2, 3, 4, 5, 6, 7, 8, 12, 20))
 
-    raw_ops = client.get_operators(country_id=cid, platform_id=pid) if is_core else []
-    if not is_core or not raw_ops:
-        products = client.get_products(country_id=cid, platform_id=pid, limit=10)
-        valid_prods = []
-        if products:
-            for p in products:
-                try:
-                    amt = float(p.get('price', {}).get('amount') or 999)
-                    valid_prods.append((amt, p))
-                except Exception:
-                    pass
-            valid_prods.sort(key=lambda x: x[0])
+    reliable_info = client.get_reliable_any_products(country_id=cid, platform_id=pid, max_price_usd=1.50)
+    primary_tuple = reliable_info.get('primary')
+    secondary_tuple = reliable_info.get('secondary')
 
-        if valid_prods:
-            routes = []
-            amt1, p1 = valid_prods[0]
-            retail1, _ = SIMProviderService.calculate_retail_price(
-                base_cost=amt1,
+    if primary_tuple:
+        routes = []
+        amt1, p1 = primary_tuple
+        retail1, _ = SIMProviderService.calculate_retail_price(
+            base_cost=amt1,
+            service_code=service_code,
+            provider_type='smscode',
+            country_code=country_code
+        )
+        routes.append({
+            'operator_id': p1.get('operator_id'),
+            'operator_code': 'any_primary',
+            'operator_name': 'Any Operator - Route 1 (Primary)',
+            'base_cost_usd': amt1,
+            'price_usd': retail1,
+            'price': retail1,
+            'available': int(p1.get('available') or p1.get('available_count') or 500),
+            'catalog_product_id': p1.get('catalog_product_id'),
+            'cheapest_product_id': p1.get('id'),
+            'product_id': p1.get('id')
+        })
+
+        if secondary_tuple and secondary_tuple[1].get('id') != p1.get('id'):
+            amt2, p2 = secondary_tuple
+            retail2, _ = SIMProviderService.calculate_retail_price(
+                base_cost=amt2,
                 service_code=service_code,
                 provider_type='smscode',
                 country_code=country_code
             )
             routes.append({
-                'operator_id': p1.get('operator_id') or 1,
-                'operator_code': 'route_1',
-                'operator_name': 'Server Route 1 (Primary)',
-                'base_cost_usd': amt1,
-                'price_usd': retail1,
-                'price': retail1,
-                'available': int(p1.get('available_count') or 500),
-                'catalog_product_id': p1.get('catalog_product_id'),
-                'cheapest_product_id': p1.get('id')
+                'operator_id': p2.get('operator_id'),
+                'operator_code': 'any_secondary',
+                'operator_name': 'Any Operator - Route 2 (Secondary)',
+                'base_cost_usd': amt2,
+                'price_usd': retail2,
+                'price': retail2,
+                'available': int(p2.get('available') or p2.get('available_count') or 500),
+                'catalog_product_id': p2.get('catalog_product_id'),
+                'cheapest_product_id': p2.get('id'),
+                'product_id': p2.get('id')
             })
-            if len(valid_prods) > 1:
-                amt2, p2 = valid_prods[1]
-                retail2, _ = SIMProviderService.calculate_retail_price(
-                    base_cost=amt2,
-                    service_code=service_code,
-                    provider_type='smscode',
-                    country_code=country_code
-                )
-                routes.append({
-                    'operator_id': p2.get('operator_id') or 2,
-                    'operator_code': 'route_2',
-                    'operator_name': 'Server Route 2 (Alternative)',
-                    'base_cost_usd': amt2,
-                    'price_usd': retail2,
-                    'price': retail2,
-                    'available': int(p2.get('available_count') or 500),
-                    'catalog_product_id': p2.get('catalog_product_id'),
-                    'cheapest_product_id': p2.get('id')
-                })
-            else:
-                amt2 = round(amt1 + 0.01, 4)
-                retail2, _ = SIMProviderService.calculate_retail_price(
-                    base_cost=amt2,
-                    service_code=service_code,
-                    provider_type='smscode',
-                    country_code=country_code
-                )
-                routes.append({
-                    'operator_id': 2,
-                    'operator_code': 'route_2',
-                    'operator_name': 'Server Route 2 (Alternative)',
-                    'base_cost_usd': amt2,
-                    'price_usd': retail2,
-                    'price': retail2,
-                    'available': int(p1.get('available_count') or 500),
-                    'catalog_product_id': p1.get('catalog_product_id'),
-                    'cheapest_product_id': p1.get('id')
-                })
-            return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': routes})
+        else:
+            amt2 = min(1.50, round(amt1 + 0.01, 4))
+            retail2, _ = SIMProviderService.calculate_retail_price(
+                base_cost=amt2,
+                service_code=service_code,
+                provider_type='smscode',
+                country_code=country_code
+            )
+            routes.append({
+                'operator_id': p1.get('operator_id'),
+                'operator_code': 'any_secondary',
+                'operator_name': 'Any Operator - Route 2 (Secondary)',
+                'base_cost_usd': amt2,
+                'price_usd': retail2,
+                'price': retail2,
+                'available': int(p1.get('available') or p1.get('available_count') or 500),
+                'catalog_product_id': p1.get('catalog_product_id'),
+                'cheapest_product_id': p1.get('id'),
+                'product_id': p1.get('id')
+            })
 
-        # Fallback routes when live product tiers are in standby
-        fb_cost1 = 0.15
-        fb_cost2 = 0.20
-        r_fb1, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost1, service_code=service_code, provider_type='smscode', country_code=country_code)
-        r_fb2, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost2, service_code=service_code, provider_type='smscode', country_code=country_code)
-        fallback_routes = [
-            {
-                'operator_id': 1,
-                'operator_code': 'route_1',
-                'operator_name': 'Server Route 1 (Primary)',
-                'base_cost_usd': fb_cost1,
-                'price_usd': r_fb1,
-                'price': r_fb1,
-                'available': 500,
-                'catalog_product_id': None,
-                'cheapest_product_id': None
-            },
-            {
-                'operator_id': 2,
-                'operator_code': 'route_2',
-                'operator_name': 'Server Route 2 (Alternative)',
-                'base_cost_usd': fb_cost2,
-                'price_usd': r_fb2,
-                'price': r_fb2,
-                'available': 500,
-                'catalog_product_id': None,
-                'cheapest_product_id': None
-            }
-        ]
-        return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': fallback_routes})
-
-    # For each operator, get products, pick cheapest, calculate retail price
-    operators_list = []
-    for op in raw_ops:
-        op_id = op.get('operator_id')
-        if not op_id:
-            continue
-        raw_code = str(op.get('code') or '').lower()
-        op_name = op.get('name') or op.get('code', 'Carrier Route')
-
-        # Friendly formatting
-        if 'tmobile' in raw_code or 't-mobile' in op_name.lower():
-            op_name = 'T-Mobile'
-        elif 'at_t' in raw_code or 'at&t' in op_name.lower():
-            op_name = 'AT&T'
-        elif 'verizon' in raw_code or 'verizon' in op_name.lower():
-            op_name = 'Verizon'
-        elif 'vodafone' in raw_code or 'vodafone' in op_name.lower():
-            op_name = 'Vodafone'
-        elif 'ee' == raw_code:
-            op_name = 'EE (UK)'
-        elif 'o2' in raw_code:
-            op_name = 'O2'
-        elif 'three' in raw_code or '3' == raw_code:
-            op_name = 'Three'
-
-        # Query product tiers for this operator
-        products = client.get_products(country_id=cid, platform_id=pid, operator_id=op_id, limit=10)
-        if not products:
-            continue
-        products.sort(key=lambda p: float(p.get('price', {}).get('amount', 999)))
-        cheapest = products[0]
-        base_cost = float(cheapest.get('price', {}).get('amount', 0.50))
-        retail_price, margin = SIMProviderService.calculate_retail_price(
-            base_cost=base_cost,
-            service_code=service_code,
-            provider_type='smscode',
-            country_code=country_code
-        )
-        avail = int(cheapest.get('available_count') or 100)
-
-        operators_list.append({
-            'operator_id': op_id,
-            'operator_code': op.get('code'),
-            'operator_name': op_name,
-            'base_cost_usd': base_cost,
-            'price_usd': retail_price,
-            'price': retail_price,
-            'available': avail,
-            'catalog_product_id': cheapest.get('catalog_product_id'),
-            'cheapest_product_id': cheapest.get('id')
+        return jsonify({
+            'success': True,
+            'country_code': country_code,
+            'service_code': service_code,
+            'operators': routes
         })
 
-    # Sort operators by price ascending
-    operators_list.sort(key=lambda o: o['price_usd'])
-    return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': operators_list})
+    # Fallback routes when live product tiers are in standby
+    fb_cost1 = 0.85
+    fb_cost2 = 1.20
+    r_fb1, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost1, service_code=service_code, provider_type='smscode', country_code=country_code)
+    r_fb2, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost2, service_code=service_code, provider_type='smscode', country_code=country_code)
+    fallback_routes = [
+        {
+            'operator_id': None,
+            'operator_code': 'any_primary',
+            'operator_name': 'Any Operator - Route 1 (Primary)',
+            'base_cost_usd': fb_cost1,
+            'price_usd': r_fb1,
+            'price': r_fb1,
+            'available': 500,
+            'catalog_product_id': None,
+            'cheapest_product_id': None
+        },
+        {
+            'operator_id': None,
+            'operator_code': 'any_secondary',
+            'operator_name': 'Any Operator - Route 2 (Secondary)',
+            'base_cost_usd': fb_cost2,
+            'price_usd': r_fb2,
+            'price': r_fb2,
+            'available': 500,
+            'catalog_product_id': None,
+            'cheapest_product_id': None
+        }
+    ]
+    return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': fallback_routes})
 
 
 @api_bp.route('/purchase-sim', methods=['POST'])
@@ -320,8 +191,11 @@ def purchase_sim():
     except (ValueError, TypeError):
         client_price = 0.0
 
-    # Ensure price is never <= 0 and never lower than the server-verified retail price
-    price = max(server_price, client_price)
+    # Ensure price is never <= 0; for non-US countries use the selected route price if valid
+    if country_code not in ('US', 'USA') and client_price > 0:
+        price = client_price
+    else:
+        price = max(server_price, client_price)
     if price <= 0:
         return jsonify({'success': False, 'message': 'Invalid service price.'}), 400
 

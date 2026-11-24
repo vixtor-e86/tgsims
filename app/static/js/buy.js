@@ -233,7 +233,7 @@
             '<span class="badge badge-brand" style="width:24px;height:24px;display:grid;place-items:center;padding:0;font-size:0.75rem;font-weight:700;">' + letter + '</span>' +
             '<div class="buy-list-text">' +
               '<span class="buy-list-primary">' + s.name + '</span>' +
-              '<span class="buy-list-secondary">' + (isCore ? 'Multi-Operator Routes' : '2 Server Routes') + '</span>' +
+              '<span class="buy-list-secondary">2 Reliable Operator Routes</span>' +
             '</div>' +
           '</div>' +
           '<div class="buy-list-meta">' +
@@ -464,16 +464,16 @@
           if (!ops.length) {
             ops = [
               {
-                operator_name: "Server Route 1 (Primary)",
-                operator_code: "route_1",
-                operator_id: 1,
+                operator_name: "Any Operator - Route 1 (Primary)",
+                operator_code: "any_primary",
+                operator_id: null,
                 price_usd: service.price,
                 available: service.available || 500
               },
               {
-                operator_name: "Server Route 2 (Alternative)",
-                operator_code: "route_2",
-                operator_id: 2,
+                operator_name: "Any Operator - Route 2 (Secondary)",
+                operator_code: "any_secondary",
+                operator_id: null,
                 price_usd: service.price,
                 available: service.available || 500
               }
@@ -486,16 +486,16 @@
           state.isLoadingOps = false;
           var fallback = [
             {
-              operator_name: "Server Route 1 (Primary)",
-              operator_code: "route_1",
-              operator_id: 1,
+              operator_name: "Any Operator - Route 1 (Primary)",
+              operator_code: "any_primary",
+              operator_id: null,
               price_usd: service.price,
               available: service.available || 500
             },
             {
-              operator_name: "Server Route 2 (Alternative)",
-              operator_code: "route_2",
-              operator_id: 2,
+              operator_name: "Any Operator - Route 2 (Secondary)",
+              operator_code: "any_secondary",
+              operator_id: null,
               price_usd: service.price,
               available: service.available || 500
             }
