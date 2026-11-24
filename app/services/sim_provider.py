@@ -125,6 +125,256 @@ class SMSCodeClient:
             print(f"[SMSCodeClient] get_products error: {e}")
             return []
 
+    @staticmethod
+    def _format_operator_display_name(raw_code: str, raw_name: str) -> str:
+        """Formats carrier operator code/name into a clean user-facing display label."""
+        rc = str(raw_code or '').strip().lower()
+        rn = str(raw_name or raw_code or 'Carrier Route').strip()
+        rnl = rn.lower()
+        if 'vodafone' in rc or 'vodafone' in rnl:
+            return 'Vodafone'
+        if rc == 'ee' or rnl == 'ee':
+            return 'EE'
+        if 'tmobile' in rc or 't-mobile' in rnl:
+            return 'T-Mobile'
+        if 'o2' in rc or rnl == 'o2':
+            return 'O2'
+        if 'three' in rc or rc == '3' or rnl == 'three':
+            return 'Three'
+        if 'lebara' in rc or 'lebara' in rnl:
+            return 'Lebara'
+        if 'lyca' in rc or 'lyca' in rnl:
+            return 'Lycamobile'
+        if 'tesco' in rc or 'tesco' in rnl:
+            return 'Tesco Mobile'
+        if 'giffgaff' in rc or 'giffgaff' in rnl:
+            return 'Giffgaff'
+        if 'telekom' in rc or 'telekom' in rnl:
+            return 'Telekom'
+        if 'ortel' in rc or 'ortel' in rnl:
+            return 'Ortel Mobile'
+        if 'fonic' in rc or 'fonic' in rnl:
+            return 'FONIC'
+        if 'kpn' in rc or rnl == 'kpn':
+            return 'KPN'
+        if 'telkomsel' in rc or 'telkomsel' in rnl:
+            return 'Telkomsel'
+        if 'indosat' in rc or 'indosat' in rnl:
+            return 'Indosat Ooredoo'
+        if 'axis' in rc or 'axis' in rnl:
+            return 'AXIS'
+        if 'smartfren' in rc or 'smartfren' in rnl:
+            return 'Smartfren'
+        if 'airtel' in rc or 'airtel' in rnl:
+            return 'AirTel'
+        if 'mtn' in rc or rnl == 'mtn':
+            return 'MTN'
+        if 'glo' in rc or 'globacom' in rnl:
+            return 'Glo'
+        if '9mobile' in rc or 'etisalat' in rc:
+            return '9mobile'
+        if 'orange' in rc or 'orange' in rnl:
+            return 'Orange'
+        if 'sfr' in rc or rnl == 'sfr':
+            return 'SFR'
+        if 'bouygues' in rc or 'bouygues' in rnl:
+            return 'Bouygues'
+        if 'movistar' in rc or 'movistar' in rnl:
+            return 'Movistar'
+        if 'yoigo' in rc or 'yoigo' in rnl:
+            return 'Yoigo'
+        if 'claro' in rc or 'claro' in rnl:
+            return 'Claro'
+        if 'vivo' in rc or 'vivo' in rnl:
+            return 'Vivo'
+        if rc == 'tim' or rnl == 'tim':
+            return 'TIM'
+        if 'rogers' in rc or 'rogers' in rnl:
+            return 'Rogers'
+        if 'bell' in rc or rnl == 'bell':
+            return 'Bell'
+        if 'telus' in rc or 'telus' in rnl:
+            return 'Telus'
+        return rn
+
+    def _pick_reliable_tiers_from_products(self, products: list, max_price_usd: float = 1.50) -> dict:
+        """Given a list of product dicts, sorts by price ascending, filters by max_price_usd ($1.50),
+        and picks the most expensive reliable tier(s) <= $1.50 (or > $1.50 if all tiers are expensive).
+        """
+        if not products:
+            return {'best': None, 'primary': None, 'secondary': None, 'candidates': []}
+
+        in_stock = [
+            p for p in products
+            if p.get('active', True) is not False and int(p.get('available') or p.get('available_count') or 0) > 0
+        ]
+        active_pool = in_stock if in_stock else products
+
+        valid_prods = []
+        for p in active_pool:
+            try:
+                amt = float(p.get('price', {}).get('amount') or 0.0)
+                if amt > 0:
+                    valid_prods.append((amt, p))
+            except Exception:
+                pass
+
+        if not valid_prods:
+            return {'best': None, 'primary': None, 'secondary': None, 'candidates': []}
+
+        valid_prods.sort(key=lambda x: x[0])
+        under_cap = [(amt, p) for amt, p in valid_prods if amt <= max_price_usd]
+        above_cap = [(amt, p) for amt, p in valid_prods if amt > max_price_usd]
+
+        if len(under_cap) >= 2:
+            primary = under_cap[-2]
+            secondary = under_cap[-1]
+            best = under_cap[-1]  # Most expensive reliable tier <= $1.50 for a single carrier operator
+            candidates = [secondary[1], primary[1]] + [p for _, p in reversed(under_cap[:-2])]
+        elif len(under_cap) == 1:
+            primary = under_cap[0]
+            best = under_cap[0]
+            if above_cap:
+                secondary = above_cap[0]
+                candidates = [primary[1], secondary[1]]
+            else:
+                secondary = under_cap[0]
+                candidates = [primary[1]]
+        else:
+            # All tiers for this operator/service exceed $1.50 ("can also be more than 1.5 if the service are expensive")
+            # If there are multiple expensive tiers, pick a reliable one without jumping to extreme outliers
+            if len(above_cap) >= 2:
+                primary = above_cap[0]
+                secondary = above_cap[1]
+                best = above_cap[1] if above_cap[1][0] <= 3.50 else above_cap[0]
+                candidates = [best[1]] + [p for _, p in above_cap if p.get('id') != best[1].get('id')]
+            else:
+                primary = above_cap[0]
+                secondary = above_cap[0]
+                best = above_cap[0]
+                candidates = [above_cap[0][1]]
+
+        return {
+            'best': best,
+            'primary': primary,
+            'secondary': secondary,
+            'candidates': candidates
+        }
+
+    def get_reliable_operator_products(
+        self,
+        country_id: int,
+        platform_id: int,
+        operator_id: int,
+        max_price_usd: float = 1.50
+    ) -> dict:
+        """Fetches product tiers for a specific carrier operator_id and picks its best reliable tier
+        (highest priced <= $1.50, or > $1.50 if all tiers for that operator are expensive).
+        """
+        products = self.get_products(
+            country_id=country_id,
+            platform_id=platform_id,
+            operator_id=operator_id,
+            limit=200
+        ) or []
+        return self._pick_reliable_tiers_from_products(products, max_price_usd=max_price_usd)
+
+    def get_reliable_country_operators(
+        self,
+        country_id: int,
+        platform_id: int,
+        max_operators: int = 5,
+        max_price_usd: float = 1.50
+    ) -> list:
+        """For countries/services that have named carrier operators on SMSCode (e.g. UK, Germany, Netherlands,
+        Indonesia, France, Spain, etc.), fetches up to `max_operators` (5) carrier operators and selects 1
+        reliable product tier per operator (focusing on the highest tier <= $1.50, or > $1.50 if expensive).
+        Returns a list of selected operator route dicts, or empty list if the country/service doesn't have
+        multiple named carrier operators.
+        """
+        raw_ops = self.get_operators(country_id=country_id, platform_id=platform_id) or []
+        if len(raw_ops) < 2:
+            return []
+
+        # Prioritize well-known major carriers first when a country has > 5 operators (e.g. UK has 10)
+        PRIORITY_CARRIERS = {
+            'vodafone': 1, 'o2': 2, 'ee': 3, 'three': 4, '3': 4, 'tmobile': 5, 't-mobile': 5,
+            'telekom': 6, 'lebara': 7, 'lycamobile': 8, 'tesco': 9, 'giffgaff': 10,
+            'orange': 11, 'sfr': 12, 'bouygues': 13, 'kpn': 14, 'movistar': 15,
+            'telkomsel': 16, 'indosat': 17, 'axis': 18, 'smartfren': 19,
+            'mtn': 20, 'airtel': 21, 'glo': 22, '9mobile': 23,
+            'rogers': 24, 'bell': 25, 'telus': 26, 'claro': 27, 'vivo': 28, 'tim': 29,
+            'ortel_mobile': 30, 'fonic': 31
+        }
+
+        def _op_rank(op):
+            code = str(op.get('code') or '').strip().lower()
+            name = str(op.get('name') or '').strip().lower()
+            for k, r in PRIORITY_CARRIERS.items():
+                if code == k or k in code or k in name:
+                    return (0, r, name)
+            return (1, 50, name)
+
+        sorted_ops = sorted(raw_ops, key=_op_rank)
+        # Inspect up to 8 candidate operators concurrently to pick up to 5 with valid in-stock tiers
+        candidates_to_check = sorted_ops[:8]
+
+        from concurrent.futures import ThreadPoolExecutor
+
+        def _fetch_one_op(op):
+            op_id = op.get('operator_id')
+            if not op_id:
+                return None
+            tier_info = self.get_reliable_operator_products(
+                country_id=country_id,
+                platform_id=platform_id,
+                operator_id=op_id,
+                max_price_usd=max_price_usd
+            )
+            best = tier_info.get('best')
+            if not best:
+                return None
+            amt, prod = best
+            disp_name = self._format_operator_display_name(op.get('code'), op.get('name'))
+            return {
+                'operator_id': op_id,
+                'operator_code': op.get('code') or f"op_{op_id}",
+                'operator_name': disp_name,
+                'base_cost_usd': amt,
+                'available': int(prod.get('available') or prod.get('available_count') or 100),
+                'catalog_product_id': prod.get('catalog_product_id'),
+                'cheapest_product_id': prod.get('id'),
+                'product_id': prod.get('id'),
+                'within_cap': amt <= max_price_usd
+            }
+
+        results = []
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            for res in executor.map(_fetch_one_op, candidates_to_check):
+                if res:
+                    results.append(res)
+
+        if len(results) < 2:
+            return []
+
+        # Deduplicate by display name (e.g. if both 'ee' and 'tmobile' format to 'EE' or 'T-Mobile')
+        seen_names = set()
+        deduped = []
+        # Prefer operators with tiers <= $1.50 first, then expensive ones (> $1.50) if needed
+        results.sort(key=lambda r: (0 if r['within_cap'] else 1, r['base_cost_usd']))
+        for r in results:
+            name_key = r['operator_name'].lower()
+            if name_key in seen_names:
+                continue
+            seen_names.add(name_key)
+            deduped.append(r)
+            if len(deduped) >= max_operators:
+                break
+
+        # Sort final selected operators (up to 5) by price ascending
+        deduped.sort(key=lambda r: r['base_cost_usd'])
+        return deduped
+
     def get_reliable_any_products(
         self,
         country_id: int,
@@ -132,7 +382,8 @@ class SMSCodeClient:
         max_price_usd: float = 1.50
     ) -> dict:
         """Fetches 'any' operator product tiers for a (country_id, platform_id),
-        focusing on the last two most expensive tiers with wholesale price <= max_price_usd ($1.50 max).
+        focusing on the last two most expensive tiers with wholesale price <= max_price_usd ($1.50 max,
+        or > $1.50 if the service is expensive).
         Returns:
             {
                 'primary': (amt, product_dict) or None,
@@ -150,61 +401,20 @@ class SMSCodeClient:
             if p.get('operator_id') is None or str(p.get('operator_code') or '').lower() in ('', 'any')
         ]
         pool = any_prods if any_prods else products
-
-        # Prefer active tiers with available stock > 0
-        in_stock = [
-            p for p in pool
-            if p.get('active', True) is not False and int(p.get('available') or p.get('available_count') or 0) > 0
-        ]
-        active_pool = in_stock if in_stock else pool
-
-        valid_prods = []
-        for p in active_pool:
-            try:
-                amt = float(p.get('price', {}).get('amount') or 0.0)
-                if amt > 0:
-                    valid_prods.append((amt, p))
-            except Exception:
-                pass
-
-        if not valid_prods:
-            return {'primary': None, 'secondary': None, 'candidates': []}
-
-        # Sort ascending by wholesale price
-        valid_prods.sort(key=lambda x: x[0])
-
-        # Filter to products with wholesale price <= max_price_usd ($1.50)
-        under_cap = [(amt, p) for amt, p in valid_prods if amt <= max_price_usd]
-        above_cap = [(amt, p) for amt, p in valid_prods if amt > max_price_usd]
-
-        primary = None
-        secondary = None
-        candidates = []
-
-        if len(under_cap) >= 2:
-            # Pick the last two (most expensive ones within the $1.50 max cap)
-            primary = under_cap[-2]
-            secondary = under_cap[-1]
-            # Failover candidates: primary, secondary, then remaining under_cap from most expensive down
-            candidates = [primary[1], secondary[1]] + [p for _, p in reversed(under_cap[:-2])]
-        elif len(under_cap) == 1:
-            primary = under_cap[0]
-            if above_cap:
-                secondary = above_cap[0]
-                candidates = [primary[1], secondary[1]]
-            else:
-                secondary = under_cap[0]
-                candidates = [primary[1]]
-        else:
-            # Fallback if every tier for this country/service is above $1.50
-            primary = valid_prods[0]
-            secondary = valid_prods[1] if len(valid_prods) > 1 else valid_prods[0]
-            candidates = [p for _, p in valid_prods[:3]]
-
+        res = self._pick_reliable_tiers_from_products(pool, max_price_usd=max_price_usd)
+        # Order candidates with primary first, then secondary, then remaining
+        cands = []
+        if res.get('primary'):
+            cands.append(res['primary'][1])
+        if res.get('secondary') and (not cands or res['secondary'][1].get('id') != cands[0].get('id')):
+            cands.append(res['secondary'][1])
+        for c in res.get('candidates', []):
+            if all(c.get('id') != existing.get('id') for existing in cands):
+                cands.append(c)
         return {
-            'primary': primary,
-            'secondary': secondary,
-            'candidates': candidates
+            'primary': res.get('primary'),
+            'secondary': res.get('secondary'),
+            'candidates': cands
         }
 
     def get_country_id(self, code_or_slug: str) -> int:
@@ -440,7 +650,10 @@ class SMSCodeClient:
         pid = self.get_platform_id(service_code)
 
         # For all Other Countries (non-US):
-        # Focus on the last two most expensive 'any' operator product tiers <= $1.50 max (Primary & Secondary)
+        # 1. Start with the exact product_id selected by the user (either from the 5 named carrier operators
+        #    or from the Primary/Secondary 'any' operator routes).
+        # 2. If a specific operator_id was selected, fail over to other reliable tiers on that operator first.
+        # 3. Then fail over to the reliable 'any' operator tiers (last two <= $1.50, or > $1.50 if expensive).
         if cc_clean not in ('US', 'USA'):
             candidates = []
             if product_id:
@@ -448,6 +661,25 @@ class SMSCodeClient:
                     candidates.append(int(product_id))
                 except Exception:
                     pass
+
+            if operator_id is not None and str(operator_id).isdigit() and int(operator_id) > 0:
+                op_info = self.get_reliable_operator_products(
+                    country_id=cid,
+                    platform_id=pid,
+                    operator_id=int(operator_id),
+                    max_price_usd=1.50
+                )
+                for cand_prod in op_info.get('candidates', []):
+                    cpid = cand_prod.get('id')
+                    if cpid:
+                        try:
+                            cpid_int = int(cpid)
+                            if cpid_int not in candidates:
+                                candidates.append(cpid_int)
+                        except Exception:
+                            pass
+                    if not catalog_product_id and cand_prod.get('catalog_product_id'):
+                        catalog_product_id = cand_prod.get('catalog_product_id')
 
             reliable_info = self.get_reliable_any_products(country_id=cid, platform_id=pid, max_price_usd=1.50)
             for cand_prod in reliable_info.get('candidates', []):
@@ -472,7 +704,7 @@ class SMSCodeClient:
             if catalog_product_id:
                 res = self.create_order(
                     catalog_product_id=catalog_product_id,
-                    max_price='1.50',
+                    operator_id=int(operator_id) if (operator_id and str(operator_id).isdigit() and int(operator_id) > 0) else None,
                     policy='best_success'
                 )
                 if res.get('success'):

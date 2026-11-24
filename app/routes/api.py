@@ -44,14 +44,46 @@ def get_catalog_operators():
             return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': matched['operators']})
 
     # For all other countries (SMSCode):
-    # Pick the last two most expensive 'any' operator product tiers with wholesale price <= $1.50 max:
-    # One for Primary and one for Secondary.
+    # 1. If the country/service has multiple named carrier operators (e.g. UK, Germany, Netherlands, Indonesia,
+    #    France, Spain, etc.), pick up to 5 carrier operators, choosing 1 reliable product tier per operator
+    #    (focusing on the highest tier <= $1.50, or > $1.50 if the service/operator is expensive).
+    # 2. Otherwise, fall back to the last two most expensive 'any' operator tiers (<= $1.50, or > $1.50 if expensive)
+    #    as Primary and Secondary routes.
     client = SIMProviderService.get_client()
     if not client.is_configured:
         return jsonify({'success': True, 'operators': []})
 
     cid = client.get_country_id(country_code)
     pid = client.get_platform_id(service_code)
+
+    named_ops = client.get_reliable_country_operators(
+        country_id=cid,
+        platform_id=pid,
+        max_operators=5,
+        max_price_usd=1.50
+    )
+    if len(named_ops) >= 2:
+        operators_list = []
+        for op_item in named_ops:
+            base_cost = float(op_item.get('base_cost_usd') or 0.50)
+            retail_price, _ = SIMProviderService.calculate_retail_price(
+                base_cost=base_cost,
+                service_code=service_code,
+                provider_type='smscode',
+                country_code=country_code
+            )
+            entry = dict(op_item)
+            entry['price_usd'] = retail_price
+            entry['price'] = retail_price
+            operators_list.append(entry)
+
+        operators_list.sort(key=lambda o: o['price_usd'])
+        return jsonify({
+            'success': True,
+            'country_code': country_code,
+            'service_code': service_code,
+            'operators': operators_list
+        })
 
     reliable_info = client.get_reliable_any_products(country_id=cid, platform_id=pid, max_price_usd=1.50)
     primary_tuple = reliable_info.get('primary')
