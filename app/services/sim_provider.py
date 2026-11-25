@@ -197,9 +197,12 @@ class SMSCodeClient:
             return 'Telus'
         return rn
 
-    def _pick_reliable_tiers_from_products(self, products: list, max_price_usd: float = 1.50) -> dict:
-        """Given a list of product dicts, sorts by price ascending, filters by max_price_usd ($1.50),
-        and picks the most expensive reliable tier(s) <= $1.50 (or > $1.50 if all tiers are expensive).
+    def _pick_reliable_tiers_from_products(self, products: list, max_price_usd: float = None) -> dict:
+        """Given a list of product dicts, sorts by price ascending.
+        - If max_price_usd is None (used for named carrier operators in big countries):
+          picks the last product tier with the highest price (`valid_prods[-1]`).
+        - If max_price_usd is set (e.g. $1.50 for 'any' operator fallback):
+          picks the most expensive reliable tier(s) <= max_price_usd (or > max_price_usd if all tiers are expensive).
         """
         if not products:
             return {'best': None, 'primary': None, 'secondary': None, 'candidates': []}
@@ -223,13 +226,27 @@ class SMSCodeClient:
             return {'best': None, 'primary': None, 'secondary': None, 'candidates': []}
 
         valid_prods.sort(key=lambda x: x[0])
+
+        # No price cap: pick the last tier with the highest price
+        if max_price_usd is None:
+            best = valid_prods[-1]
+            secondary = valid_prods[-1]
+            primary = valid_prods[-2] if len(valid_prods) >= 2 else valid_prods[-1]
+            candidates = [p for _, p in reversed(valid_prods)]
+            return {
+                'best': best,
+                'primary': primary,
+                'secondary': secondary,
+                'candidates': candidates
+            }
+
         under_cap = [(amt, p) for amt, p in valid_prods if amt <= max_price_usd]
         above_cap = [(amt, p) for amt, p in valid_prods if amt > max_price_usd]
 
         if len(under_cap) >= 2:
             primary = under_cap[-2]
             secondary = under_cap[-1]
-            best = under_cap[-1]  # Most expensive reliable tier <= $1.50 for a single carrier operator
+            best = under_cap[-1]
             candidates = [secondary[1], primary[1]] + [p for _, p in reversed(under_cap[:-2])]
         elif len(under_cap) == 1:
             primary = under_cap[0]
@@ -241,13 +258,11 @@ class SMSCodeClient:
                 secondary = under_cap[0]
                 candidates = [primary[1]]
         else:
-            # All tiers for this operator/service exceed $1.50 ("can also be more than 1.5 if the service are expensive")
-            # If there are multiple expensive tiers, pick a reliable one without jumping to extreme outliers
             if len(above_cap) >= 2:
-                primary = above_cap[0]
-                secondary = above_cap[1]
-                best = above_cap[1] if above_cap[1][0] <= 3.50 else above_cap[0]
-                candidates = [best[1]] + [p for _, p in above_cap if p.get('id') != best[1].get('id')]
+                primary = above_cap[-2]
+                secondary = above_cap[-1]
+                best = above_cap[-1]
+                candidates = [p for _, p in reversed(above_cap)]
             else:
                 primary = above_cap[0]
                 secondary = above_cap[0]
@@ -266,10 +281,10 @@ class SMSCodeClient:
         country_id: int,
         platform_id: int,
         operator_id: int,
-        max_price_usd: float = 1.50
+        max_price_usd: float = None
     ) -> dict:
-        """Fetches product tiers for a specific carrier operator_id and picks its best reliable tier
-        (highest priced <= $1.50, or > $1.50 if all tiers for that operator are expensive).
+        """Fetches product tiers for a specific carrier operator_id and picks its highest-priced
+        (last) product tier by default (no $1.50 cap).
         """
         products = self.get_products(
             country_id=country_id,
@@ -284,13 +299,11 @@ class SMSCodeClient:
         country_id: int,
         platform_id: int,
         max_operators: int = 5,
-        max_price_usd: float = 1.50
+        max_price_usd: float = None
     ) -> list:
         """For countries/services that have named carrier operators on SMSCode (e.g. UK, Germany, Netherlands,
-        Indonesia, France, Spain, etc.), fetches up to `max_operators` (5) carrier operators and selects 1
-        reliable product tier per operator (focusing on the highest tier <= $1.50, or > $1.50 if expensive).
-        Returns a list of selected operator route dicts, or empty list if the country/service doesn't have
-        multiple named carrier operators.
+        Indonesia, France, Spain, etc.), fetches up to `max_operators` (5) carrier operators and selects
+        the LAST product tier with the HIGHEST price for each operator (no $1.50 cap).
         """
         raw_ops = self.get_operators(country_id=country_id, platform_id=platform_id) or []
         if len(raw_ops) < 2:
@@ -344,8 +357,7 @@ class SMSCodeClient:
                 'available': int(prod.get('available') or prod.get('available_count') or 100),
                 'catalog_product_id': prod.get('catalog_product_id'),
                 'cheapest_product_id': prod.get('id'),
-                'product_id': prod.get('id'),
-                'within_cap': amt <= max_price_usd
+                'product_id': prod.get('id')
             }
 
         results = []
@@ -357,11 +369,9 @@ class SMSCodeClient:
         if len(results) < 2:
             return []
 
-        # Deduplicate by display name (e.g. if both 'ee' and 'tmobile' format to 'EE' or 'T-Mobile')
+        # Deduplicate by display name while preserving carrier priority order, taking up to max_operators (5)
         seen_names = set()
         deduped = []
-        # Prefer operators with tiers <= $1.50 first, then expensive ones (> $1.50) if needed
-        results.sort(key=lambda r: (0 if r['within_cap'] else 1, r['base_cost_usd']))
         for r in results:
             name_key = r['operator_name'].lower()
             if name_key in seen_names:
@@ -667,7 +677,7 @@ class SMSCodeClient:
                     country_id=cid,
                     platform_id=pid,
                     operator_id=int(operator_id),
-                    max_price_usd=1.50
+                    max_price_usd=None
                 )
                 for cand_prod in op_info.get('candidates', []):
                     cpid = cand_prod.get('id')
@@ -3380,5 +3390,345 @@ class SIMProviderService:
             'success': True,
             'message': f"Dedicated number {rental.get('phone_number')} successfully returned and ${refund_amount:.2f} refunded to wallet.",
             'refund_amount': refund_amount
+        }
+
+    # =========================================================================
+    # TRAVEL & GLOBAL DATA eSIM MARKETPLACE (ADMIN PREVIEW STRUCTURE)
+    # =========================================================================
+    ESIM_DESTINATIONS = [
+        {
+            'code': 'GLOBAL',
+            'name': 'Global (130+ Countries)',
+            'region': 'Regional & Global',
+            'flag': '🌍',
+            'badge': 'Worldwide',
+            'networks': 'AT&T • Vodafone • Orange • SoftBank • MTN (5G/LTE)',
+            'speed': '4G LTE / 5G High-Speed',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'One unified international data eSIM covering 130+ countries across North America, Europe, Asia, Africa, and the Middle East.',
+            'plans': [
+                {'id': 'global-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 4.50,  'retail_usd': 6.00},
+                {'id': 'global-3gb-15d',  'data_gb': '3 GB',       'days': 15, 'label': '3 GB • 15 Days',  'badge': 'Popular',    'base_usd': 10.50, 'retail_usd': 13.50},
+                {'id': 'global-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 16.00, 'retail_usd': 20.00},
+                {'id': 'global-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Pro Travel', 'base_usd': 28.00, 'retail_usd': 35.00},
+                {'id': 'global-20gb-30d', 'data_gb': '20 GB',      'days': 30, 'label': '20 GB • 30 Days', 'badge': 'Max Data',   'base_usd': 46.00, 'retail_usd': 58.00},
+            ]
+        },
+        {
+            'code': 'EU',
+            'name': 'Europe (39 Countries)',
+            'region': 'Regional & Global',
+            'flag': '🇪🇺',
+            'badge': 'Euro Pass',
+            'networks': 'Vodafone • Orange • Deutsche Telekom • O2 (5G)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Seamless high-speed 5G roaming across 39 European countries including UK, Germany, France, Spain, Italy, and Netherlands.',
+            'plans': [
+                {'id': 'eu-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 2.00,  'retail_usd': 3.00},
+                {'id': 'eu-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 4.50,  'retail_usd': 6.00},
+                {'id': 'eu-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 6.50,  'retail_usd': 8.50},
+                {'id': 'eu-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 11.00, 'retail_usd': 14.50},
+                {'id': 'eu-20gb-30d', 'data_gb': '20 GB',      'days': 30, 'label': '20 GB • 30 Days', 'badge': 'Heavy User', 'base_usd': 18.00, 'retail_usd': 23.00},
+                {'id': 'eu-unlim-15d','data_gb': 'Unlimited',  'days': 15, 'label': 'Unlimited • 15 Days', 'badge': 'Unlimited', 'base_usd': 26.00, 'retail_usd': 33.00},
+            ]
+        },
+        {
+            'code': 'US',
+            'name': 'United States',
+            'region': 'Popular Countries',
+            'flag': '🇺🇸',
+            'badge': '5G Direct',
+            'networks': 'AT&T • T-Mobile • Verizon 5G',
+            'speed': '5G Ultra Wideband / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'High-priority domestic US data eSIM with multi-carrier automatic switching across AT&T and T-Mobile 5G.',
+            'plans': [
+                {'id': 'us-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 1.80,  'retail_usd': 2.75},
+                {'id': 'us-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 4.00,  'retail_usd': 5.50},
+                {'id': 'us-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 6.00,  'retail_usd': 8.00},
+                {'id': 'us-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 10.00, 'retail_usd': 13.50},
+                {'id': 'us-20gb-30d', 'data_gb': '20 GB',      'days': 30, 'label': '20 GB • 30 Days', 'badge': 'Heavy User', 'base_usd': 16.50, 'retail_usd': 21.50},
+                {'id': 'us-unlim-15d','data_gb': 'Unlimited',  'days': 15, 'label': 'Unlimited • 15 Days', 'badge': 'Unlimited', 'base_usd': 24.00, 'retail_usd': 30.00},
+            ]
+        },
+        {
+            'code': 'GB',
+            'name': 'United Kingdom',
+            'region': 'Popular Countries',
+            'flag': '🇬🇧',
+            'badge': '5G UK',
+            'networks': 'Vodafone UK • O2 • EE • Three (5G)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Fast UK cellular data across England, Scotland, Wales, and Northern Ireland on tier-1 5G networks.',
+            'plans': [
+                {'id': 'gb-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 1.80,  'retail_usd': 2.75},
+                {'id': 'gb-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 3.80,  'retail_usd': 5.25},
+                {'id': 'gb-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 5.50,  'retail_usd': 7.50},
+                {'id': 'gb-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 9.50,  'retail_usd': 12.50},
+                {'id': 'gb-20gb-30d', 'data_gb': '20 GB',      'days': 30, 'label': '20 GB • 30 Days', 'badge': 'Heavy User', 'base_usd': 15.00, 'retail_usd': 19.50},
+            ]
+        },
+        {
+            'code': 'NG',
+            'name': 'Nigeria',
+            'region': 'Popular Countries',
+            'flag': '🇳🇬',
+            'badge': 'Local Data',
+            'networks': 'MTN Nigeria • Airtel NG (4G/5G)',
+            'speed': '4G LTE / 5G',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Instant Nigerian eSIM data profile with automatic connection to MTN and Airtel high-speed towers nationwide.',
+            'plans': [
+                {'id': 'ng-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 2.50,  'retail_usd': 3.50},
+                {'id': 'ng-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 6.00,  'retail_usd': 8.00},
+                {'id': 'ng-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 9.50,  'retail_usd': 12.50},
+                {'id': 'ng-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Heavy User', 'base_usd': 17.00, 'retail_usd': 22.00},
+            ]
+        },
+        {
+            'code': 'CA',
+            'name': 'Canada',
+            'region': 'Popular Countries',
+            'flag': '🇨🇦',
+            'badge': '5G Canada',
+            'networks': 'Rogers • Bell • Telus (5G)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Reliable Canadian travel and business data eSIM backed by Rogers, Bell, and Telus nationwide coverage.',
+            'plans': [
+                {'id': 'ca-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 2.20,  'retail_usd': 3.25},
+                {'id': 'ca-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 5.00,  'retail_usd': 6.75},
+                {'id': 'ca-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 7.50,  'retail_usd': 10.00},
+                {'id': 'ca-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 13.00, 'retail_usd': 17.00},
+            ]
+        },
+        {
+            'code': 'AE',
+            'name': 'United Arab Emirates (Dubai)',
+            'region': 'Popular Countries',
+            'flag': '🇦🇪',
+            'badge': 'UAE 5G',
+            'networks': 'Etisalat (e&) • Du (5G)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Instant 5G travel eSIM for Dubai, Abu Dhabi, and across the UAE on Etisalat and Du networks.',
+            'plans': [
+                {'id': 'ae-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 2.50,  'retail_usd': 3.50},
+                {'id': 'ae-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 5.50,  'retail_usd': 7.50},
+                {'id': 'ae-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 8.50,  'retail_usd': 11.50},
+                {'id': 'ae-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 14.50, 'retail_usd': 19.00},
+            ]
+        },
+        {
+            'code': 'TR',
+            'name': 'Turkey',
+            'region': 'Popular Countries',
+            'flag': '🇹🇷',
+            'badge': 'Tourist Pick',
+            'networks': 'Turkcell • Türk Telekom • Vodafone TR',
+            'speed': '4.5G LTE / 5G',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'High-speed coverage across Istanbul, Antalya, Cappadocia, and all of Turkey via Turkcell & Vodafone.',
+            'plans': [
+                {'id': 'tr-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 1.75,  'retail_usd': 2.50},
+                {'id': 'tr-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 3.50,  'retail_usd': 5.00},
+                {'id': 'tr-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 5.20,  'retail_usd': 7.00},
+                {'id': 'tr-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 8.80,  'retail_usd': 11.75},
+                {'id': 'tr-20gb-30d', 'data_gb': '20 GB',      'days': 30, 'label': '20 GB • 30 Days', 'badge': 'Heavy User', 'base_usd': 13.50, 'retail_usd': 17.50},
+            ]
+        },
+        {
+            'code': 'DE',
+            'name': 'Germany',
+            'region': 'Popular Countries',
+            'flag': '🇩🇪',
+            'badge': '5G DE',
+            'networks': 'Telekom • Vodafone DE • O2 (5G)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Premium German 5G/LTE data eSIM with nationwide coverage across Berlin, Munich, Frankfurt, and Hamburg.',
+            'plans': [
+                {'id': 'de-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 1.80,  'retail_usd': 2.75},
+                {'id': 'de-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 3.80,  'retail_usd': 5.25},
+                {'id': 'de-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 5.50,  'retail_usd': 7.50},
+                {'id': 'de-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 9.50,  'retail_usd': 12.50},
+            ]
+        },
+        {
+            'code': 'FR',
+            'name': 'France',
+            'region': 'Popular Countries',
+            'flag': '🇫🇷',
+            'badge': '5G France',
+            'networks': 'Orange France • SFR • Bouygues (5G)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'High-speed 5G data across Paris and all regions of France on Orange and Bouygues Telecom.',
+            'plans': [
+                {'id': 'fr-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 1.80,  'retail_usd': 2.75},
+                {'id': 'fr-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 3.80,  'retail_usd': 5.25},
+                {'id': 'fr-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 5.50,  'retail_usd': 7.50},
+                {'id': 'fr-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 9.50,  'retail_usd': 12.50},
+            ]
+        },
+        {
+            'code': 'ZA',
+            'name': 'South Africa',
+            'region': 'Popular Countries',
+            'flag': '🇿🇦',
+            'badge': 'Africa Hub',
+            'networks': 'Vodacom • MTN SA (5G/LTE)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Fast cellular data across Johannesburg, Cape Town, Durban, and nationwide via Vodacom and MTN.',
+            'plans': [
+                {'id': 'za-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 2.20,  'retail_usd': 3.25},
+                {'id': 'za-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 5.20,  'retail_usd': 7.00},
+                {'id': 'za-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 8.00,  'retail_usd': 10.75},
+                {'id': 'za-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 14.00, 'retail_usd': 18.50},
+            ]
+        },
+        {
+            'code': 'JP',
+            'name': 'Japan',
+            'region': 'Popular Countries',
+            'flag': '🇯🇵',
+            'badge': '5G Asia',
+            'networks': 'NTT Docomo • SoftBank • KDDI (5G)',
+            'speed': '5G / 4G LTE',
+            'hotspot': 'Allowed (Unlimited Tethering)',
+            'description': 'Ultra-fast Japanese 5G data eSIM covering Tokyo, Osaka, Kyoto, and Hokkaido.',
+            'plans': [
+                {'id': 'jp-1gb-7d',   'data_gb': '1 GB',       'days': 7,  'label': '1 GB • 7 Days',   'badge': 'Starter',    'base_usd': 1.90,  'retail_usd': 2.75},
+                {'id': 'jp-3gb-30d',  'data_gb': '3 GB',       'days': 30, 'label': '3 GB • 30 Days',  'badge': 'Popular',    'base_usd': 4.20,  'retail_usd': 5.75},
+                {'id': 'jp-5gb-30d',  'data_gb': '5 GB',       'days': 30, 'label': '5 GB • 30 Days',  'badge': 'Best Value', 'base_usd': 6.50,  'retail_usd': 8.75},
+                {'id': 'jp-10gb-30d', 'data_gb': '10 GB',      'days': 30, 'label': '10 GB • 30 Days', 'badge': 'Recommended','base_usd': 11.00, 'retail_usd': 14.50},
+            ]
+        }
+    ]
+
+    _admin_preview_esims = []
+
+    @classmethod
+    def get_esim_catalog(cls) -> list:
+        """Returns the Travel & Global Data eSIM catalog with NGN & USD prices calculated."""
+        from app.services.settings_service import SettingsService
+        try:
+            ngn_rate = SettingsService.get_usd_ngn_rate()
+        except Exception:
+            ngn_rate = 1600.00
+
+        catalog = []
+        for dest in cls.ESIM_DESTINATIONS:
+            d_copy = dict(dest)
+            plans = []
+            for p in dest.get('plans', []):
+                p_copy = dict(p)
+                r_usd = round(float(p['retail_usd']), 2)
+                r_ngn = round(r_usd * ngn_rate, 2)
+                p_copy['retail_usd'] = r_usd
+                p_copy['retail_ngn'] = r_ngn
+                p_copy['formatted_usd'] = f"${r_usd:.2f}"
+                p_copy['formatted_ngn'] = f"₦{r_ngn:,.2f}"
+                plans.append(p_copy)
+            d_copy['plans'] = plans
+            d_copy['starting_usd'] = min(p['retail_usd'] for p in plans) if plans else 0.0
+            d_copy['starting_ngn'] = round(d_copy['starting_usd'] * ngn_rate, 2)
+            catalog.append(d_copy)
+        return catalog
+
+    @classmethod
+    def get_user_esims(cls, user_id: str) -> list:
+        """Returns active/preview eSIM profiles for the admin preview table."""
+        if not cls._admin_preview_esims:
+            import datetime
+            now_utc = datetime.datetime.now(datetime.timezone.utc)
+            exp_dt = now_utc + datetime.timedelta(days=30)
+            cls._admin_preview_esims.append({
+                'id': 'esim-preview-101',
+                'esim_reference': 'TGS-ESIM-84920A',
+                'user_id': user_id,
+                'country_code': 'US',
+                'country_name': 'United States',
+                'flag': '🇺🇸',
+                'plan_id': 'us-5gb-30d',
+                'plan_label': '5 GB • 30 Days',
+                'data_total_gb': 5.0,
+                'data_used_gb': 1.25,
+                'data_percent': 25,
+                'duration_days': 30,
+                'networks': 'AT&T • T-Mobile 5G',
+                'iccid': '8901260882310495821',
+                'smdp_address': 'rsp.truphone.com',
+                'activation_code': 'JQ-209481-TGSIMS-88412',
+                'lpa_string': 'LPA:1$rsp.truphone.com$JQ-209481-TGSIMS-88412',
+                'apn': 'automatically configured (truphone.com)',
+                'price_usd': 8.00,
+                'status': 'active',
+                'created_at': now_utc.strftime('%Y-%m-%d %H:%M'),
+                'expires_at': exp_dt.strftime('%b %d, %Y'),
+                'is_preview': True
+            })
+        return list(cls._admin_preview_esims)
+
+    @classmethod
+    def create_preview_esim(cls, user_id: str, country_code: str, plan_id: str) -> dict:
+        """Creates a simulated eSIM order in Admin UI Preview Mode (no wallet charge until live API is connected)."""
+        import uuid
+        import random
+        import datetime
+
+        catalog = cls.get_esim_catalog()
+        dest = next((d for d in catalog if d['code'].upper() == str(country_code or '').upper()), catalog[0])
+        plan = next((p for p in dest['plans'] if p['id'] == plan_id), dest['plans'][0])
+
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        days = int(plan.get('days', 30))
+        exp_dt = now_utc + datetime.timedelta(days=days)
+
+        ref = f"TGS-ESIM-{uuid.uuid4().hex[:6].upper()}"
+        iccid = f"8901260{random.randint(100000000000, 999999999999)}"
+        act_code = f"TG-{uuid.uuid4().hex[:6].upper()}-{uuid.uuid4().hex[:6].upper()}"
+        smdp = "smdp.io.tgsims.network"
+        lpa = f"LPA:1${smdp}${act_code}"
+
+        raw_gb = str(plan.get('data_gb', '5 GB')).split()[0]
+        try:
+            total_gb = float(raw_gb)
+        except Exception:
+            total_gb = 50.0  # Unlimited representation
+
+        new_esim = {
+            'id': f"esim-{uuid.uuid4().hex[:8]}",
+            'esim_reference': ref,
+            'user_id': user_id,
+            'country_code': dest['code'],
+            'country_name': dest['name'],
+            'flag': dest.get('flag', '🌐'),
+            'plan_id': plan['id'],
+            'plan_label': plan['label'],
+            'data_total_gb': total_gb,
+            'data_used_gb': 0.0,
+            'data_percent': 0,
+            'duration_days': days,
+            'networks': dest.get('networks', '5G / 4G LTE Partner Network'),
+            'iccid': iccid,
+            'smdp_address': smdp,
+            'activation_code': act_code,
+            'lpa_string': lpa,
+            'apn': 'Automatic (Global Roaming)',
+            'price_usd': plan['retail_usd'],
+            'status': 'active',
+            'created_at': now_utc.strftime('%Y-%m-%d %H:%M'),
+            'expires_at': exp_dt.strftime('%b %d, %Y'),
+            'is_preview': True
+        }
+        cls._admin_preview_esims.insert(0, new_esim)
+        return {
+            'success': True,
+            'esim': new_esim,
+            'message': f"Admin Preview: {dest['name']} ({plan['label']}) eSIM generated! Click 'View QR & Setup' to inspect the installation modal."
         }
 

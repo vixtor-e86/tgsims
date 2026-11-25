@@ -36,6 +36,14 @@
        {% if request.endpoint == it.ep %}aria-current="page"{% endif %}>
       {{ icon(it.icon) }} <span>{{ it.label }}</span>
     </a>
+    {% if it.ep == 'sims.rentals' and current_user and current_user.role == 'admin' %}
+    <a href="{{ url_for('sims.esim') }}"
+       class="side-link {% if request.endpoint == 'sims.esim' %}is-active{% endif %}"
+       {% if request.endpoint == 'sims.esim' %}aria-current="page"{% endif %}>
+      {{ icon('globe') }} <span>Travel eSIM</span>
+      <span class="badge badge-brand" style="margin-left:auto; font-size:0.62rem; padding:1px 6px; border-radius:999px; font-weight:700;">Admin</span>
+    </a>
+    {% endif %}
     {% endfor %}
 
     {% if current_user and current_user.role in ('admin', 'support') %}

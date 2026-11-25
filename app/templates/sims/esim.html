@@ -1,0 +1,365 @@
+{% extends "layouts/app.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block title %}Travel &amp; Global Data eSIM | {{ BRAND }}{% endblock %}
+
+{% block page %}
+{# ---- Admin-Only Preview Notice Banner ---- #}
+<div style="background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.28); border-radius:var(--r-lg); padding:0.85rem 1.1rem; margin-bottom:var(--sp-5); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="width:32px; height:32px; border-radius:var(--r-full); background:var(--brand); color:#fff; display:grid; place-items:center; flex-shrink:0;">
+      {{ icon('shield') }}
+    </span>
+    <div>
+      <div style="font-size:0.84rem; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px;">
+        <span>Admin-Only UI Preview Mode</span>
+        <span class="badge badge-brand badge-xs">Hidden from regular users</span>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted); margin:2px 0 0 0;">
+        Only administrators can view and test this page. Test orders generate a sample QR code &amp; SM-DP+ profile without deducting wallet funds until your live eSIM API credentials are connected.
+      </p>
+    </div>
+  </div>
+  <span class="badge badge-info" style="font-size:0.72rem; padding:4px 10px;">Awaiting Live API Keys</span>
+</div>
+
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ icon('globe') }} Travel &amp; Global Data eSIM</h1>
+    <p class="page-subtitle">Instant 4G/5G international data plans via QR code across 130+ countries. No physical SIM card required.</p>
+  </div>
+</div>
+
+{# ---- Active User eSIM Profiles Table ---- #}
+{% if esims %}
+<section class="card card-pad" style="margin-bottom:var(--sp-6); border:1px solid var(--border);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-4); flex-wrap:wrap; gap:var(--sp-2);">
+    <div>
+      <h2 class="card-title" style="margin:0 0 2px 0; display:flex; align-items:center; gap:8px;">
+        {{ icon('smartphone') }} Your Active Data eSIMs ({{ esims|length }})
+      </h2>
+      <p style="font-size:var(--fs-xs); color:var(--text-muted); margin:0;">
+        Click <strong>View QR &amp; Setup</strong> to scan your installation QR code or copy manual SM-DP+ activation details.
+      </p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Destination</th>
+          <th>Data Package</th>
+          <th>ICCID</th>
+          <th>Data Usage</th>
+          <th>Valid Until</th>
+          <th>Status</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in esims %}
+        <tr data-esim-row data-id="{{ e.id }}">
+          <td>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.25rem; line-height:1;">{{ e.flag }}</span>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <span class="td-strong">{{ e.country_name }}</span>
+                <span class="td-dim" style="font-size:0.73rem;">#{{ e.esim_reference }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <span class="td-strong">{{ e.plan_label }}</span>
+              <span class="td-dim" style="font-size:0.72rem;">{{ e.networks }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="num-cell">
+              <span class="td-mono" style="font-size:0.78rem;">{{ e.iccid }}</span>
+              <button class="copy-btn" data-copy="{{ e.iccid }}" type="button" aria-label="Copy ICCID" title="Copy ICCID">{{ icon('copy') }}</button>
+            </span>
+          </td>
+          <td style="min-width:150px;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; justify-content:space-between; font-size:0.74rem;">
+                <strong style="color:var(--text);">{{ '%.2f'|format(e.data_used_gb|default(0)) }} GB used</strong>
+                <span style="color:var(--text-muted);">{{ 'Unlimited' if e.data_total_gb >= 50 else ('%.0f'|format(e.data_total_gb) ~ ' GB') }}</span>
+              </div>
+              <div style="width:100%; height:6px; background:var(--surface-2); border-radius:999px; overflow:hidden; border:1px solid var(--border);">
+                <div style="width:{{ e.data_percent|default(15) }}%; height:100%; background:var(--brand); border-radius:999px;"></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span style="font-size:0.8rem; color:var(--text);">{{ e.expires_at }}</span>
+          </td>
+          <td>
+            <span class="badge badge-success badge-dot">Active • Ready</span>
+          </td>
+          <td class="text-right">
+            <div style="display:inline-flex; gap:6px; align-items:center; justify-content:flex-end;">
+              <button type="button" class="btn btn-primary btn-sm"
+                      data-action="open-esim-qr"
+                      data-esim='{{ e|tojson }}'>
+                {{ icon('smartphone') }} View QR &amp; Setup
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{# ---- 3-Column eSIM Selector (Matching Other Countries & Rent a Number Layout) ---- #}
+<div class="buy-three-container"
+     data-esim-store
+     data-catalog='{{ catalog|tojson }}'
+     data-endpoint="{{ url_for('api.api_purchase_esim') }}">
+
+  {# ---- Column 1: Destination / Region ---- #}
+  <div class="buy-column buy-column-country" data-column="destination">
+    <div class="buy-column-head">
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">1</span>
+          <span>Destination</span>
+        </h2>
+        <span class="badge badge-brand" data-dest-count>{{ catalog|length }}</span>
+      </div>
+      <div class="input-group buy-column-search" style="margin-bottom:8px;">
+        <span class="input-icon">{{ icon('search') }}</span>
+        <input class="input" type="search" placeholder="Search country or region..."
+               data-dest-search aria-label="Search country or region">
+      </div>
+      <div style="display:flex; gap:4px; flex-wrap:wrap;" data-region-tabs>
+        <button type="button" class="badge badge-brand" data-region-filter="all" style="cursor:pointer; border:none; padding:4px 9px; font-size:0.71rem;">All</button>
+        <button type="button" class="badge badge-neutral" data-region-filter="Popular Countries" style="cursor:pointer; border:none; padding:4px 9px; font-size:0.71rem;">Countries</button>
+        <button type="button" class="badge badge-neutral" data-region-filter="Regional & Global" style="cursor:pointer; border:none; padding:4px 9px; font-size:0.71rem;">Regional &amp; Global</button>
+      </div>
+    </div>
+    <div class="buy-column-list" data-dest-list></div>
+  </div>
+
+  {# ---- Column 2: Data Plan / Package ---- #}
+  <div class="buy-column buy-column-service" data-column="plan">
+    <div class="buy-column-head">
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">2</span>
+          <span>Data Package</span>
+        </h2>
+        <span class="badge badge-neutral" data-plan-count>0 Plans</span>
+      </div>
+      <p style="margin:0; font-size:0.75rem; color:var(--text-muted);">
+        Choose your data allowance and validity period.
+      </p>
+    </div>
+    <div class="buy-column-list" data-plan-list></div>
+  </div>
+
+  {# ---- Column 3: eSIM Specs & Checkout ---- #}
+  <div class="buy-column buy-column-operators" data-column="checkout">
+    <div class="buy-column-head">
+      <div class="buy-column-title-row">
+        <h2 class="buy-column-title">
+          <span class="step-num">3</span>
+          <span>eSIM Specs &amp; Checkout</span>
+        </h2>
+        <span class="badge badge-success">Instant QR</span>
+      </div>
+      <p style="margin:0; font-size:0.75rem; color:var(--text-muted);">
+        Digital eSIM profile delivered immediately after checkout.
+      </p>
+    </div>
+
+    <div class="buy-column-list" style="padding:0.75rem; gap:0.65rem;">
+      {# Selected Destination Card #}
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <strong style="font-size:0.9rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+            <span data-detail-flag style="font-size:1.15rem;">🌍</span>
+            <span data-detail-dest-name>Global (130+ Countries)</span>
+          </strong>
+          <span class="badge badge-brand badge-xs" data-detail-dest-badge>Worldwide</span>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.45; margin:0 0 8px 0;" data-detail-dest-desc>
+          One unified international data eSIM covering 130+ countries.
+        </p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge badge-success badge-xs">4G / 5G Data</span>
+          <span class="badge badge-info badge-xs">Hotspot Enabled</span>
+          <span class="badge badge-neutral badge-xs">No Physical SIM</span>
+        </div>
+      </div>
+
+      {# Technical Specs Breakdown #}
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem;">
+        <div style="font-size:0.82rem; font-weight:700; color:var(--text); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          {{ icon('smartphone') }} eSIM Technical Specifications
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; font-size:0.75rem; color:var(--text-muted);">
+          <div style="display:flex; justify-content:space-between; gap:8px;">
+            <span>Carrier Partners:</span>
+            <strong style="color:var(--text); text-align:right;" data-spec-networks>AT&amp;T • T-Mobile 5G</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Network Speed:</span>
+            <strong style="color:var(--text);" data-spec-speed>4G LTE / 5G High-Speed</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Mobile Hotspot:</span>
+            <strong style="color:var(--hue-success);" data-spec-hotspot>Allowed (Unlimited)</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Activation Policy:</span>
+            <strong style="color:var(--text);">Starts on First Connection</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Delivery Format:</span>
+            <strong style="color:var(--brand);">QR Code + SM-DP+ Manual Code</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Checkout Summary Box #}
+    <div class="buy-checkout-card">
+      <div class="buy-checkout-summary-row">
+        <span class="k">Destination</span>
+        <span class="v" data-review-dest>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Data Package</span>
+        <span class="v" data-review-plan>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Validity Period</span>
+        <span class="v" data-review-validity>-</span>
+      </div>
+      <div class="buy-checkout-summary-row">
+        <span class="k">Delivery</span>
+        <span class="badge badge-success badge-sm">Instant QR &amp; LPA</span>
+      </div>
+
+      <div class="buy-checkout-total">
+        <span style="font-weight:700; font-size:0.95rem; color:var(--text);">Total eSIM Price</span>
+        <span class="buy-checkout-total-val" data-review-price data-usd="0">₦0.00</span>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-lg" data-esim-submit type="button" style="font-weight:700;">
+        {{ icon('bolt') }} Purchase Data eSIM Now
+      </button>
+      <p style="text-align:center; margin:0; font-size:0.72rem; color:var(--text-muted); display:flex; align-items:center; justify-content:center; gap:4px;">
+        {{ icon('smartphone') }} Works on all eSIM-unlocked iPhone, Samsung &amp; Pixel devices
+      </p>
+    </div>
+  </div>
+
+</div>
+
+{# ---- Why Choose eSIM Section ---- #}
+<section class="buy-why">
+  <hr class="divider">
+  <h2 class="buy-why-title">Why Choose {{ BRAND }} Travel eSIMs?</h2>
+  <div class="why-grid">
+    {% set why_tint = ['why-teal', 'why-blue', 'why-amber', 'why-dark'] %}
+    {% for w in why %}
+    <div class="why-item">
+      <span class="icon-tile {{ why_tint[loop.index0 % 4] }}">{{ icon(w.icon) }}</span>
+      <div>
+        <div class="why-h">{{ w.title }}</div>
+        <div class="why-t">{{ w.text }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="buy-powered">Powered by {{ BRAND }} Global eSIM Network</p>
+</section>
+
+{# ---- eSIM QR Code & Manual Activation Modal ---- #}
+<div class="modal" id="esimQrModal" aria-hidden="true" role="dialog" aria-labelledby="esimQrModalTitle">
+  <div class="modal-box" style="max-width:540px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:var(--sp-3);">
+        <div style="width:38px; height:38px; border-radius:var(--r-full); background:rgba(37, 99, 235, 0.12); color:var(--brand); display:grid; place-items:center;">
+          {{ icon('smartphone') }}
+        </div>
+        <div>
+          <h3 class="modal-title" id="esimQrModalTitle">Install Your Data eSIM</h3>
+          <p class="td-dim" style="font-size:var(--fs-xs); margin:0;" id="esimQrModalSub">United States • 5 GB • 30 Days</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close" data-esim-modal-close aria-label="Close modal">&times;</button>
+    </div>
+
+    <div class="modal-body" style="padding:1.25rem 1.5rem; max-height:75vh; overflow-y:auto;">
+      {# QR Code Display Box #}
+      <div style="display:flex; flex-direction:column; align-items:center; text-align:center; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-lg); padding:1.1rem; margin-bottom:1rem;">
+        <div style="background:#fff; padding:12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:10px;">
+          <img id="esimQrImage" src="" alt="eSIM Activation QR Code" style="width:168px; height:168px; display:block;">
+        </div>
+        <div style="font-size:0.82rem; font-weight:700; color:var(--text);">Scan with your phone's Camera or Settings</div>
+        <div style="font-size:0.73rem; color:var(--text-muted); margin-top:2px;">
+          Keep Wi-Fi turned on while scanning and installing your eSIM profile.
+        </div>
+      </div>
+
+      {# Manual Activation Credentials (SM-DP+ & Activation Code) #}
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--text); margin-bottom:6px;">
+          Manual Installation Details (If you cannot scan QR on the same device)
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.6rem 0.8rem; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <div style="min-width:0;">
+              <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">SM-DP+ Address</div>
+              <div class="td-mono" style="font-size:0.8rem; color:var(--text); font-weight:600; word-break:break-all;" id="esimSmdpVal">rsp.truphone.com</div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCopySmdp" data-copy="rsp.truphone.com">{{ icon('copy') }} Copy</button>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.6rem 0.8rem; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <div style="min-width:0;">
+              <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Activation Code</div>
+              <div class="td-mono" style="font-size:0.8rem; color:var(--text); font-weight:600; word-break:break-all;" id="esimActCodeVal">JQ-209481-TGSIMS</div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCopyActCode" data-copy="JQ-209481-TGSIMS">{{ icon('copy') }} Copy</button>
+          </div>
+
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md); padding:0.6rem 0.8rem; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+            <div style="min-width:0;">
+              <div style="font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Full LPA String (1-Click Install)</div>
+              <div class="td-mono" style="font-size:0.75rem; color:var(--text-muted); word-break:break-all;" id="esimLpaVal">LPA:1$rsp.truphone.com$JQ-209481</div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnCopyLpa" data-copy="LPA:1$rsp.truphone.com$JQ-209481">{{ icon('copy') }} Copy</button>
+          </div>
+        </div>
+      </div>
+
+      {# Quick Setup Steps for iPhone & Android #}
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:0.85rem;">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--text); margin-bottom:6px;">Quick Device Setup Steps:</div>
+        <ul style="margin:0; padding-left:1.1rem; font-size:0.74rem; color:var(--text-muted); line-height:1.55;">
+          <li><strong>iPhone (iOS):</strong> Go to <em>Settings &rarr; Cellular (or Mobile Data) &rarr; Add eSIM &rarr; Use QR Code</em> (or tap <em>Enter Details Manually</em>).</li>
+          <li><strong>Samsung / Android:</strong> Go to <em>Settings &rarr; Connections &rarr; SIM Manager &rarr; Add eSIM &rarr; Scan QR code</em>.</li>
+          <li><strong>Upon Arrival:</strong> Turn on <strong>Data Roaming</strong> for your newly added eSIM line so it connects immediately to local 4G/5G towers.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:var(--sp-4) var(--sp-6); border-top:1px solid var(--border); background:var(--surface-2); border-bottom-left-radius:var(--r-xl); border-bottom-right-radius:var(--r-xl);">
+      <span class="td-dim" style="font-size:0.74rem;">ICCID: <strong class="td-mono" id="esimIccidFooter">8901260...</strong></span>
+      <button type="button" class="btn btn-primary btn-sm" data-esim-modal-close>Done</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() if super else '' }}
+  <script src="{{ url_for('static', filename='js/esim.js') }}?v=1"></script>
+{% endblock %}

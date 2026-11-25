@@ -324,3 +324,38 @@ def otp_history():
     return render_template('sims/otp_history.html', history=history, services=services, user=user)
 
 
+@sims_bp.route('/esim', endpoint='esim')
+@sims_bp.route('/esims', endpoint='esims')
+@sims_bp.route('/buy-esim', endpoint='buy_esim')
+def esim():
+    """Travel & Global Data eSIM Marketplace — Restricted strictly to Administrators while in UI preview."""
+    from flask import flash
+    user = _require_user()
+    if not user:
+        return redirect(url_for('auth.login'))
+
+    if user.get('role') != 'admin':
+        flash('The eSIM Marketplace is currently in private administrator preview.', 'info')
+        return redirect(url_for('dashboard.index'))
+
+    catalog = SIMProviderService.get_esim_catalog()
+    esims_list = SIMProviderService.get_user_esims(user['id'])
+    wallet = DBService.get_wallet(user['id'])
+
+    why = [
+        {'icon': 'globe', 'title': '130+ Countries Covered', 'text': 'Local, regional, and global 4G/5G data plans with zero roaming surprises.'},
+        {'icon': 'bolt', 'title': 'Instant QR Activation', 'text': 'Scan your eSIM QR code or copy the SM-DP+ code and connect in under 60 seconds.'},
+        {'icon': 'smartphone', 'title': 'Keep Your WhatsApp & SIM', 'text': 'Use your physical SIM for calls/SMS while routing high-speed data through your eSIM.'},
+        {'icon': 'refresh', 'title': 'Hotspot & Top-Up Ready', 'text': 'Full mobile hotspot tethering supported with instant data package top-ups.'},
+    ]
+
+    return render_template(
+        'sims/esim.html',
+        catalog=catalog,
+        esims=esims_list,
+        wallet=wallet,
+        why=why,
+        user=user
+    )
+
+

@@ -60,7 +60,7 @@ def get_catalog_operators():
         country_id=cid,
         platform_id=pid,
         max_operators=5,
-        max_price_usd=1.50
+        max_price_usd=None
     )
     if len(named_ops) >= 2:
         operators_list = []
@@ -1818,6 +1818,29 @@ def api_tiktok_track():
         ttclid=data.get('ttclid'),
     )
     return jsonify({'success': True, 'result': res})
+
+
+@api_bp.route('/purchase-esim', methods=['POST'])
+def api_purchase_esim():
+    """Admin-only eSIM preview order endpoint (ready for live eSIM API provider integration)."""
+    user = session.get('user')
+    if not isinstance(user, dict) or not user.get('id'):
+        return jsonify({'success': False, 'message': 'Authentication required.'}), 401
+
+    if user.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'Access restricted. Administrator preview only.'}), 403
+
+    data = request.get_json(silent=True) or {}
+    country_code = (data.get('country_code') or 'US').strip().upper()
+    plan_id = (data.get('plan_id') or '').strip()
+
+    res = SIMProviderService.create_preview_esim(
+        user_id=user['id'],
+        country_code=country_code,
+        plan_id=plan_id
+    )
+    return jsonify(res), (200 if res.get('success') else 400)
+
 
 
 
