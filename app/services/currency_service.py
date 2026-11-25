@@ -35,25 +35,30 @@ def reconcile_ngn_amount(usd: Optional[float], rate: Optional[float] = None) -> 
 
     raw = usd_f * rate
 
+    import math
+
+    def _js_round(val: float) -> float:
+        return float(math.floor(val + 0.5)) if val >= 0 else float(math.ceil(val - 0.5))
+
     # 1. Exact USD amounts (e.g. $1.00, $2.00, $0.50, $2.50) are direct USD settings or fees.
     # For example, Reactivation Fee = $2.00 at rate 1340 is EXACTLY 2680.0 NGN (never snapped to 2675).
     is_clean_usd = abs(usd_f * 2 - round(usd_f * 2)) < 1e-4
     if is_clean_usd:
-        return float(round(raw))
+        return _js_round(raw)
 
     # 2. If usd was stored with sub-cent precision (4 decimals):
     # E.g. 2.2388 for 3000 NGN, 3.7313 for 5000 NGN.
     is_sub_cent = abs(round(usd_f, 2) - round(usd_f, 4)) > 1e-5
     if is_sub_cent:
-        return float(round(raw))
+        return _js_round(raw)
 
     # 3. For legacy 2-decimal USD amounts with +-0.005 rounding error:
-    nearest25 = round(raw / 25.0) * 25.0
+    nearest25 = _js_round(raw / 25.0) * 25.0
     max_err = rate * 0.0051
     if abs(raw - nearest25) <= max_err:
         return float(nearest25)
 
-    return float(round(raw))
+    return _js_round(raw)
 
 
 def clean_ngn(usd: Optional[float], rate: Optional[float] = None) -> float:

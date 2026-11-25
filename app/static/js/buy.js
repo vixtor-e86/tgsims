@@ -233,7 +233,7 @@
             '<span class="badge badge-brand" style="width:24px;height:24px;display:grid;place-items:center;padding:0;font-size:0.75rem;font-weight:700;">' + letter + '</span>' +
             '<div class="buy-list-text">' +
               '<span class="buy-list-primary">' + s.name + '</span>' +
-              '<span class="buy-list-secondary">' + (isCore ? 'Multi-Carrier Routes' : 'Reliable Carrier Routes') + '</span>' +
+              '<span class="buy-list-secondary">2 Reliable Operator Routes</span>' +
             '</div>' +
           '</div>' +
           '<div class="buy-list-meta">' +

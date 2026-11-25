@@ -197,12 +197,15 @@ class SMSCodeClient:
             return 'Telus'
         return rn
 
-    def _pick_reliable_tiers_from_products(self, products: list, max_price_usd: float = None) -> dict:
-        """Given a list of product dicts, sorts by price ascending.
-        - If max_price_usd is None (used for named carrier operators in big countries):
-          picks the last product tier with the highest price (`valid_prods[-1]`).
-        - If max_price_usd is set (e.g. $1.50 for 'any' operator fallback):
-          picks the most expensive reliable tier(s) <= max_price_usd (or > max_price_usd if all tiers are expensive).
+    def _pick_reliable_tiers_from_products(
+        self,
+        products: list,
+        max_price_usd: float = 1.50,
+        secondary_max_price_usd: float = 3.00
+    ) -> dict:
+        """Given a list of product dicts, sorts by price ascending and selects two reliable tiers:
+        - Primary: the most reliable (highest-priced) tier <= max_price_usd ($1.50 max).
+        - Secondary: the most reliable (highest-priced) tier <= secondary_max_price_usd ($3.00 max).
         """
         if not products:
             return {'best': None, 'primary': None, 'secondary': None, 'candidates': []}
@@ -227,7 +230,6 @@ class SMSCodeClient:
 
         valid_prods.sort(key=lambda x: x[0])
 
-        # No price cap: pick the last tier with the highest price
         if max_price_usd is None:
             best = valid_prods[-1]
             secondary = valid_prods[-1]
@@ -240,34 +242,61 @@ class SMSCodeClient:
                 'candidates': candidates
             }
 
-        under_cap = [(amt, p) for amt, p in valid_prods if amt <= max_price_usd]
-        above_cap = [(amt, p) for amt, p in valid_prods if amt > max_price_usd]
+        sec_cap = secondary_max_price_usd if (secondary_max_price_usd and secondary_max_price_usd >= max_price_usd) else max_price_usd
+        under_primary = [(amt, p) for amt, p in valid_prods if amt <= max_price_usd]
+        between_caps = [(amt, p) for amt, p in valid_prods if max_price_usd < amt <= sec_cap]
+        above_secondary = [(amt, p) for amt, p in valid_prods if amt > sec_cap]
 
-        if len(under_cap) >= 2:
-            primary = under_cap[-2]
-            secondary = under_cap[-1]
-            best = under_cap[-1]
-            candidates = [secondary[1], primary[1]] + [p for _, p in reversed(under_cap[:-2])]
-        elif len(under_cap) == 1:
-            primary = under_cap[0]
-            best = under_cap[0]
-            if above_cap:
-                secondary = above_cap[0]
-                candidates = [primary[1], secondary[1]]
+        if under_primary and between_caps:
+            # Primary: highest tier <= $1.50; Secondary: highest tier in ($1.50, $3.00]
+            primary = under_primary[-1]
+            secondary = between_caps[-1]
+            best = secondary
+            candidates = [p for _, p in reversed(under_primary + between_caps)]
+        elif under_primary:
+            # All tiers under $3.00 are also <= $1.50
+            if len(under_primary) >= 2:
+                primary = under_primary[-2]
+                secondary = under_primary[-1]
+                best = under_primary[-1]
+                candidates = [p for _, p in reversed(under_primary)]
             else:
-                secondary = under_cap[0]
-                candidates = [primary[1]]
+                primary = under_primary[0]
+                best = under_primary[0]
+                if above_secondary:
+                    secondary = above_secondary[0]
+                    candidates = [primary[1], secondary[1]]
+                else:
+                    secondary = under_primary[0]
+                    candidates = [primary[1]]
+        elif between_caps:
+            # No tiers <= $1.50, but tiers exist in ($1.50, $3.00]
+            if len(between_caps) >= 2:
+                primary = between_caps[-2]
+                secondary = between_caps[-1]
+                best = between_caps[-1]
+                candidates = [p for _, p in reversed(between_caps)]
+            else:
+                primary = between_caps[0]
+                best = between_caps[0]
+                if above_secondary:
+                    secondary = above_secondary[0]
+                    candidates = [primary[1], secondary[1]]
+                else:
+                    secondary = between_caps[0]
+                    candidates = [primary[1]]
         else:
-            if len(above_cap) >= 2:
-                primary = above_cap[-2]
-                secondary = above_cap[-1]
-                best = above_cap[-1]
-                candidates = [p for _, p in reversed(above_cap)]
+            # All tiers exceed $3.00
+            if len(above_secondary) >= 2:
+                primary = above_secondary[0]
+                secondary = above_secondary[1]
+                best = above_secondary[1]
+                candidates = [p for _, p in above_secondary]
             else:
-                primary = above_cap[0]
-                secondary = above_cap[0]
-                best = above_cap[0]
-                candidates = [above_cap[0][1]]
+                primary = above_secondary[0]
+                secondary = above_secondary[0]
+                best = above_secondary[0]
+                candidates = [above_secondary[0][1]]
 
         return {
             'best': best,
@@ -389,11 +418,12 @@ class SMSCodeClient:
         self,
         country_id: int,
         platform_id: int,
-        max_price_usd: float = 1.50
+        max_price_usd: float = 1.50,
+        secondary_max_price_usd: float = 3.00
     ) -> dict:
-        """Fetches 'any' operator product tiers for a (country_id, platform_id),
-        focusing on the last two most expensive tiers with wholesale price <= max_price_usd ($1.50 max,
-        or > $1.50 if the service is expensive).
+        """Fetches 'any' operator product tiers for a (country_id, platform_id):
+        - Primary: highest-priced reliable tier <= max_price_usd ($1.50 max).
+        - Secondary: highest-priced reliable tier <= secondary_max_price_usd ($3.00 max).
         Returns:
             {
                 'primary': (amt, product_dict) or None,
@@ -411,13 +441,12 @@ class SMSCodeClient:
             if p.get('operator_id') is None or str(p.get('operator_code') or '').lower() in ('', 'any')
         ]
         pool = any_prods if any_prods else products
-        res = self._pick_reliable_tiers_from_products(pool, max_price_usd=max_price_usd)
-        # Order candidates with primary first, then secondary, then remaining
+        res = self._pick_reliable_tiers_from_products(
+            pool,
+            max_price_usd=max_price_usd,
+            secondary_max_price_usd=secondary_max_price_usd
+        )
         cands = []
-        if res.get('primary'):
-            cands.append(res['primary'][1])
-        if res.get('secondary') and (not cands or res['secondary'][1].get('id') != cands[0].get('id')):
-            cands.append(res['secondary'][1])
         for c in res.get('candidates', []):
             if all(c.get('id') != existing.get('id') for existing in cands):
                 cands.append(c)
@@ -660,66 +689,108 @@ class SMSCodeClient:
         pid = self.get_platform_id(service_code)
 
         # For all Other Countries (non-US):
-        # 1. Start with the exact product_id selected by the user (either from the 5 named carrier operators
-        #    or from the Primary/Secondary 'any' operator routes).
-        # 2. If a specific operator_id was selected, fail over to other reliable tiers on that operator first.
-        # 3. Then fail over to the reliable 'any' operator tiers (last two <= $1.50, or > $1.50 if expensive).
+        # 1. Immediately attempt the exact product_id selected by the user on the buying page first
+        #    (zero extra catalog HTTP calls when the chosen tier is in stock).
+        # 2. If that exact tier is out of stock:
+        #    - When a specific named carrier (operator_id) was chosen, fail over ONLY to tiers on that
+        #      same carrier whose wholesale cost does not exceed the selected tier's price.
+        #    - When an 'any' operator route was chosen, fail over ONLY to 'any' tiers whose wholesale
+        #      cost does not exceed the selected route's price (so Primary never silently bills Secondary).
         if cc_clean not in ('US', 'USA'):
-            candidates = []
+            tried_pids = set()
+            last_err = None
+
             if product_id:
                 try:
-                    candidates.append(int(product_id))
+                    pid_int = int(product_id)
+                    tried_pids.add(pid_int)
+                    res = self.create_order(product_id=pid_int)
+                    if res.get('success'):
+                        return res
+                    last_err = res
                 except Exception:
                     pass
 
-            if operator_id is not None and str(operator_id).isdigit() and int(operator_id) > 0:
+            has_named_op = (operator_id is not None and str(operator_id).isdigit() and int(operator_id) > 0)
+            op_code_str = str(operator or '').strip().lower()
+
+            if has_named_op:
                 op_info = self.get_reliable_operator_products(
                     country_id=cid,
                     platform_id=pid,
                     operator_id=int(operator_id),
                     max_price_usd=None
                 )
-                for cand_prod in op_info.get('candidates', []):
-                    cpid = cand_prod.get('id')
-                    if cpid:
-                        try:
-                            cpid_int = int(cpid)
-                            if cpid_int not in candidates:
-                                candidates.append(cpid_int)
-                        except Exception:
-                            pass
-                    if not catalog_product_id and cand_prod.get('catalog_product_id'):
-                        catalog_product_id = cand_prod.get('catalog_product_id')
+                # Determine price ceiling from the selected product_id (or operator's best tier)
+                max_allowed_cost = None
+                all_op_cands = op_info.get('candidates', [])
+                if product_id:
+                    for cp in all_op_cands:
+                        if str(cp.get('id')) == str(product_id):
+                            try:
+                                max_allowed_cost = float(cp.get('price', {}).get('amount') or 0.0)
+                            except Exception:
+                                pass
+                            break
+                if not max_allowed_cost and op_info.get('best'):
+                    max_allowed_cost = float(op_info['best'][0])
 
-            reliable_info = self.get_reliable_any_products(country_id=cid, platform_id=pid, max_price_usd=1.50)
-            for cand_prod in reliable_info.get('candidates', []):
-                cpid = cand_prod.get('id')
-                if cpid:
+                for cand_prod in all_op_cands:
+                    cpid = cand_prod.get('id')
+                    if not cpid:
+                        continue
                     try:
                         cpid_int = int(cpid)
-                        if cpid_int not in candidates:
-                            candidates.append(cpid_int)
+                        cand_amt = float(cand_prod.get('price', {}).get('amount') or 0.0)
                     except Exception:
-                        pass
-                if not catalog_product_id and cand_prod.get('catalog_product_id'):
-                    catalog_product_id = cand_prod.get('catalog_product_id')
+                        continue
+                    if cpid_int in tried_pids:
+                        continue
+                    if max_allowed_cost and cand_amt > max_allowed_cost + 1e-4:
+                        continue
+                    tried_pids.add(cpid_int)
+                    res = self.create_order(product_id=cpid_int)
+                    if res.get('success'):
+                        return res
+                    last_err = res
+                    if len(tried_pids) >= 4:
+                        break
 
-            last_err = None
-            for pid_target in candidates[:4]:
-                res = self.create_order(product_id=pid_target)
+                return last_err or {'success': False, 'message': 'No numbers currently available on this carrier route. Please try another carrier option.'}
+
+            # 'Any' operator routes (Primary <= $1.50 / Secondary <= $3.00):
+            reliable_info = self.get_reliable_any_products(
+                country_id=cid,
+                platform_id=pid,
+                max_price_usd=1.50,
+                secondary_max_price_usd=3.00
+            )
+            max_allowed_cost = 3.00
+            if op_code_str == 'any_primary' and reliable_info.get('primary'):
+                max_allowed_cost = float(reliable_info['primary'][0])
+            elif reliable_info.get('secondary'):
+                max_allowed_cost = float(reliable_info['secondary'][0])
+
+            for cand_prod in reliable_info.get('candidates', []):
+                cpid = cand_prod.get('id')
+                if not cpid:
+                    continue
+                try:
+                    cpid_int = int(cpid)
+                    cand_amt = float(cand_prod.get('price', {}).get('amount') or 0.0)
+                except Exception:
+                    continue
+                if cpid_int in tried_pids:
+                    continue
+                if max_allowed_cost and cand_amt > max_allowed_cost + 1e-4:
+                    continue
+                tried_pids.add(cpid_int)
+                res = self.create_order(product_id=cpid_int)
                 if res.get('success'):
                     return res
                 last_err = res
-
-            if catalog_product_id:
-                res = self.create_order(
-                    catalog_product_id=catalog_product_id,
-                    operator_id=int(operator_id) if (operator_id and str(operator_id).isdigit() and int(operator_id) > 0) else None,
-                    policy='best_success'
-                )
-                if res.get('success'):
-                    return res
-                last_err = res
+                if len(tried_pids) >= 4:
+                    break
 
             return last_err or {'success': False, 'message': 'No numbers currently available for this service/country.'}
 

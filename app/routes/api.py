@@ -44,11 +44,9 @@ def get_catalog_operators():
             return jsonify({'success': True, 'country_code': country_code, 'service_code': service_code, 'operators': matched['operators']})
 
     # For all other countries (SMSCode):
-    # 1. If the country/service has multiple named carrier operators (e.g. UK, Germany, Netherlands, Indonesia,
-    #    France, Spain, etc.), pick up to 5 carrier operators, choosing 1 reliable product tier per operator
-    #    (focusing on the highest tier <= $1.50, or > $1.50 if the service/operator is expensive).
-    # 2. Otherwise, fall back to the last two most expensive 'any' operator tiers (<= $1.50, or > $1.50 if expensive)
-    #    as Primary and Secondary routes.
+    # Use two reliable 'any' operator routes for every country/service:
+    # - Primary: highest-priced reliable tier <= $1.50 wholesale
+    # - Secondary: highest-priced reliable tier <= $3.00 wholesale
     client = SIMProviderService.get_client()
     if not client.is_configured:
         return jsonify({'success': True, 'operators': []})
@@ -56,36 +54,12 @@ def get_catalog_operators():
     cid = client.get_country_id(country_code)
     pid = client.get_platform_id(service_code)
 
-    named_ops = client.get_reliable_country_operators(
+    reliable_info = client.get_reliable_any_products(
         country_id=cid,
         platform_id=pid,
-        max_operators=5,
-        max_price_usd=None
+        max_price_usd=1.50,
+        secondary_max_price_usd=3.00
     )
-    if len(named_ops) >= 2:
-        operators_list = []
-        for op_item in named_ops:
-            base_cost = float(op_item.get('base_cost_usd') or 0.50)
-            retail_price, _ = SIMProviderService.calculate_retail_price(
-                base_cost=base_cost,
-                service_code=service_code,
-                provider_type='smscode',
-                country_code=country_code
-            )
-            entry = dict(op_item)
-            entry['price_usd'] = retail_price
-            entry['price'] = retail_price
-            operators_list.append(entry)
-
-        operators_list.sort(key=lambda o: o['price_usd'])
-        return jsonify({
-            'success': True,
-            'country_code': country_code,
-            'service_code': service_code,
-            'operators': operators_list
-        })
-
-    reliable_info = client.get_reliable_any_products(country_id=cid, platform_id=pid, max_price_usd=1.50)
     primary_tuple = reliable_info.get('primary')
     secondary_tuple = reliable_info.get('secondary')
 
@@ -271,7 +245,14 @@ def purchase_sim():
     order_ref = sim_result.get('order_reference') or f"TGS-SIM-{uuid.uuid4().hex[:6].upper()}"
 
     res_price = float(sim_result.get('retail_price') or 0.0)
-    if country_code != 'US' and res_price > 0:
+    if country_code not in ('US', 'USA') and client_price > 0:
+        # Keep the exact displayed buying-page price when valid (failover only uses tiers <= selected tier cost)
+        _, min_floor = SettingsService.get_smscode_markup()
+        if client_price >= min_floor and (res_price <= 0 or client_price >= res_price - 0.05):
+            final_price = client_price
+        else:
+            final_price = max(client_price, res_price)
+    elif country_code != 'US' and res_price > 0:
         final_price = res_price
     else:
         final_price = max(price, res_price)
@@ -321,6 +302,7 @@ def purchase_sim():
         'country_code': country_code,
         'country_slug': country_name.lower().replace(' ', '_'),
         'phone_number': sim_result.get('phone_number', ''),
+        'operator': sim_result.get('operator') or operator or 'any',
         'user_cost': final_price,
         'price': final_price,
         'provider_cost': float(sim_result.get('provider_cost') or 0.00),
@@ -340,7 +322,7 @@ def purchase_sim():
         'country_name': country_name,
         'country_code': country_code,
         'phone_number': sim_result.get('phone_number', ''),
-        'price': price,
+        'price': final_price,
         'status': 'active',
         'sms_code': None,
         'full_sms_text': 'Waiting for SMS verification code...',
