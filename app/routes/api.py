@@ -70,7 +70,8 @@ def get_catalog_operators():
             base_cost=amt1,
             service_code=service_code,
             provider_type='smscode',
-            country_code=country_code
+            country_code=country_code,
+            route_type='primary'
         )
         routes.append({
             'operator_id': p1.get('operator_id'),
@@ -91,7 +92,8 @@ def get_catalog_operators():
                 base_cost=amt2,
                 service_code=service_code,
                 provider_type='smscode',
-                country_code=country_code
+                country_code=country_code,
+                route_type='secondary'
             )
             routes.append({
                 'operator_id': p2.get('operator_id'),
@@ -111,7 +113,8 @@ def get_catalog_operators():
                 base_cost=amt2,
                 service_code=service_code,
                 provider_type='smscode',
-                country_code=country_code
+                country_code=country_code,
+                route_type='secondary'
             )
             routes.append({
                 'operator_id': p1.get('operator_id'),
@@ -136,8 +139,8 @@ def get_catalog_operators():
     # Fallback routes when live product tiers are in standby
     fb_cost1 = 0.85
     fb_cost2 = 1.20
-    r_fb1, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost1, service_code=service_code, provider_type='smscode', country_code=country_code)
-    r_fb2, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost2, service_code=service_code, provider_type='smscode', country_code=country_code)
+    r_fb1, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost1, service_code=service_code, provider_type='smscode', country_code=country_code, route_type='primary')
+    r_fb2, _ = SIMProviderService.calculate_retail_price(base_cost=fb_cost2, service_code=service_code, provider_type='smscode', country_code=country_code, route_type='secondary')
     fallback_routes = [
         {
             'operator_id': None,
@@ -246,9 +249,9 @@ def purchase_sim():
 
     res_price = float(sim_result.get('retail_price') or 0.0)
     if country_code not in ('US', 'USA') and client_price > 0:
-        # Keep the exact displayed buying-page price when valid (failover only uses tiers <= selected tier cost)
+        # Keep the exact displayed buying-page price when valid (or when an override matches res_price)
         _, min_floor = SettingsService.get_smscode_markup()
-        if client_price >= min_floor and (res_price <= 0 or client_price >= res_price - 0.05):
+        if abs(client_price - res_price) <= 0.05 or (client_price >= min_floor and (res_price <= 0 or client_price >= res_price - 0.05)):
             final_price = client_price
         else:
             final_price = max(client_price, res_price)

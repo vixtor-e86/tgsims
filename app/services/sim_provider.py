@@ -1059,14 +1059,57 @@ class SIMProviderService:
     def get_client(cls) -> SMSCodeClient:
         return cls.get_smscode_client()
 
+    @staticmethod
+    def _get_service_code_aliases(sc: str) -> list:
+        """Returns normalized candidate service codes (including standard & catalog aliases)."""
+        sc_clean = (sc or '').strip().lower()
+        if not sc_clean:
+            return []
+        alias_groups = [
+            ('whatsapp', 'wa', 'wa_biz'),
+            ('telegram', 'tg'),
+            ('google', 'google-youtube-gmail', 'gmail', 'youtube', 'go'),
+            ('instagram', 'instagram-threads', 'threads', 'ig'),
+            ('tiktok', 'tiktok-douyin', 'douyin', 'lf'),
+            ('twitter', 'twitter-x', 'x', 'tw'),
+            ('facebook', 'meta', 'fb'),
+            ('openai', 'openai-chatgpt', 'chatgpt', 'dr'),
+            ('apple', 'apple-icloud', 'icloud', 'wx'),
+            ('discord', 'ds'),
+            ('snapchat', 'fu'),
+            ('netflix', 'nf'),
+            ('uber', 'ub'),
+            ('tinder', 'oi'),
+            ('microsoft', 'mm'),
+            ('amazon', 'am'),
+            ('paypal', 'ts'),
+        ]
+        cands = [sc_clean]
+        for grp in alias_groups:
+            if sc_clean in grp:
+                for item in grp:
+                    if item not in cands:
+                        cands.append(item)
+                break
+        return cands
+
     @classmethod
-    def calculate_retail_price(cls, base_cost: float, service_code: str = None, provider_type: str = 'smscode', country_code: str = 'US') -> tuple[float, float]:
+    def calculate_retail_price(
+        cls,
+        base_cost: float,
+        service_code: str = None,
+        provider_type: str = 'smscode',
+        country_code: str = 'US',
+        route_type: str = None
+    ) -> tuple[float, float]:
         """Calculates retail price and profit margin in USD using admin-configured markup and overrides.
-        Fixed service price overrides apply exclusively to US numbers (Basic & TextVerified US Reliable).
-        Global numbers (GB, NG, etc.) strictly follow provider dynamic markup.
+        Supports:
+        - TextVerified US service overrides (provider_type == 'textverified')
+        - SMSCode Country + Service (+ optional Primary/Secondary route) overrides across all countries,
+          as well as global ('all:<service>') and US ('us:<service>' or '<service>') overrides.
         """
         if base_cost <= 0:
-            return 1.50, 1.50
+            base_cost = 0.50
 
         try:
             from app.services.settings_service import SettingsService
@@ -1075,10 +1118,8 @@ class SIMProviderService:
             else:
                 pct, floor = SettingsService.get_smscode_markup()
 
-            # Overrides apply strictly to US numbers
-            is_us = (provider_type == 'textverified') or (country_code and str(country_code).strip().upper() in ('US', 'USA'))
-            if is_us and service_code:
-                sc = service_code.strip().lower()
+            if service_code:
+                sc_candidates = cls._get_service_code_aliases(service_code)
                 all_overrides = SettingsService.get_price_overrides()
                 if provider_type == 'textverified':
                     allowed_provs = ('textverified', 'all')
@@ -1088,25 +1129,53 @@ class SIMProviderService:
                 overrides = {
                     o['service_code'].strip().lower(): float(o['override_price_usd'])
                     for o in all_overrides
-                    if o.get('provider_type') in allowed_provs and o.get('is_active', True)
+                    if o.get('provider_type') in allowed_provs and o.get('is_active', True) and o.get('service_code')
                 }
 
-                alias_map = {
-                    'google-youtube-gmail': 'google',
-                    'instagram-threads': 'instagram',
-                    'tiktok-douyin': 'tiktok',
-                    'google': 'google-youtube-gmail',
-                    'instagram': 'instagram-threads',
-                    'tiktok': 'tiktok-douyin'
-                }
-                alias = alias_map.get(sc)
+                if provider_type == 'textverified':
+                    for cand in sc_candidates:
+                        if cand in overrides:
+                            override_p = overrides[cand]
+                            return override_p, round(override_p - base_cost, 4)
+                else:
+                    cc = (country_code or 'US').strip().lower()
+                    if cc == 'usa':
+                        cc = 'us'
+                    elif cc == 'uk':
+                        cc = 'gb'
 
-                if sc in overrides:
-                    override_p = overrides[sc]
-                    return override_p, round(override_p - base_cost, 4)
-                elif alias and alias in overrides:
-                    override_p = overrides[alias]
-                    return override_p, round(override_p - base_cost, 4)
+                    rt_raw = (route_type or '').strip().lower()
+                    if 'primary' in rt_raw or rt_raw == 'route_1':
+                        rt = 'primary'
+                    elif 'secondary' in rt_raw or rt_raw == 'route_2':
+                        rt = 'secondary'
+                    else:
+                        rt = ''
+
+                    lookup_keys = []
+                    # 1. Exact Country + Service + Route (e.g. 'gb:whatsapp:primary')
+                    if rt:
+                        for cand in sc_candidates:
+                            lookup_keys.append(f"{cc}:{cand}:{rt}")
+                    # 2. Exact Country + Service (All Routes, e.g. 'gb:whatsapp')
+                    for cand in sc_candidates:
+                        lookup_keys.append(f"{cc}:{cand}")
+                    # 3. Legacy US-only service key without country prefix (only when country is US)
+                    if cc == 'us':
+                        for cand in sc_candidates:
+                            lookup_keys.append(cand)
+                    # 4. Global All-Countries + Service + Route (e.g. 'all:whatsapp:primary')
+                    if rt:
+                        for cand in sc_candidates:
+                            lookup_keys.append(f"all:{cand}:{rt}")
+                    # 5. Global All-Countries + Service (e.g. 'all:whatsapp')
+                    for cand in sc_candidates:
+                        lookup_keys.append(f"all:{cand}")
+
+                    for k in lookup_keys:
+                        if k in overrides:
+                            override_p = overrides[k]
+                            return override_p, round(override_p - base_cost, 4)
         except Exception:
             pct, floor = 0.0, 0.0
 
@@ -1361,7 +1430,8 @@ class SIMProviderService:
                 base_cost=prov_cost,
                 service_code=svc_code_clean,
                 provider_type='smscode',
-                country_code=cc_clean
+                country_code=cc_clean,
+                route_type=operator
             )
 
             return {
@@ -1922,12 +1992,24 @@ class SIMProviderService:
                         profit = max(base_cost * (pct / 100.0), floor)
                         op_retail = round(base_cost + profit, 2)
                     op_retail_ngn = round(op_retail * rate, 2)
+                elif f"us:{std_code}" in overrides:
+                    op_retail = overrides[f"us:{std_code}"]
+                    op_retail_ngn = round(overrides_ngn.get(f"us:{std_code}", op_retail * rate), 2)
+                elif f"us:{sc}" in overrides:
+                    op_retail = overrides[f"us:{sc}"]
+                    op_retail_ngn = round(overrides_ngn.get(f"us:{sc}", op_retail * rate), 2)
                 elif std_code in overrides:
                     op_retail = overrides[std_code]
                     op_retail_ngn = round(overrides_ngn.get(std_code, op_retail * rate), 2)
                 elif sc in overrides:
                     op_retail = overrides[sc]
                     op_retail_ngn = round(overrides_ngn.get(sc, op_retail * rate), 2)
+                elif f"all:{std_code}" in overrides:
+                    op_retail = overrides[f"all:{std_code}"]
+                    op_retail_ngn = round(overrides_ngn.get(f"all:{std_code}", op_retail * rate), 2)
+                elif f"all:{sc}" in overrides:
+                    op_retail = overrides[f"all:{sc}"]
+                    op_retail_ngn = round(overrides_ngn.get(f"all:{sc}", op_retail * rate), 2)
                 elif not apply_markup:
                     op_retail = round(base_cost, 2)
                     op_retail_ngn = round(op_retail * rate, 2)
@@ -2018,10 +2100,18 @@ class SIMProviderService:
                 processed_ops = []
                 for op in raw_ops:
                     base_cost = float(op.get('base_price_usd', 0.20))
-                    if s_code in overrides:
+                    if f"us:{s_code}" in overrides:
+                        op_retail = overrides[f"us:{s_code}"]
+                    elif f"us:{key}" in overrides:
+                        op_retail = overrides[f"us:{key}"]
+                    elif s_code in overrides:
                         op_retail = overrides[s_code]
                     elif key in overrides:
                         op_retail = overrides[key]
+                    elif f"all:{s_code}" in overrides:
+                        op_retail = overrides[f"all:{s_code}"]
+                    elif f"all:{key}" in overrides:
+                        op_retail = overrides[f"all:{key}"]
                     elif not apply_markup or (pct <= 0.0 and floor <= 0.0):
                         op_retail = round(base_cost, 2)
                     else:

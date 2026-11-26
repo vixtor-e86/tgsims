@@ -204,23 +204,61 @@ def pricing():
             except Exception as e:
                 flash(f'Failed to update settings: {e}', 'error')
 
-        elif action == 'add_override':
+        elif action in ('add_override', 'add_smscode_override', 'add_tv_override'):
             svc_code = request.form.get('service_code', '').strip().lower()
             svc_name = request.form.get('service_name', '').strip()
             prov_type = request.form.get('provider_type', 'smscode').strip().lower()
+            if action == 'add_tv_override':
+                prov_type = 'textverified'
+            elif action == 'add_smscode_override':
+                prov_type = 'smscode'
             norm_prov = 'textverified' if prov_type == 'textverified' else '5sim'
             try:
-                override_price = round(float(request.form.get('override_price_usd', 0.00)), 4)
+                rate = SettingsService.get_usd_ngn_rate()
+                raw_usd = (request.form.get('override_price_usd') or '').replace('$', '').replace(',', '').strip()
+                raw_ngn = (request.form.get('override_price_ngn') or '').replace('₦', '').replace(',', '').strip()
+                override_usd = round(float(raw_usd), 4) if raw_usd else 0.0
+                override_ngn = round(float(raw_ngn), 2) if raw_ngn else None
+
+                if override_usd <= 0 and override_ngn and override_ngn > 0:
+                    override_usd = round(override_ngn / rate, 4)
+                elif override_usd > 0 and (override_ngn is None or override_ngn <= 0):
+                    override_ngn = round(override_usd * rate, 2)
+
                 notes = request.form.get('notes', '').strip()
-                if svc_code and override_price > 0:
-                    ok = SettingsService.set_price_override(svc_code, svc_name or svc_code.capitalize(), norm_prov, override_price, notes)
+
+                if norm_prov == 'textverified':
+                    target_code = svc_code
+                    target_name = svc_name or svc_code.capitalize()
+                else:
+                    country_code = (request.form.get('country_code') or 'ALL').strip().upper()
+                    country_name = (request.form.get('country_name') or country_code).strip()
+                    route_scope = (request.form.get('route_scope') or 'all').strip().lower()
+                    cc_key = country_code.lower()
+                    if route_scope in ('primary', 'secondary'):
+                        target_code = f"{cc_key}:{svc_code}:{route_scope}"
+                        route_label = 'Route 1 Primary' if route_scope == 'primary' else 'Route 2 Secondary'
+                        target_name = f"{country_name} — {svc_name or svc_code.capitalize()} ({route_label})"
+                    else:
+                        target_code = f"{cc_key}:{svc_code}"
+                        target_name = f"{country_name} — {svc_name or svc_code.capitalize()}"
+
+                if svc_code and override_usd > 0:
+                    ok = SettingsService.set_price_override(
+                        target_code,
+                        target_name,
+                        norm_prov,
+                        override_usd,
+                        notes,
+                        override_price_ngn=override_ngn
+                    )
                     if ok:
                         SIMProviderService.clear_all_caches()
-                        flash(f'Price override saved for {svc_name or svc_code} (${override_price:.2f}).', 'success')
+                        flash(f'Price override saved for {target_name} at ${override_usd:.2f} (₦{override_ngn:,.2f}).', 'success')
                     else:
-                        flash(f'Failed to save price override for {svc_name or svc_code}. Please check system logs.', 'error')
+                        flash(f'Failed to save price override for {target_name}. Please check system logs.', 'error')
                 else:
-                    flash('Please enter a valid service code and override price.', 'error')
+                    flash('Please select a valid service and enter an override price.', 'error')
             except Exception as e:
                 flash(f'Error saving price override: {e}', 'error')
 
@@ -482,8 +520,6 @@ def pricing():
 
     settings = SettingsService.get_settings(force_refresh=True)
     all_overrides = SettingsService.get_price_overrides()
-    # Separate operator-specific overrides from general overrides
-    overrides = [ov for ov in all_overrides if not (ov.get('service_code') and ':' in ov['service_code'])]
     us_whatsapp_operators = SettingsService.get_us_whatsapp_operators_pricing()
 
     # Precalculated examples for admin visualization
@@ -491,6 +527,167 @@ def pricing():
     f5_pct, f5_floor = SettingsService.get_smscode_markup()
     tv_pct, tv_floor = SettingsService.get_textverified_markup()
     react_fee = SettingsService.get_reactivation_fee()
+
+    # Load full global SMSCode catalog (countries + services)
+    global_cat = SIMProviderService.get_catalog()
+    raw_countries = global_cat.get('countries', []) if isinstance(global_cat, dict) else []
+    raw_global_services = global_cat.get('services', []) if isinstance(global_cat, dict) else []
+
+    smscode_countries = [
+        {
+            'country_code': 'ALL',
+            'country_name': 'All Countries (Global Default)',
+            'flag': '🌍',
+            'dial': 'Global',
+            'is_popular': True
+        },
+        {
+            'country_code': 'US',
+            'country_name': 'United States (US Basic Package)',
+            'flag': '🇺🇸',
+            'dial': '+1',
+            'is_popular': True
+        }
+    ]
+    POPULAR_CC = {'GB', 'NG', 'CA', 'DE', 'ID', 'PH', 'NL', 'FR', 'IN', 'ZA', 'AU', 'BR', 'ES', 'IT', 'MX', 'KE', 'GH', 'AE'}
+    country_lookup = {
+        'ALL': {'country_code': 'ALL', 'country_name': 'All Countries (Global)', 'flag': '🌍', 'dial': 'Global'},
+        'US': {'country_code': 'US', 'country_name': 'United States (US Basic)', 'flag': '🇺🇸', 'dial': '+1'}
+    }
+    for c in raw_countries:
+        cc = (c.get('country_code') or '').strip().upper()
+        if not cc or cc == 'US':
+            continue
+        c_entry = {
+            'country_code': cc,
+            'country_name': c.get('country_name', cc),
+            'flag': c.get('flag', '🌐'),
+            'dial': c.get('dial', ''),
+            'is_popular': cc in POPULAR_CC
+        }
+        smscode_countries.append(c_entry)
+        country_lookup[cc] = c_entry
+
+    # Build SMSCode services list (1,236 services from catalog.json, falling back to US list if empty)
+    smscode_services_catalog = []
+    seen_smscode_svc = set()
+    service_lookup = {}
+    for s in raw_global_services:
+        sc = (s.get('code') or '').strip().lower()
+        if sc and sc not in seen_smscode_svc:
+            seen_smscode_svc.add(sc)
+            s_name = s.get('name', sc.capitalize())
+            entry = {
+                'service_code': sc,
+                'service_name': s_name,
+                'is_core': bool(s.get('is_core')),
+                'base_cost': float(s.get('base_cost') or 0.50)
+            }
+            smscode_services_catalog.append(entry)
+            service_lookup[sc] = s_name
+
+    f5_raw = SIMProviderService.get_5sim_us_services(apply_markup=False)
+    seen_f5 = set()
+    f5_catalog = []
+    for s in f5_raw:
+        sc = (s.get('service_code') or '').strip().lower()
+        if sc and sc not in seen_f5:
+            seen_f5.add(sc)
+            s_name = s.get('service_name', sc.capitalize())
+            f5_catalog.append({
+                'service_code': sc,
+                'service_name': s_name,
+                'is_core': bool(s.get('is_core')),
+                'base_cost': float(s.get('price_usd', 0.50))
+            })
+            if sc not in service_lookup:
+                service_lookup[sc] = s_name
+            if sc not in seen_smscode_svc:
+                seen_smscode_svc.add(sc)
+                smscode_services_catalog.append({
+                    'service_code': sc,
+                    'service_name': s_name,
+                    'is_core': bool(s.get('is_core')),
+                    'base_cost': float(s.get('price_usd', 0.50))
+                })
+
+    tv_raw = SIMProviderService.get_textverified_us_services(apply_markup=False)
+    seen_tv = set()
+    tv_catalog = []
+    for s in tv_raw:
+        sc = s.get('service_code')
+        if sc and sc not in seen_tv:
+            seen_tv.add(sc)
+            tv_catalog.append({
+                'service_code': sc,
+                'service_name': s.get('service_name', sc.capitalize()),
+                'base_cost': float(s.get('price_usd', 0.50))
+            })
+
+    # Separate overrides into:
+    # 1. tv_overrides (TextVerified US Reliable)
+    # 2. smscode_overrides (SMSCode Country + Service + Route overrides)
+    # (Excluding US WhatsApp operator-specific overrides which have their own dedicated table)
+    US_WA_OP_CODES = {'tmobile', 'at_t', 'verizon', 'mint_mobile', 'us_mobile', 'any', 'basic', '125', '111', '119', '128', '127', '0'}
+    tv_overrides = []
+    smscode_overrides = []
+    for ov in all_overrides:
+        raw_sc = (ov.get('service_code') or '').strip().lower()
+        if not raw_sc:
+            continue
+        if raw_sc.startswith('whatsapp:') and raw_sc.split(':', 1)[1] in US_WA_OP_CODES:
+            continue
+
+        ov_copy = dict(ov)
+        ov_usd = float(ov.get('override_price_usd') or 0.0)
+        ov_ngn = float(ov.get('override_price_ngn') or round(ov_usd * rate, 2))
+        ov_copy['override_price_usd'] = ov_usd
+        ov_copy['override_price_ngn'] = ov_ngn
+
+        if ov.get('provider_type') == 'textverified':
+            tv_overrides.append(ov_copy)
+        else:
+            parts = raw_sc.split(':')
+            if len(parts) == 3 and parts[2] in ('primary', 'secondary'):
+                cc_part = parts[0].upper()
+                svc_part = parts[1]
+                route_scope = parts[2]
+            elif len(parts) == 2:
+                cc_part = parts[0].upper()
+                svc_part = parts[1]
+                route_scope = 'all'
+            else:
+                cc_part = 'US'
+                svc_part = raw_sc
+                route_scope = 'all'
+
+            c_meta = country_lookup.get(cc_part, {
+                'country_code': cc_part,
+                'country_name': cc_part,
+                'flag': '🌐',
+                'dial': ''
+            })
+            clean_svc_name = service_lookup.get(svc_part)
+            if not clean_svc_name:
+                raw_sname = ov.get('service_name') or svc_part.capitalize()
+                if '—' in raw_sname:
+                    clean_svc_name = raw_sname.split('—', 1)[1].split(' (Route')[0].strip()
+                else:
+                    clean_svc_name = raw_sname
+
+            ov_copy['country_code'] = cc_part
+            ov_copy['country_name'] = c_meta['country_name']
+            ov_copy['country_flag'] = c_meta['flag']
+            ov_copy['clean_service_code'] = svc_part
+            ov_copy['clean_service_name'] = clean_svc_name
+            ov_copy['route_scope'] = route_scope
+            if route_scope == 'primary':
+                ov_copy['route_label'] = 'Route 1 (Primary)'
+            elif route_scope == 'secondary':
+                ov_copy['route_label'] = 'Route 2 (Secondary)'
+            else:
+                ov_copy['route_label'] = 'All Routes (Primary & Secondary)'
+            smscode_overrides.append(ov_copy)
 
     # Example SMSCode cost: $0.50 -> retail price calculation
     f5_ex_cost = 0.50
@@ -512,35 +709,10 @@ def pricing():
         'reactivation': {'price': react_fee, 'ngn': round(react_fee * rate, 2)}
     }
 
-    f5_raw = SIMProviderService.get_5sim_us_services(apply_markup=False)
-    seen_f5 = set()
-    f5_catalog = []
-    for s in f5_raw:
-        sc = s.get('service_code')
-        if sc and sc not in seen_f5:
-            seen_f5.add(sc)
-            f5_catalog.append({
-                'service_code': sc,
-                'service_name': s.get('service_name', sc.capitalize()),
-                'base_cost': float(s.get('price_usd', 0.50))
-            })
-
-    tv_raw = SIMProviderService.get_textverified_us_services(apply_markup=False)
-    seen_tv = set()
-    tv_catalog = []
-    for s in tv_raw:
-        sc = s.get('service_code')
-        if sc and sc not in seen_tv:
-            seen_tv.add(sc)
-            tv_catalog.append({
-                'service_code': sc,
-                'service_name': s.get('service_name', sc.capitalize()),
-                'base_cost': float(s.get('price_usd', 0.50))
-            })
-
     services_catalog = {
-        'smscode': f5_catalog,
-        'virtualsms': f5_catalog,
+        'smscode': smscode_services_catalog,
+        'smscode_countries': smscode_countries,
+        'virtualsms': smscode_services_catalog,
         '5sim': f5_catalog,
         'textverified': tv_catalog
     }
@@ -551,7 +723,10 @@ def pricing():
     return render_template(
         'admin/pricing.html',
         settings=settings,
-        overrides=overrides,
+        overrides=tv_overrides + smscode_overrides,
+        tv_overrides=tv_overrides,
+        smscode_overrides=smscode_overrides,
+        smscode_countries=smscode_countries,
         us_whatsapp_operators=us_whatsapp_operators,
         examples=examples,
         services_catalog=services_catalog,

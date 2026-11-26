@@ -421,128 +421,323 @@
   </div>
 </form>
 
-{# Service Price Overrides Section #}
-<div class="card card-pad" style="background: var(--surface); border: 1px solid var(--border);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+{# ========================================================================= #}
+{# 1. TEXTVERIFIED SERVICE PRICE OVERRIDES (US RELIABLE NON-VOIP)            #}
+{# ========================================================================= #}
+<div class="settings-panel" id="tv-overrides-section">
+  <div class="settings-panel-header">
     <div>
-      <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0; color: var(--text); display: flex; align-items: center; gap: 0.5rem;">
-        {{ icon('tag') }} Fixed Service Price Overrides (US Numbers)
+      <h2>
+        {{ icon('shield') }} TextVerified Service Price Overrides (US Reliable Package)
       </h2>
-      <p style="color: var(--text-muted); margin-top: 0.25rem; font-size: 0.85rem;">
-        Set fixed retail prices for specific US services under SMS Code (Basic) or TextVerified (Reliable). Global store countries will strictly use your standard dynamic profit margin and min floor.
+      <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.85rem;">
+        Set fixed retail prices for specific US Reliable (TextVerified Non-VoIP) services. Enter either USD ($) or Naira (₦) and the other converts automatically.
       </p>
     </div>
+    <span class="badge badge-brand">{{ tv_overrides|length if tv_overrides is defined else 0 }} Active Override{{ '' if (tv_overrides is defined and tv_overrides|length == 1) else 's' }}</span>
   </div>
 
-  {# Add Override Form #}
-  <form id="add-override-form" action="{{ url_for('admin.pricing') }}" method="POST" style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1.1rem; margin-bottom: 1.5rem;">
-    <input type="hidden" name="action" value="add_override">
-    <input type="hidden" name="service_code" id="override-service-code" required>
-    <input type="hidden" name="service_name" id="override-service-name" required>
+  <div class="settings-panel-body" style="gap: 1.25rem;">
+    <form id="add-tv-override-form" action="{{ url_for('admin.pricing') }}" method="POST"
+          data-rate="{{ settings.ngn_per_usd_rate }}"
+          style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1.15rem;">
+      <input type="hidden" name="action" value="add_tv_override">
+      <input type="hidden" name="provider_type" value="textverified">
+      <input type="hidden" name="service_code" id="override-service-code" required>
+      <input type="hidden" name="service_name" id="override-service-name" required>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.85rem; align-items: flex-end;">
-      <div>
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">US Provider Pool</label>
-        <select name="provider_type" id="override-provider-type" class="input input-sm">
-          <option value="smscode">SMS Code API (US Basic Package)</option>
-          <option value="textverified">TextVerified (US Reliable Package)</option>
-        </select>
-      </div>
-
-      <div class="admin-search-wrapper" style="position: relative;">
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Search Service</label>
-        <div style="position: relative; display: flex; align-items: center;">
-          <input type="search" id="override-search" placeholder="Type name or code (e.g. WhatsApp)..." autocomplete="off" class="input input-sm" style="padding-right: 28px;">
-          <button type="button" id="override-clear-search" aria-label="Clear search" title="Clear search" style="position: absolute; right: 8px; background: none; border: none; font-size: 1.15rem; color: var(--text-muted); cursor: pointer; display: none; line-height: 1; padding: 0;">&times;</button>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 0.85rem; align-items: flex-end;">
+        <div class="admin-search-wrapper" style="position: relative;">
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">1. Search US Reliable Service</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="search" id="override-search" placeholder="Type service (e.g. WhatsApp, Telegram)..." autocomplete="off" class="input input-sm" style="padding-right: 28px;">
+            <button type="button" id="override-clear-search" aria-label="Clear search" title="Clear search" style="position: absolute; right: 8px; background: none; border: none; font-size: 1.15rem; color: var(--text-muted); cursor: pointer; display: none; line-height: 1; padding: 0;">&times;</button>
+          </div>
+          <div id="override-search-dropdown" class="admin-search-dropdown"></div>
         </div>
-        <div id="override-search-dropdown" class="admin-search-dropdown"></div>
-      </div>
 
-      <div>
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Select Service (Dropdown)</label>
-        <select id="override-service-select" class="input input-sm">
-          <option value="">-- Choose a service --</option>
-        </select>
-      </div>
-
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
-          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0;">Fixed Price ($ USD)</label>
-          <span id="override-base-badge" style="font-size: 0.72rem; color: var(--text-muted); display: none;">
-            Wholesale: <strong id="override-base-val" style="color: var(--brand);">$0.00</strong>
-          </span>
+        <div>
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Or Select from List</label>
+          <select id="override-service-select" class="input input-sm">
+            <option value="">-- Choose a US Reliable service --</option>
+          </select>
         </div>
-        <input type="number" step="any" min="0.0001" max="1000" name="override_price_usd" id="override-price-usd" placeholder="e.g. 2.50 or 0.8850" required class="input input-sm">
-      </div>
 
-      <div>
-        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Notes (Optional)</label>
-        <input type="text" name="notes" placeholder="e.g. Promo pricing" class="input input-sm">
-      </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+            <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0;">2. Fixed Price ($ USD)</label>
+            <span id="override-base-badge" style="font-size: 0.72rem; color: var(--text-muted); display: none;">
+              Wholesale: <strong id="override-base-val" style="color: var(--brand);">$0.00</strong>
+            </span>
+          </div>
+          <input type="number" step="any" min="0.0001" max="1000" name="override_price_usd" id="override-price-usd" placeholder="e.g. 2.60" class="input input-sm">
+        </div>
 
-      <div>
-        <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
-          {{ icon('plus') }} Add Override
-        </button>
-      </div>
-    </div>
-  </form>
+        <div>
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Or Fixed Price (₦ NGN)</label>
+          <input type="number" step="any" min="1" max="5000000" name="override_price_ngn" id="override-price-ngn" placeholder="e.g. 3510" class="input input-sm">
+        </div>
 
-  {# Overrides List #}
-  {% if overrides and overrides|length > 0 %}
-    <div style="overflow-x: auto;">
-      <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
-            <th style="padding: 0.75rem 0.5rem;">Service</th>
-            <th style="padding: 0.75rem 0.5rem;">Service Code</th>
-            <th style="padding: 0.75rem 0.5rem;">Provider</th>
-            <th style="padding: 0.75rem 0.5rem;">Override Price</th>
-            <th style="padding: 0.75rem 0.5rem;">Notes</th>
-            <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ov in overrides %}
-            <tr style="border-bottom: 1px solid var(--border); font-size: 0.9rem;">
-              <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--text);">
-                {{ ov.service_name }}
-              </td>
-              <td style="padding: 0.75rem 0.5rem;">
-                <code style="font-size: 0.8rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ ov.service_code }}</code>
-              </td>
-              <td style="padding: 0.75rem 0.5rem;">
-                {% if ov.provider_type == 'textverified' %}
-                  <span class="badge badge-brand" style="font-size: 0.75rem;">TextVerified (US Reliable)</span>
-                {% else %}
-                  <span class="badge badge-success" style="font-size: 0.75rem;">SMS Code (US Basic)</span>
-                {% endif %}
-              </td>
-              <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--hue-success);">
-                ${{ '%.2f'|format(ov.override_price_usd) }}
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">
-                  (₦{{ '{:,.0f}'.format(ov.override_price_usd * settings.ngn_per_usd_rate) }})
-                </span>
-              </td>
-              <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
-                {{ ov.notes or '-' }}
-              </td>
-              <td style="padding: 0.75rem 0.5rem; text-align: right;">
-                <button type="button" class="btn btn-ghost btn-sm text-danger" style="padding: 0.2rem 0.5rem;" title="Delete"
-                        onclick="openDeleteOverrideModal('{{ ov.id }}', '{{ ov.service_name }}', '{{ ov.provider_type }}', '{{ '%.2f'|format(ov.override_price_usd) }}')">
-                  {{ icon('trash') }}
-                </button>
-              </td>
+        <div>
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Notes (Optional)</label>
+          <input type="text" name="notes" id="override-notes" placeholder="e.g. Promo pricing" class="input input-sm">
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 700;">
+            {{ icon('plus') }} Save TextVerified Override
+          </button>
+        </div>
+      </div>
+    </form>
+
+    {% if tv_overrides and tv_overrides|length > 0 %}
+      <div style="overflow-x: auto;">
+        <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">
+              <th style="padding: 0.75rem 0.5rem;">Service</th>
+              <th style="padding: 0.75rem 0.5rem;">Service Code</th>
+              <th style="padding: 0.75rem 0.5rem;">Provider Pool</th>
+              <th style="padding: 0.75rem 0.5rem;">Fixed Override Price</th>
+              <th style="padding: 0.75rem 0.5rem;">Notes</th>
+              <th style="padding: 0.75rem 0.5rem; text-align: right;">Actions</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for ov in tv_overrides %}
+              <tr style="border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+                <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--text);">
+                  {{ ov.service_name }}
+                </td>
+                <td style="padding: 0.75rem 0.5rem;">
+                  <code style="font-size: 0.78rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ ov.service_code }}</code>
+                </td>
+                <td style="padding: 0.75rem 0.5rem;">
+                  <span class="badge badge-brand" style="font-size: 0.74rem;">TextVerified (US Reliable)</span>
+                </td>
+                <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--hue-success);">
+                  ${{ '%.2f'|format(ov.override_price_usd) }}
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">
+                    (₦{{ '{:,.0f}'.format(ov.override_price_ngn) }})
+                  </span>
+                </td>
+                <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.84rem;">
+                  {{ ov.notes or '-' }}
+                </td>
+                <td style="padding: 0.75rem 0.5rem; text-align: right; white-space: nowrap;">
+                  <button type="button" class="btn btn-secondary btn-xs" style="margin-right: 0.25rem;"
+                          onclick="editTvOverride('{{ ov.service_code }}', '{{ ov.service_name|e }}', '{{ ov.override_price_usd|clean_decimal(2, 4) }}', '{{ ov.override_price_ngn|clean_decimal(0, 2) }}', '{{ (ov.notes or '')|e }}')">
+                    Edit
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm text-danger" style="padding: 0.2rem 0.5rem;" title="Delete"
+                          onclick="openDeleteOverrideModal('{{ ov.id }}', '{{ ov.service_name|e }}', 'textverified', '{{ '%.2f'|format(ov.override_price_usd) }}')">
+                    {{ icon('trash') }}
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 1.5rem 1rem; color: var(--text-muted); font-size: 0.88rem;">
+        No TextVerified fixed price overrides configured. All US Reliable services currently follow your TextVerified dynamic markup rules.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ========================================================================= #}
+{# 2. SMSCODE COUNTRY & SERVICE PRICE OVERRIDES (GLOBAL & US BASIC)          #}
+{# ========================================================================= #}
+<div class="settings-panel" id="smscode-overrides-section">
+  <div class="settings-panel-header">
+    <div>
+      <h2>
+        {{ icon('globe') }} SMSCode Country &amp; Service Price Overrides (Other Countries &amp; US Basic)
+      </h2>
+      <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.85rem;">
+        Select a <strong>Country</strong> (or <em>All Countries</em>) and a <strong>Service</strong>, then choose whether the fixed price applies to <strong>All Routes</strong>, <strong>Route 1 (Primary)</strong>, or <strong>Route 2 (Secondary)</strong>.
+      </p>
     </div>
-  {% else %}
-    <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.9rem;">
-      No specific price overrides configured. All services currently follow the dynamic markup percentage rules above.
-    </div>
-  {% endif %}
+    <span class="badge badge-success">{{ smscode_overrides|length if smscode_overrides is defined else 0 }} Active Override{{ '' if (smscode_overrides is defined and smscode_overrides|length == 1) else 's' }}</span>
+  </div>
+
+  <div class="settings-panel-body" style="gap: 1.25rem;">
+    <form id="add-smscode-override-form" action="{{ url_for('admin.pricing') }}" method="POST"
+          data-rate="{{ settings.ngn_per_usd_rate }}"
+          style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 1.25rem;">
+      <input type="hidden" name="action" value="add_smscode_override">
+      <input type="hidden" name="provider_type" value="smscode">
+      <input type="hidden" name="country_code" id="sc-override-country-code" required>
+      <input type="hidden" name="country_name" id="sc-override-country-name" required>
+      <input type="hidden" name="service_code" id="sc-override-service-code" required>
+      <input type="hidden" name="service_name" id="sc-override-service-name" required>
+
+      {# Step 1 & Step 2 Row: Country Selection + Service Selection #}
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+        {# 1. Country Picker (Search + Dropdown) #}
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem;">
+          <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brand); margin-bottom: 0.5rem;">
+            Step 1: Select Country
+          </div>
+          <div class="admin-search-wrapper" style="position: relative; margin-bottom: 0.55rem;">
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="search" id="sc-country-search" placeholder="Search country (e.g. United Kingdom, Nigeria, GB)..." autocomplete="off" class="input input-sm" style="padding-right: 28px;">
+              <button type="button" id="sc-country-clear" aria-label="Clear country" title="Clear country" style="position: absolute; right: 8px; background: none; border: none; font-size: 1.15rem; color: var(--text-muted); cursor: pointer; display: none; line-height: 1; padding: 0;">&times;</button>
+            </div>
+            <div id="sc-country-dropdown" class="admin-search-dropdown"></div>
+          </div>
+          <select id="sc-country-select" class="input input-sm">
+            <option value="">-- Choose a country --</option>
+          </select>
+        </div>
+
+        {# 2. Service Picker (Search + Dropdown) #}
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem;">
+          <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brand); margin-bottom: 0.5rem;">
+            Step 2: Select Service
+          </div>
+          <div class="admin-search-wrapper" style="position: relative; margin-bottom: 0.55rem;">
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="search" id="sc-service-search" placeholder="Search service (e.g. WhatsApp, Telegram, Google)..." autocomplete="off" class="input input-sm" style="padding-right: 28px;">
+              <button type="button" id="sc-service-clear" aria-label="Clear service" title="Clear service" style="position: absolute; right: 8px; background: none; border: none; font-size: 1.15rem; color: var(--text-muted); cursor: pointer; display: none; line-height: 1; padding: 0;">&times;</button>
+            </div>
+            <div id="sc-service-dropdown" class="admin-search-dropdown"></div>
+          </div>
+          <select id="sc-service-select" class="input input-sm">
+            <option value="">-- Choose a service --</option>
+          </select>
+        </div>
+      </div>
+
+      {# Live Route Wholesale & Current Selling Price Preview Banner #}
+      <div id="sc-live-route-preview" style="display: none; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--brand); border-radius: var(--r-sm); padding: 0.65rem 0.9rem; margin-bottom: 1rem; font-size: 0.82rem; color: var(--text);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+          <span style="font-weight: 700; color: var(--text);" id="sc-preview-title">Live Route Pricing Preview</span>
+          <div id="sc-preview-routes" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;"></div>
+        </div>
+      </div>
+
+      {# Step 3 & Step 4 Row: Route Scope + Fixed Price (USD / NGN) + Notes + Submit #}
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 0.85rem; align-items: flex-end;">
+        <div>
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Step 3: Route Scope</label>
+          <select name="route_scope" id="sc-route-scope" class="input input-sm">
+            <option value="all">Both Routes (Primary &amp; Secondary)</option>
+            <option value="primary">Route 1 (Primary Only — ≤$1.50)</option>
+            <option value="secondary">Route 2 (Secondary Only — ≤$3.00)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Step 4: Fixed Price ($ USD)</label>
+          <input type="number" step="any" min="0.0001" max="1000" name="override_price_usd" id="sc-override-price-usd" placeholder="e.g. 3.50" class="input input-sm">
+        </div>
+
+        <div>
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Or Fixed Price (₦ NGN)</label>
+          <input type="number" step="any" min="1" max="5000000" name="override_price_ngn" id="sc-override-price-ngn" placeholder="e.g. 4725" class="input input-sm">
+        </div>
+
+        <div>
+          <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text);">Notes (Optional)</label>
+          <input type="text" name="notes" id="sc-override-notes" placeholder="e.g. UK WhatsApp promo" class="input input-sm">
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary btn-sm" style="width: 100%; font-weight: 700;">
+            {{ icon('plus') }} Save SMSCode Override
+          </button>
+        </div>
+      </div>
+    </form>
+
+    {# Filter & Search Bar for Active SMSCode Overrides #}
+    {% if smscode_overrides and smscode_overrides|length > 0 %}
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <label for="sc-table-country-filter" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Filter by Country:</label>
+          <select id="sc-table-country-filter" class="input input-sm" style="width: auto; min-width: 190px; height: 32px; font-size: 0.82rem;">
+            <option value="ALL_ROWS">All Overridden Countries ({{ smscode_overrides|length }})</option>
+          </select>
+        </div>
+        <div style="min-width: 240px;">
+          <input type="search" id="sc-table-search" class="input input-sm" placeholder="Filter overrides by country or service..." style="height: 32px; font-size: 0.82rem;">
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="data-table" style="width: 100%; text-align: left; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">
+              <th style="padding: 0.75rem 0.5rem;">Country</th>
+              <th style="padding: 0.75rem 0.5rem;">Service</th>
+              <th style="padding: 0.75rem 0.5rem;">Target Route</th>
+              <th style="padding: 0.75rem 0.5rem;">Override Key</th>
+              <th style="padding: 0.75rem 0.5rem;">Fixed Selling Price</th>
+              <th style="padding: 0.75rem 0.5rem;">Notes</th>
+              <th style="padding: 0.75rem 0.5rem; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sc-overrides-tbody">
+            {% for ov in smscode_overrides %}
+              <tr class="sc-override-row"
+                  data-country="{{ ov.country_code }}"
+                  data-country-name="{{ ov.country_name|e }}"
+                  data-search="{{ (ov.country_name ~ ' ' ~ ov.country_code ~ ' ' ~ ov.clean_service_name ~ ' ' ~ ov.clean_service_code ~ ' ' ~ ov.route_label ~ ' ' ~ (ov.notes or ''))|lower|e }}"
+                  style="border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+                <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--text);">
+                  <span style="margin-right: 0.35rem;">{{ ov.country_flag }}</span>
+                  <span>{{ ov.country_name }}</span>
+                  <span class="badge badge-neutral" style="font-size: 0.68rem; margin-left: 0.25rem;">{{ ov.country_code }}</span>
+                </td>
+                <td style="padding: 0.75rem 0.5rem; font-weight: 600; color: var(--text);">
+                  {{ ov.clean_service_name }}
+                </td>
+                <td style="padding: 0.75rem 0.5rem;">
+                  {% if ov.route_scope == 'primary' %}
+                    <span class="badge badge-brand" style="font-size: 0.72rem;">Route 1 (Primary)</span>
+                  {% elif ov.route_scope == 'secondary' %}
+                    <span class="badge badge-info" style="font-size: 0.72rem;">Route 2 (Secondary)</span>
+                  {% else %}
+                    <span class="badge badge-success" style="font-size: 0.72rem;">All Routes (Primary &amp; Secondary)</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 0.75rem 0.5rem;">
+                  <code style="font-size: 0.76rem; background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: var(--r-xs);">{{ ov.service_code }}</code>
+                </td>
+                <td style="padding: 0.75rem 0.5rem; font-weight: 700; color: var(--hue-success);">
+                  ${{ '%.2f'|format(ov.override_price_usd) }}
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">
+                    (₦{{ '{:,.0f}'.format(ov.override_price_ngn) }})
+                  </span>
+                </td>
+                <td style="padding: 0.75rem 0.5rem; color: var(--text-muted); font-size: 0.84rem;">
+                  {{ ov.notes or '-' }}
+                </td>
+                <td style="padding: 0.75rem 0.5rem; text-align: right; white-space: nowrap;">
+                  <button type="button" class="btn btn-secondary btn-xs" style="margin-right: 0.25rem;"
+                          onclick="editSmscodeOverride('{{ ov.country_code }}', '{{ ov.clean_service_code }}', '{{ ov.route_scope }}', '{{ ov.override_price_usd|clean_decimal(2, 4) }}', '{{ ov.override_price_ngn|clean_decimal(0, 2) }}', '{{ (ov.notes or '')|e }}')">
+                    Edit
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm text-danger" style="padding: 0.2rem 0.5rem;" title="Delete"
+                          onclick="openDeleteOverrideModal('{{ ov.id }}', '{{ (ov.country_name ~ ' — ' ~ ov.clean_service_name ~ ' (' ~ ov.route_label ~ ')')|e }}', 'smscode', '{{ '%.2f'|format(ov.override_price_usd) }}')">
+                    {{ icon('trash') }}
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 1.75rem 1rem; color: var(--text-muted); font-size: 0.88rem;">
+        No SMSCode country/service price overrides configured yet. Select a country and service above to set a fixed custom price.
+      </div>
+    {% endif %}
+  </div>
 </div>
 
 {# ========================================================================= #}
@@ -1335,143 +1530,129 @@ script[type="application/json"] {
     }
   }
 
-  var form = document.getElementById('add-override-form');
-  var providerSelect = document.getElementById('override-provider-type');
-  var searchInput = document.getElementById('override-search');
-  var clearBtn = document.getElementById('override-clear-search');
-  var dropdownEl = document.getElementById('override-search-dropdown');
-  var serviceSelect = document.getElementById('override-service-select');
-  var hiddenCode = document.getElementById('override-service-code');
-  var hiddenName = document.getElementById('override-service-name');
-  var baseBadge = document.getElementById('override-base-badge');
-  var baseVal = document.getElementById('override-base-val');
-  var priceInput = document.getElementById('override-price-usd');
-
   var POPULAR_KEYS = [
-    'whatsapp', 'telegram', 'google', 'openai', 'chatgpt', 'instagram',
-    'facebook', 'twitter', 'x', 'tinder', 'tiktok', 'uber', 'amazon',
-    'apple', 'discord', 'microsoft', 'steam', 'netflix', 'paypal', 'yahoo', 'snapchat', 'linkedin'
+    'whatsapp', 'telegram', 'google', 'google-youtube-gmail', 'openai', 'chatgpt',
+    'instagram', 'instagram-threads', 'facebook', 'twitter', 'x', 'tinder',
+    'tiktok', 'tiktok-douyin', 'uber', 'amazon', 'apple', 'discord', 'microsoft',
+    'steam', 'netflix', 'paypal', 'yahoo', 'snapchat', 'linkedin'
   ];
 
-  var currentProvider = providerSelect ? providerSelect.value : 'smscode';
-  var highlightedIndex = -1;
-  var currentFiltered = [];
-
-  function getCurrentServices() {
-    return (catalog && (catalog[currentProvider] || catalog['smscode'] || catalog['virtualsms'] || catalog['5sim'])) || [];
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
   }
 
-  function populateSelectDropdown() {
-    if (!serviceSelect) return;
-    serviceSelect.innerHTML = '<option value="">-- Choose a service --</option>';
+  function wireUsdNgnPair(usdInput, ngnInput, rate) {
+    if (!usdInput || !ngnInput) return;
+    var r = parseFloat(rate) || 1600.0;
+    usdInput.addEventListener('input', function() {
+      var u = parseFloat(usdInput.value);
+      if (!isNaN(u) && u > 0) {
+        ngnInput.value = Math.round(u * r);
+      } else if (!usdInput.value.trim()) {
+        ngnInput.value = '';
+      }
+    });
+    ngnInput.addEventListener('input', function() {
+      var n = parseFloat(ngnInput.value);
+      if (!isNaN(n) && n > 0) {
+        usdInput.value = parseFloat((n / r).toFixed(4));
+      } else if (!ngnInput.value.trim()) {
+        usdInput.value = '';
+      }
+    });
+  }
 
-    var services = getCurrentServices();
-    if (!services || services.length === 0) return;
+  /* ========================================================================
+     1. TEXTVERIFIED (US RELIABLE) OVERRIDES CONTROLLER
+     ======================================================================== */
+  var tvForm = document.getElementById('add-tv-override-form');
+  var tvSearchInput = document.getElementById('override-search');
+  var tvClearBtn = document.getElementById('override-clear-search');
+  var tvDropdownEl = document.getElementById('override-search-dropdown');
+  var tvServiceSelect = document.getElementById('override-service-select');
+  var tvHiddenCode = document.getElementById('override-service-code');
+  var tvHiddenName = document.getElementById('override-service-name');
+  var tvBaseBadge = document.getElementById('override-base-badge');
+  var tvBaseVal = document.getElementById('override-base-val');
+  var tvPriceUsd = document.getElementById('override-price-usd');
+  var tvPriceNgn = document.getElementById('override-price-ngn');
+  var tvNotes = document.getElementById('override-notes');
+  var tvRate = tvForm ? (parseFloat(tvForm.getAttribute('data-rate')) || 1600.0) : 1600.0;
+
+  wireUsdNgnPair(tvPriceUsd, tvPriceNgn, tvRate);
+
+  var tvServices = (catalog && catalog['textverified']) || [];
+
+  function populateTvDropdown() {
+    if (!tvServiceSelect) return;
+    tvServiceSelect.innerHTML = '<option value="">-- Choose a US Reliable service --</option>';
+    if (!tvServices.length) return;
 
     var popGroup = document.createElement('optgroup');
     popGroup.label = 'Popular Services';
-
     var allGroup = document.createElement('optgroup');
     allGroup.label = 'All Services (A-Z)';
-
     var popCount = 0;
-    var sorted = services.slice().sort(function(a, b) {
+
+    var sorted = tvServices.slice().sort(function(a, b) {
       return (a.service_name || '').localeCompare(b.service_name || '');
     });
 
     sorted.forEach(function(s) {
       var opt = document.createElement('option');
       opt.value = s.service_code;
-      opt.setAttribute('data-name', s.service_name);
-      opt.setAttribute('data-cost', s.base_cost);
-      opt.textContent = s.service_name + ' (' + s.service_code + ') - Wholesale: $' + Number(s.base_cost).toFixed(2);
-
-      var isPop = POPULAR_KEYS.indexOf((s.service_code || '').toLowerCase()) !== -1;
-      if (isPop) {
+      opt.textContent = s.service_name + ' (' + s.service_code + ') - Wholesale: $' + Number(s.base_cost || 0).toFixed(2);
+      if (POPULAR_KEYS.indexOf((s.service_code || '').toLowerCase()) !== -1) {
         popGroup.appendChild(opt.cloneNode(true));
         popCount++;
       }
       allGroup.appendChild(opt);
     });
 
-    if (popCount > 0) {
-      serviceSelect.appendChild(popGroup);
-    }
-    serviceSelect.appendChild(allGroup);
+    if (popCount > 0) tvServiceSelect.appendChild(popGroup);
+    tvServiceSelect.appendChild(allGroup);
   }
 
-  function setSelection(service) {
+  function setTvSelection(service) {
     if (!service) {
-      if (hiddenCode) hiddenCode.value = '';
-      if (hiddenName) hiddenName.value = '';
-      if (baseBadge) baseBadge.style.display = 'none';
-      if (searchInput) searchInput.value = '';
-      if (clearBtn) clearBtn.style.display = 'none';
-      if (serviceSelect) serviceSelect.value = '';
+      if (tvHiddenCode) tvHiddenCode.value = '';
+      if (tvHiddenName) tvHiddenName.value = '';
+      if (tvBaseBadge) tvBaseBadge.style.display = 'none';
+      if (tvSearchInput) tvSearchInput.value = '';
+      if (tvClearBtn) tvClearBtn.style.display = 'none';
+      if (tvServiceSelect) tvServiceSelect.value = '';
       return;
     }
-
-    if (hiddenCode) hiddenCode.value = service.service_code;
-    if (hiddenName) hiddenName.value = service.service_name;
-
-    if (searchInput) {
-      searchInput.value = service.service_name + ' (' + service.service_code + ')';
+    if (tvHiddenCode) tvHiddenCode.value = service.service_code;
+    if (tvHiddenName) tvHiddenName.value = service.service_name;
+    if (tvSearchInput) tvSearchInput.value = service.service_name + ' (' + service.service_code + ')';
+    if (tvClearBtn) tvClearBtn.style.display = 'block';
+    if (tvServiceSelect) tvServiceSelect.value = service.service_code;
+    if (tvBaseBadge && tvBaseVal) {
+      tvBaseVal.textContent = '$' + Number(service.base_cost || 0).toFixed(2);
+      tvBaseBadge.style.display = 'inline-block';
     }
-    if (clearBtn) clearBtn.style.display = 'block';
-
-    if (serviceSelect) {
-      serviceSelect.value = service.service_code;
+    if (tvDropdownEl) {
+      tvDropdownEl.classList.remove('is-open');
+      tvDropdownEl.style.display = 'none';
     }
-
-    if (baseBadge && baseVal) {
-      baseVal.textContent = '$' + Number(service.base_cost || 0).toFixed(2);
-      baseBadge.style.display = 'inline-block';
-    }
-
-    closeDropdown();
   }
 
-  function openDropdown() {
-    if (!dropdownEl) return;
-    dropdownEl.classList.add('is-open');
-    dropdownEl.style.display = 'block';
-  }
-
-  function closeDropdown() {
-    if (!dropdownEl) return;
-    dropdownEl.classList.remove('is-open');
-    dropdownEl.style.display = 'none';
-    highlightedIndex = -1;
-  }
-
-  function renderSearchDropdown(items) {
-    if (!dropdownEl) return;
-    dropdownEl.innerHTML = '';
-
-    if (!items || items.length === 0) {
-      var emptyEl = document.createElement('div');
-      emptyEl.className = 'admin-search-empty';
-      emptyEl.textContent = 'No matching service found';
-      dropdownEl.appendChild(emptyEl);
-      openDropdown();
+  function renderTvSearchDropdown(items) {
+    if (!tvDropdownEl) return;
+    tvDropdownEl.innerHTML = '';
+    if (!items || !items.length) {
+      tvDropdownEl.innerHTML = '<div class="admin-search-empty">No matching service found</div>';
+      tvDropdownEl.classList.add('is-open');
+      tvDropdownEl.style.display = 'block';
       return;
     }
-
-    var MAX = 120;
-    var list = items.slice(0, MAX);
-
-    list.forEach(function(s, idx) {
+    items.slice(0, 120).forEach(function(s) {
       var itemEl = document.createElement('div');
-      itemEl.className = 'admin-search-item';
-      if (idx === highlightedIndex) {
-        itemEl.classList.add('is-highlighted');
-      }
-      if (hiddenCode && hiddenCode.value === s.service_code) {
-        itemEl.classList.add('is-selected');
-      }
-
+      itemEl.className = 'admin-search-item' + ((tvHiddenCode && tvHiddenCode.value === s.service_code) ? ' is-selected' : '');
       var iconLetter = (s.service_name || 'S').charAt(0).toUpperCase();
-
       itemEl.innerHTML =
         '<div class="admin-search-item-left">' +
           '<span class="admin-search-item-icon">' + iconLetter + '</span>' +
@@ -1480,153 +1661,466 @@ script[type="application/json"] {
             '<span class="admin-search-item-code">' + escapeHtml(s.service_code) + '</span>' +
           '</div>' +
         '</div>' +
-        '<span class="admin-search-item-cost">Wholesale: $' + Number(s.base_cost).toFixed(2) + '</span>';
-
+        '<span class="admin-search-item-cost">Wholesale: $' + Number(s.base_cost || 0).toFixed(2) + '</span>';
       itemEl.addEventListener('click', function(e) {
         e.stopPropagation();
-        setSelection(s);
+        setTvSelection(s);
       });
-
-      dropdownEl.appendChild(itemEl);
+      tvDropdownEl.appendChild(itemEl);
     });
-
-    openDropdown();
+    tvDropdownEl.classList.add('is-open');
+    tvDropdownEl.style.display = 'block';
   }
 
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str || '';
-    return div.innerHTML;
-  }
-
-  function filterServices(query) {
-    var q = (query || '').trim().toLowerCase();
-    var all = getCurrentServices();
-    if (!q) {
-      return all;
-    }
-    return all.filter(function(s) {
-      var nameMatch = (s.service_name || '').toLowerCase().indexOf(q) !== -1;
-      var codeMatch = (s.service_code || '').toLowerCase().indexOf(q) !== -1;
-      return nameMatch || codeMatch;
+  if (tvSearchInput) {
+    tvSearchInput.addEventListener('input', function() {
+      var q = (tvSearchInput.value || '').trim().toLowerCase();
+      if (tvClearBtn) tvClearBtn.style.display = q ? 'block' : 'none';
+      var filtered = !q ? tvServices : tvServices.filter(function(s) {
+        return (s.service_name || '').toLowerCase().indexOf(q) !== -1 || (s.service_code || '').toLowerCase().indexOf(q) !== -1;
+      });
+      renderTvSearchDropdown(filtered);
+    });
+    tvSearchInput.addEventListener('focus', function() {
+      var q = (tvSearchInput.value || '').trim().toLowerCase();
+      var filtered = !q ? tvServices : tvServices.filter(function(s) {
+        return (s.service_name || '').toLowerCase().indexOf(q) !== -1 || (s.service_code || '').toLowerCase().indexOf(q) !== -1;
+      });
+      renderTvSearchDropdown(filtered);
     });
   }
-
-  // Provider change
-  if (providerSelect) {
-    providerSelect.addEventListener('change', function() {
-      currentProvider = providerSelect.value;
-      populateSelectDropdown();
-      setSelection(null);
-    });
-  }
-
-  // Search input typing
-  if (searchInput) {
-    searchInput.addEventListener('input', function() {
-      var val = searchInput.value;
-      if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
-      currentFiltered = filterServices(val);
-      highlightedIndex = -1;
-      renderSearchDropdown(currentFiltered);
-    });
-
-    searchInput.addEventListener('focus', function() {
-      currentFiltered = filterServices(searchInput.value);
-      renderSearchDropdown(currentFiltered);
-    });
-
-    searchInput.addEventListener('keydown', function(e) {
-      if (!dropdownEl || !dropdownEl.classList.contains('is-open')) {
-        if (e.key === 'ArrowDown') {
-          openDropdown();
-          return;
-        }
-      }
-
-      var items = dropdownEl.querySelectorAll('.admin-search-item');
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
-        updateHighlight(items);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        highlightedIndex = Math.max(highlightedIndex - 1, 0);
-        updateHighlight(items);
-      } else if (e.key === 'Enter') {
-        if (highlightedIndex >= 0 && currentFiltered[highlightedIndex]) {
-          e.preventDefault();
-          setSelection(currentFiltered[highlightedIndex]);
-        }
-      } else if (e.key === 'Escape') {
-        closeDropdown();
-      }
-    });
-  }
-
-  function updateHighlight(items) {
-    items.forEach(function(el, idx) {
-      if (idx === highlightedIndex) {
-        el.classList.add('is-highlighted');
-        el.scrollIntoView({ block: 'nearest' });
-      } else {
-        el.classList.remove('is-highlighted');
-      }
-    });
-  }
-
-  // Clear search button
-  if (clearBtn) {
-    clearBtn.addEventListener('click', function(e) {
+  if (tvClearBtn) {
+    tvClearBtn.addEventListener('click', function(e) {
       e.stopPropagation();
-      setSelection(null);
-      closeDropdown();
+      setTvSelection(null);
     });
   }
-
-  // Select dropdown change
-  if (serviceSelect) {
-    serviceSelect.addEventListener('change', function() {
-      var code = serviceSelect.value;
-      if (!code) {
-        setSelection(null);
+  if (tvServiceSelect) {
+    tvServiceSelect.addEventListener('change', function() {
+      var code = tvServiceSelect.value;
+      if (!code) { setTvSelection(null); return; }
+      var found = tvServices.find(function(s) { return s.service_code === code; });
+      if (found) setTvSelection(found);
+    });
+  }
+  if (tvForm) {
+    tvForm.addEventListener('submit', function(e) {
+      if (!tvHiddenCode.value) {
+        e.preventDefault();
+        if (window.toast) window.toast('Please select a TextVerified service first.', 'error');
+        if (tvSearchInput) tvSearchInput.focus();
         return;
       }
-      var all = getCurrentServices();
-      var found = all.find(function(s) { return s.service_code === code; });
-      if (found) {
-        setSelection(found);
+      var u = tvPriceUsd ? parseFloat(tvPriceUsd.value) : NaN;
+      var n = tvPriceNgn ? parseFloat(tvPriceNgn.value) : NaN;
+      if ((isNaN(u) || u <= 0) && (isNaN(n) || n <= 0)) {
+        e.preventDefault();
+        if (window.toast) window.toast('Please enter a fixed override price in USD ($) or Naira (₦).', 'error');
+      }
+    });
+  }
+  populateTvDropdown();
+
+  window.editTvOverride = function(code, name, usd, ngn, notes) {
+    var found = tvServices.find(function(s) { return s.service_code === code; }) || { service_code: code, service_name: name, base_cost: 0 };
+    setTvSelection(found);
+    if (tvPriceUsd) tvPriceUsd.value = usd;
+    if (tvPriceNgn) tvPriceNgn.value = ngn;
+    if (tvNotes) tvNotes.value = notes || '';
+    var sec = document.getElementById('tv-overrides-section');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (tvPriceUsd) tvPriceUsd.focus();
+  };
+
+  /* ========================================================================
+     2. SMSCODE COUNTRY & SERVICE OVERRIDES CONTROLLER
+     ======================================================================== */
+  var scForm = document.getElementById('add-smscode-override-form');
+  var scCountrySearch = document.getElementById('sc-country-search');
+  var scCountryClear = document.getElementById('sc-country-clear');
+  var scCountryDropdown = document.getElementById('sc-country-dropdown');
+  var scCountrySelect = document.getElementById('sc-country-select');
+  var scHiddenCountryCode = document.getElementById('sc-override-country-code');
+  var scHiddenCountryName = document.getElementById('sc-override-country-name');
+
+  var scServiceSearch = document.getElementById('sc-service-search');
+  var scServiceClear = document.getElementById('sc-service-clear');
+  var scServiceDropdown = document.getElementById('sc-service-dropdown');
+  var scServiceSelect = document.getElementById('sc-service-select');
+  var scHiddenServiceCode = document.getElementById('sc-override-service-code');
+  var scHiddenServiceName = document.getElementById('sc-override-service-name');
+
+  var scRouteScope = document.getElementById('sc-route-scope');
+  var scPriceUsd = document.getElementById('sc-override-price-usd');
+  var scPriceNgn = document.getElementById('sc-override-price-ngn');
+  var scNotes = document.getElementById('sc-override-notes');
+  var scPreviewBanner = document.getElementById('sc-live-route-preview');
+  var scPreviewTitle = document.getElementById('sc-preview-title');
+  var scPreviewRoutes = document.getElementById('sc-preview-routes');
+  var scRate = scForm ? (parseFloat(scForm.getAttribute('data-rate')) || 1600.0) : 1600.0;
+
+  wireUsdNgnPair(scPriceUsd, scPriceNgn, scRate);
+
+  var scCountries = (catalog && catalog['smscode_countries']) || [];
+  var scServices = (catalog && catalog['smscode']) || [];
+
+  function populateScCountries() {
+    if (!scCountrySelect) return;
+    scCountrySelect.innerHTML = '<option value="">-- Choose a country --</option>';
+    if (!scCountries.length) return;
+
+    var popGroup = document.createElement('optgroup');
+    popGroup.label = 'Global, US & Popular Countries';
+    var allGroup = document.createElement('optgroup');
+    allGroup.label = 'All Countries (A-Z)';
+
+    scCountries.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.country_code;
+      opt.textContent = (c.flag || '🌐') + ' ' + c.country_name + ' (' + c.country_code + (c.dial && c.dial !== 'Global' ? ' ' + c.dial : '') + ')';
+      if (c.is_popular) {
+        popGroup.appendChild(opt.cloneNode(true));
+      }
+      allGroup.appendChild(opt);
+    });
+
+    scCountrySelect.appendChild(popGroup);
+    scCountrySelect.appendChild(allGroup);
+  }
+
+  function populateScServices() {
+    if (!scServiceSelect) return;
+    scServiceSelect.innerHTML = '<option value="">-- Choose a service --</option>';
+    if (!scServices.length) return;
+
+    var coreGroup = document.createElement('optgroup');
+    coreGroup.label = 'Core & Popular Services';
+    var allGroup = document.createElement('optgroup');
+    allGroup.label = 'All Services (A-Z)';
+
+    var sorted = scServices.slice().sort(function(a, b) {
+      return (a.service_name || '').localeCompare(b.service_name || '');
+    });
+
+    sorted.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.service_code;
+      opt.textContent = s.service_name + ' (' + s.service_code + ')';
+      if (s.is_core || POPULAR_KEYS.indexOf((s.service_code || '').toLowerCase()) !== -1) {
+        coreGroup.appendChild(opt.cloneNode(true));
+      }
+      allGroup.appendChild(opt);
+    });
+
+    scServiceSelect.appendChild(coreGroup);
+    scServiceSelect.appendChild(allGroup);
+  }
+
+  function setScCountry(country) {
+    if (!country) {
+      if (scHiddenCountryCode) scHiddenCountryCode.value = '';
+      if (scHiddenCountryName) scHiddenCountryName.value = '';
+      if (scCountrySearch) scCountrySearch.value = '';
+      if (scCountryClear) scCountryClear.style.display = 'none';
+      if (scCountrySelect) scCountrySelect.value = '';
+      updateScLivePreview();
+      return;
+    }
+    if (scHiddenCountryCode) scHiddenCountryCode.value = country.country_code;
+    if (scHiddenCountryName) scHiddenCountryName.value = country.country_name;
+    if (scCountrySearch) scCountrySearch.value = (country.flag || '🌐') + ' ' + country.country_name + ' (' + country.country_code + ')';
+    if (scCountryClear) scCountryClear.style.display = 'block';
+    if (scCountrySelect) scCountrySelect.value = country.country_code;
+    if (scCountryDropdown) {
+      scCountryDropdown.classList.remove('is-open');
+      scCountryDropdown.style.display = 'none';
+    }
+    updateScLivePreview();
+  }
+
+  function setScService(service) {
+    if (!service) {
+      if (scHiddenServiceCode) scHiddenServiceCode.value = '';
+      if (scHiddenServiceName) scHiddenServiceName.value = '';
+      if (scServiceSearch) scServiceSearch.value = '';
+      if (scServiceClear) scServiceClear.style.display = 'none';
+      if (scServiceSelect) scServiceSelect.value = '';
+      updateScLivePreview();
+      return;
+    }
+    if (scHiddenServiceCode) scHiddenServiceCode.value = service.service_code;
+    if (scHiddenServiceName) scHiddenServiceName.value = service.service_name;
+    if (scServiceSearch) scServiceSearch.value = service.service_name + ' (' + service.service_code + ')';
+    if (scServiceClear) scServiceClear.style.display = 'block';
+    if (scServiceSelect) scServiceSelect.value = service.service_code;
+    if (scServiceDropdown) {
+      scServiceDropdown.classList.remove('is-open');
+      scServiceDropdown.style.display = 'none';
+    }
+    updateScLivePreview();
+  }
+
+  function renderScCountryDropdown(items) {
+    if (!scCountryDropdown) return;
+    scCountryDropdown.innerHTML = '';
+    if (!items || !items.length) {
+      scCountryDropdown.innerHTML = '<div class="admin-search-empty">No matching country found</div>';
+      scCountryDropdown.classList.add('is-open');
+      scCountryDropdown.style.display = 'block';
+      return;
+    }
+    items.slice(0, 120).forEach(function(c) {
+      var itemEl = document.createElement('div');
+      itemEl.className = 'admin-search-item' + ((scHiddenCountryCode && scHiddenCountryCode.value === c.country_code) ? ' is-selected' : '');
+      itemEl.innerHTML =
+        '<div class="admin-search-item-left">' +
+          '<span class="admin-search-item-icon" style="font-size: 1rem; background: transparent;">' + (c.flag || '🌐') + '</span>' +
+          '<div class="admin-search-item-info">' +
+            '<span class="admin-search-item-name">' + escapeHtml(c.country_name) + '</span>' +
+            '<span class="admin-search-item-code">' + escapeHtml(c.country_code) + (c.dial ? ' • ' + escapeHtml(c.dial) : '') + '</span>' +
+          '</div>' +
+        '</div>';
+      itemEl.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setScCountry(c);
+      });
+      scCountryDropdown.appendChild(itemEl);
+    });
+    scCountryDropdown.classList.add('is-open');
+    scCountryDropdown.style.display = 'block';
+  }
+
+  function renderScServiceDropdown(items) {
+    if (!scServiceDropdown) return;
+    scServiceDropdown.innerHTML = '';
+    if (!items || !items.length) {
+      scServiceDropdown.innerHTML = '<div class="admin-search-empty">No matching service found</div>';
+      scServiceDropdown.classList.add('is-open');
+      scServiceDropdown.style.display = 'block';
+      return;
+    }
+    items.slice(0, 120).forEach(function(s) {
+      var itemEl = document.createElement('div');
+      itemEl.className = 'admin-search-item' + ((scHiddenServiceCode && scHiddenServiceCode.value === s.service_code) ? ' is-selected' : '');
+      var iconLetter = (s.service_name || 'S').charAt(0).toUpperCase();
+      itemEl.innerHTML =
+        '<div class="admin-search-item-left">' +
+          '<span class="admin-search-item-icon">' + iconLetter + '</span>' +
+          '<div class="admin-search-item-info">' +
+            '<span class="admin-search-item-name">' + escapeHtml(s.service_name) + '</span>' +
+            '<span class="admin-search-item-code">' + escapeHtml(s.service_code) + '</span>' +
+          '</div>' +
+        '</div>' +
+        (s.is_core ? '<span class="admin-search-item-cost">Core</span>' : '');
+      itemEl.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setScService(s);
+      });
+      scServiceDropdown.appendChild(itemEl);
+    });
+    scServiceDropdown.classList.add('is-open');
+    scServiceDropdown.style.display = 'block';
+  }
+
+  function updateScLivePreview() {
+    if (!scPreviewBanner || !scPreviewRoutes || !scPreviewTitle) return;
+    var cc = scHiddenCountryCode ? scHiddenCountryCode.value : '';
+    var cn = scHiddenCountryName ? scHiddenCountryName.value : '';
+    var sc = scHiddenServiceCode ? scHiddenServiceCode.value : '';
+    var sn = scHiddenServiceName ? scHiddenServiceName.value : '';
+
+    if (!cc || !sc) {
+      scPreviewBanner.style.display = 'none';
+      return;
+    }
+
+    scPreviewBanner.style.display = 'block';
+    scPreviewTitle.textContent = cn + ' — ' + sn + ' Live Routes:';
+
+    if (cc === 'ALL') {
+      scPreviewRoutes.innerHTML = '<span style="color: var(--text-muted);">Global override applies to all countries unless a country has its own specific override.</span>';
+      return;
+    }
+
+    scPreviewRoutes.innerHTML = '<span style="color: var(--text-muted);">Checking live SMSCode wholesale &amp; retail routes...</span>';
+    var url = '/api/catalog/operators?country_code=' + encodeURIComponent(cc) + '&service_code=' + encodeURIComponent(sc) + '&service_name=' + encodeURIComponent(sn);
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var ops = (data && data.operators) || [];
+        if (!ops.length) {
+          scPreviewRoutes.innerHTML = '<span style="color: var(--text-muted);">No live tiers cached</span>';
+          return;
+        }
+        var html = '';
+        ops.forEach(function(op) {
+          var bCost = op.base_cost_usd !== undefined ? ('Wholesale: $' + Number(op.base_cost_usd).toFixed(2) + ' → ') : '';
+          var rUsd = Number(op.price_usd || op.price || 0);
+          var rNgn = Math.round(rUsd * scRate);
+          html += '<span class="badge badge-neutral" style="font-size: 0.76rem; padding: 4px 8px;">' +
+                    '<strong>' + escapeHtml(op.operator_name) + ':</strong> ' +
+                    bCost + 'Selling: <strong style="color: var(--hue-success);">$' + rUsd.toFixed(2) + ' (₦' + rNgn.toLocaleString() + ')</strong>' +
+                  '</span>';
+        });
+        scPreviewRoutes.innerHTML = html;
+      })
+      .catch(function() {
+        scPreviewRoutes.innerHTML = '<span style="color: var(--text-muted);">Could not load route preview</span>';
+      });
+  }
+
+  if (scCountrySearch) {
+    scCountrySearch.addEventListener('input', function() {
+      var q = (scCountrySearch.value || '').trim().toLowerCase();
+      if (scCountryClear) scCountryClear.style.display = q ? 'block' : 'none';
+      var filtered = !q ? scCountries : scCountries.filter(function(c) {
+        return (c.country_name || '').toLowerCase().indexOf(q) !== -1 || (c.country_code || '').toLowerCase().indexOf(q) !== -1 || (c.dial || '').toLowerCase().indexOf(q) !== -1;
+      });
+      renderScCountryDropdown(filtered);
+    });
+    scCountrySearch.addEventListener('focus', function() {
+      var q = (scCountrySearch.value || '').trim().toLowerCase();
+      var filtered = !q ? scCountries : scCountries.filter(function(c) {
+        return (c.country_name || '').toLowerCase().indexOf(q) !== -1 || (c.country_code || '').toLowerCase().indexOf(q) !== -1;
+      });
+      renderScCountryDropdown(filtered);
+    });
+  }
+  if (scCountryClear) {
+    scCountryClear.addEventListener('click', function(e) {
+      e.stopPropagation();
+      setScCountry(null);
+    });
+  }
+  if (scCountrySelect) {
+    scCountrySelect.addEventListener('change', function() {
+      var code = scCountrySelect.value;
+      if (!code) { setScCountry(null); return; }
+      var found = scCountries.find(function(c) { return c.country_code === code; });
+      if (found) setScCountry(found);
+    });
+  }
+
+  if (scServiceSearch) {
+    scServiceSearch.addEventListener('input', function() {
+      var q = (scServiceSearch.value || '').trim().toLowerCase();
+      if (scServiceClear) scServiceClear.style.display = q ? 'block' : 'none';
+      var filtered = !q ? scServices : scServices.filter(function(s) {
+        return (s.service_name || '').toLowerCase().indexOf(q) !== -1 || (s.service_code || '').toLowerCase().indexOf(q) !== -1;
+      });
+      renderScServiceDropdown(filtered);
+    });
+    scServiceSearch.addEventListener('focus', function() {
+      var q = (scServiceSearch.value || '').trim().toLowerCase();
+      var filtered = !q ? scServices : scServices.filter(function(s) {
+        return (s.service_name || '').toLowerCase().indexOf(q) !== -1 || (s.service_code || '').toLowerCase().indexOf(q) !== -1;
+      });
+      renderScServiceDropdown(filtered);
+    });
+  }
+  if (scServiceClear) {
+    scServiceClear.addEventListener('click', function(e) {
+      e.stopPropagation();
+      setScService(null);
+    });
+  }
+  if (scServiceSelect) {
+    scServiceSelect.addEventListener('change', function() {
+      var code = scServiceSelect.value;
+      if (!code) { setScService(null); return; }
+      var found = scServices.find(function(s) { return s.service_code === code; });
+      if (found) setScService(found);
+    });
+  }
+
+  if (scForm) {
+    scForm.addEventListener('submit', function(e) {
+      if (!scHiddenCountryCode.value) {
+        e.preventDefault();
+        if (window.toast) window.toast('Please select a country in Step 1 first.', 'error');
+        if (scCountrySearch) scCountrySearch.focus();
+        return;
+      }
+      if (!scHiddenServiceCode.value) {
+        e.preventDefault();
+        if (window.toast) window.toast('Please select a service in Step 2 first.', 'error');
+        if (scServiceSearch) scServiceSearch.focus();
+        return;
+      }
+      var u = scPriceUsd ? parseFloat(scPriceUsd.value) : NaN;
+      var n = scPriceNgn ? parseFloat(scPriceNgn.value) : NaN;
+      if ((isNaN(u) || u <= 0) && (isNaN(n) || n <= 0)) {
+        e.preventDefault();
+        if (window.toast) window.toast('Please enter a fixed override price in USD ($) or Naira (₦).', 'error');
       }
     });
   }
 
-  // Click outside to close dropdown
+  populateScCountries();
+  populateScServices();
+
+  // Populate Country Filter Dropdown & Search for Active SMSCode Overrides Table
+  var scTableFilter = document.getElementById('sc-table-country-filter');
+  var scTableSearch = document.getElementById('sc-table-search');
+  var scOverrideRows = document.querySelectorAll('.sc-override-row');
+
+  if (scTableFilter && scOverrideRows.length > 0) {
+    var seenTableCountries = {};
+    scOverrideRows.forEach(function(r) {
+      var cc = r.getAttribute('data-country');
+      var cn = r.getAttribute('data-country-name');
+      if (cc) {
+        seenTableCountries[cc] = (seenTableCountries[cc] || { name: cn, count: 0 });
+        seenTableCountries[cc].count++;
+      }
+    });
+    Object.keys(seenTableCountries).sort().forEach(function(cc) {
+      var opt = document.createElement('option');
+      opt.value = cc;
+      opt.textContent = seenTableCountries[cc].name + ' (' + cc + ') — ' + seenTableCountries[cc].count;
+      scTableFilter.appendChild(opt);
+    });
+  }
+
+  function filterScTable() {
+    var ccVal = scTableFilter ? scTableFilter.value : 'ALL_ROWS';
+    var q = scTableSearch ? (scTableSearch.value || '').trim().toLowerCase() : '';
+    scOverrideRows.forEach(function(r) {
+      var rowCc = r.getAttribute('data-country');
+      var rowSearch = r.getAttribute('data-search') || '';
+      var matchCc = (ccVal === 'ALL_ROWS' || rowCc === ccVal);
+      var matchQ = (!q || rowSearch.indexOf(q) !== -1);
+      r.style.display = (matchCc && matchQ) ? '' : 'none';
+    });
+  }
+  if (scTableFilter) scTableFilter.addEventListener('change', filterScTable);
+  if (scTableSearch) scTableSearch.addEventListener('input', filterScTable);
+
+  window.editSmscodeOverride = function(countryCode, serviceCode, routeScope, usd, ngn, notes) {
+    var cFound = scCountries.find(function(c) { return c.country_code === countryCode; }) || { country_code: countryCode, country_name: countryCode, flag: '🌐' };
+    var sFound = scServices.find(function(s) { return s.service_code === serviceCode; }) || { service_code: serviceCode, service_name: serviceCode };
+    setScCountry(cFound);
+    setScService(sFound);
+    if (scRouteScope) scRouteScope.value = routeScope || 'all';
+    if (scPriceUsd) scPriceUsd.value = usd;
+    if (scPriceNgn) scPriceNgn.value = ngn;
+    if (scNotes) scNotes.value = notes || '';
+    var sec = document.getElementById('smscode-overrides-section');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (scPriceUsd) scPriceUsd.focus();
+  };
+
+  // Click outside to close all search dropdowns
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.admin-search-wrapper')) {
-      closeDropdown();
+      [tvDropdownEl, scCountryDropdown, scServiceDropdown].forEach(function(d) {
+        if (d) {
+          d.classList.remove('is-open');
+          d.style.display = 'none';
+        }
+      });
     }
   });
-
-  // Form submit validation
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      if (!hiddenCode.value) {
-        e.preventDefault();
-        if (window.toast) {
-          window.toast('Please select a service from the search or dropdown first.', 'error');
-        } else {
-          searchInput.classList.add('is-invalid');
-        }
-        if (searchInput) {
-          searchInput.focus();
-          openDropdown();
-        }
-      }
-    });
-  }
-
-  // Initial load
-  populateSelectDropdown();
 })();
 
 function openDeleteOverrideModal(overrideId, serviceName, providerType, price) {
@@ -1638,7 +2132,7 @@ function openDeleteOverrideModal(overrideId, serviceName, providerType, price) {
 
   inputId.value = overrideId;
   nameEl.textContent = serviceName;
-  provEl.textContent = providerType === 'textverified' ? 'TextVerified (US Reliable)' : 'SMS Code (US Basic)';
+  provEl.textContent = providerType === 'textverified' ? 'TextVerified (US Reliable)' : 'SMSCode (Country & Service Override)';
   priceEl.textContent = '$' + price;
 
   modal.classList.add('is-open');
