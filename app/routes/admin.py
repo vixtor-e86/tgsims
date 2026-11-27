@@ -569,9 +569,20 @@ def pricing():
         country_lookup[cc] = c_entry
 
     # Build SMSCode services list (1,236 services from catalog.json, falling back to US list if empty)
-    smscode_services_catalog = []
-    seen_smscode_svc = set()
-    service_lookup = {}
+    # Include 'all' at the top so admin can override ALL services under a selected country in one click
+    smscode_services_catalog = [
+        {
+            'service_code': 'all',
+            'service_name': 'All Services (Every Service in Selected Country)',
+            'is_core': True,
+            'is_all_services': True,
+            'base_cost': 0.50
+        }
+    ]
+    seen_smscode_svc = {'all'}
+    service_lookup = {
+        'all': 'All Services (Entire Country)'
+    }
     for s in raw_global_services:
         sc = (s.get('code') or '').strip().lower()
         if sc and sc not in seen_smscode_svc:

@@ -1160,17 +1160,26 @@ class SIMProviderService:
                     # 2. Exact Country + Service (All Routes, e.g. 'gb:whatsapp')
                     for cand in sc_candidates:
                         lookup_keys.append(f"{cc}:{cand}")
-                    # 3. Legacy US-only service key without country prefix (only when country is US)
+                    # 3. Exact Country + ALL Services + Route (e.g. 'gb:all:primary')
+                    if rt:
+                        lookup_keys.append(f"{cc}:all:{rt}")
+                    # 4. Exact Country + ALL Services (All Routes, e.g. 'gb:all')
+                    lookup_keys.append(f"{cc}:all")
+                    # 5. Legacy US-only service key without country prefix (only when country is US)
                     if cc == 'us':
                         for cand in sc_candidates:
                             lookup_keys.append(cand)
-                    # 4. Global All-Countries + Service + Route (e.g. 'all:whatsapp:primary')
+                    # 6. Global All-Countries + Service + Route (e.g. 'all:whatsapp:primary')
                     if rt:
                         for cand in sc_candidates:
                             lookup_keys.append(f"all:{cand}:{rt}")
-                    # 5. Global All-Countries + Service (e.g. 'all:whatsapp')
+                    # 7. Global All-Countries + Service (e.g. 'all:whatsapp')
                     for cand in sc_candidates:
                         lookup_keys.append(f"all:{cand}")
+                    # 8. Global All-Countries + ALL Services (+ Route)
+                    if rt:
+                        lookup_keys.append(f"all:all:{rt}")
+                    lookup_keys.append("all:all")
 
                     for k in lookup_keys:
                         if k in overrides:
@@ -2004,12 +2013,18 @@ class SIMProviderService:
                 elif sc in overrides:
                     op_retail = overrides[sc]
                     op_retail_ngn = round(overrides_ngn.get(sc, op_retail * rate), 2)
+                elif "us:all" in overrides:
+                    op_retail = overrides["us:all"]
+                    op_retail_ngn = round(overrides_ngn.get("us:all", op_retail * rate), 2)
                 elif f"all:{std_code}" in overrides:
                     op_retail = overrides[f"all:{std_code}"]
                     op_retail_ngn = round(overrides_ngn.get(f"all:{std_code}", op_retail * rate), 2)
                 elif f"all:{sc}" in overrides:
                     op_retail = overrides[f"all:{sc}"]
                     op_retail_ngn = round(overrides_ngn.get(f"all:{sc}", op_retail * rate), 2)
+                elif "all:all" in overrides:
+                    op_retail = overrides["all:all"]
+                    op_retail_ngn = round(overrides_ngn.get("all:all", op_retail * rate), 2)
                 elif not apply_markup:
                     op_retail = round(base_cost, 2)
                     op_retail_ngn = round(op_retail * rate, 2)
@@ -2108,10 +2123,14 @@ class SIMProviderService:
                         op_retail = overrides[s_code]
                     elif key in overrides:
                         op_retail = overrides[key]
+                    elif "us:all" in overrides:
+                        op_retail = overrides["us:all"]
                     elif f"all:{s_code}" in overrides:
                         op_retail = overrides[f"all:{s_code}"]
                     elif f"all:{key}" in overrides:
                         op_retail = overrides[f"all:{key}"]
+                    elif "all:all" in overrides:
+                        op_retail = overrides["all:all"]
                     elif not apply_markup or (pct <= 0.0 and floor <= 0.0):
                         op_retail = round(base_cost, 2)
                     else:

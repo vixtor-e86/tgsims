@@ -594,20 +594,25 @@
           </select>
         </div>
 
-        {# 2. Service Picker (Search + Dropdown) #}
+        {# 2. Service Picker (Search + Dropdown + 1-Click All Services Button) #}
         <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0.85rem;">
-          <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brand); margin-bottom: 0.5rem;">
-            Step 2: Select Service
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brand);">
+              Step 2: Select Service (or All Services)
+            </span>
+            <button type="button" id="sc-select-all-services-btn" class="btn btn-secondary btn-xs" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 700;" title="Apply fixed price to every service in the selected country">
+              ✨ Select All Services in Country
+            </button>
           </div>
           <div class="admin-search-wrapper" style="position: relative; margin-bottom: 0.55rem;">
             <div style="position: relative; display: flex; align-items: center;">
-              <input type="search" id="sc-service-search" placeholder="Search service (e.g. WhatsApp, Telegram, Google)..." autocomplete="off" class="input input-sm" style="padding-right: 28px;">
+              <input type="search" id="sc-service-search" placeholder="Search service or choose 'All Services'..." autocomplete="off" class="input input-sm" style="padding-right: 28px;">
               <button type="button" id="sc-service-clear" aria-label="Clear service" title="Clear service" style="position: absolute; right: 8px; background: none; border: none; font-size: 1.15rem; color: var(--text-muted); cursor: pointer; display: none; line-height: 1; padding: 0;">&times;</button>
             </div>
             <div id="sc-service-dropdown" class="admin-search-dropdown"></div>
           </div>
           <select id="sc-service-select" class="input input-sm">
-            <option value="">-- Choose a service --</option>
+            <option value="">-- Choose a service (or All Services) --</option>
           </select>
         </div>
       </div>
@@ -1790,15 +1795,26 @@ script[type="application/json"] {
 
   function populateScServices() {
     if (!scServiceSelect) return;
-    scServiceSelect.innerHTML = '<option value="">-- Choose a service --</option>';
+    scServiceSelect.innerHTML = '<option value="">-- Choose a service (or All Services) --</option>';
     if (!scServices.length) return;
 
+    var allSvcGroup = document.createElement('optgroup');
+    allSvcGroup.label = 'Entire Country Override (All Services)';
     var coreGroup = document.createElement('optgroup');
     coreGroup.label = 'Core & Popular Services';
     var allGroup = document.createElement('optgroup');
-    allGroup.label = 'All Services (A-Z)';
+    allGroup.label = 'All Individual Services (A-Z)';
 
-    var sorted = scServices.slice().sort(function(a, b) {
+    var allSvcItem = scServices.find(function(s) { return s.service_code === 'all'; });
+    if (allSvcItem) {
+      var allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.textContent = '✨ ' + allSvcItem.service_name;
+      allSvcGroup.appendChild(allOpt);
+      scServiceSelect.appendChild(allSvcGroup);
+    }
+
+    var sorted = scServices.filter(function(s) { return s.service_code !== 'all'; }).sort(function(a, b) {
       return (a.service_name || '').localeCompare(b.service_name || '');
     });
 
@@ -1814,6 +1830,20 @@ script[type="application/json"] {
 
     scServiceSelect.appendChild(coreGroup);
     scServiceSelect.appendChild(allGroup);
+  }
+
+  var scSelectAllServicesBtn = document.getElementById('sc-select-all-services-btn');
+  if (scSelectAllServicesBtn) {
+    scSelectAllServicesBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var allSvc = scServices.find(function(s) { return s.service_code === 'all'; }) || {
+        service_code: 'all',
+        service_name: 'All Services (Every Service in Selected Country)',
+        is_core: true
+      };
+      setScService(allSvc);
+      if (scPriceUsd) scPriceUsd.focus();
+    });
   }
 
   function setScCountry(country) {
@@ -1939,6 +1969,11 @@ script[type="application/json"] {
 
     if (cc === 'ALL') {
       scPreviewRoutes.innerHTML = '<span style="color: var(--text-muted);">Global override applies to all countries unless a country has its own specific override.</span>';
+      return;
+    }
+
+    if (sc === 'all') {
+      scPreviewRoutes.innerHTML = '<span style="color: var(--brand); font-weight: 600;">✨ Country-Wide Override: This fixed price will apply to EVERY service in ' + escapeHtml(cn) + ' (unless a specific service in ' + escapeHtml(cn) + ' has its own individual override).</span>';
       return;
     }
 
